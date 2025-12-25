@@ -54,3 +54,7 @@ Use cases:
 - Code review after completing work
 - Brainstorming for problem-solving
 - A second opinion on your approach
+
+## License
+
+MIT License

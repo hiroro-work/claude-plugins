@@ -14,30 +14,36 @@ Get a second opinion from a peer engineer (Claude subagent) for:
 
 ## Usage
 
-Invoke the peer agent via Task tool:
+Use the `/ask-peer` command followed by your consultation request:
 
+```bash
+/ask-peer Review this implementation plan for adding user authentication
 ```
-Task(subagent_type="peer", prompt="Your consultation request here")
+
+Or simply describe what you need help with:
+
+```bash
+/ask-peer I'm stuck on how to handle error cases in the payment flow
 ```
 
 ## Examples
 
 **Plan review before implementation:**
 
-```
-Task(subagent_type="peer", prompt="Review this implementation plan for adding user authentication. Check for security concerns and missing edge cases.")
+```bash
+/ask-peer Review my plan to refactor the authentication module. Check for security concerns and missing edge cases.
 ```
 
 **Code review after completion:**
 
-```
-Task(subagent_type="peer", prompt="Review the changes I made to the authentication module. Look for bugs, security issues, and code quality problems.")
+```bash
+/ask-peer Review the changes I made to src/auth/. Look for bugs, security issues, and code quality problems.
 ```
 
 **Problem-solving consultation:**
 
-```
-Task(subagent_type="peer", prompt="I'm getting intermittent test failures in the payment module. Help me think through possible causes.")
+```bash
+/ask-peer I'm getting intermittent test failures in the payment module. Help me think through possible causes.
 ```
 
 ## What the Peer Agent Provides

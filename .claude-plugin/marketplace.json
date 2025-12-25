@@ -15,6 +15,12 @@
       "source": "./plugins/ask-codex",
       "description": "Get a second opinion from OpenAI Codex",
       "version": "1.0.0"
+    },
+    {
+      "name": "ask-gemini",
+      "source": "./plugins/ask-gemini",
+      "description": "Get a second opinion from Google Gemini",
+      "version": "1.0.0"
     }
   ]
 }

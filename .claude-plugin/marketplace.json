@@ -1,0 +1,20 @@
+{
+  "name": "hiropon-plugins",
+  "owner": {
+    "name": "hiropon"
+  },
+  "plugins": [
+    {
+      "name": "ask-claude",
+      "source": "./plugins/ask-claude",
+      "description": "Get a second opinion from another Claude instance",
+      "version": "1.0.0"
+    },
+    {
+      "name": "ask-codex",
+      "source": "./plugins/ask-codex",
+      "description": "Get a second opinion from OpenAI Codex",
+      "version": "1.0.0"
+    }
+  ]
+}

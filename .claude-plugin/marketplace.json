@@ -21,6 +21,12 @@
       "source": "./plugins/ask-gemini",
       "description": "Get a second opinion from Google Gemini",
       "version": "1.0.0"
+    },
+    {
+      "name": "peer",
+      "source": "./plugins/peer",
+      "description": "Peer engineer for code review, planning, and brainstorming",
+      "version": "1.0.0"
     }
   ]
 }

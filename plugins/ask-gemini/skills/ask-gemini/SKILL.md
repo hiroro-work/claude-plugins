@@ -7,6 +7,8 @@ description: Asks Gemini CLI for coding assistance. Use for getting a second opi
 
 Executes the local `gemini` CLI to get coding assistance.
 
+**Note:** This skill requires the `gemini` CLI to be installed and available in your system's PATH.
+
 ## Quick start
 
 Run a single query using positional prompt:

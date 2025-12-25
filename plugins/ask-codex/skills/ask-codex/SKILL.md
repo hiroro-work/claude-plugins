@@ -7,6 +7,8 @@ description: Asks Codex CLI for coding assistance. Use for getting a second opin
 
 Executes the local `codex` CLI to get coding assistance.
 
+**Note:** This skill requires the `codex` CLI to be installed and available in your system's PATH.
+
 ## Quick start
 
 Run a single query with `codex exec`:

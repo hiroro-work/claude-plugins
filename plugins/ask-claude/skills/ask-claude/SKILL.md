@@ -7,6 +7,8 @@ description: Asks Claude Code CLI for coding assistance. Use for getting a secon
 
 Executes the local `claude` CLI to get coding assistance.
 
+**Note:** This skill requires the `claude` CLI to be installed and available in your system's PATH.
+
 ## Quick start
 
 Run a single query with `-p` (print mode):

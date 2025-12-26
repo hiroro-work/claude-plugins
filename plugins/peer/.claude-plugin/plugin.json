@@ -2,5 +2,7 @@
   "name": "peer",
   "version": "1.0.0",
   "description": "Claude subagent for peer review, planning discussions, and brainstorming",
-  "author": "hiropon"
+  "author": {
+    "name": "hiropon"
+  }
 }

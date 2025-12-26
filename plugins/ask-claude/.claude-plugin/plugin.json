@@ -2,5 +2,7 @@
   "name": "ask-claude",
   "version": "1.0.0",
   "description": "Claude Code CLI integration for getting a second opinion from another Claude instance",
-  "author": "hiropon"
+  "author": {
+    "name": "hiropon"
+  }
 }

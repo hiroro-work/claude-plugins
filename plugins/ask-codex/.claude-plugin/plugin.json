@@ -2,5 +2,7 @@
   "name": "ask-codex",
   "version": "1.0.0",
   "description": "Codex CLI integration for getting a second opinion from OpenAI Codex",
-  "author": "hiropon"
+  "author": {
+    "name": "hiropon"
+  }
 }

@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.1.0] - 2025-12-27
+
+### Changed
+
+- `ask-claude`, `ask-codex`, `ask-gemini`: Add `allowed-tools` to eliminate double permission prompts when using skills
+
 ## [1.0.0] - 2025-12-25
 
 ### Added

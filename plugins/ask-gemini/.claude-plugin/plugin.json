@@ -1,6 +1,6 @@
 {
   "name": "ask-gemini",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Gemini CLI integration for getting a second opinion from Google Gemini",
   "author": {
     "name": "hiropon"

@@ -1,6 +1,12 @@
 # Changelog
 
-## [1.1.0] - 2025-12-27
+## [1.1.1] - 2025-12-28
+
+### Fixed
+
+- `ask-codex`: Fix `allowed-tools` pattern from `Bash(codex exec:*)` to `Bash(codex:*)`
+
+## [1.1.0] - 2025-12-28
 
 ### Changed
 

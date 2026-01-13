@@ -1,22 +1,25 @@
 # Changelog
 
-## [1.1.1] - 2025-12-28
+## 2026-01-13
 
-### Fixed
+### ask-claude v1.1.1
 
-- `ask-codex`: Fix `allowed-tools` pattern from `Bash(codex exec:*)` to `Bash(codex:*)`
+- Update description to clarify it's for non-Claude AI agents (Codex, Gemini, etc.)
 
-## [1.1.0] - 2025-12-28
+## 2025-12-28
 
-### Changed
+### ask-codex v1.1.1
 
-- `ask-claude`, `ask-codex`, `ask-gemini`: Add `allowed-tools` to eliminate double permission prompts when using skills
+- Fix `allowed-tools` pattern from `Bash(codex exec:*)` to `Bash(codex:*)`
 
-## [1.0.0] - 2025-12-25
+### ask-claude, ask-codex, ask-gemini v1.1.0
 
-### Added
+- Add `allowed-tools` to eliminate double permission prompts when using skills
 
-- Initial release
+## 2025-12-25
+
+### Initial release v1.0.0
+
 - `ask-claude` plugin: Claude CLI integration for getting a second opinion
 - `ask-codex` plugin: Codex CLI integration for getting a second opinion
 - `ask-gemini` plugin: Gemini CLI integration for getting a second opinion

@@ -3,6 +3,18 @@
   "version": "1.1.0",
   "description": "Gemini CLI integration for getting a second opinion from Google Gemini",
   "author": {
-    "name": "hiropon"
-  }
+    "name": "hiropon",
+    "url": "https://github.com/hiroro-work"
+  },
+  "homepage": "https://github.com/hiroro-work/claude-plugins",
+  "repository": "https://github.com/hiroro-work/claude-plugins",
+  "license": "MIT",
+  "keywords": [
+    "ai",
+    "gemini",
+    "google",
+    "second-opinion",
+    "peer-review",
+    "workflow"
+  ]
 }

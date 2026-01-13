@@ -1,32 +1,49 @@
 {
   "name": "hiropon-plugins",
   "owner": {
-    "name": "hiropon"
+    "name": "hiropon",
+    "email": "hiroro.work@gmail.com"
   },
   "plugins": [
     {
       "name": "ask-claude",
       "source": "./plugins/ask-claude",
       "description": "Get a second opinion from another Claude instance",
-      "version": "1.1.0"
+      "version": "1.1.0",
+      "author": {
+        "name": "hiropon"
+      },
+      "category": "workflow"
     },
     {
       "name": "ask-codex",
       "source": "./plugins/ask-codex",
       "description": "Get a second opinion from OpenAI Codex",
-      "version": "1.1.1"
+      "version": "1.1.1",
+      "author": {
+        "name": "hiropon"
+      },
+      "category": "workflow"
     },
     {
       "name": "ask-gemini",
       "source": "./plugins/ask-gemini",
       "description": "Get a second opinion from Google Gemini",
-      "version": "1.1.0"
+      "version": "1.1.0",
+      "author": {
+        "name": "hiropon"
+      },
+      "category": "workflow"
     },
     {
       "name": "peer",
       "source": "./plugins/peer",
       "description": "Peer engineer for code review, planning, and brainstorming",
-      "version": "1.0.0"
+      "version": "1.0.0",
+      "author": {
+        "name": "hiropon"
+      },
+      "category": "workflow"
     }
   ]
 }

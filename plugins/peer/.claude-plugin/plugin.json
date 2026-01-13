@@ -3,6 +3,19 @@
   "version": "1.0.0",
   "description": "Claude subagent for peer review, planning discussions, and brainstorming",
   "author": {
-    "name": "hiropon"
-  }
+    "name": "hiropon",
+    "url": "https://github.com/hiroro-work"
+  },
+  "homepage": "https://github.com/hiroro-work/claude-plugins",
+  "repository": "https://github.com/hiroro-work/claude-plugins",
+  "license": "MIT",
+  "keywords": [
+    "ai",
+    "claude",
+    "peer-review",
+    "code-review",
+    "planning",
+    "brainstorming",
+    "workflow"
+  ]
 }

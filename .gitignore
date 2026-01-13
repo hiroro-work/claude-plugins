@@ -1,1 +1,3 @@
-.claude/
+.claude/*
+!.claude/commands/
+!.claude/skills/

@@ -1,0 +1,13 @@
+{
+  "name": "plugin-security",
+  "version": "1.0.0",
+  "description": "Security scanner for Claude Code plugins - detects malicious code and dangerous patterns",
+  "author": {
+    "name": "hiroro-work",
+    "url": "https://github.com/hiroro-work"
+  },
+  "homepage": "https://github.com/hiroro-work/claude-plugins",
+  "repository": "https://github.com/hiroro-work/claude-plugins",
+  "license": "MIT",
+  "keywords": ["security", "scanner", "audit", "malware-detection", "plugin-security"]
+}

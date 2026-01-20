@@ -1,6 +1,6 @@
 ---
 description: Test all plugin skills and agents to verify they work correctly
-allowed-tools: Bash(which:*), Skill(ask-claude), Skill(ask-codex), Skill(ask-gemini), Skill(ask-peer), Skill(tr), Task
+allowed-tools: Bash(which:*), Skill(ask-claude), Skill(ask-codex), Skill(ask-gemini), Skill(ask-peer), Skill(tr), Skill(plugin-security), Task
 ---
 
 # Test Skills and Agents
@@ -16,6 +16,7 @@ allowed-tools: Bash(which:*), Skill(ask-claude), Skill(ask-codex), Skill(ask-gem
 | ask-gemini | /ask-gemini | - | `gemini` CLI |
 | peer | /ask-peer | peer | なし |
 | translate | /tr | tr, tr-hq | なし |
+| plugin-security | /plugin-security | security-scanner | なし |
 
 ## 作業手順
 
@@ -56,6 +57,10 @@ allowed-tools: Bash(which:*), Skill(ask-claude), Skill(ask-codex), Skill(ask-gem
 
 - `Skill(skill: "tr", args: "hello")` を実行 → 日本語への翻訳を確認
 
+#### plugin-security
+
+- `Skill(skill: "plugin-security", args: "--project")` を実行 → プロジェクトレベルプラグインのスキャン結果を確認
+
 ### Step 3: エージェント動作テスト
 
 `Task` ツールを使って各エージェントをテストします。
@@ -69,6 +74,11 @@ allowed-tools: Bash(which:*), Skill(ask-claude), Skill(ask-codex), Skill(ask-gem
 
 - `Task(subagent_type: "tr-hq", prompt: "Translate: The quick brown fox jumps over the lazy dog")` を実行
 - 日本語への翻訳結果を確認
+
+#### security-scanner エージェント
+
+- `Task(subagent_type: "security-scanner", prompt: "Analyze the plugin at plugins/translate/ for security issues")` を実行
+- セキュリティ分析レポートを確認
 
 ### Step 4: 結果サマリー
 
@@ -86,6 +96,7 @@ allowed-tools: Bash(which:*), Skill(ask-claude), Skill(ask-codex), Skill(ask-gem
 | ask-gemini | /ask-gemini | ✅/⚠️/N/A | ... |
 | peer | /ask-peer | ✅/⚠️ | ... |
 | translate | /tr | ✅/⚠️ | ... |
+| plugin-security | /plugin-security | ✅/⚠️ | ... |
 
 ### エージェント
 
@@ -93,6 +104,7 @@ allowed-tools: Bash(which:*), Skill(ask-claude), Skill(ask-codex), Skill(ask-gem
 |-----------|------------|------|------|
 | translate | tr | ✅/⚠️ | ... |
 | translate | tr-hq | ✅/⚠️ | ... |
+| plugin-security | security-scanner | ✅/⚠️ | ... |
 
 ### 総合結果
 ✅ 全テスト成功 / ⚠️ N件の問題が見つかりました

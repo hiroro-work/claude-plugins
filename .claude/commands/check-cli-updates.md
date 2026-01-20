@@ -1,6 +1,6 @@
 ---
 description: Check for CLI updates and validate SKILL.md contents for ask-claude, ask-codex, ask-gemini plugins
-allowed-tools: WebSearch, WebFetch, Read, Grep, Glob, Bash(claude:*), Bash(codex:*), Bash(gemini:*), Bash(which:*), Skill(ask-claude), Skill(ask-codex), Skill(ask-gemini), Skill(ask-peer)
+allowed-tools: WebSearch, WebFetch, Read, Grep, Glob, Bash(claude:*), Bash(codex:*), Bash(gemini:*), Bash(which:*), mcp__context7__resolve-library-id, mcp__context7__query-docs, Skill(ask-peer)
 ---
 
 # CLI Update Check
@@ -17,7 +17,7 @@ allowed-tools: WebSearch, WebFetch, Read, Grep, Glob, Bash(claude:*), Bash(codex
 
 ## 作業手順
 
-### Step 0: 前提確認
+### Step 1: 前提確認
 
 各CLIがインストールされているか確認してください：
 
@@ -27,11 +27,11 @@ allowed-tools: WebSearch, WebFetch, Read, Grep, Glob, Bash(claude:*), Bash(codex
 
 インストールされていないCLIはスキップし、結果サマリーで報告してください。
 
-### Step 1: 現状確認
+### Step 2: 現状確認
 
 各SKILL.mdを読んで、現在記載されているオプションを確認してください。
 
-### Step 2: CLIヘルプ確認
+### Step 3: CLIヘルプ確認
 
 各CLIの `--help` と `--version` を実行して、現在のオプションとバージョンを確認してください：
 
@@ -39,28 +39,20 @@ allowed-tools: WebSearch, WebFetch, Read, Grep, Glob, Bash(claude:*), Bash(codex
 - `codex exec --help` / `codex --version`
 - `gemini --help` / `gemini --version`
 
-### Step 3: 最新ドキュメント調査
+### Step 4: 最新ドキュメント調査
 
 WebSearchを使って、各CLIの最新ドキュメントを調査してください。
 利用可能なMCP（Context7など）があれば活用してください。
 
 確認ポイント：
+
 - 使用しているオプションが有効か
 - 非推奨（deprecated）や廃止されたオプションがないか
 - 新しく追加された重要なオプションがないか
 
-### Step 4: peerレビュー
+### Step 5: peerレビュー
 
 調査結果をpeerにレビュー依頼してください。
-
-### Step 5: スキル動作確認
-
-各スキルが正しく動作することを確認してください。
-このプロジェクトでは `.claude/skills/` にローカルスキルが設定されているため、`plugins/` 配下の最新のスキルを直接テストできます。
-
-- `/ask-codex` で Codex CLI が呼び出せるか確認
-- `/ask-gemini` で Gemini CLI が呼び出せるか確認
-- `/ask-claude` で Claude CLI が呼び出せるか確認
 
 ### Step 6: 結果サマリー
 

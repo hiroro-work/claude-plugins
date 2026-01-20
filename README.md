@@ -10,6 +10,7 @@ Claude Code plugins for integrating with AI coding assistants.
 | ask-codex | Skill | Get a second opinion from OpenAI Codex |
 | ask-gemini | Skill | Get a second opinion from Google Gemini |
 | peer | Agent + Skill | Peer engineer for code review, planning, and brainstorming |
+| translate | Agent + Skill | AI-powered translation with /tr command (configurable quality) |
 
 ## Installation
 
@@ -26,6 +27,7 @@ claude plugin install ask-claude@hiropon-plugins
 claude plugin install ask-codex@hiropon-plugins
 claude plugin install ask-gemini@hiropon-plugins
 claude plugin install peer@hiropon-plugins
+claude plugin install translate@hiropon-plugins
 ```
 
 ## Requirements
@@ -34,6 +36,7 @@ claude plugin install peer@hiropon-plugins
 - **ask-codex**: Requires `codex` CLI
 - **ask-gemini**: Requires `gemini` CLI
 - **peer**: No external dependencies (runs as Claude subagent)
+- **translate**: No external dependencies (runs as Claude subagent)
 
 ## Usage
 

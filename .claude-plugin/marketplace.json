@@ -9,7 +9,7 @@
       "name": "ask-claude",
       "source": "./plugins/ask-claude",
       "description": "Get a second opinion from another Claude instance",
-      "version": "1.1.0",
+      "version": "1.1.1",
       "author": {
         "name": "hiropon"
       },
@@ -39,6 +39,16 @@
       "name": "peer",
       "source": "./plugins/peer",
       "description": "Peer engineer for code review, planning, and brainstorming",
+      "version": "1.0.0",
+      "author": {
+        "name": "hiropon"
+      },
+      "category": "workflow"
+    },
+    {
+      "name": "translate",
+      "source": "./plugins/translate",
+      "description": "AI-powered translation plugin with /tr command (--hq for high-quality)",
       "version": "1.0.0",
       "author": {
         "name": "hiropon"

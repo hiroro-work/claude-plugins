@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-01-15
+
+### translate v1.0.0
+
+- Initial release: AI-powered translation plugin using Claude subagents
+- `/tr` command with haiku model (default)
+- `--hq` option for high-quality translation using sonnet model
+- `--fast` option to force standard translation using haiku model
+- `--to` option for specifying target language
+- `--from` option for specifying source language (skip auto-detection)
+- Auto-detects Japanese/English translation direction
+- Configurable defaults via `.claude/translate.local.md` (quality, languages)
+
 ## 2026-01-13
 
 ### ask-claude v1.1.1

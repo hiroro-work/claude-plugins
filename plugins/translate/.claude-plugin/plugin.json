@@ -1,0 +1,13 @@
+{
+  "name": "translate",
+  "version": "1.0.0",
+  "description": "AI-powered translation plugin with /tr command (--hq for high-quality)",
+  "author": {
+    "name": "hiropon",
+    "url": "https://github.com/hiroro-work"
+  },
+  "homepage": "https://github.com/hiroro-work/claude-plugins",
+  "repository": "https://github.com/hiroro-work/claude-plugins",
+  "license": "MIT",
+  "keywords": ["translation", "japanese", "english", "multilingual", "ai"]
+}

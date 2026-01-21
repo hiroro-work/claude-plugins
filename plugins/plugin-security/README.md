@@ -15,6 +15,9 @@ Claude Code plugin for scanning installed plugins using **AI semantic analysis**
 
 # Scan project-level plugins only (.claude/plugins/)
 /plugin-security --project
+
+# Scan ALL plugins including trusted sources and self (full audit)
+/plugin-security --all
 ```
 
 **Note:** If `~/.claude/plugins/installed_plugins.json` doesn't exist, the scanner reports "No user-level plugins installed" and continues with project-level plugins.

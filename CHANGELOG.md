@@ -8,9 +8,11 @@
 - `/plugin-security` command to scan all installed plugins
 - `--user` option for user-level plugins only (`~/.claude/plugins/`)
 - `--project` option for project-level plugins only (`.claude/plugins/`)
+- `--all` option for full audit (ignore trusted sources and self-exclusion)
 - AI semantic analysis to detect malicious code AND natural language instructions
 - Detects: remote code execution, reverse shells, credential theft, data exfiltration, etc.
 - Trusted sources configuration via `.claude/plugin-security.local.md`
+- Self-exclusion with impersonation protection (`plugin-security@hiropon-plugins` only)
 - Uses only Read, Glob, Grep tools (no command execution)
 
 ## 2026-01-15

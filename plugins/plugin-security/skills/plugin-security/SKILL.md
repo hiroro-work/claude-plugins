@@ -14,6 +14,7 @@ Analyzes Claude Code plugins for malicious content using AI semantic analysis.
 /plugin-security              # Scan all plugins (default)
 /plugin-security --user       # Scan user-level plugins only
 /plugin-security --project    # Scan project-level plugins only
+/plugin-security --all        # Scan ALL plugins (ignore trusted sources and self-exclusion)
 ```
 
 ## Scan Targets
@@ -56,6 +57,7 @@ Check the argument to determine which plugins to scan:
 - No argument or default: Scan both user-level and project-level
 - `--user`: Scan only `~/.claude/plugins/`
 - `--project`: Scan only `.claude/plugins/`
+- `--all`: Scan ALL plugins (skip Step 4 filtering entirely)
 
 ### Step 3: Get Plugin List
 
@@ -69,6 +71,8 @@ Check the argument to determine which plugins to scan:
 2. If no plugins found, report "No project-level plugins found" and continue
 
 ### Step 4: Filter Plugins
+
+**If `--all` flag is set: Skip this step entirely and scan all plugins.**
 
 For each plugin, check if it should be skipped:
 

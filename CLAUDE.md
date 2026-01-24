@@ -8,6 +8,9 @@ Claude Code用プラグインを公開するためのマーケットプレイス
 .
 ├── .claude-plugin/
 │   └── marketplace.json      # プラグインマニフェスト（全プラグイン一覧）
+├── skills/                   # Skills.sh用スキル（SKILL.md直接配置）
+│   └── <skill-name>/
+│       └── SKILL.md
 ├── plugins/
 │   └── <plugin-name>/        # 各プラグインディレクトリ
 │       ├── .claude-plugin/
@@ -101,7 +104,30 @@ ln -s ../../plugins/<plugin-name>/skills/<skill-name> .claude/skills/<skill-name
 ln -s ../../plugins/<plugin-name>/agents/<agent-name>.md .claude/agents/<agent-name>.md
 ```
 
-### 5. CHANGELOG.md 更新
+### 5. Skills.sh対応（スキルがエージェント非依存の場合のみ）
+
+スキルが `allowed-tools` を持ち、エージェントに依存しない場合は、Skills.sh用にコピー:
+
+```bash
+# skills/ディレクトリにコピー
+mkdir -p skills/<skill-name>
+cp plugins/<plugin-name>/skills/<skill-name>/SKILL.md skills/<skill-name>/SKILL.md
+```
+
+**対象条件:**
+- スキルに `allowed-tools` が指定されている
+- スキルがTask toolでエージェントを呼び出さない
+- スキル単体で完結する設計
+
+**現在のSkills.sh対応スキル:** ask-claude, ask-codex, ask-gemini, security-scanner
+
+**重要: 二重管理のルール**
+
+- `plugins/` が正（source of truth）
+- `skills/` への同期はリリース時に手動で行う
+- スキルを更新した場合は、必ず `skills/` にもコピーすること
+
+### 6. CHANGELOG.md 更新
 
 ```markdown
 ## YYYY-MM-DD
@@ -113,7 +139,7 @@ ln -s ../../plugins/<plugin-name>/agents/<agent-name>.md .claude/agents/<agent-n
 - Feature 2
 ```
 
-### 6. verify-plugins.md と test-skills.md 更新
+### 7. verify-plugins.md と test-skills.md 更新
 
 - `verify-plugins.md`: ファイル存在確認テーブル、結果サマリーテーブルに追加
 - `test-skills.md`: テスト対象テーブル、allowed-tools、テスト手順、結果サマリーに追加

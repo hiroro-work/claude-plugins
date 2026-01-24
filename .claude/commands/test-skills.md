@@ -59,9 +59,7 @@ allowed-tools: Bash(which:*), Skill(ask-claude), Skill(ask-codex), Skill(ask-gem
 
 #### security-scanner
 
-- `Skill(skill: "security-scanner", args: "--project")` を実行 → プロジェクトレベル全体のスキャン結果を確認
-- `Skill(skill: "security-scanner", args: "--project --plugins")` を実行 → プロジェクトレベルプラグインのみスキャン
-- `Skill(skill: "security-scanner", args: "--project --skills")` を実行 → プロジェクトレベルスタンドアロンスキルのみスキャン
+- `Skill(skill: "security-scanner", args: "--project")` を実行 → プロジェクトレベルのスキャン結果を確認
 - `Skill(skill: "security-scanner", args: "--url https://github.com/hiroro-work/claude-plugins/tree/main/plugins/translate")` を実行 → GitHubからのプラグインスキャン結果を確認
 - `Skill(skill: "security-scanner", args: "--url https://github.com/hiroro-work/claude-plugins/blob/main/plugins/translate/skills/tr/SKILL.md")` を実行 → 単一ファイルスキャン結果を確認
 

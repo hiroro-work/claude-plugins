@@ -19,13 +19,16 @@
 - Install via: `npx skills add hiroro-work/claude-plugins`
 - Note: Agent features (peer, translate) are only available via Claude Code Plugin Marketplace
 
+### security-scanner v1.1.1
+
+- Remove `--plugins` and `--skills` options to simplify the skill (always scans both)
+
 ### security-scanner v1.1.0
 
 **Renamed from plugin-security to security-scanner** to reflect expanded scope and clearer purpose.
 
 - feat: Add `--url` option for scanning plugins from GitHub public repositories
 - feat: Add skills scanning (`~/.claude/skills/`, `.claude/skills/`)
-- feat: Add type filters: `--plugins`, `--skills` (can combine with `--user`/`--project`)
 - Supports full GitHub URLs (e.g., `https://github.com/owner/repo/tree/main/plugins/my-plugin`)
 - Supports non-plugin content: skill directories without plugin.json, single SKILL.md files
 - Uses GitHub Contents API via WebFetch (no authentication required for public repos)

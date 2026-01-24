@@ -14,13 +14,9 @@ Analyzes Claude Code plugins and skills for malicious content using AI semantic 
 /security-scanner              # Scan all (plugins + skills)
 /security-scanner --user       # Scan user-level only (~/.claude/)
 /security-scanner --project    # Scan project-level only (.claude/)
-/security-scanner --plugins    # Scan plugins only
-/security-scanner --skills     # Scan skills only
 /security-scanner --all        # Scan ALL (ignore trusted sources and self-exclusion)
 /security-scanner --url <url>  # Scan from GitHub URL (public repos only)
 ```
-
-Options can be combined: `/security-scanner --user --skills` scans user-level skills only.
 
 ### URL Format (--url option)
 
@@ -103,16 +99,9 @@ Check arguments to determine what to scan:
 - `--user`: Scan only `~/.claude/` (user-level)
 - `--project`: Scan only `.claude/` (project-level)
 
-**Type filters:**
-- No type flag: Scan all types (plugins + skills)
-- `--plugins`: Scan only plugins
-- `--skills`: Scan only skills
-
 **Special modes:**
 - `--all`: Scan everything (skip Step 4 filtering entirely)
 - `--url <url>`: Scan from GitHub URL → **Go to Step 2-URL**
-
-**Combinations:** Options can be combined. Example: `--user --skills` scans only user-level skills.
 
 ---
 
@@ -193,7 +182,7 @@ After fetching all files, proceed to **Step 5** for analysis.
 
 Based on scope determined in Step 2, collect targets:
 
-**For plugins (if included):**
+**For plugins:**
 
 *User-level:*
 1. Read `~/.claude/plugins/installed_plugins.json`
@@ -204,7 +193,7 @@ Based on scope determined in Step 2, collect targets:
 1. Use Glob to find plugins in `.claude/plugins/*/`
 2. If no plugins found, report "No project-level plugins found"
 
-**For skills (if included):**
+**For skills:**
 
 *User-level:*
 1. Use Glob to find skill directories in `~/.claude/skills/*/`

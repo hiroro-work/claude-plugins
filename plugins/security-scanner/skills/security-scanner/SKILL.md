@@ -1,26 +1,26 @@
 ---
-name: skills-scanner
-description: Scan installed plugins and skills for security risks including malicious code AND malicious natural language instructions. Use /skills-scanner to audit before installation.
+name: security-scanner
+description: Scan installed plugins and skills for security risks including malicious code AND malicious natural language instructions. Use /security-scanner to audit before installation.
 allowed-tools: Read, Glob, Grep, WebFetch
 ---
 
-# Skills Scanner
+# Security Scanner
 
 Analyzes Claude Code plugins and skills for malicious content using AI semantic analysis.
 
 ## Usage
 
 ```text
-/skills-scanner              # Scan all (plugins + skills)
-/skills-scanner --user       # Scan user-level only (~/.claude/)
-/skills-scanner --project    # Scan project-level only (.claude/)
-/skills-scanner --plugins    # Scan plugins only
-/skills-scanner --skills     # Scan skills only
-/skills-scanner --all        # Scan ALL (ignore trusted sources and self-exclusion)
-/skills-scanner --url <url>  # Scan from GitHub URL (public repos only)
+/security-scanner              # Scan all (plugins + skills)
+/security-scanner --user       # Scan user-level only (~/.claude/)
+/security-scanner --project    # Scan project-level only (.claude/)
+/security-scanner --plugins    # Scan plugins only
+/security-scanner --skills     # Scan skills only
+/security-scanner --all        # Scan ALL (ignore trusted sources and self-exclusion)
+/security-scanner --url <url>  # Scan from GitHub URL (public repos only)
 ```
 
-Options can be combined: `/skills-scanner --user --skills` scans user-level skills only.
+Options can be combined: `/security-scanner --user --skills` scans user-level skills only.
 
 ### URL Format (--url option)
 
@@ -45,7 +45,7 @@ https://github.com/owner/repo/tree/main/path/to/plugin
 
 ## Configuration (Trusted Sources)
 
-Users can define trusted marketplaces, plugins, and skills in `.claude/skills-scanner.local.md`:
+Users can define trusted marketplaces, plugins, and skills in `.claude/security-scanner.local.md`:
 
 ```markdown
 ---
@@ -65,13 +65,13 @@ trusted_skills:
 
 **Trusted sources are skipped during scanning.**
 
-To add/remove trusted sources, edit `.claude/skills-scanner.local.md` manually.
+To add/remove trusted sources, edit `.claude/security-scanner.local.md` manually.
 
 ## Scanning Process
 
 ### Step 1: Load Settings
 
-Read `.claude/skills-scanner.local.md` if it exists:
+Read `.claude/security-scanner.local.md` if it exists:
 - Extract `trusted_marketplaces` list from YAML frontmatter
 - Extract `trusted_plugins` list from YAML frontmatter
 - Extract `trusted_skills` list from YAML frontmatter
@@ -207,7 +207,7 @@ Based on scope determined in Step 2, collect targets:
 #### For plugins:
 
 **Self-exclusion (automatic):**
-- Skip `skills-scanner@hiropon-plugins` (official scanner) to avoid false positives from example patterns
+- Skip `security-scanner@hiropon-plugins` (official scanner) to avoid false positives from example patterns
 - Plugins with the same name but different marketplace will NOT be skipped (potential impersonation)
 
 **Trusted sources:**
@@ -363,4 +363,4 @@ Use the same report format as local scans, with this header added:
 - This scan uses AI to understand intent, not just pattern matching
 - Both code AND natural language instructions are analyzed
 - False positives are possible - always review context
-- Use `.claude/skills-scanner.local.md` to configure trusted sources
+- Use `.claude/security-scanner.local.md` to configure trusted sources

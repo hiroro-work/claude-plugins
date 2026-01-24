@@ -130,8 +130,8 @@ ln -s ../../plugins/<plugin-name>/agents/<agent-name>.md .claude/agents/<agent-n
 
 ### 命名規則
 
-- プラグイン名: kebab-case（例: `skills-scanner`, `ask-claude`）
-- スキル名: kebab-case（例: `skills-scanner`, `ask-peer`）
+- プラグイン名: kebab-case（例: `security-scanner`, `ask-claude`）
+- スキル名: kebab-case（例: `security-scanner`, `ask-peer`）
 - エージェント名: kebab-case（例: `security-scanner`, `peer`）
 
 ### allowed-tools
@@ -152,4 +152,4 @@ ln -s ../../plugins/<plugin-name>/agents/<agent-name>.md .claude/agents/<agent-n
 
 ## セキュリティ
 
-プラグイン追加時は `/skills-scanner --project` でセキュリティスキャンを実行し、問題がないことを確認してください。
+プラグイン追加時は `/security-scanner --project` でセキュリティスキャンを実行し、問題がないことを確認してください。

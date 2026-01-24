@@ -33,7 +33,7 @@ allowed-tools: Read, Glob, Grep, Bash(jq:*), Bash(for:*), Bash(echo:*), Bash(if:
 | ask-gemini | plugins/ask-gemini/.claude-plugin/plugin.json | skills/ask-gemini/SKILL.md | - |
 | peer | plugins/peer/.claude-plugin/plugin.json | skills/ask-peer/SKILL.md | agents/peer.md |
 | translate | plugins/translate/.claude-plugin/plugin.json | skills/tr/SKILL.md | agents/tr.md, agents/tr-hq.md |
-| skills-scanner | plugins/skills-scanner/.claude-plugin/plugin.json | skills/skills-scanner/SKILL.md | agents/security-scanner.md |
+| security-scanner | plugins/security-scanner/.claude-plugin/plugin.json | skills/security-scanner/SKILL.md | agents/security-scanner.md |
 
 ### 2. バージョン整合性
 
@@ -91,7 +91,7 @@ Skill(skill: "test-skills")
 
 このスキルでは以下がテストされます：
 
-- 各プラグインのスキル動作（/ask-claude, /ask-codex, /ask-gemini, /ask-peer, /tr, /skills-scanner）
+- 各プラグインのスキル動作（/ask-claude, /ask-codex, /ask-gemini, /ask-peer, /tr, /security-scanner）
 - 各プラグインのエージェント動作（tr, tr-hq, security-scanner）
 - 外部CLI依存のスキルは、CLIがインストールされていない場合スキップ
 
@@ -125,7 +125,7 @@ Skill(skill: "check-cli-updates")
 | ask-gemini | ✅ | ✅ | N/A | ✅ |
 | peer | ✅ | ✅ | ✅ | ✅ |
 | translate | ✅ | ✅ | ✅ | ✅ |
-| skills-scanner | ✅ | ✅ | ✅ | ✅ |
+| security-scanner | ✅ | ✅ | ✅ | ✅ |
 
 ### バージョン整合性
 | プラグイン | marketplace | plugin.json | 状態 |
@@ -149,8 +149,8 @@ Skill(skill: "check-cli-updates")
 | translate | /tr | ✅/⚠️ | ... |
 | translate | tr agent | ✅/⚠️ | ... |
 | translate | tr-hq agent | ✅/⚠️ | ... |
-| skills-scanner | /skills-scanner | ✅/⚠️ | ... |
-| skills-scanner | security-scanner agent | ✅/⚠️ | ... |
+| security-scanner | /security-scanner | ✅/⚠️ | ... |
+| security-scanner | security-scanner agent | ✅/⚠️ | ... |
 
 ### 総合結果
 ✅ 全プラグインが正常です / ⚠️ N件の問題が見つかりました

@@ -94,7 +94,7 @@ For each finding, determine:
 
 ## Important Guidelines
 
-- **Self-exclusion**: Skip only `skills-scanner@hiropon-plugins` (official scanner). Plugins with the same name but different marketplace should be scanned (potential impersonation)
+- **Self-exclusion**: Skip only `security-scanner@hiropon-plugins` (official scanner). Plugins with the same name but different marketplace should be scanned (potential impersonation)
 - Be thorough but avoid false positives
 - Consider the plugin's stated purpose when evaluating findings
 - A plugin that needs `Bash(git:*)` for git operations is fine

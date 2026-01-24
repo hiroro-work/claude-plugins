@@ -1,4 +1,4 @@
-# Skills Scanner
+# Security Scanner
 
 Claude Code plugin for scanning installed plugins and skills using **AI semantic analysis** to detect:
 - Malicious code patterns
@@ -8,26 +8,26 @@ Claude Code plugin for scanning installed plugins and skills using **AI semantic
 
 ```bash
 # Scan all (plugins + skills)
-/skills-scanner
+/security-scanner
 
 # Location filters
-/skills-scanner --user       # User-level only (~/.claude/)
-/skills-scanner --project    # Project-level only (.claude/)
+/security-scanner --user       # User-level only (~/.claude/)
+/security-scanner --project    # Project-level only (.claude/)
 
 # Type filters
-/skills-scanner --plugins    # Plugins only
-/skills-scanner --skills     # skills only
+/security-scanner --plugins    # Plugins only
+/security-scanner --skills     # skills only
 
 # Combine filters
-/skills-scanner --user --skills  # User-level skills only
+/security-scanner --user --skills  # User-level skills only
 
 # Full audit (ignore trusted sources)
-/skills-scanner --all
+/security-scanner --all
 
 # Scan from GitHub URL (public repos only)
-/skills-scanner --url https://github.com/owner/repo
-/skills-scanner --url https://github.com/owner/repo/tree/main/plugins/my-plugin
-/skills-scanner --url https://github.com/owner/repo/blob/main/skills/my-skill/SKILL.md
+/security-scanner --url https://github.com/owner/repo
+/security-scanner --url https://github.com/owner/repo/tree/main/plugins/my-plugin
+/security-scanner --url https://github.com/owner/repo/blob/main/skills/my-skill/SKILL.md
 ```
 
 **Notes:**
@@ -95,7 +95,7 @@ The scanner reads and analyzes system prompts and instructions to detect:
 
 ## Trusted Sources Configuration
 
-Create `.claude/skills-scanner.local.md` to define trusted marketplaces, plugins, and skills that will be skipped during scanning:
+Create `.claude/security-scanner.local.md` to define trusted marketplaces, plugins, and skills that will be skipped during scanning:
 
 ```markdown
 ---
@@ -117,7 +117,7 @@ trusted_skills:
 - Settings persist across plugin updates
 - Can trust entire marketplaces, specific plugins, or skills
 
-**To manage trusted sources:** Edit `.claude/skills-scanner.local.md` manually.
+**To manage trusted sources:** Edit `.claude/security-scanner.local.md` manually.
 
 **Security notes:**
 
@@ -180,7 +180,7 @@ trusted_skills:
 
 - This plugin uses only Read, Glob, Grep, and WebFetch tools (no command execution)
 - Scan results are displayed locally and never sent externally
-- The scanner automatically skips itself (`skills-scanner@hiropon-plugins`) to avoid false positives from example patterns. Plugins with the same name but different marketplace will be scanned (impersonation protection)
+- The scanner automatically skips itself (`security-scanner@hiropon-plugins`) to avoid false positives from example patterns. Plugins with the same name but different marketplace will be scanned (impersonation protection)
 - When using `--url`, the scanner fetches files via GitHub's public API (rate limited to 60 requests/hour for unauthenticated users)
 
 ## License

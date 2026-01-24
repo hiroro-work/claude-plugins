@@ -2,6 +2,14 @@
 
 ## 2026-01-24
 
+### Repository restructure (anthropics/skills pattern)
+
+- Adopt anthropics/skills pattern for skill-only items
+- `skills/` is now canonical location (no duplication)
+- `marketplace.json` uses `skills` array for skill collection
+- Agent-dependent plugins (peer, translate) remain in `plugins/`
+- Delete redundant `plugins/` directories: ask-claude, ask-codex, ask-gemini, security-scanner
+
 ### Skills.sh support
 
 - Add `skills/` directory for Skills.sh distribution

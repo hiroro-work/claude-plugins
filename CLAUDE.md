@@ -7,47 +7,95 @@ Claude Code用プラグインを公開するためのマーケットプレイス
 ```
 .
 ├── .claude-plugin/
-│   └── marketplace.json      # プラグインマニフェスト（全プラグイン一覧）
-├── skills/                   # Skills.sh用スキル（SKILL.md直接配置）
+│   └── marketplace.json      # プラグインマニフェスト
+├── skills/                   # スキル専用（Skills.sh + マーケットプレイス両対応）
 │   └── <skill-name>/
-│       └── SKILL.md
-├── plugins/
-│   └── <plugin-name>/        # 各プラグインディレクトリ
+│       └── SKILL.md          # 正規ファイル（二重管理なし）
+├── plugins/                  # エージェント依存プラグインのみ
+│   └── <plugin-name>/
 │       ├── .claude-plugin/
-│       │   └── plugin.json   # プラグインメタデータ
+│       │   └── plugin.json
 │       ├── skills/
 │       │   └── <skill-name>/
-│       │       └── SKILL.md  # スキル定義
+│       │       └── SKILL.md
 │       ├── agents/
-│       │   └── <agent-name>.md  # エージェント定義（任意）
-│       └── README.md         # プラグインドキュメント
+│       │   └── <agent-name>.md
+│       └── README.md
 ├── .claude/
 │   ├── commands/             # 開発用コマンド
-│   ├── skills/               # プラグインスキルへのシンボリックリンク
-│   └── agents/               # プラグインエージェントへのシンボリックリンク
+│   ├── skills/               # スキルへのシンボリックリンク
+│   └── agents/               # エージェントへのシンボリックリンク
 ├── CHANGELOG.md              # 変更履歴
 └── README.md                 # リポジトリ説明
 ```
 
-## プラグイン追加フロー
+## スキル追加フロー（エージェント非依存）
 
-### 1. プラグインディレクトリ作成
+スキルが `allowed-tools` を持ち、エージェントに依存しない場合:
+
+### 1. skills/ディレクトリにスキル作成
+
+```
+skills/<skill-name>/
+└── SKILL.md
+```
+
+### 2. SKILL.md
+
+```markdown
+---
+name: <skill-name>
+description: スキルの説明
+allowed-tools: Read, Glob, Grep
+---
+
+# スキル名
+
+スキルの詳細な説明と使い方
+```
+
+### 3. marketplace.json の skills 配列に追加
+
+`.claude-plugin/marketplace.json` の `hiropon-skills` プラグインの `skills` 配列に追加:
+
+```json
+{
+  "name": "hiropon-skills",
+  "source": "./",
+  "skills": [
+    "./skills/ask-claude",
+    "./skills/<skill-name>"  // 追加
+  ]
+}
+```
+
+### 4. シンボリックリンク作成
 
 ```bash
+ln -s ../../skills/<skill-name> .claude/skills/<skill-name>
+```
+
+### 5. CHANGELOG.md 更新
+
+## プラグイン追加フロー（エージェント依存）
+
+エージェントを必要とするプラグインの場合:
+
+### 1. plugins/ディレクトリにプラグイン作成
+
+```
 plugins/<plugin-name>/
 ├── .claude-plugin/
 │   └── plugin.json
 ├── skills/
 │   └── <skill-name>/
 │       └── SKILL.md
-├── agents/              # エージェントがある場合
+├── agents/
 │   └── <agent-name>.md
 └── README.md
 ```
 
-### 2. 必須ファイル
-
-#### plugin.json
+### 2. plugin.json
 
 ```json
 {
@@ -65,23 +113,9 @@ plugins/<plugin-name>/
 }
 ```
 
-#### SKILL.md
-
-```markdown
----
-name: <skill-name>
-description: スキルの説明。Use /<skill-name> to ...
-allowed-tools: Read, Glob, Grep
----
-
-# スキル名
-
-スキルの詳細な説明と使い方
-```
-
 ### 3. marketplace.json に追加
 
-`.claude-plugin/marketplace.json` の `plugins` 配列に追加：
+`.claude-plugin/marketplace.json` の `plugins` 配列に追加:
 
 ```json
 {
@@ -100,49 +134,11 @@ allowed-tools: Read, Glob, Grep
 # スキル
 ln -s ../../plugins/<plugin-name>/skills/<skill-name> .claude/skills/<skill-name>
 
-# エージェント（ある場合）
+# エージェント
 ln -s ../../plugins/<plugin-name>/agents/<agent-name>.md .claude/agents/<agent-name>.md
 ```
 
-### 5. Skills.sh対応（スキルがエージェント非依存の場合のみ）
-
-スキルが `allowed-tools` を持ち、エージェントに依存しない場合は、Skills.sh用にコピー:
-
-```bash
-# skills/ディレクトリにコピー
-mkdir -p skills/<skill-name>
-cp plugins/<plugin-name>/skills/<skill-name>/SKILL.md skills/<skill-name>/SKILL.md
-```
-
-**対象条件:**
-- スキルに `allowed-tools` が指定されている
-- スキルがTask toolでエージェントを呼び出さない
-- スキル単体で完結する設計
-
-**現在のSkills.sh対応スキル:** ask-claude, ask-codex, ask-gemini, security-scanner
-
-**重要: 二重管理のルール**
-
-- `plugins/` が正（source of truth）
-- `skills/` への同期はリリース時に手動で行う
-- スキルを更新した場合は、必ず `skills/` にもコピーすること
-
-### 6. CHANGELOG.md 更新
-
-```markdown
-## YYYY-MM-DD
-
-### <plugin-name> v1.0.0
-
-- Initial release: ...
-- Feature 1
-- Feature 2
-```
-
-### 7. verify-plugins.md と test-skills.md 更新
-
-- `verify-plugins.md`: ファイル存在確認テーブル、結果サマリーテーブルに追加
-- `test-skills.md`: テスト対象テーブル、allowed-tools、テスト手順、結果サマリーに追加
+### 5. CHANGELOG.md 更新
 
 ## 検証コマンド
 
@@ -156,9 +152,9 @@ cp plugins/<plugin-name>/skills/<skill-name>/SKILL.md skills/<skill-name>/SKILL.
 
 ### 命名規則
 
-- プラグイン名: kebab-case（例: `security-scanner`, `ask-claude`）
-- スキル名: kebab-case（例: `security-scanner`, `ask-peer`）
-- エージェント名: kebab-case（例: `security-scanner`, `peer`）
+- スキル名: kebab-case（例: `security-scanner`, `ask-claude`）
+- プラグイン名: kebab-case（例: `peer`, `translate`）
+- エージェント名: kebab-case（例: `peer`, `tr`）
 
 ### allowed-tools
 

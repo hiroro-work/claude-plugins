@@ -9,14 +9,14 @@ allowed-tools: Bash(which:*), Skill(ask-claude), Skill(ask-codex), Skill(ask-gem
 
 ## テスト対象
 
-| プラグイン | スキル | エージェント | 外部依存 |
-|-----------|--------|------------|---------|
+| 対象 | スキル | エージェント | 外部依存 |
+|------|--------|------------|---------|
 | ask-claude | /ask-claude | - | `claude` CLI |
 | ask-codex | /ask-codex | - | `codex` CLI |
 | ask-gemini | /ask-gemini | - | `gemini` CLI |
 | peer | /ask-peer | peer | なし |
 | translate | /tr | tr, tr-hq | なし |
-| security-scanner | /security-scanner | security-scanner | なし |
+| security-scanner | /security-scanner | - | なし |
 
 ## 作業手順
 
@@ -79,11 +79,6 @@ allowed-tools: Bash(which:*), Skill(ask-claude), Skill(ask-codex), Skill(ask-gem
 - `Task(subagent_type: "tr-hq", prompt: "Translate: The quick brown fox jumps over the lazy dog")` を実行
 - 日本語への翻訳結果を確認
 
-#### security-scanner エージェント
-
-- `Task(subagent_type: "security-scanner", prompt: "Analyze the plugin at plugins/translate/ for security issues")` を実行
-- セキュリティ分析レポートを確認
-
 ### Step 4: 結果サマリー
 
 以下の形式で結果を報告してください：
@@ -104,11 +99,11 @@ allowed-tools: Bash(which:*), Skill(ask-claude), Skill(ask-codex), Skill(ask-gem
 
 ### エージェント
 
-| プラグイン | エージェント | 結果 | 備考 |
-|-----------|------------|------|------|
+| 対象 | エージェント | 結果 | 備考 |
+|------|------------|------|------|
+| peer | peer | ✅/⚠️ | ... |
 | translate | tr | ✅/⚠️ | ... |
 | translate | tr-hq | ✅/⚠️ | ... |
-| security-scanner | security-scanner | ✅/⚠️ | ... |
 
 ### 総合結果
 ✅ 全テスト成功 / ⚠️ N件の問題が見つかりました

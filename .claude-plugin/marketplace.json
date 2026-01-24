@@ -6,9 +6,25 @@
   },
   "plugins": [
     {
+      "name": "hiropon-skills",
+      "description": "Collection of AI assistant skills: ask-claude, ask-codex, ask-gemini, security-scanner",
+      "source": "./",
+      "skills": [
+        "./skills/ask-claude",
+        "./skills/ask-codex",
+        "./skills/ask-gemini",
+        "./skills/security-scanner"
+      ],
+      "author": {
+        "name": "hiropon"
+      },
+      "category": "workflow"
+    },
+    {
       "name": "ask-claude",
-      "source": "./plugins/ask-claude",
       "description": "Get a second opinion from another Claude instance",
+      "source": "./",
+      "skills": ["./skills/ask-claude"],
       "version": "1.1.1",
       "author": {
         "name": "hiropon"
@@ -17,8 +33,9 @@
     },
     {
       "name": "ask-codex",
-      "source": "./plugins/ask-codex",
       "description": "Get a second opinion from OpenAI Codex",
+      "source": "./",
+      "skills": ["./skills/ask-codex"],
       "version": "1.1.1",
       "author": {
         "name": "hiropon"
@@ -27,13 +44,25 @@
     },
     {
       "name": "ask-gemini",
-      "source": "./plugins/ask-gemini",
       "description": "Get a second opinion from Google Gemini",
+      "source": "./",
+      "skills": ["./skills/ask-gemini"],
       "version": "1.1.0",
       "author": {
         "name": "hiropon"
       },
       "category": "workflow"
+    },
+    {
+      "name": "security-scanner",
+      "description": "Scan plugins and skills for security risks",
+      "source": "./",
+      "skills": ["./skills/security-scanner"],
+      "version": "1.1.0",
+      "author": {
+        "name": "hiropon"
+      },
+      "category": "security"
     },
     {
       "name": "peer",
@@ -54,16 +83,6 @@
         "name": "hiropon"
       },
       "category": "workflow"
-    },
-    {
-      "name": "security-scanner",
-      "source": "./plugins/security-scanner",
-      "description": "Security scanner for Claude Code plugins and skills - detects malicious code and dangerous patterns",
-      "version": "1.1.0",
-      "author": {
-        "name": "hiropon"
-      },
-      "category": "security"
     }
   ]
 }

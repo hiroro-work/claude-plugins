@@ -51,6 +51,7 @@ Available skills: `ask-claude`, `ask-codex`, `ask-gemini`, `security-scanner`
 - **ask-gemini**: Requires `gemini` CLI
 - **peer**: No external dependencies (runs as Claude subagent)
 - **translate**: No external dependencies (runs as Claude subagent)
+- **security-scanner**: No external dependencies
 
 ## Usage
 

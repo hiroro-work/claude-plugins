@@ -1,28 +1,44 @@
-# Plugin Security
+# Skills Scanner
 
-Claude Code plugin for scanning installed plugins using **AI semantic analysis** to detect:
+Claude Code plugin for scanning installed plugins and skills using **AI semantic analysis** to detect:
 - Malicious code patterns
 - Malicious natural language instructions (hidden in system prompts)
 
 ## Usage
 
 ```bash
-# Scan all installed plugins (recommended)
-/plugin-security
+# Scan all (plugins + skills)
+/skills-scanner
 
-# Scan user-level plugins only (~/.claude/plugins/)
-/plugin-security --user
+# Location filters
+/skills-scanner --user       # User-level only (~/.claude/)
+/skills-scanner --project    # Project-level only (.claude/)
 
-# Scan project-level plugins only (.claude/plugins/)
-/plugin-security --project
+# Type filters
+/skills-scanner --plugins    # Plugins only
+/skills-scanner --skills     # skills only
 
-# Scan ALL plugins including trusted sources and self (full audit)
-/plugin-security --all
+# Combine filters
+/skills-scanner --user --skills  # User-level skills only
+
+# Full audit (ignore trusted sources)
+/skills-scanner --all
+
+# Scan from GitHub URL (public repos only)
+/skills-scanner --url https://github.com/owner/repo
+/skills-scanner --url https://github.com/owner/repo/tree/main/plugins/my-plugin
+/skills-scanner --url https://github.com/owner/repo/blob/main/skills/my-skill/SKILL.md
 ```
 
-**Note:** If `~/.claude/plugins/installed_plugins.json` doesn't exist, the scanner reports "No user-level plugins installed" and continues with project-level plugins.
+**Notes:**
+
+- By default, scans plugins and skills
+- skills: `~/.claude/skills/` and `.claude/skills/`
+- The `--url` option only supports public GitHub repositories
 
 ## Scan Targets
+
+### Plugins
 
 The scanner analyzes the following files in each plugin:
 
@@ -32,6 +48,15 @@ The scanner analyzes the following files in each plugin:
 - `commands/*.md` - Command definitions
 - `.mcp.json` - MCP server configurations
 - `plugin.json`, `README.md` - Plugin metadata and documentation
+
+### Skills
+
+For skills in `.claude/skills/`, the scanner analyzes **all files in the skill directory**:
+
+- `SKILL.md` - Main skill instructions (required)
+- All other files in the directory
+
+**Note:** Agent, hook, and command files in `.claude/` directly (outside skill directories) are user-created and not scanned.
 
 ## What It Detects
 
@@ -70,7 +95,7 @@ The scanner reads and analyzes system prompts and instructions to detect:
 
 ## Trusted Sources Configuration
 
-Create `.claude/plugin-security.local.md` to define trusted marketplaces and plugins that will be skipped during scanning:
+Create `.claude/skills-scanner.local.md` to define trusted marketplaces, plugins, and skills that will be skipped during scanning:
 
 ```markdown
 ---
@@ -80,15 +105,19 @@ trusted_marketplaces:
 
 trusted_plugins:
   - frontend-design@claude-code-plugins    # Skip specific plugin
+
+trusted_skills:
+  - my-skill                   # Skip specific skill by name
 ---
 ```
 
 **Benefits:**
+
 - Trusted sources are skipped (faster scans)
 - Settings persist across plugin updates
-- Can trust entire marketplaces or specific plugins
+- Can trust entire marketplaces, specific plugins, or skills
 
-**To manage trusted sources:** Edit `.claude/plugin-security.local.md` manually.
+**To manage trusted sources:** Edit `.claude/skills-scanner.local.md` manually.
 
 **Security notes:**
 
@@ -102,44 +131,57 @@ trusted_plugins:
 # Security Analysis Report
 
 ## Summary
-- Plugins found: 7
-- Trusted (skipped): 4
-- Scanned: 3
-- Malicious: 0
-- Suspicious: 1
-- Safe: 2
+| Type | Found | Trusted | Scanned | Malicious | Suspicious | Safe |
+|------|-------|---------|---------|-----------|------------|------|
+| Plugins | 5 | 3 | 2 | 0 | 1 | 1 |
+| Skills | 2 | 0 | 2 | 0 | 0 | 2 |
 
 ## Trusted (Skipped)
 - ask-claude@hiropon-plugins (trusted marketplace)
 - peer@hiropon-plugins (trusted marketplace)
-- plugin-dev@claude-plugins-official (trusted marketplace)
-- frontend-design@claude-code-plugins (trusted plugin)
+- plugin-dev@claude-plugins-official (trusted plugin)
 
 ## Findings
 
-### my-plugin
-**Verdict:** Suspicious
-- Unrestricted Bash execution: `Bash(*)` in SKILL.md
+### Plugins
 
-### other-plugin
+#### my-plugin
+**Type:** Plugin
+**Purpose:** Code formatting helper
+**Verdict:** Suspicious
+
+**Issues found:**
+- Unrestricted Bash execution: `Bash(*)` in SKILL.md - excessive permissions for stated purpose
+
+### Skills
+
+#### my-skill
+**Type:** Skill
+**Location:** .claude/skills/my-skill/
+**Purpose:** File organizer
 **Verdict:** Safe
-- No issues found
+
+---
+
+## Recommendation
+- [ ] Review required - my-plugin: Unrestricted Bash access
 ```
 
 ## Limitations
 
-- This scan detects common malicious patterns but cannot guarantee 100% safety
+- This scan uses AI semantic analysis but cannot guarantee 100% safety
 - Always manually review plugin code before installation
-- Some legitimate tools may trigger false positives
-- Cannot detect compressed or encoded malicious code
-- Cannot detect dynamically generated commands
-- The scan focuses on static text patterns only
+- Some legitimate tools may trigger false positives (context-dependent)
+- Cannot detect compressed or heavily encoded malicious code
+- Cannot detect dynamically generated commands at runtime
+- AI analysis is based on the text content available at scan time
 
 ## Notes
 
-- This plugin uses only Read, Glob, and Grep tools (no command execution)
+- This plugin uses only Read, Glob, Grep, and WebFetch tools (no command execution)
 - Scan results are displayed locally and never sent externally
-- The scanner automatically skips itself (`plugin-security@hiropon-plugins`) to avoid false positives from example patterns. Plugins with the same name but different marketplace will be scanned (impersonation protection)
+- The scanner automatically skips itself (`skills-scanner@hiropon-plugins`) to avoid false positives from example patterns. Plugins with the same name but different marketplace will be scanned (impersonation protection)
+- When using `--url`, the scanner fetches files via GitHub's public API (rate limited to 60 requests/hour for unauthenticated users)
 
 ## License
 

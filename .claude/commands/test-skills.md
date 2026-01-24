@@ -1,6 +1,6 @@
 ---
 description: Test all plugin skills and agents to verify they work correctly
-allowed-tools: Bash(which:*), Skill(ask-claude), Skill(ask-codex), Skill(ask-gemini), Skill(ask-peer), Skill(tr), Skill(plugin-security), Task
+allowed-tools: Bash(which:*), Skill(ask-claude), Skill(ask-codex), Skill(ask-gemini), Skill(ask-peer), Skill(tr), Skill(skills-scanner), Task
 ---
 
 # Test Skills and Agents
@@ -16,7 +16,7 @@ allowed-tools: Bash(which:*), Skill(ask-claude), Skill(ask-codex), Skill(ask-gem
 | ask-gemini | /ask-gemini | - | `gemini` CLI |
 | peer | /ask-peer | peer | なし |
 | translate | /tr | tr, tr-hq | なし |
-| plugin-security | /plugin-security | security-scanner | なし |
+| skills-scanner | /skills-scanner | security-scanner | なし |
 
 ## 作業手順
 
@@ -57,9 +57,13 @@ allowed-tools: Bash(which:*), Skill(ask-claude), Skill(ask-codex), Skill(ask-gem
 
 - `Skill(skill: "tr", args: "hello")` を実行 → 日本語への翻訳を確認
 
-#### plugin-security
+#### skills-scanner
 
-- `Skill(skill: "plugin-security", args: "--project")` を実行 → プロジェクトレベルプラグインのスキャン結果を確認
+- `Skill(skill: "skills-scanner", args: "--project")` を実行 → プロジェクトレベル全体のスキャン結果を確認
+- `Skill(skill: "skills-scanner", args: "--project --plugins")` を実行 → プロジェクトレベルプラグインのみスキャン
+- `Skill(skill: "skills-scanner", args: "--project --skills")` を実行 → プロジェクトレベルスタンドアロンスキルのみスキャン
+- `Skill(skill: "skills-scanner", args: "--url https://github.com/hiroro-work/claude-plugins/tree/main/plugins/translate")` を実行 → GitHubからのプラグインスキャン結果を確認
+- `Skill(skill: "skills-scanner", args: "--url https://github.com/hiroro-work/claude-plugins/blob/main/plugins/translate/skills/tr/SKILL.md")` を実行 → 単一ファイルスキャン結果を確認
 
 ### Step 3: エージェント動作テスト
 
@@ -96,7 +100,7 @@ allowed-tools: Bash(which:*), Skill(ask-claude), Skill(ask-codex), Skill(ask-gem
 | ask-gemini | /ask-gemini | ✅/⚠️/N/A | ... |
 | peer | /ask-peer | ✅/⚠️ | ... |
 | translate | /tr | ✅/⚠️ | ... |
-| plugin-security | /plugin-security | ✅/⚠️ | ... |
+| skills-scanner | /skills-scanner | ✅/⚠️ | ... |
 
 ### エージェント
 
@@ -104,7 +108,7 @@ allowed-tools: Bash(which:*), Skill(ask-claude), Skill(ask-codex), Skill(ask-gem
 |-----------|------------|------|------|
 | translate | tr | ✅/⚠️ | ... |
 | translate | tr-hq | ✅/⚠️ | ... |
-| plugin-security | security-scanner | ✅/⚠️ | ... |
+| skills-scanner | security-scanner | ✅/⚠️ | ... |
 
 ### 総合結果
 ✅ 全テスト成功 / ⚠️ N件の問題が見つかりました

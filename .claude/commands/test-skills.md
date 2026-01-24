@@ -60,8 +60,8 @@ allowed-tools: Bash(which:*), Skill(ask-claude), Skill(ask-codex), Skill(ask-gem
 #### security-scanner
 
 - `Skill(skill: "security-scanner", args: "--project")` を実行 → プロジェクトレベルのスキャン結果を確認
-- `Skill(skill: "security-scanner", args: "--url https://github.com/hiroro-work/claude-plugins/tree/main/plugins/translate")` を実行 → GitHubからのプラグインスキャン結果を確認
-- `Skill(skill: "security-scanner", args: "--url https://github.com/hiroro-work/claude-plugins/blob/main/plugins/translate/skills/tr/SKILL.md")` を実行 → 単一ファイルスキャン結果を確認
+- `Skill(skill: "security-scanner", args: "https://github.com/hiroro-work/claude-plugins/tree/main/plugins/translate")` を実行 → GitHubからのプラグインスキャン結果を確認（URL直接指定形式）
+- `Skill(skill: "security-scanner", args: "--url https://github.com/hiroro-work/claude-plugins/blob/main/plugins/translate/skills/tr/SKILL.md")` を実行 → 単一ファイルスキャン結果を確認（--url明示形式）
 
 ### Step 3: エージェント動作テスト
 

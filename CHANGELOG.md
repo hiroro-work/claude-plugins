@@ -19,6 +19,10 @@
 - Install via: `npx skills add hiroro-work/claude-plugins`
 - Note: Agent features (peer, translate) are only available via Claude Code Plugin Marketplace
 
+### security-scanner v1.1.2
+
+- feat: Add URL auto-detection for GitHub URLs (`--url` flag is now optional)
+
 ### security-scanner v1.1.1
 
 - Remove `--plugins` and `--skills` options to simplify the skill (always scans both)

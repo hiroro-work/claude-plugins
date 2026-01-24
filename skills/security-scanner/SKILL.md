@@ -15,7 +15,8 @@ Analyzes Claude Code plugins and skills for malicious content using AI semantic 
 /security-scanner --user       # Scan user-level only (~/.claude/)
 /security-scanner --project    # Scan project-level only (.claude/)
 /security-scanner --all        # Scan ALL (ignore trusted sources and self-exclusion)
-/security-scanner --url <url>  # Scan from GitHub URL (public repos only)
+/security-scanner <url>        # Scan from GitHub URL (public repos only)
+/security-scanner --url <url>  # Same as above (explicit form)
 ```
 
 ### URL Format (--url option)
@@ -99,15 +100,19 @@ Check arguments to determine what to scan:
 - `--user`: Scan only `~/.claude/` (user-level)
 - `--project`: Scan only `.claude/` (project-level)
 
-**Special modes:**
+**URL detection (highest priority):**
+1. If `--url <url>` is provided explicitly → Go to Step 2-URL
+2. If any argument starts with `https://github.com/` or `http://github.com/` → Treat as URL, go to Step 2-URL
+3. If any argument starts with `https://` or `http://` but not `github.com` → Error: "Unsupported host: {host}. Currently only github.com is supported."
+
+**Special modes (if no URL):**
 - `--all`: Scan everything (skip Step 4 filtering entirely)
-- `--url <url>`: Scan from GitHub URL → **Go to Step 2-URL**
 
 ---
 
 ### Step 2-URL: GitHub URL Scan
 
-If `--url` is provided, follow this process instead of Steps 3-4.
+If URL is provided (via `--url` or auto-detected), follow this process instead of Steps 3-4.
 
 #### Step 2-URL-1: Parse URL
 

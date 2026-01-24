@@ -1,6 +1,6 @@
 ---
 description: Test all plugin skills and agents to verify they work correctly
-allowed-tools: Bash(which:*), Skill(ask-claude), Skill(ask-codex), Skill(ask-gemini), Skill(ask-peer), Skill(tr), Task
+allowed-tools: Bash(which:*), Skill(ask-claude), Skill(ask-codex), Skill(ask-gemini), Skill(ask-peer), Skill(tr), Skill(security-scanner), Task
 ---
 
 # Test Skills and Agents
@@ -16,6 +16,7 @@ allowed-tools: Bash(which:*), Skill(ask-claude), Skill(ask-codex), Skill(ask-gem
 | ask-gemini | /ask-gemini | - | `gemini` CLI |
 | peer | /ask-peer | peer | なし |
 | translate | /tr | tr, tr-hq | なし |
+| security-scanner | /security-scanner | security-scanner | なし |
 
 ## 作業手順
 
@@ -56,6 +57,14 @@ allowed-tools: Bash(which:*), Skill(ask-claude), Skill(ask-codex), Skill(ask-gem
 
 - `Skill(skill: "tr", args: "hello")` を実行 → 日本語への翻訳を確認
 
+#### security-scanner
+
+- `Skill(skill: "security-scanner", args: "--project")` を実行 → プロジェクトレベル全体のスキャン結果を確認
+- `Skill(skill: "security-scanner", args: "--project --plugins")` を実行 → プロジェクトレベルプラグインのみスキャン
+- `Skill(skill: "security-scanner", args: "--project --skills")` を実行 → プロジェクトレベルスタンドアロンスキルのみスキャン
+- `Skill(skill: "security-scanner", args: "--url https://github.com/hiroro-work/claude-plugins/tree/main/plugins/translate")` を実行 → GitHubからのプラグインスキャン結果を確認
+- `Skill(skill: "security-scanner", args: "--url https://github.com/hiroro-work/claude-plugins/blob/main/plugins/translate/skills/tr/SKILL.md")` を実行 → 単一ファイルスキャン結果を確認
+
 ### Step 3: エージェント動作テスト
 
 `Task` ツールを使って各エージェントをテストします。
@@ -69,6 +78,11 @@ allowed-tools: Bash(which:*), Skill(ask-claude), Skill(ask-codex), Skill(ask-gem
 
 - `Task(subagent_type: "tr-hq", prompt: "Translate: The quick brown fox jumps over the lazy dog")` を実行
 - 日本語への翻訳結果を確認
+
+#### security-scanner エージェント
+
+- `Task(subagent_type: "security-scanner", prompt: "Analyze the plugin at plugins/translate/ for security issues")` を実行
+- セキュリティ分析レポートを確認
 
 ### Step 4: 結果サマリー
 
@@ -86,6 +100,7 @@ allowed-tools: Bash(which:*), Skill(ask-claude), Skill(ask-codex), Skill(ask-gem
 | ask-gemini | /ask-gemini | ✅/⚠️/N/A | ... |
 | peer | /ask-peer | ✅/⚠️ | ... |
 | translate | /tr | ✅/⚠️ | ... |
+| security-scanner | /security-scanner | ✅/⚠️ | ... |
 
 ### エージェント
 
@@ -93,6 +108,7 @@ allowed-tools: Bash(which:*), Skill(ask-claude), Skill(ask-codex), Skill(ask-gem
 |-----------|------------|------|------|
 | translate | tr | ✅/⚠️ | ... |
 | translate | tr-hq | ✅/⚠️ | ... |
+| security-scanner | security-scanner | ✅/⚠️ | ... |
 
 ### 総合結果
 ✅ 全テスト成功 / ⚠️ N件の問題が見つかりました

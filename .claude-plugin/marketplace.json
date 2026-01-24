@@ -54,6 +54,16 @@
         "name": "hiropon"
       },
       "category": "workflow"
+    },
+    {
+      "name": "security-scanner",
+      "source": "./plugins/security-scanner",
+      "description": "Security scanner for Claude Code plugins and skills - detects malicious code and dangerous patterns",
+      "version": "1.1.0",
+      "author": {
+        "name": "hiropon"
+      },
+      "category": "security"
     }
   ]
 }

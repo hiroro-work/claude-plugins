@@ -9,11 +9,11 @@ allowed-tools: WebSearch, WebFetch, Read, Grep, Glob, Bash(claude:*), Bash(codex
 
 ## 対象プラグイン
 
-| プラグイン | CLI | SKILL.mdパス | 公式リポジトリ |
-|-----------|-----|-------------|---------------|
-| ask-claude | `claude` | plugins/ask-claude/skills/ask-claude/SKILL.md | https://github.com/anthropics/claude-code |
-| ask-codex | `codex` | plugins/ask-codex/skills/ask-codex/SKILL.md | https://github.com/openai/codex |
-| ask-gemini | `gemini` | plugins/ask-gemini/skills/ask-gemini/SKILL.md | https://github.com/google-gemini/gemini-cli |
+| スキル | CLI | SKILL.mdパス | 公式リポジトリ |
+|--------|-----|-------------|---------------|
+| ask-claude | `claude` | skills/ask-claude/SKILL.md | https://github.com/anthropics/claude-code |
+| ask-codex | `codex` | skills/ask-codex/SKILL.md | https://github.com/openai/codex |
+| ask-gemini | `gemini` | skills/ask-gemini/SKILL.md | https://github.com/google-gemini/gemini-cli |
 
 ## 作業手順
 

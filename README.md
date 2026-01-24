@@ -11,23 +11,37 @@ Claude Code plugins for integrating with AI coding assistants.
 | ask-gemini | Skill | Get a second opinion from Google Gemini |
 | peer | Agent + Skill | Peer engineer for code review, planning, and brainstorming |
 | translate | Agent + Skill | AI-powered translation with /tr command (configurable quality) |
+| security-scanner | Skill | Scan plugins and skills for security risks |
 
 ## Installation
 
-### 1. Add marketplace
+### Via Skills.sh (Claude Code, Cursor, Copilot, etc.)
 
 ```bash
-claude plugin marketplace add hiroro-work/claude-plugins
+npx skills add hiroro-work/claude-plugins
 ```
 
-### 2. Install plugins
+Available skills: `ask-claude`, `ask-codex`, `ask-gemini`, `security-scanner`
+
+> Note: Agent features (peer, translate) are only available via Claude Code Plugin Marketplace.
+
+### Via Claude Code Plugin Marketplace (Full features)
+
+#### 1. Add marketplace
 
 ```bash
-claude plugin install ask-claude@hiropon-plugins
-claude plugin install ask-codex@hiropon-plugins
-claude plugin install ask-gemini@hiropon-plugins
-claude plugin install peer@hiropon-plugins
-claude plugin install translate@hiropon-plugins
+/plugin marketplace add hiroro-work/claude-plugins
+```
+
+#### 2. Install plugins
+
+```bash
+/plugin install ask-claude@hiropon-plugins
+/plugin install ask-codex@hiropon-plugins
+/plugin install ask-gemini@hiropon-plugins
+/plugin install peer@hiropon-plugins
+/plugin install translate@hiropon-plugins
+/plugin install security-scanner@hiropon-plugins
 ```
 
 ## Requirements
@@ -37,6 +51,7 @@ claude plugin install translate@hiropon-plugins
 - **ask-gemini**: Requires `gemini` CLI
 - **peer**: No external dependencies (runs as Claude subagent)
 - **translate**: No external dependencies (runs as Claude subagent)
+- **security-scanner**: No external dependencies
 
 ## Usage
 

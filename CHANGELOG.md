@@ -2,6 +2,23 @@
 
 ## 2026-01-24
 
+### Repository restructure (anthropics/skills pattern)
+
+- Adopt anthropics/skills pattern for skill-only items
+- `skills/` is now canonical location (no duplication)
+- Skill-only plugins use `source: "./"` + `skills` array to reference `skills/` directory
+- Agent-dependent plugins (peer, translate) remain in `plugins/`
+- Delete redundant `plugins/` directories: ask-claude, ask-codex, ask-gemini, security-scanner
+
+**For existing users:** Refresh the marketplace to update to the new structure.
+
+### Skills.sh support
+
+- Add `skills/` directory for Skills.sh distribution
+- Available skills: `ask-claude`, `ask-codex`, `ask-gemini`, `security-scanner`
+- Install via: `npx skills add hiroro-work/claude-plugins`
+- Note: Agent features (peer, translate) are only available via Claude Code Plugin Marketplace
+
 ### security-scanner v1.1.0
 
 **Renamed from plugin-security to security-scanner** to reflect expanded scope and clearer purpose.
@@ -15,6 +32,7 @@
 - Error handling for private repos, rate limits, and invalid paths
 - Renamed: `/plugin-security` → `/security-scanner`
 - Renamed: `.claude/plugin-security.local.md` → `.claude/security-scanner.local.md`
+- Remove security-scanner agent (skill is self-contained with `allowed-tools`)
 
 ## 2026-01-20
 

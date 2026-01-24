@@ -45,7 +45,12 @@ https://github.com/owner/repo/tree/main/path/to/plugin
 
 ## Configuration (Trusted Sources)
 
-Users can define trusted marketplaces, plugins, and skills in `.claude/security-scanner.local.md`:
+Users can define trusted marketplaces, plugins, and skills in `security-scanner.local.md`:
+
+- Project-level: `.claude/security-scanner.local.md` (takes precedence)
+- User-level: `~/.claude/security-scanner.local.md`
+
+If both files exist, **project-level settings take precedence**.
 
 ```markdown
 ---
@@ -65,17 +70,28 @@ trusted_skills:
 
 **Trusted sources are skipped during scanning.**
 
-To add/remove trusted sources, edit `.claude/security-scanner.local.md` manually.
+To add/remove trusted sources, edit `security-scanner.local.md` in `.claude/` (project-level) or `~/.claude/` (user-level).
 
 ## Scanning Process
 
 ### Step 1: Load Settings
 
-Read `.claude/security-scanner.local.md` if it exists:
-- Extract `trusted_marketplaces` list from YAML frontmatter
-- Extract `trusted_plugins` list from YAML frontmatter
-- Extract `trusted_skills` list from YAML frontmatter
-- If file doesn't exist, proceed with no trusted sources
+Search for `security-scanner.local.md` in the following locations:
+
+1. **Project-level**: `.claude/security-scanner.local.md`
+2. **User-level**: `~/.claude/security-scanner.local.md`
+
+**Priority rules:**
+- If both files exist, use project-level settings only (project-level takes precedence)
+- If only one file exists, use that file
+- If neither file exists, proceed with no trusted sources
+
+**From the selected file, extract:**
+- `trusted_marketplaces` list from YAML frontmatter
+- `trusted_plugins` list from YAML frontmatter
+- `trusted_skills` list from YAML frontmatter
+
+**Error handling:**
 - If file exists but has invalid YAML syntax, warn the user and proceed with no trusted sources (do not fail the scan)
 
 ### Step 2: Determine Scope
@@ -363,4 +379,4 @@ Use the same report format as local scans, with this header added:
 - This scan uses AI to understand intent, not just pattern matching
 - Both code AND natural language instructions are analyzed
 - False positives are possible - always review context
-- Use `.claude/security-scanner.local.md` to configure trusted sources
+- Use `security-scanner.local.md` in the skill's `.claude/` directory to configure trusted sources

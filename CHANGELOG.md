@@ -6,9 +6,11 @@
 
 - Adopt anthropics/skills pattern for skill-only items
 - `skills/` is now canonical location (no duplication)
-- `marketplace.json` uses `skills` array for skill collection
+- Skill-only plugins use `source: "./"` + `skills` array to reference `skills/` directory
 - Agent-dependent plugins (peer, translate) remain in `plugins/`
 - Delete redundant `plugins/` directories: ask-claude, ask-codex, ask-gemini, security-scanner
+
+**For existing users:** Refresh the marketplace to update to the new structure.
 
 ### Skills.sh support
 

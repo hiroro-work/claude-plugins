@@ -6,21 +6,6 @@
   },
   "plugins": [
     {
-      "name": "hiropon-skills",
-      "description": "Collection of AI assistant skills: ask-claude, ask-codex, ask-gemini, security-scanner",
-      "source": "./",
-      "skills": [
-        "./skills/ask-claude",
-        "./skills/ask-codex",
-        "./skills/ask-gemini",
-        "./skills/security-scanner"
-      ],
-      "author": {
-        "name": "hiropon"
-      },
-      "category": "workflow"
-    },
-    {
       "name": "ask-claude",
       "description": "Get a second opinion from another Claude instance",
       "source": "./",

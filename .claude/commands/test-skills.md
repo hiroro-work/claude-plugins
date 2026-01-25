@@ -1,6 +1,6 @@
 ---
 description: Test all plugin skills and agents to verify they work correctly
-allowed-tools: Bash(which:*), Skill(ask-claude), Skill(ask-codex), Skill(ask-gemini), Skill(ask-peer), Skill(tr), Skill(security-scanner), Task
+allowed-tools: Bash(which:*), Skill(ask-claude), Skill(ask-codex), Skill(ask-gemini), Skill(ask-copilot), Skill(ask-peer), Skill(tr), Skill(security-scanner), Task
 ---
 
 # Test Skills and Agents
@@ -14,6 +14,7 @@ allowed-tools: Bash(which:*), Skill(ask-claude), Skill(ask-codex), Skill(ask-gem
 | ask-claude | /ask-claude | - | `claude` CLI |
 | ask-codex | /ask-codex | - | `codex` CLI |
 | ask-gemini | /ask-gemini | - | `gemini` CLI |
+| ask-copilot | /ask-copilot | - | `copilot` CLI |
 | peer | /ask-peer | peer | なし |
 | translate | /tr | tr, tr-hq | なし |
 | security-scanner | /security-scanner | - | なし |
@@ -27,6 +28,7 @@ allowed-tools: Bash(which:*), Skill(ask-claude), Skill(ask-codex), Skill(ask-gem
 - `which claude`
 - `which codex`
 - `which gemini`
+- `which copilot`
 
 インストールされていないCLIに依存するスキルはスキップします。
 
@@ -47,6 +49,11 @@ allowed-tools: Bash(which:*), Skill(ask-claude), Skill(ask-codex), Skill(ask-gem
 #### ask-gemini
 
 - `Skill(skill: "ask-gemini", args: "what is 2+2?")` を実行
+- CLIがインストールされていない場合はスキップ
+
+#### ask-copilot
+
+- `Skill(skill: "ask-copilot", args: "what is 2+2?")` を実行
 - CLIがインストールされていない場合はスキップ
 
 #### peer
@@ -91,6 +98,7 @@ allowed-tools: Bash(which:*), Skill(ask-claude), Skill(ask-codex), Skill(ask-gem
 | ask-claude | /ask-claude | ✅/⚠️/N/A | 正常/エラー内容/CLI未インストール |
 | ask-codex | /ask-codex | ✅/⚠️/N/A | ... |
 | ask-gemini | /ask-gemini | ✅/⚠️/N/A | ... |
+| ask-copilot | /ask-copilot | ✅/⚠️/N/A | ... |
 | peer | /ask-peer | ✅/⚠️ | ... |
 | translate | /tr | ✅/⚠️ | ... |
 | security-scanner | /security-scanner | ✅/⚠️ | ... |

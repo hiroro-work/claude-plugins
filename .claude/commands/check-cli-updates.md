@@ -1,11 +1,11 @@
 ---
-description: Check for CLI updates and validate SKILL.md contents for ask-claude, ask-codex, ask-gemini plugins
-allowed-tools: WebSearch, WebFetch, Read, Grep, Glob, Bash(claude:*), Bash(codex:*), Bash(gemini:*), Bash(which:*), mcp__context7__resolve-library-id, mcp__context7__query-docs, Skill(ask-peer)
+description: Check for CLI updates and validate SKILL.md contents for ask-claude, ask-codex, ask-gemini, ask-copilot plugins
+allowed-tools: WebSearch, WebFetch, Read, Grep, Glob, Bash(claude:*), Bash(codex:*), Bash(gemini:*), Bash(copilot:*), Bash(which:*), mcp__context7__resolve-library-id, mcp__context7__query-docs, Skill(ask-peer)
 ---
 
 # CLI Update Check
 
-このプロジェクトのask-claude, ask-codex, ask-geminiプラグインが利用している外部CLIの最新情報を調査し、SKILL.mdの内容に更新が必要かチェックしてください。
+このプロジェクトのask-claude, ask-codex, ask-gemini, ask-copilotプラグインが利用している外部CLIの最新情報を調査し、SKILL.mdの内容に更新が必要かチェックしてください。
 
 ## 対象プラグイン
 
@@ -14,6 +14,7 @@ allowed-tools: WebSearch, WebFetch, Read, Grep, Glob, Bash(claude:*), Bash(codex
 | ask-claude | `claude` | skills/ask-claude/SKILL.md | https://github.com/anthropics/claude-code |
 | ask-codex | `codex` | skills/ask-codex/SKILL.md | https://github.com/openai/codex |
 | ask-gemini | `gemini` | skills/ask-gemini/SKILL.md | https://github.com/google-gemini/gemini-cli |
+| ask-copilot | `copilot` | skills/ask-copilot/SKILL.md | https://github.com/github/copilot-cli |
 
 ## 作業手順
 
@@ -24,6 +25,7 @@ allowed-tools: WebSearch, WebFetch, Read, Grep, Glob, Bash(claude:*), Bash(codex
 - `which claude`
 - `which codex`
 - `which gemini`
+- `which copilot`
 
 インストールされていないCLIはスキップし、結果サマリーで報告してください。
 
@@ -38,6 +40,7 @@ allowed-tools: WebSearch, WebFetch, Read, Grep, Glob, Bash(claude:*), Bash(codex
 - `claude --help` / `claude --version`
 - `codex exec --help` / `codex --version`
 - `gemini --help` / `gemini --version`
+- `copilot --help` / `copilot --version`
 
 ### Step 4: 最新ドキュメント調査
 
@@ -63,3 +66,4 @@ WebSearchを使って、各CLIの最新ドキュメントを調査してくだ�
 | ask-claude | x.x.x | ✅/⚠️/N/A | なし/修正内容/未インストール |
 | ask-codex | x.x.x | ✅/⚠️/N/A | なし/修正内容/未インストール |
 | ask-gemini | x.x.x | ✅/⚠️/N/A | なし/修正内容/未インストール |
+| ask-copilot | x.x.x | ✅/⚠️/N/A | なし/修正内容/未インストール |

@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-01-25
+
+### ask-copilot v1.0.0
+
+- Initial release: Copilot CLI integration for getting a second opinion
+- `/ask-copilot` skill to invoke `copilot` CLI
+
 ## 2026-01-24
 
 ### Repository restructure (anthropics/skills pattern)

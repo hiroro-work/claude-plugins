@@ -32,6 +32,7 @@ allowed-tools: Read, Glob, Grep, Bash(jq:*), Bash(for:*), Bash(echo:*), Bash(if:
 | ask-claude | skills/ask-claude/SKILL.md |
 | ask-codex | skills/ask-codex/SKILL.md |
 | ask-gemini | skills/ask-gemini/SKILL.md |
+| ask-copilot | skills/ask-copilot/SKILL.md |
 | security-scanner | skills/security-scanner/SKILL.md |
 
 #### エージェント依存プラグイン（plugins/配下）
@@ -98,7 +99,7 @@ Skill(skill: "test-skills")
 
 このスキルでは以下がテストされます：
 
-- 各スキル動作（/ask-claude, /ask-codex, /ask-gemini, /ask-peer, /tr, /security-scanner）
+- 各スキル動作（/ask-claude, /ask-codex, /ask-gemini, /ask-copilot, /ask-peer, /tr, /security-scanner）
 - 各エージェント動作（peer, tr, tr-hq）
 - 外部CLI依存のスキルは、CLIがインストールされていない場合スキップ
 
@@ -130,6 +131,7 @@ Skill(skill: "check-cli-updates")
 | ask-claude | ✅ | ✅ |
 | ask-codex | ✅ | ✅ |
 | ask-gemini | ✅ | ✅ |
+| ask-copilot | ✅ | ✅ |
 | security-scanner | ✅ | ✅ |
 
 ### ファイル存在（エージェント依存プラグイン）
@@ -152,6 +154,7 @@ Skill(skill: "check-cli-updates")
 | ask-claude | N/A | ✅ | ✅ |
 | ask-codex | N/A | ✅ | ✅ |
 | ask-gemini | N/A | ✅ | ✅ |
+| ask-copilot | N/A | ✅ | ✅ |
 | security-scanner | N/A | ✅ | ✅ |
 
 ### 動作テスト
@@ -160,6 +163,7 @@ Skill(skill: "check-cli-updates")
 | ask-claude | /ask-claude | ✅/⚠️/N/A | 正常動作/エラー内容/CLI未インストール |
 | ask-codex | /ask-codex | ✅/⚠️/N/A | ... |
 | ask-gemini | /ask-gemini | ✅/⚠️/N/A | ... |
+| ask-copilot | /ask-copilot | ✅/⚠️/N/A | ... |
 | peer | /ask-peer | ✅/⚠️ | ... |
 | translate | /tr | ✅/⚠️ | ... |
 | translate | tr agent | ✅/⚠️ | ... |

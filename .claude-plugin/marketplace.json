@@ -39,6 +39,17 @@
       "category": "workflow"
     },
     {
+      "name": "ask-copilot",
+      "description": "Get a second opinion from GitHub Copilot",
+      "source": "./",
+      "skills": ["./skills/ask-copilot"],
+      "version": "1.0.0",
+      "author": {
+        "name": "hiropon"
+      },
+      "category": "workflow"
+    },
+    {
       "name": "security-scanner",
       "description": "Scan plugins and skills for security risks",
       "source": "./",

@@ -9,6 +9,7 @@ Claude Code plugins for integrating with AI coding assistants.
 | ask-claude | Skill | Get a second opinion from another Claude instance |
 | ask-codex | Skill | Get a second opinion from OpenAI Codex |
 | ask-gemini | Skill | Get a second opinion from Google Gemini |
+| ask-copilot | Skill | Get a second opinion from GitHub Copilot |
 | peer | Agent + Skill | Peer engineer for code review, planning, and brainstorming |
 | translate | Agent + Skill | AI-powered translation with /tr command (configurable quality) |
 | security-scanner | Skill | Scan plugins and skills for security risks |
@@ -21,7 +22,7 @@ Claude Code plugins for integrating with AI coding assistants.
 npx skills add hiroro-work/claude-plugins
 ```
 
-Available skills: `ask-claude`, `ask-codex`, `ask-gemini`, `security-scanner`
+Available skills: `ask-claude`, `ask-codex`, `ask-gemini`, `ask-copilot`, `security-scanner`
 
 > Note: Agent features (peer, translate) are only available via Claude Code Plugin Marketplace.
 
@@ -39,6 +40,7 @@ Available skills: `ask-claude`, `ask-codex`, `ask-gemini`, `security-scanner`
 /plugin install ask-claude@hiropon-plugins
 /plugin install ask-codex@hiropon-plugins
 /plugin install ask-gemini@hiropon-plugins
+/plugin install ask-copilot@hiropon-plugins
 /plugin install peer@hiropon-plugins
 /plugin install translate@hiropon-plugins
 /plugin install security-scanner@hiropon-plugins
@@ -49,13 +51,14 @@ Available skills: `ask-claude`, `ask-codex`, `ask-gemini`, `security-scanner`
 - **ask-claude**: Requires `claude` CLI
 - **ask-codex**: Requires `codex` CLI
 - **ask-gemini**: Requires `gemini` CLI
+- **ask-copilot**: Requires `copilot` CLI
 - **peer**: No external dependencies (runs as Claude subagent)
 - **translate**: No external dependencies (runs as Claude subagent)
 - **security-scanner**: No external dependencies
 
 ## Usage
 
-### Skill Plugins (ask-claude, ask-codex, ask-gemini)
+### Skill Plugins (ask-claude, ask-codex, ask-gemini, ask-copilot)
 
 These plugins provide `/ask-*` commands for getting second opinions from other AI assistants.
 

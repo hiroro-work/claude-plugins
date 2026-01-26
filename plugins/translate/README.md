@@ -28,7 +28,12 @@ AI-powered translation plugin for Claude Code using subagents.
 
 ## Configuration
 
-Create `.claude/translate.local.md` to customize defaults:
+Create `translate.local.md` to customize defaults:
+
+- **Project-level**: `.claude/translate.local.md` (takes precedence)
+- **User-level**: `~/.claude/translate.local.md`
+
+If both files exist, **project-level settings take precedence**.
 
 ```markdown
 ---

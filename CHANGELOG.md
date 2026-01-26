@@ -19,6 +19,12 @@
   - gemini: `.gemini/skills/`, `~/.gemini/skills/`
   - agents: `.agents/skills/`, `~/.config/agents/skills/`, `~/.agents/skills/`
 
+### translate v1.1.0
+
+- feat: Add user-level configuration support (`~/.claude/translate.local.md`)
+- Project-level settings take precedence over user-level
+- Aligns with security-scanner configuration pattern
+
 ## 2026-01-25
 
 ### ask-copilot v1.0.0

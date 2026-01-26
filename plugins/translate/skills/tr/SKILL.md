@@ -26,7 +26,12 @@ Translate text using Claude subagents.
 
 ## Configuration
 
-Users can customize defaults in `.claude/translate.local.md`:
+Users can configure defaults in `translate.local.md`:
+
+- **Project-level**: `.claude/translate.local.md` (takes precedence)
+- **User-level**: `~/.claude/translate.local.md`
+
+If both files exist, **project-level settings take precedence**.
 
 ```markdown
 ---
@@ -51,8 +56,16 @@ secondary_language: en   # Default target when primary detected (default: en)
 
 ## Execution
 
-1. **Check for settings file**: Read `.claude/translate.local.md` if it exists
-   - Parse YAML frontmatter for settings
+1. **Check for settings file**: Search for `translate.local.md` in the following locations:
+   1. **Project-level**: `.claude/translate.local.md`
+   2. **User-level**: `~/.claude/translate.local.md`
+
+   Settings file resolution:
+   - If both files exist, use project-level settings only (project-level takes precedence)
+   - If only one file exists, use that file
+   - If neither file exists, proceed with default settings
+
+   Parse YAML frontmatter for settings:
    - `default_quality`: If `hq`, default to sonnet model
    - `primary_language`: Language to detect (default: `ja` for Japanese)
    - `secondary_language`: Target when primary detected (default: `en` for English)

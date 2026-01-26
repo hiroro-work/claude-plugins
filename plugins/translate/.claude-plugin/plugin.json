@@ -1,6 +1,6 @@
 {
   "name": "translate",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "AI-powered translation plugin with /tr command (--hq for high-quality)",
   "author": {
     "name": "hiropon",

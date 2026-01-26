@@ -1,5 +1,24 @@
 # Changelog
 
+## 2026-01-26
+
+### security-scanner v1.2.0
+
+**Multi-agent support for skills scanning**
+
+- feat: Add `target_agents` configuration to scan skills from multiple AI agents
+- Supported agents: `claude`, `codex`, `gemini`, `agents` (Skills.sh/Amp)
+- Default: `claude` only (backward compatible)
+- note: For Skills.sh, configure `target_agents` appropriately to avoid redundant scanning
+- feat: Add Agent column to report summary and findings
+- feat: Add `report_language` configuration (default: `ja`)
+- fix: Add `Bash(ls:*)` to allowed-tools for symlink directory listing
+- Agent-specific skill paths:
+  - claude: `.claude/skills/`, `~/.claude/skills/`
+  - codex: `.codex/skills/`, `~/.codex/skills/`
+  - gemini: `.gemini/skills/`, `~/.gemini/skills/`
+  - agents: `.agents/skills/`, `~/.config/agents/skills/`, `~/.agents/skills/`
+
 ## 2026-01-25
 
 ### ask-copilot v1.0.0

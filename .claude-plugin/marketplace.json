@@ -51,10 +51,10 @@
     },
     {
       "name": "security-scanner",
-      "description": "Scan plugins and skills for security risks",
+      "description": "Scan plugins and skills for security risks (multi-agent support)",
       "source": "./",
       "skills": ["./skills/security-scanner"],
-      "version": "1.1.2",
+      "version": "1.2.0",
       "author": {
         "name": "hiropon"
       },

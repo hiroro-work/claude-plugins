@@ -1,7 +1,7 @@
 ---
 name: security-scanner
 description: Scan installed plugins and skills for security risks including malicious code AND malicious natural language instructions. Use /security-scanner to audit before installation.
-allowed-tools: Read, Glob, Grep, WebFetch
+allowed-tools: Read, Glob, Grep, WebFetch, Bash(ls:*)
 ---
 
 # Security Scanner
@@ -32,17 +32,31 @@ https://github.com/owner/repo/tree/main/path/to/plugin
 
 ## Scan Targets
 
-### Plugins
+### Plugins (Claude Code only)
+
+Plugins are a Claude Code specific concept. Scan locations are fixed:
+
 - **User-level**: `~/.claude/plugins/` (shared across all projects)
 - **Project-level**: `.claude/plugins/` (project-specific)
 
-### Skills
-- **User-level**: `~/.claude/skills/` (shared across all projects)
-- **Project-level**: `.claude/skills/` (project-specific)
+### Skills (Multi-agent support)
 
-## Configuration (Trusted Sources)
+Skills are scanned based on the `target_agents` setting in configuration. If not configured, only `claude` is scanned (backward compatible).
 
-Users can define trusted marketplaces, plugins, and skills in `security-scanner.local.md`:
+| Agent ID | Project Level | User Level |
+|----------|---------------|------------|
+| claude | `.claude/skills/` | `~/.claude/skills/` |
+| codex | `.codex/skills/` | `~/.codex/skills/` |
+| gemini | `.gemini/skills/` | `~/.gemini/skills/` |
+| agents | `.agents/skills/` | `~/.config/agents/skills/` AND `~/.agents/skills/` |
+
+**Note**: For Skills.sh/Amp (`agents`), the user-level path checks both `~/.config/agents/skills/` and `~/.agents/skills/`.
+
+**Symlink note**: For Skills.sh, the skill body is in `.agents/skills/` and other agent directories contain symlinks. Configure `target_agents` appropriately to avoid redundant scanning (e.g., use only `agents` instead of all agents).
+
+## Configuration
+
+Users can configure target agents and trusted sources in `security-scanner.local.md`:
 
 - Project-level: `.claude/security-scanner.local.md` (takes precedence)
 - User-level: `~/.claude/security-scanner.local.md`
@@ -51,6 +65,19 @@ If both files exist, **project-level settings take precedence**.
 
 ```markdown
 ---
+# Report language (default: ja)
+# Examples: ja, en, zh, ko, fr, de, etc.
+report_language: ja
+
+# Target agents to scan (default: claude only)
+# Valid values: claude, codex, gemini, agents
+target_agents:
+  - claude
+  - codex
+  - gemini
+  - agents
+
+# Trusted sources (skipped during scanning)
 trusted_marketplaces:
   - claude-plugins-official    # Skip all plugins from this marketplace
   - hiropon-plugins
@@ -60,14 +87,31 @@ trusted_plugins:
   - frontend-design@claude-code-plugins
 
 trusted_skills:
-  - my-skill                   # Skip specific skill by name
-  - another-skill
+  - my-skill                   # Skip specific skill by name (all agents)
 ---
 ```
 
+### Report Language
+
+- `report_language`: Language for the security report output
+- Any language code is accepted (e.g., `ja`, `en`, `zh`, `ko`, `fr`, `de`)
+- Default: `ja` (Japanese)
+
+### Target Agents
+
+- `target_agents`: List of agent IDs to scan skills for
+- If not specified or empty, defaults to `["claude"]` for backward compatibility
+- Valid agent IDs: `claude`, `codex`, `gemini`, `agents`
+
+### Trusted Sources
+
 **Trusted sources are skipped during scanning.**
 
-To add/remove trusted sources, edit `security-scanner.local.md` in `.claude/` (project-level) or `~/.claude/` (user-level).
+- `trusted_marketplaces`: Skip all plugins from these marketplaces
+- `trusted_plugins`: Skip specific plugins (format: `plugin-name@marketplace`)
+- `trusted_skills`: Skip specific skills by name (applies to all agents)
+
+To add/remove settings, edit `security-scanner.local.md` in `.claude/` (project-level) or `~/.claude/` (user-level).
 
 ## Scanning Process
 
@@ -81,24 +125,38 @@ Search for `security-scanner.local.md` in the following locations:
 **Priority rules:**
 - If both files exist, use project-level settings only (project-level takes precedence)
 - If only one file exists, use that file
-- If neither file exists, proceed with no trusted sources
+- If neither file exists, proceed with default settings
 
 **From the selected file, extract:**
+- `report_language` from YAML frontmatter (default: `ja`)
+- `target_agents` list from YAML frontmatter (default: `["claude"]`)
 - `trusted_marketplaces` list from YAML frontmatter
 - `trusted_plugins` list from YAML frontmatter
 - `trusted_skills` list from YAML frontmatter
 
+**Default values (when not specified):**
+- `report_language`: `ja` (Japanese)
+- `target_agents`: `["claude"]` (backward compatible - only scan Claude Code skills)
+- `trusted_marketplaces`: `[]`
+- `trusted_plugins`: `[]`
+- `trusted_skills`: `[]`
+
+**Validation:**
+- `report_language`: Any string value accepted (AI will generate report in that language)
+- `target_agents` must contain only valid agent IDs: `claude`, `codex`, `gemini`, `agents`
+- Invalid agent IDs are ignored with a warning
+
 **Error handling:**
-- If file exists but has invalid YAML syntax, warn the user and proceed with no trusted sources (do not fail the scan)
+- If file exists but has invalid YAML syntax, warn the user and proceed with default settings (do not fail the scan)
 
 ### Step 2: Determine Scope
 
 Check arguments to determine what to scan:
 
 **Location filters:**
-- No location flag: Scan both user-level and project-level
-- `--user`: Scan only `~/.claude/` (user-level)
-- `--project`: Scan only `.claude/` (project-level)
+- No location flag: Scan both user-level and project-level for all configured agents
+- `--user`: Scan only user-level paths for all agents in `target_agents` (e.g., `~/.claude/`, `~/.codex/`, etc.)
+- `--project`: Scan only project-level paths for all agents in `target_agents` (e.g., `.claude/`, `.codex/`, etc.)
 
 **URL detection (highest priority):**
 1. If `--url <url>` is provided explicitly → Go to Step 2-URL
@@ -185,9 +243,9 @@ After fetching all files, proceed to **Step 5** for analysis.
 
 ### Step 3: Get Scan Targets
 
-Based on scope determined in Step 2, collect targets:
+Based on scope determined in Step 2 and `target_agents` from Step 1, collect targets:
 
-**For plugins:**
+**For plugins (Claude Code only):**
 
 *User-level:*
 1. Read `~/.claude/plugins/installed_plugins.json`
@@ -198,17 +256,33 @@ Based on scope determined in Step 2, collect targets:
 1. Use Glob to find plugins in `.claude/plugins/*/`
 2. If no plugins found, report "No project-level plugins found"
 
-**For skills:**
+**For skills (based on target_agents):**
+
+For each agent in `target_agents` list, collect skills from the corresponding directories:
+
+**Agent path mapping:**
+
+| Agent | Project Level | User Level |
+|-------|---------------|------------|
+| claude | `.claude/skills/*/` | `~/.claude/skills/*/` |
+| codex | `.codex/skills/*/` | `~/.codex/skills/*/` |
+| gemini | `.gemini/skills/*/` | `~/.gemini/skills/*/` |
+| agents | `.agents/skills/*/` | `~/.config/agents/skills/*/` AND `~/.agents/skills/*/` |
+
+**For each agent in target_agents:**
 
 *User-level:*
-1. Use Glob to find skill directories in `~/.claude/skills/*/`
-2. For each skill directory, note the path for full directory scan
-3. If no skills found, report "No user-level skills found"
+1. Determine user-level path(s) based on agent ID (see table above)
+2. For `agents`: Check both `~/.config/agents/skills/*/` and `~/.agents/skills/*/`
+3. Find skill directories in the path
+4. For each skill directory found, note the path and agent ID for scanning
+5. If no skills found for this agent, report "No user-level skills found for {agent}"
 
 *Project-level:*
-1. Use Glob to find skill directories in `.claude/skills/*/`
-2. For each skill directory, note the path for full directory scan
-3. If no skills found, report "No project-level skills found"
+1. Determine project-level path based on agent ID (see table above)
+2. Find skill directories in the path
+3. For each skill directory found, note the path and agent ID for scanning
+4. If no skills found for this agent, report "No project-level skills found for {agent}"
 
 ### Step 4: Filter Targets
 
@@ -306,24 +380,81 @@ Check if permissions match the plugin's purpose:
 
 ### Step 7: Generate Report
 
+Generate the report in the language specified by `report_language` setting (default: `ja`).
+
 #### For Local Scans (default, --user, --project, --all)
+
+**Japanese (ja) - Default:**
+
+```markdown
+# セキュリティ分析レポート
+
+## 概要
+| エージェント | 種別 | 検出 | 信頼済 | スキャン | 悪意あり | 要注意 | 安全 |
+|-------------|------|------|--------|----------|----------|--------|------|
+| claude | プラグイン | N | N | N | N | N | N |
+| claude | スキル | N | N | N | N | N | N |
+
+注: `target_agents` に設定されたエージェントのみ表示。プラグインは常に `claude` 配下。
+
+## 信頼済み（スキップ）
+- plugin-name@marketplace（信頼済みマーケットプレイス）
+- skill-name (claude) - 信頼済みスキル
+
+## 検出結果
+
+### プラグイン (claude)
+
+#### [プラグイン名]
+**種別:** プラグイン
+**目的:** [README/plugin.json から]
+**判定:** 安全 / 要注意 / 悪意あり
+
+**検出された問題:**
+- [問題の説明、ファイル、懸念される理由]
+
+### スキル
+
+#### [スキル名] (claude)
+**エージェント:** claude
+**種別:** スキル
+**場所:** ~/.claude/skills/skill-name/ または .claude/skills/skill-name/
+**目的:** [SKILL.md の description から]
+**判定:** 安全 / 要注意 / 悪意あり
+
+**検出された問題:**
+- [問題の説明と懸念される理由]
+
+---
+
+## 推奨事項
+
+問題のある項目について:
+- [ ] 安全 - 使用可
+- [ ] 要確認 - [具体的な懸念点]
+- [ ] 使用禁止 - [悪意のあるコンテンツを検出]
+```
+
+**English (en):**
 
 ```markdown
 # Security Analysis Report
 
 ## Summary
-| Type | Found | Trusted | Scanned | Malicious | Suspicious | Safe |
-|------|-------|---------|---------|-----------|------------|------|
-| Plugins | N | N | N | N | N | N |
-| Skills | N | N | N | N | N | N |
+| Agent | Type | Found | Trusted | Scanned | Malicious | Suspicious | Safe |
+|-------|------|-------|---------|---------|-----------|------------|------|
+| claude | Plugins | N | N | N | N | N | N |
+| claude | Skills | N | N | N | N | N | N |
+
+Note: Only rows for configured `target_agents` are shown. Plugins are always under `claude`.
 
 ## Trusted (Skipped)
 - plugin-name@marketplace (trusted marketplace)
-- other-plugin@marketplace (trusted plugin)
+- skill-name (claude) - trusted skill
 
 ## Findings
 
-### Plugins
+### Plugins (claude)
 
 #### [Plugin Name]
 **Type:** Plugin
@@ -335,7 +466,8 @@ Check if permissions match the plugin's purpose:
 
 ### Skills
 
-#### [Skill Name]
+#### [Skill Name] (claude)
+**Agent:** claude
 **Type:** Skill
 **Location:** ~/.claude/skills/skill-name/ or .claude/skills/skill-name/
 **Purpose:** [from SKILL.md description]
@@ -344,19 +476,15 @@ Check if permissions match the plugin's purpose:
 **Issues found:**
 - [Description of issue and why it's concerning]
 
----
-
-## Recommendation
-
-For each item with issues:
-- [ ] Safe to install/use
-- [ ] Review required - [specific concern]
-- [ ] Do not install/use - [malicious content detected]
-```
-
 #### For GitHub URL Scans (--url)
 
 Use the same report format as local scans, with this header added:
+
+**Japanese (ja):**
+- **URL**: {元のURL}
+- **種別**: プラグイン / スキル / 単一ファイル
+
+**English (en):**
 - **URL**: {original URL}
 - **Type**: Plugin / Skill / Single file
 

@@ -1,5 +1,22 @@
 # Changelog
 
+## 2026-01-28
+
+### extract-rules v1.0.0
+
+- Initial release: Extract project-specific coding rules from codebase for AI agents
+- `/extract-rules` command to analyze codebase and generate rule documentation
+- `--force` option to overwrite existing rule files
+- `--dry-run` option for analysis without file output
+- `--from-conversation` option to extract rules from conversation history
+- 11 extraction categories: naming, types, testing, error-handling, structure, imports, comments, architecture, domain, async-patterns, logging
+- Language/framework-based organization for rule portability
+- Configurable via `.claude/extract-rules.local.md`
+- Output structure:
+  - `languages/` - Language-specific rules (portable)
+  - `frameworks/` - Framework-specific rules (portable)
+  - `project/` - Project-specific rules (domain, architecture)
+
 ## 2026-01-26
 
 ### security-scanner v1.2.0

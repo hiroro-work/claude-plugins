@@ -61,6 +61,17 @@
       "category": "security"
     },
     {
+      "name": "extract-rules",
+      "description": "Extract project-specific coding rules from codebase for AI agents",
+      "source": "./",
+      "skills": ["./skills/extract-rules"],
+      "version": "1.0.0",
+      "author": {
+        "name": "hiropon"
+      },
+      "category": "workflow"
+    },
+    {
       "name": "peer",
       "source": "./plugins/peer",
       "description": "Peer engineer for code review, planning, and brainstorming",

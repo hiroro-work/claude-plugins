@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-01-29
+
+### extract-rules v1.1.0
+
+- feat: Hybrid output format (Principles + Project-specific patterns)
+- feat: Abstract principles with implementation hints for general style choices
+- feat: Compact one-line format for project-specific patterns
+- docs: Add extraction criteria sections
+
 ## 2026-01-28
 
 ### extract-rules v1.0.0

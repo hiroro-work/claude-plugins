@@ -4,9 +4,11 @@
 
 ### extract-rules v1.1.0
 
+- feat: Add `--update` option to re-scan and add new patterns while preserving existing rules
 - feat: Hybrid output format (Principles + Project-specific patterns)
 - feat: Abstract principles with implementation hints for general style choices
 - feat: Compact one-line format for project-specific patterns
+- remove: `--dry-run` option (use git to revert if needed)
 - docs: Add extraction criteria sections
 
 ## 2026-01-28

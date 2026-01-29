@@ -13,8 +13,8 @@ Analyzes existing codebase to extract project-specific coding rules and domain k
 
 ```text
 /extract-rules                      # Extract rules from codebase (initial)
-/extract-rules --force              # Overwrite existing rule files
-/extract-rules --dry-run            # Analyze only (no file output)
+/extract-rules --update             # Re-scan and add new patterns (preserve existing)
+/extract-rules --force              # Overwrite all rule files (discard existing)
 /extract-rules --from-conversation  # Extract rules from conversation and append
 ```
 
@@ -78,7 +78,7 @@ language: ja
 Check arguments to determine mode:
 
 - No arguments or `--force` → **Full Extraction Mode** (Step 1-7)
-- `--dry-run` → **Full Extraction Mode** but skip file writing
+- `--update` → **Update Mode** (Step U1-U5)
 - `--from-conversation` → **Conversation Extraction Mode** (Step C1-C4)
 
 ---
@@ -192,10 +192,6 @@ Extract explicit coding rules and guidelines from these documents.
 
 ### Step 6: Generate Output
 
-**If `--dry-run` is set:** Display analysis results only, skip file writing.
-
-**Otherwise:**
-
 1. Check if output directory exists
    - If exists and `--force` not set: Error "Output directory already exists. Use --force to overwrite."
    - If exists and `--force` set:
@@ -281,7 +277,67 @@ Display analysis summary:
    ## Coding Rules
    See .claude/rules/ for project-specific coding rules.
    \`\`\`
-3. Re-run with `/extract-rules --force` when codebase evolves
+3. Re-run with `/extract-rules --update` when codebase evolves
+```
+
+---
+
+## Update Mode
+
+When `--update` is specified, re-scan the codebase and add new patterns while preserving existing rules.
+
+### Step U1: Check Prerequisites
+
+1. Check if output directory exists (default: `.claude/rules/`)
+   - If not exists: Error "Run /extract-rules first to initialize rule files."
+
+2. Load existing rule files to understand current rules
+
+### Step U2: Re-scan Codebase
+
+Execute Step 1-5 from Full Extraction Mode:
+- Load settings
+- Detect project type
+- Collect sample files
+- Analyze by category
+- Analyze documentation
+
+### Step U3: Compare and Merge
+
+For each extracted principle/pattern:
+
+1. **Check if already exists**: Compare with existing rules
+   - Exact match → Skip
+   - Similar but different → Keep both (let user review)
+   - New → Add
+
+2. **Preserve manual edits**: Do not modify existing rules
+
+### Step U4: Append New Rules
+
+1. Append new principles to appropriate section (`## Principles`)
+2. Append new project-specific patterns to appropriate section (`## Project-specific patterns`)
+3. Maintain file structure and formatting
+
+### Step U5: Report Changes
+
+```markdown
+## Update Complete
+
+### Added to languages/typescript.md:
+#### Principles
+- (none)
+
+#### Project-specific patterns
+- `useNewFeature()` returns `{ data, refresh }` - new feature hook
+
+### Added to frameworks/react.md:
+- (none)
+
+### Unchanged files:
+- project.md
+
+**Tip**: Review added rules and remove any that are incorrect or redundant.
 ```
 
 ---

@@ -1,7 +1,7 @@
 ---
 description: Verify all plugins structure, versions, and execute skill/agent tests
 argument-hint: [--full]
-allowed-tools: Read, Glob, Grep, Bash(jq:*), Bash(for:*), Bash(echo:*), Bash(if:*), Bash(head:*), Bash(do:*), Skill(test-skills), Skill(check-cli-updates)
+allowed-tools: Read, Glob, Grep, Bash(jq *), Bash(for *), Bash(echo *), Bash(if *), Bash(head *), Bash(do *), Skill(test-skills), Skill(check-cli-updates)
 ---
 
 # Verify Plugins

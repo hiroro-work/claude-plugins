@@ -1,6 +1,6 @@
 ---
 description: Check for CLI updates and validate SKILL.md contents for ask-claude, ask-codex, ask-gemini, ask-copilot plugins
-allowed-tools: WebSearch, WebFetch, Read, Grep, Glob, Bash(claude:*), Bash(codex:*), Bash(gemini:*), Bash(copilot:*), Bash(which:*), mcp__context7__resolve-library-id, mcp__context7__query-docs, Skill(ask-peer)
+allowed-tools: WebSearch, WebFetch, Read, Grep, Glob, Bash(claude *), Bash(codex *), Bash(gemini *), Bash(copilot *), Bash(which *), mcp__context7__resolve-library-id, mcp__context7__query-docs, Skill(ask-peer)
 ---
 
 # CLI Update Check

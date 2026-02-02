@@ -1,6 +1,6 @@
 ---
 description: Test all plugin skills and agents to verify they work correctly
-allowed-tools: Bash(which:*), Skill(ask-claude), Skill(ask-codex), Skill(ask-gemini), Skill(ask-copilot), Skill(ask-peer), Skill(tr), Skill(security-scanner), Task
+allowed-tools: Bash(which *), Skill(ask-claude), Skill(ask-codex), Skill(ask-gemini), Skill(ask-copilot), Skill(ask-peer), Skill(tr), Skill(security-scanner), Task
 ---
 
 # Test Skills and Agents

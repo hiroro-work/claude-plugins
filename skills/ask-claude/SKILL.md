@@ -1,7 +1,7 @@
 ---
 name: ask-claude
 description: Asks Claude CLI for coding assistance. Use for getting a second opinion, code generation, debugging, or delegating coding tasks.
-allowed-tools: Bash(claude:*)
+allowed-tools: Bash(claude *)
 ---
 
 # Ask Claude

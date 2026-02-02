@@ -159,7 +159,7 @@ ln -s ../../plugins/<plugin-name>/agents/<agent-name>.md .claude/agents/<agent-n
 ### allowed-tools
 
 - 必要最小限の権限のみ付与
-- `Bash(*)` は避け、具体的なコマンドを指定（例: `Bash(git:*)`, `Bash(jq:*)`）
+- `Bash(*)` は避け、具体的なコマンドを指定（例: `Bash(git *)`, `Bash(jq *)`）
 - セキュリティスキャンで警告される可能性のあるパターンは正当な理由がある場合のみ使用
 
 ### バージョン管理

@@ -2,7 +2,7 @@
 name: extract-rules
 description: Extract project-specific coding rules and domain knowledge from existing codebase, generating markdown documentation for AI agents.
 model: opus
-allowed-tools: Read, Glob, Grep, Write, Bash(ls:*), Bash(mkdir:*), Bash(git ls-files:*), Bash(grep:*), Bash(wc:*), Bash(head:*), Bash(tail:*), Bash(sort:*), Bash(uniq:*), Bash(tree:*)
+allowed-tools: Read, Glob, Grep, Write, Bash(ls *), Bash(mkdir *), Bash(git ls-files *), Bash(grep *), Bash(wc *), Bash(head *), Bash(tail *), Bash(sort *), Bash(uniq *), Bash(tree *)
 ---
 
 # Extract Rules

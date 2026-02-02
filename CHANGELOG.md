@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-02-02
+
+### ask-claude v1.1.2, ask-codex v1.1.2, ask-gemini v1.1.1, ask-copilot v1.0.1, security-scanner v1.2.1, extract-rules v1.1.1
+
+- refactor: Update `allowed-tools` Bash syntax from legacy colon format to space format
+  - Changed: `Bash(command:*)` → `Bash(command *)`
+  - This follows the current recommended syntax per Claude Code official documentation
+  - Affected skill files and command files
+  - Updated documentation examples in `CLAUDE.md`, `.claude/rules/project.rules.md`, `docs/article-peer-plugin.md`
+
 ## 2026-01-29
 
 ### extract-rules v1.1.0

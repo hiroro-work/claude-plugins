@@ -1,7 +1,7 @@
 ---
 name: security-scanner
 description: Scan installed plugins and skills for security risks including malicious code AND malicious natural language instructions. Use /security-scanner to audit before installation.
-allowed-tools: Read, Glob, Grep, WebFetch, Bash(ls:*)
+allowed-tools: Read, Glob, Grep, WebFetch, Bash(ls *)
 ---
 
 # Security Scanner
@@ -375,7 +375,7 @@ Look for dangerous command patterns:
 #### Permission Analysis
 Check if permissions match the plugin's purpose:
 - Does a "translation plugin" need `Bash(*)`? Suspicious.
-- Does a "git helper" need `Bash(git:*)`? Reasonable.
+- Does a "git helper" need `Bash(git *)`? Reasonable.
 - Does a "file organizer" need access to `~/.ssh/`? Suspicious.
 
 ### Step 7: Generate Report

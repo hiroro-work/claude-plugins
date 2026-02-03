@@ -13,6 +13,7 @@ Claude Code plugins for integrating with AI coding assistants.
 | peer | Agent + Skill | Peer engineer for code review, planning, and brainstorming |
 | translate | Agent + Skill | AI-powered translation with /tr command (configurable quality) |
 | security-scanner | Skill | Scan plugins and skills for security risks |
+| extract-rules | Skill | Extract project-specific coding rules from codebase for AI agents |
 
 ## Installation
 
@@ -22,7 +23,7 @@ Claude Code plugins for integrating with AI coding assistants.
 npx skills add hiroro-work/claude-plugins
 ```
 
-Available skills: `ask-claude`, `ask-codex`, `ask-gemini`, `ask-copilot`, `security-scanner`
+Available skills: `ask-claude`, `ask-codex`, `ask-gemini`, `ask-copilot`, `security-scanner`, `extract-rules`
 
 > Note: Agent features (peer, translate) are only available via Claude Code Plugin Marketplace.
 
@@ -44,6 +45,7 @@ Available skills: `ask-claude`, `ask-codex`, `ask-gemini`, `ask-copilot`, `secur
 /plugin install peer@hiropon-plugins
 /plugin install translate@hiropon-plugins
 /plugin install security-scanner@hiropon-plugins
+/plugin install extract-rules@hiropon-plugins
 ```
 
 ## Requirements
@@ -55,6 +57,7 @@ Available skills: `ask-claude`, `ask-codex`, `ask-gemini`, `ask-copilot`, `secur
 - **peer**: No external dependencies (runs as Claude subagent)
 - **translate**: No external dependencies (runs as Claude subagent)
 - **security-scanner**: No external dependencies
+- **extract-rules**: No external dependencies
 
 ## Usage
 
@@ -75,6 +78,19 @@ Use cases:
 - Code review after completing work
 - Brainstorming for problem-solving
 - A second opinion on your approach
+
+### Skill Plugin (extract-rules)
+
+Extract project-specific coding rules and domain knowledge from your codebase, generating structured markdown documentation for AI agents.
+
+```bash
+/extract-rules                      # Extract rules from codebase (initial)
+/extract-rules --update             # Re-scan and add new patterns (preserve existing)
+/extract-rules --force              # Overwrite all rule files
+/extract-rules --from-conversation  # Extract rules from conversation
+```
+
+Output files are generated in `.claude/rules/` directory.
 
 ## License
 

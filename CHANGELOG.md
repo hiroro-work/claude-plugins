@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-02-21
+
+### extract-rules v1.2.0
+
+- feat: Add scope criterion to Concrete Example Criteria (Symbol + Scope dual filter)
+  - Project-wide usage or convention-defining patterns only — skip local utilities
+- feat: Change Decision criterion to inconsistency-based approach
+  - "Would AI produce inconsistent results without knowing this pattern?"
+- feat: Change Fallback rule from "include when uncertain" to "apply the scope criterion"
+  - Rules should answer "how to write new code" not "what utilities exist"
+
 ## 2026-02-02
 
 ### ask-claude v1.1.2, ask-codex v1.1.2, ask-gemini v1.1.1, ask-copilot v1.0.1, security-scanner v1.2.1, extract-rules v1.1.1

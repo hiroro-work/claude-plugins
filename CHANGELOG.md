@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-02-25
+
+### caffeinate v1.0.0
+
+- feat: macOS caffeinate management plugin
+  - Prevent idle/system sleep with `caffeinate -is`
+  - PID file-based process management (unique per project)
+  - start/stop/status modes (`/caffeinate`, `/caffeinate stop`)
+  - Auto-stop on session end via SessionEnd hook
+
 ## 2026-02-21
 
 ### extract-rules v1.2.0

@@ -72,6 +72,16 @@
       "category": "workflow"
     },
     {
+      "name": "caffeinate",
+      "source": "./plugins/caffeinate",
+      "description": "Manage macOS caffeinate to prevent system sleep",
+      "version": "1.0.0",
+      "author": {
+        "name": "hiropon"
+      },
+      "category": "workflow"
+    },
+    {
       "name": "peer",
       "source": "./plugins/peer",
       "description": "Peer engineer for code review, planning, and brainstorming",

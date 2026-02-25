@@ -1,0 +1,25 @@
+{
+  "name": "caffeinate",
+  "version": "1.0.0",
+  "description": "Manage macOS caffeinate to prevent system sleep",
+  "author": {
+    "name": "hiropon",
+    "url": "https://github.com/hiroro-work"
+  },
+  "homepage": "https://github.com/hiroro-work/claude-plugins",
+  "repository": "https://github.com/hiroro-work/claude-plugins",
+  "license": "MIT",
+  "keywords": ["caffeinate", "macos", "sleep", "workflow"],
+  "hooks": {
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/skills/caffeinate/caffeinate.sh stop"
+          }
+        ]
+      }
+    ]
+  }
+}

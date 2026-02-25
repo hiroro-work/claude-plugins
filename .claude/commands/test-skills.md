@@ -1,6 +1,6 @@
 ---
 description: Test all plugin skills and agents to verify they work correctly
-allowed-tools: Bash(which *), Skill(ask-claude), Skill(ask-codex), Skill(ask-gemini), Skill(ask-copilot), Skill(ask-peer), Skill(tr), Skill(security-scanner), Task
+allowed-tools: Bash(which *), Skill(ask-claude), Skill(ask-codex), Skill(ask-gemini), Skill(ask-copilot), Skill(ask-peer), Skill(tr), Skill(caffeinate), Skill(security-scanner), Task
 ---
 
 # Test Skills and Agents
@@ -17,6 +17,7 @@ allowed-tools: Bash(which *), Skill(ask-claude), Skill(ask-codex), Skill(ask-gem
 | ask-copilot | /ask-copilot | - | `copilot` CLI |
 | peer | /ask-peer | peer | なし |
 | translate | /tr | tr, tr-hq | なし |
+| caffeinate | /caffeinate | - | macOS only |
 | security-scanner | /security-scanner | - | なし |
 
 ## 作業手順
@@ -64,6 +65,10 @@ allowed-tools: Bash(which *), Skill(ask-claude), Skill(ask-codex), Skill(ask-gem
 
 - `Skill(skill: "tr", args: "hello")` を実行 → 日本語への翻訳を確認
 
+#### caffeinate
+
+- `Skill(skill: "caffeinate", args: "status")` を実行 → ステータス確認（start/stopはテスト環境への副作用を避けるためstatusのみ）
+
 #### security-scanner
 
 - `Skill(skill: "security-scanner", args: "--project")` を実行 → プロジェクトレベルのスキャン結果を確認
@@ -101,6 +106,7 @@ allowed-tools: Bash(which *), Skill(ask-claude), Skill(ask-codex), Skill(ask-gem
 | ask-copilot | /ask-copilot | ✅/⚠️/N/A | ... |
 | peer | /ask-peer | ✅/⚠️ | ... |
 | translate | /tr | ✅/⚠️ | ... |
+| caffeinate | /caffeinate | ✅/⚠️ | ... |
 | security-scanner | /security-scanner | ✅/⚠️ | ... |
 
 ### エージェント

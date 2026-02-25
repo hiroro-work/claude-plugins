@@ -14,6 +14,7 @@ Claude Code plugins for integrating with AI coding assistants.
 | translate | Agent + Skill | AI-powered translation with /tr command (configurable quality) |
 | security-scanner | Skill | Scan plugins and skills for security risks |
 | extract-rules | Skill | Extract project-specific coding rules from codebase for AI agents |
+| caffeinate | Plugin | Manage macOS caffeinate to prevent system sleep |
 
 ## Installation
 
@@ -25,7 +26,7 @@ npx skills add hiroro-work/claude-plugins
 
 Available skills: `ask-claude`, `ask-codex`, `ask-gemini`, `ask-copilot`, `security-scanner`, `extract-rules`
 
-> Note: Agent features (peer, translate) are only available via Claude Code Plugin Marketplace.
+> Note: Agent features (peer, translate) and hook features (caffeinate) are only available via Claude Code Plugin Marketplace.
 
 ### Via Claude Code Plugin Marketplace (Full features)
 
@@ -46,6 +47,7 @@ Available skills: `ask-claude`, `ask-codex`, `ask-gemini`, `ask-copilot`, `secur
 /plugin install translate@hiropon-plugins
 /plugin install security-scanner@hiropon-plugins
 /plugin install extract-rules@hiropon-plugins
+/plugin install caffeinate@hiropon-plugins
 ```
 
 ## Requirements
@@ -58,6 +60,7 @@ Available skills: `ask-claude`, `ask-codex`, `ask-gemini`, `ask-copilot`, `secur
 - **translate**: No external dependencies (runs as Claude subagent)
 - **security-scanner**: No external dependencies
 - **extract-rules**: No external dependencies
+- **caffeinate**: macOS only (`caffeinate` command)
 
 ## Usage
 
@@ -78,6 +81,18 @@ Use cases:
 - Code review after completing work
 - Brainstorming for problem-solving
 - A second opinion on your approach
+
+### Plugin (caffeinate)
+
+Prevent macOS system sleep during long-running sessions using `caffeinate`.
+
+```bash
+/caffeinate            # Start caffeinate
+/caffeinate stop       # Stop caffeinate
+/caffeinate status     # Check status
+```
+
+Automatically stops on session end via SessionEnd hook.
 
 ### Skill Plugin (extract-rules)
 

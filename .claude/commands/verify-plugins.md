@@ -41,6 +41,7 @@ allowed-tools: Read, Glob, Grep, Bash(jq *), Bash(for *), Bash(echo *), Bash(if 
 |-----------|-------------|--------|------------|
 | peer | plugins/peer/.claude-plugin/plugin.json | skills/ask-peer/SKILL.md | agents/peer.md |
 | translate | plugins/translate/.claude-plugin/plugin.json | skills/tr/SKILL.md | agents/tr.md, agents/tr-hq.md |
+| caffeinate | plugins/caffeinate/.claude-plugin/plugin.json | skills/caffeinate/SKILL.md | N/A |
 
 ### 2. バージョン整合性
 
@@ -70,7 +71,7 @@ Globを使って効率的に確認できます。
 
 ### Step 3: バージョン整合性チェック
 
-**エージェント依存プラグイン（peer, translate）のみ**：
+**plugins/配下のプラグイン（peer, translate, caffeinate）**：
 1. marketplace.json のバージョンを取得
 2. plugin.json のバージョンを取得
 3. 一致を確認
@@ -139,18 +140,21 @@ Skill(skill: "check-cli-updates")
 |-----------|-------------|--------|------------|------|
 | peer | ✅ | ✅ | ✅ | ✅ |
 | translate | ✅ | ✅ | ✅ | ✅ |
+| caffeinate | ✅ | ✅ | N/A | ✅ |
 
 ### バージョン整合性
 | プラグイン | marketplace | plugin.json | 状態 |
 |-----------|-------------|-------------|------|
 | peer | 1.0.0 | 1.0.0 | ✅ |
 | translate | 1.0.0 | 1.0.0 | ✅ |
+| caffeinate | 1.0.0 | 1.0.0 | ✅ |
 
 ### 構文検証
 | 対象 | JSON | フロントマター | 状態 |
 |------|------|---------------|------|
 | peer | ✅ | ✅ | ✅ |
 | translate | ✅ | ✅ | ✅ |
+| caffeinate | ✅ | ✅ | ✅ |
 | ask-claude | N/A | ✅ | ✅ |
 | ask-codex | N/A | ✅ | ✅ |
 | ask-gemini | N/A | ✅ | ✅ |
@@ -168,6 +172,7 @@ Skill(skill: "check-cli-updates")
 | translate | /tr | ✅/⚠️ | ... |
 | translate | tr agent | ✅/⚠️ | ... |
 | translate | tr-hq agent | ✅/⚠️ | ... |
+| caffeinate | /caffeinate | ✅/⚠️ | ... |
 | security-scanner | /security-scanner | ✅/⚠️ | ... |
 
 ### 総合結果

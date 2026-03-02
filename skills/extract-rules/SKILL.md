@@ -1,8 +1,8 @@
 ---
 name: extract-rules
-description: Extract project-specific coding rules and domain knowledge from existing codebase, generating markdown documentation for AI agents.
+description: Extract project-specific coding rules and domain knowledge from existing codebase, generating markdown documentation for AI agents. Use this skill when onboarding a new project, after significant code review discussions about coding style, when coding conventions need to be documented, or when the team's coding patterns should be captured for consistency. Also consider running with --from-conversation after sessions where coding preferences were discussed or corrected.
 model: opus
-allowed-tools: Read, Glob, Grep, Write, Bash(ls *), Bash(mkdir *), Bash(git ls-files *), Bash(grep *), Bash(wc *), Bash(head *), Bash(tail *), Bash(sort *), Bash(uniq *), Bash(tree *)
+allowed-tools: Read, Glob, Grep, Write, Bash(ls *), Bash(mkdir *), Bash(git ls-files *), Bash(wc *), Bash(head *), Bash(tail *), Bash(sort *), Bash(uniq *), Bash(tree *)
 ---
 
 # Extract Rules
@@ -55,21 +55,47 @@ output_dir: .claude/rules
 
 # Output language for reports
 language: ja
+
+# Split output into shared (.md) and local (.local.md) files
+# Default: false (single file per category with both Principles and patterns)
+# Set true to separate Principles (portable) from Project-specific patterns (local)
+split_output: false
 ---
 ```
 
 ## Output Structure
 
+**Default** (`split_output: false`):
 ```text
 .claude/rules/
 ├── languages/
-│   ├── typescript.md
-│   └── ...              # python.md, go.md, ruby.md, etc.
+│   └── typescript.md    # Principles + Project-specific patterns
 ├── frameworks/
-│   ├── react.md
-│   └── ...              # nextjs.md, firebase.md, rails.md, etc.
-└── project.md           # Domain, architecture (not portable)
+│   └── react.md         # Principles + Project-specific patterns
+└── project.md           # Domain, architecture, conventions
 ```
+
+**Split mode** (`split_output: true`):
+```text
+.claude/rules/
+├── languages/
+│   ├── typescript.md          # Principles only (portable)
+│   ├── typescript.local.md    # Project-specific patterns only
+│   └── ...
+├── frameworks/
+│   ├── react.md               # Principles only (portable)
+│   ├── react.local.md         # Project-specific patterns only
+│   └── ...
+└── project.md                 # Always single file (no split)
+```
+
+Split mode separates Principles (portable across projects) from Project-specific patterns (local). This enables organizational rule sharing and AI-driven merge across projects.
+
+**Layered frameworks** (Rails, Django, Spring, etc.):
+When a framework has distinct architectural layers, generate layer-specific files:
+- `<framework>.md` — Cross-layer rules (no `paths:` or broad scope)
+- `<framework>-<layer>.md` — Layer-specific rules with scoped `paths:` (e.g., `app/models/**`)
+- In split mode, both cross-layer and layer-specific files get `.local.md` counterparts
 
 ## Processing Flow
 
@@ -97,14 +123,7 @@ Search for `extract-rules.local.md`:
 - If only one exists, use that file
 - If neither exists, use default settings
 
-**Extract from settings:**
-- `target_dirs` (default: `["."]` - all directories)
-- `exclude_dirs` (default: `[".git", ".claude"]`)
-- `exclude_patterns` (default: `["*.generated.ts", "*.d.ts", "*.min.js"]`)
-- `output_dir` (default: `.claude/rules`)
-- `language` (default: `ja`)
-
-**Note:** `.gitignore` patterns are always applied. Common exclusions like `node_modules/`, `dist/`, `build/` are typically in `.gitignore` and automatically excluded.
+**Extract settings** (`target_dirs`, `exclude_dirs`, `exclude_patterns`, `output_dir`, `language`, `split_output`) from the config file. See Configuration section above for defaults.
 
 ### Step 2: Detect Project Type
 
@@ -130,7 +149,11 @@ Detect project language and framework:
 
 Identify frameworks by their config files (e.g., `next.config.*`, `playwright.config.*`, `jest.config.*`) and dependencies in package.json, requirements.txt, Gemfile, etc.
 
-**Output:** List of detected languages and frameworks
+**4. Detect architectural layers** (for layered frameworks):
+
+If a framework has distinct layers with separate directories (e.g., Rails: `app/models/`, `app/controllers/`, `app/views/`; Django: `models.py`, `views.py`; Spring: `controller/`, `service/`, `repository/`), detect them for layer-specific rule files. Only split when corresponding directories actually exist.
+
+**Output:** List of detected languages, frameworks, and architectural layers
 
 ### Step 3: Collect Sample Files
 
@@ -158,11 +181,13 @@ Collect target files for analysis:
 
 ### Step 4: Analyze by Category
 
+Read `references/extraction-criteria.md` before proceeding to understand the classification criteria.
+
 For each detected language and framework:
 
 1. Use Grep/Read to collect relevant code patterns
 
-2. **Classify each pattern** (see Concrete Example Criteria):
+2. **Classify each pattern** (see `references/extraction-criteria.md`):
    - **General style choice** (uses only language built-ins) → Abstract principle + hints
    - **Project-defined symbol** (types, functions, hooks defined in project) → Include concrete example
 
@@ -175,7 +200,7 @@ For each detected language and framework:
    - Format as one line: `signature` - brief context (2-5 words)
    - Avoid multi-line code blocks to minimize context overhead
 
-5. Apply AI judgment to determine which patterns meet the extraction criteria (see Principle Extraction Criteria)
+5. Apply AI judgment to determine which patterns meet the extraction criteria (see `references/extraction-criteria.md`)
 
 Determine appropriate detection methods based on language and project structure.
 
@@ -197,15 +222,24 @@ Extract explicit coding rules and guidelines from these documents.
    - If exists and `--force` set:
      - **Warning:** "Existing rules will be overwritten. Manual edits will be lost."
      - List files that will be overwritten
+     - If `split_output: false` and `.local.md` files exist: warn and delete them (superseded by hybrid files)
      - Proceed with overwrite (backup is user's responsibility via git)
    - If not exists: Create directory
 
-2. Generate rule files:
+2. Generate rule files per category:
+
    - `languages/<lang>.md` for language-specific rules
    - `frameworks/<framework>.md` for framework-specific rules
    - `project.md` for project-specific rules
+   - **Layered frameworks**: `<framework>.md` (cross-layer) + `<framework>-<layer>.md` per detected layer with scoped `paths:`
 
-**Rule file format (hybrid: principles + project-specific patterns):**
+   **When `split_output: true`**: Generate 2 files per category (except project.md):
+   - `<name>.md` — `## Principles` only (portable)
+   - `<name>.local.md` — `## Project-specific patterns` only (local)
+   - Layer-specific and regular files require `paths:` frontmatter independently. Cross-layer files (`<framework>.md`) use no `paths:` or broad scope as they apply across all layers.
+   - Skip generating a file if it would be empty. Skipped files are omitted from the Step 7 report.
+
+**Rule file format (default: hybrid):**
 
 ```markdown
 ---
@@ -217,9 +251,9 @@ paths:
 
 ## Principles
 
-- Immutability (spread演算子, map/filter/reduce, const優先)
-- Declarative style (命令的ループより宣言的変換)
-- Type safety (strict mode, 明示的型注釈, any禁止)
+- Immutability (spread, map/filter/reduce, const)
+- Declarative style (declarative transforms, no imperative loops)
+- Type safety (strict mode, explicit annotations, no any)
 
 ## Project-specific patterns
 
@@ -232,14 +266,16 @@ paths:
 
 For **Principles** section:
 - Each principle: `Principle name (hint1, hint2, hint3)`
-- 2-4 implementation hints per principle
+- Principle name: noun phrase naming the philosophy (e.g., "Immutability" not "Use const")
+- Hints: 2-4 keywords per principle, describing implementation techniques observed in the project
 - Only for general style choices (language built-ins)
 
 For **Project-specific patterns** section:
-- **One line per pattern**: `signature/definition` - brief context
+- **One line per pattern**: `` `signature` `` - brief context
 - Use inline code for signatures, not code blocks
-- Keep context to 2-5 words maximum
-- Only include the minimal signature needed for AI to infer usage
+- Keep context to 2-5 words
+- Only include the minimal signature: type name, function signature with return type, or API combination
+- Example of minimal: `useAuth() → { user, login, logout }` (not full implementation)
 
 **paths patterns by category:**
 - TypeScript: `**/*.ts`, `**/*.tsx`
@@ -261,11 +297,11 @@ Display analysis summary:
 
 ### Generated Files
 
-| File | Principles |
-|------|------------|
-| languages/typescript.md | 3 principles |
-| frameworks/react.md | 2 principles |
-| project.md | 2 principles |
+| File | Principles | Patterns |
+|------|------------|----------|
+| languages/typescript.md | 3 | 5 |
+| frameworks/react.md | 2 | 8 |
+| project.md | - | architecture, conventions |
 
 **Output**: `<output_dir>` (default: .claude/rules/)
 
@@ -286,17 +322,19 @@ Display analysis summary:
 
 When `--update` is specified, re-scan the codebase and add new patterns while preserving existing rules.
 
-### Step U1: Check Prerequisites
+### Step U1: Load Settings and Check Prerequisites
 
-1. Check if output directory exists (default: `.claude/rules/`)
+1. Load settings from `extract-rules.local.md` (same as Step 1 in Full Extraction Mode)
+
+2. Check if output directory exists (default: `.claude/rules/`)
    - If not exists: Error "Run /extract-rules first to initialize rule files."
+   - If `split_output: false` and `.local.md` files exist: warn that orphaned `.local.md` files were found — recommend running `--force` to clean up
 
-2. Load existing rule files to understand current rules
+3. Load existing rule files to understand current rules (if `split_output: true`, load both `<name>.md` and `<name>.local.md`)
 
 ### Step U2: Re-scan Codebase
 
-Execute Step 1-5 from Full Extraction Mode:
-- Load settings
+Execute Step 2-5 from Full Extraction Mode:
 - Detect project type
 - Collect sample files
 - Analyze by category
@@ -306,7 +344,7 @@ Execute Step 1-5 from Full Extraction Mode:
 
 For each extracted principle/pattern:
 
-1. **Check if already exists**: Compare with existing rules
+1. **Check if already exists**: Compare with existing rules (check both shared and local files if `split_output: true`)
    - Exact match → Skip
    - Similar but different → Keep both (let user review)
    - New → Add
@@ -315,9 +353,11 @@ For each extracted principle/pattern:
 
 ### Step U4: Append New Rules
 
-1. Append new principles to appropriate section (`## Principles`)
-2. Append new project-specific patterns to appropriate section (`## Project-specific patterns`)
-3. Maintain file structure and formatting
+1. Append new principles to `## Principles` section
+2. Append new project-specific patterns to `## Project-specific patterns` section
+3. **When `split_output: true`**: Principles go to `<name>.md`, patterns go to `<name>.local.md`. Create missing files with proper frontmatter.
+4. For `project.md`: always append to the single file
+5. Maintain file structure and formatting
 
 ### Step U5: Report Changes
 
@@ -346,28 +386,21 @@ For each extracted principle/pattern:
 
 When `--from-conversation` is specified, extract rules from the conversation history.
 
-### Step C1: Check Prerequisites
+### Step C1: Load Settings and Check Prerequisites
 
-1. Check if output directory exists (default: `.claude/rules/`)
+1. Load settings from `extract-rules.local.md` (same as Step 1 in Full Extraction Mode)
+
+2. Check if output directory exists (default: `.claude/rules/`)
    - If not exists: Error "Run /extract-rules first to initialize rule files."
 
-2. Load existing rule files to understand current rules
+3. Load existing rule files to understand current rules (if `split_output: true`, load both `<name>.md` and `<name>.local.md`)
 
-### Step C2: Determine Conversation Source
+### Step C2: Analyze Conversation Context
 
-**Option A: Read from transcript file (preferred, full history)**
+Analyze the current conversation context to identify coding style discussions, preferences, and corrections.
 
-If transcript file path is known:
-- Location: `~/.claude/projects/<project-path>/<session-id>.jsonl`
-- Read the JSONL file (each line is a JSON object)
-- Focus on `type: "user"` and `type: "assistant"` entries
-- This includes ALL messages from session start (even after compaction)
-
-**Option B: Use current context (fallback)**
-
-If transcript path is unknown (e.g., running in Codex or other AI tools):
-- Analyze the current conversation context
-- Note: May have limited history if context was compacted
+- Focus on user instructions, code review feedback, and explicit style preferences
+- Note: If context was compacted, history may be limited — extract what is available
 
 ### Step C3: Extract Principles and Patterns
 
@@ -383,20 +416,20 @@ Look for user preferences and classify them (same as Full Extraction Mode):
 
 **3. Code review feedback**: Identify underlying philosophy or specific patterns
 
-Apply the same criteria as Full Extraction Mode (see Principle Extraction Criteria and Concrete Example Criteria).
+Apply the same criteria as Full Extraction Mode (see `references/extraction-criteria.md`).
 
 ### Step C4: Append Principles and Patterns
 
 1. Categorize each extracted item:
    - Language-specific → `languages/<lang>.md`
    - Framework-specific → `frameworks/<framework>.md`
-   - Project-specific → `project.md`
+   - Project-level → `project.md`
+
+   **When `split_output: true`**: Conversation-extracted **project-specific patterns** always go to `.local.md` files. Principles may be added to shared files. `project.md` is always a single file — project-level items go there regardless of `split_output`. Promoting patterns to shared files should be done manually or via organization-level merge.
 
 2. Check for duplicates: Skip if already exists or covered
 
-3. Append in appropriate format:
-   - Principles: `Principle name (hint1, hint2, hint3)`
-   - Project-specific patterns: `signature` - brief context (one line)
+3. Append using the same format as Step 6 (see Format guidelines)
 
 4. Report what was added:
    ```markdown
@@ -404,7 +437,7 @@ Apply the same criteria as Full Extraction Mode (see Principle Extraction Criter
 
    ### Added to languages/typescript.md:
    #### Principles
-   - Immutability (spread operators, map/filter, avoid mutations)
+   - Immutability (spread, map/filter, const)
 
    #### Project-specific patterns
    - `RefOrNull<T extends { id: string }> = T | { id: null }` - nullable refs
@@ -422,99 +455,23 @@ Apply the same criteria as Full Extraction Mode (see Principle Extraction Criter
 - Use `--from-conversation` after significant discussions about coding style
 - Generated rules are meant to be reviewed and refined by humans
 
-## Principle Extraction Criteria
+### Split output mode (`split_output: true`)
 
-**Goal:** Extract abstract principles that guide AI to write code consistent with project style.
+When enabled in `extract-rules.local.md`, Principles and Project-specific patterns are separated into two files:
+- `<name>.md` — Principles only (portable, mergeable across projects)
+- `<name>.local.md` — Project-specific patterns only (local)
+- Classification is mechanical: `## Principles` → shared file, `## Project-specific patterns` → local file
+- `project.md` is never split (inherently project-specific)
 
-### Extract these principles
+To migrate existing single-file rules to split format: set `split_output: true` and run `--force` to regenerate.
 
-Principles where **multiple common approaches exist** and AI might choose differently without guidance:
+## Extraction Criteria
 
-- **Immutability vs Mutability** - AI often writes mutable code by default
-- **Declarative vs Imperative** - Both are common approaches
-- **Functional vs Class-based** - Both are valid paradigms
-- **OOP vs FP** - Different design philosophies
+For detailed criteria on what to extract and how to classify patterns, read `references/extraction-criteria.md`.
 
-### Do NOT extract these
-
-Principles where **only one practical approach exists**:
-
-- React components use PascalCase (no alternative)
-- Python uses snake_case (language standard)
-- TypeScript files use `.ts` extension
-
-### Decision criterion
-
-> "Would a general AI write code differently without this principle?"
-> - **Yes** → Extract it
-> - **No** → Skip it
-
-### Abstraction examples
-
-| Concrete patterns observed | Abstract principle |
-|---|---|
-| `const` preferred, spread operators, no mutations | Immutability (const, spread, map/filter) |
-| Arrow functions, no classes, pure functions | Functional style (arrow functions, pure, no this) |
-| Strict TypeScript, explicit types, no any | Type safety (strict, explicit, no any) |
-
-## Concrete Example Criteria
-
-**Goal:** Determine when to include concrete code examples vs abstract principles.
-
-### Include concrete examples when
-
-Pattern involves **project-defined symbols** that AI cannot infer, **AND** meets at least one scope criterion:
-
-**Symbol criteria** (what):
-- **Custom types/interfaces** defined in the project (not from node_modules)
-- **Project-specific hooks** (e.g., `useAuthClient`, `useDataFetch`)
-- **Utility functions** with non-obvious signatures
-- **Non-obvious combinations** (e.g., `pathFor()` + `url()` must be used together)
-
-**Scope criteria** (why it matters):
-- **Project-wide usage**: Used across many files/modules, AI needs to know about it to write consistent code
-- **Convention-defining**: Not using it would break project consistency (e.g., required wrapper, mandatory type)
-
-**Important: Keep examples minimal**
-- One line per pattern: `signature` - context (2-5 words)
-- Include only the type signature or function signature
-- Omit implementation details, only show the "shape" AI needs to know
-
-### Keep abstract (principles only) when
-
-Pattern uses only **language built-ins** or **well-known patterns**:
-
-- `const`, `let`, spread operators, map/filter/reduce
-- Standard design patterns with well-known implementations
-- Framework APIs documented in official docs
-
-### Decision criterion
-
-> "Would AI writing **new code** in this project produce **inconsistent results** without knowing this pattern?"
-> - **Yes** → Include concrete example (e.g., `useAuth()` — without it, AI would write custom auth logic)
-> - **No** → Skip or abstract principle only (e.g., a utility hook used in 2 files — AI not knowing it won't cause inconsistency)
-
-### Example classification
-
-| Pattern | Classification | Reason |
-|---------|---------------|--------|
-| Prefer `const` over `let` | Principle only | Language built-in, AI knows this |
-| `RefOrNull<T>` type usage | Concrete example | Project-defined type, AI cannot infer |
-| Page Object Model | Principle + hints | Well-known pattern |
-| `pathFor()` + `url()` combination | Concrete example | Project-specific API combination |
-
-### Gray zone handling
-
-For patterns that are **not clearly general or project-specific**:
-
-- Extended types from node_modules (e.g., `type MyUser = User & { custom: string }`)
-- Specific combinations of standard libraries (e.g., zod + react-hook-form patterns)
-
-**Fallback rule: When uncertain, apply the scope criterion.**
-
-- If the pattern is used project-wide or defines a convention → include
-- If the pattern is a local utility (1-2 usage sites) → skip
-- Rationale: Over-specifying with local utilities clutters rule files with implementation details rather than style guidance. Rules should answer "how to write new code" not "what utilities exist."
+Key decision questions:
+- **Principle extraction**: "Would a general AI write code differently without this principle?" → Yes = extract, No = skip
+- **Concrete example**: "Would AI writing new code produce inconsistent results without knowing this pattern?" → Yes = include example, No = principle only
 
 ## Security Considerations
 

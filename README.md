@@ -107,6 +107,8 @@ Extract project-specific coding rules and domain knowledge from your codebase, g
 
 Output files are generated in `.claude/rules/` directory.
 
+**Configuration** (optional): Create `.claude/extract-rules.local.md` with YAML frontmatter to customize target directories, exclusions, output language, and split output mode. See SKILL.md for details.
+
 ## License
 
 MIT License

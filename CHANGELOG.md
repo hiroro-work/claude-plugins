@@ -1,5 +1,26 @@
 # Changelog
 
+## 2026-03-02
+
+### extract-rules v1.3.0
+
+- feat: Add `split_output` option for `.local.md` file separation (opt-in)
+  - `split_output: false` (default): Single hybrid file per category (backwards compatible)
+  - `split_output: true`: Principles → `<name>.md` (portable), Project-specific patterns → `<name>.local.md` (local)
+  - Classification is mechanical: `## Principles` → shared file, `## Project-specific patterns` → local file
+  - `project.md` is never split (inherently project-specific)
+- feat: Add layered framework support (Rails, Django, Spring, etc.)
+  - Detect architectural layers (e.g., models, controllers, views) when directories exist
+  - Generate layer-specific files with scoped `paths:` (e.g., `rails-model.md`)
+  - Cross-layer rules in `<framework>.md` (no `paths:` or broad scope)
+- feat: Handle orphaned `.local.md` files when switching split modes
+  - `--force`: Warns and deletes orphaned `.local.md` files
+  - `--update`: Warns and recommends running `--force` to clean up
+- refactor: Extract classification criteria to `references/extraction-criteria.md`
+  - Progressive disclosure: metadata → SKILL.md body → bundled references
+- refactor: Remove `Bash(grep *)` from allowed-tools (use Grep tool instead)
+- docs: Enhanced skill description for better trigger matching
+
 ## 2026-02-25
 
 ### caffeinate v1.0.0

@@ -101,7 +101,7 @@ Extract project-specific coding rules and domain knowledge from your codebase, g
 ```bash
 /extract-rules                      # Extract rules from codebase (initial)
 /extract-rules --update             # Re-scan and add new patterns (preserve existing)
-/extract-rules --force              # Overwrite all rule files
+/extract-rules --restructure        # Re-analyze, reorganize structure, merge existing rules
 /extract-rules --from-conversation  # Extract rules from conversation
 ```
 

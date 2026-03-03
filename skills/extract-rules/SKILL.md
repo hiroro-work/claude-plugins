@@ -14,7 +14,7 @@ Analyzes existing codebase to extract project-specific coding rules and domain k
 ```text
 /extract-rules                      # Extract rules from codebase (initial)
 /extract-rules --update             # Re-scan and add new patterns (preserve existing)
-/extract-rules --force              # Overwrite all rule files (discard existing)
+/extract-rules --restructure        # Re-analyze, reorganize structure, merge existing rules
 /extract-rules --from-conversation  # Extract rules from conversation and append
 ```
 
@@ -103,8 +103,9 @@ When a framework has distinct architectural layers, generate layer-specific file
 
 Check arguments to determine mode:
 
-- No arguments or `--force` → **Full Extraction Mode** (Step 1-7)
+- No arguments → **Full Extraction Mode** (Step 1-7)
 - `--update` → **Update Mode** (Step U1-U5)
+- `--restructure` → **Restructure Mode** (Step R1-R5)
 - `--from-conversation` → **Conversation Extraction Mode** (Step C1-C4)
 
 ---
@@ -218,12 +219,7 @@ Extract explicit coding rules and guidelines from these documents.
 ### Step 6: Generate Output
 
 1. Check if output directory exists
-   - If exists and `--force` not set: Error "Output directory already exists. Use --force to overwrite."
-   - If exists and `--force` set:
-     - **Warning:** "Existing rules will be overwritten. Manual edits will be lost."
-     - List files that will be overwritten
-     - If `split_output: false` and `.local.md` files exist: warn and delete them (superseded by hybrid files)
-     - Proceed with overwrite (backup is user's responsibility via git)
+   - If exists: Error "Output directory already exists. Use `--restructure` to reorganize, `--update` to add new patterns, or delete the directory manually to start fresh."
    - If not exists: Create directory
 
 2. Generate rule files per category:
@@ -285,36 +281,7 @@ For **Project-specific patterns** section:
 
 ### Step 7: Report Summary
 
-Display analysis summary:
-
-```markdown
-## Extraction Complete
-
-**Project**: [project name]
-**Languages**: [detected languages]
-**Frameworks**: [detected frameworks]
-**Analyzed files**: [count]
-
-### Generated Files
-
-| File | Principles | Patterns |
-|------|------------|----------|
-| languages/typescript.md | 3 | 5 |
-| frameworks/react.md | 2 | 8 |
-| project.md | - | architecture, conventions |
-
-**Output**: `<output_dir>` (default: .claude/rules/)
-
-### Recommended Actions
-
-1. Review generated rules and edit if needed
-2. Add reference to CLAUDE.md:
-   \`\`\`markdown
-   ## Coding Rules
-   See .claude/rules/ for project-specific coding rules.
-   \`\`\`
-3. Re-run with `/extract-rules --update` when codebase evolves
-```
+Display analysis summary. See `references/report-templates.md` for format.
 
 ---
 
@@ -328,7 +295,7 @@ When `--update` is specified, re-scan the codebase and add new patterns while pr
 
 2. Check if output directory exists (default: `.claude/rules/`)
    - If not exists: Error "Run /extract-rules first to initialize rule files."
-   - If `split_output: false` and `.local.md` files exist: warn that orphaned `.local.md` files were found — recommend running `--force` to clean up
+   - If `split_output: false` and `.local.md` files exist: warn that orphaned `.local.md` files were found — recommend deleting orphaned files manually or running `--restructure`
 
 3. Load existing rule files to understand current rules (if `split_output: true`, load both `<name>.md` and `<name>.local.md`)
 
@@ -361,24 +328,39 @@ For each extracted principle/pattern:
 
 ### Step U5: Report Changes
 
-```markdown
-## Update Complete
+Report what was added per file. See `references/report-templates.md` for format.
 
-### Added to languages/typescript.md:
-#### Principles
-- (none)
+---
 
-#### Project-specific patterns
-- `useNewFeature()` returns `{ data, refresh }` - new feature hook
+## Restructure Mode
 
-### Added to frameworks/react.md:
-- (none)
+When `--restructure` is specified, re-analyze the codebase to determine the optimal file structure, then merge existing rule content into the new structure. Use this when the project has evolved (new frameworks, architectural changes), when `split_output` settings change, or after updating the extract-rules skill itself.
 
-### Unchanged files:
-- project.md
+### Step R1: Load Settings and Snapshot Existing Rules
 
-**Tip**: Review added rules and remove any that are incorrect or redundant.
-```
+1. Load settings (same as Step 1 in Full Extraction Mode)
+2. Check output directory exists → Error if not: "Run /extract-rules first to initialize rule files."
+3. Read and parse all existing rule files under output directory (`.md` and `.local.md`)
+
+### Step R2: Re-analyze Codebase
+
+Execute Step 2-5 from Full Extraction Mode to determine the ideal file structure.
+
+### Step R3: Show Restructure Plan and Confirm
+
+Compare old and new file structures, display planned changes (Keep/New/Remove per file), and wait for user confirmation before proceeding.
+
+### Step R4: Merge and Write
+
+1. Fresh extraction results as base, route existing rules to appropriate new files by category/scope/layer
+2. **Existing rules take priority** on conflict (respect manual edits and conversation-extracted rules)
+3. Unmatched rules → `project.md` as fallback; preserve custom sections in the most relevant file
+4. Apply `split_output` setting (handle hybrid ↔ split transitions), deduplicate
+5. **Write new files first**, then remove old files no longer in the new structure
+
+### Step R5: Report Summary
+
+Report structural changes, content merge summary, and unmatched rules. See `references/report-templates.md` for format.
 
 ---
 
@@ -431,20 +413,7 @@ Apply the same criteria as Full Extraction Mode (see `references/extraction-crit
 
 3. Append using the same format as Step 6 (see Format guidelines)
 
-4. Report what was added:
-   ```markdown
-   ## Extracted from Conversation
-
-   ### Added to languages/typescript.md:
-   #### Principles
-   - Immutability (spread, map/filter, const)
-
-   #### Project-specific patterns
-   - `RefOrNull<T extends { id: string }> = T | { id: null }` - nullable refs
-
-   ### No changes:
-   - Functional style - Already documented
-   ```
+4. Report what was added. See `references/report-templates.md` for format.
 
 ---
 
@@ -463,7 +432,7 @@ When enabled in `extract-rules.local.md`, Principles and Project-specific patter
 - Classification is mechanical: `## Principles` → shared file, `## Project-specific patterns` → local file
 - `project.md` is never split (inherently project-specific)
 
-To migrate existing single-file rules to split format: set `split_output: true` and run `--force` to regenerate.
+To migrate existing single-file rules to split format: set `split_output: true` and run `--restructure` to reorganize while preserving existing rules, or delete the rules directory and run `/extract-rules` to regenerate from scratch.
 
 ## Extraction Criteria
 

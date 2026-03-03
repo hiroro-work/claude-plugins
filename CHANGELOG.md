@@ -1,5 +1,20 @@
 # Changelog
 
+## 2026-03-03
+
+### extract-rules v1.4.0
+
+- feat: Add `--restructure` option for file structure reorganization with content merge
+  - Re-analyzes codebase to determine optimal file structure
+  - Merges existing rules into new structure (preserves manual edits and conversation-extracted rules)
+  - Existing rules take priority over fresh extraction on conflict (respects manual edits)
+  - Shows restructure plan for user confirmation before execution
+  - Handles split_output mode transitions (hybrid ↔ split)
+  - Unmatched rules fall back to project.md
+- remove: `--force` option (use `rm -rf .claude/rules/ && /extract-rules` or `--restructure` instead)
+- refactor: Extract report templates to `references/report-templates.md` (progressive disclosure)
+- refactor: Simplify Restructure Mode steps (R1-R6 → R1-R5, concise descriptions)
+
 ## 2026-03-02
 
 ### extract-rules v1.3.0

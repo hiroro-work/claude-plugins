@@ -4,7 +4,7 @@ Reference templates for each mode's output report.
 
 ## Full Extraction Mode (Step 7)
 
-```markdown
+````markdown
 ## Extraction Complete
 
 **Project**: [project name]
@@ -31,7 +31,7 @@ Reference templates for each mode's output report.
    See .claude/rules/ for project-specific coding rules.
    ```
 3. Re-run with `/extract-rules --update` when codebase evolves
-```
+````
 
 ## Update Mode (Step U5)
 

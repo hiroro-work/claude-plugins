@@ -11,6 +11,7 @@
   - Shows restructure plan for user confirmation before execution
   - Handles split_output mode transitions (hybrid ↔ split)
   - Unmatched rules fall back to project.md
+- **breaking**: Change `split_output` default from `false` to `true` (Principles and Project-specific patterns are now separated by default)
 - remove: `--force` option (use `rm -rf .claude/rules/ && /extract-rules` or `--restructure` instead)
 - refactor: Extract report templates to `references/report-templates.md` (progressive disclosure)
 - refactor: Simplify Restructure Mode steps (R1-R6 → R1-R5, concise descriptions)

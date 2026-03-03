@@ -57,25 +57,15 @@ output_dir: .claude/rules
 language: ja
 
 # Split output into shared (.md) and local (.local.md) files
-# Default: false (single file per category with both Principles and patterns)
-# Set true to separate Principles (portable) from Project-specific patterns (local)
-split_output: false
+# Default: true (Principles and Project-specific patterns in separate files)
+# Set false for single file per category with both Principles and patterns
+split_output: true
 ---
 ```
 
 ## Output Structure
 
-**Default** (`split_output: false`):
-```text
-.claude/rules/
-├── languages/
-│   └── typescript.md    # Principles + Project-specific patterns
-├── frameworks/
-│   └── react.md         # Principles + Project-specific patterns
-└── project.md           # Domain, architecture, conventions
-```
-
-**Split mode** (`split_output: true`):
+**Default** (`split_output: true`):
 ```text
 .claude/rules/
 ├── languages/
@@ -89,7 +79,17 @@ split_output: false
 └── project.md                 # Always single file (no split)
 ```
 
-Split mode separates Principles (portable across projects) from Project-specific patterns (local). This enables organizational rule sharing and AI-driven merge across projects.
+Principles (portable across projects) and Project-specific patterns (local) are separated by default. This enables organizational rule sharing and AI-driven merge across projects.
+
+**Hybrid mode** (`split_output: false`):
+```text
+.claude/rules/
+├── languages/
+│   └── typescript.md    # Principles + Project-specific patterns
+├── frameworks/
+│   └── react.md         # Principles + Project-specific patterns
+└── project.md           # Domain, architecture, conventions
+```
 
 **Layered frameworks** (Rails, Django, Spring, etc.):
 When a framework has distinct architectural layers, generate layer-specific files:
@@ -229,13 +229,15 @@ Extract explicit coding rules and guidelines from these documents.
    - `project.md` for project-specific rules
    - **Layered frameworks**: `<framework>.md` (cross-layer) + `<framework>-<layer>.md` per detected layer with scoped `paths:`
 
-   **When `split_output: true`**: Generate 2 files per category (except project.md):
+   **By default** (`split_output: true`): Generate 2 files per category (except project.md):
    - `<name>.md` — `## Principles` only (portable)
    - `<name>.local.md` — `## Project-specific patterns` only (local)
    - Layer-specific and regular files require `paths:` frontmatter independently. Cross-layer files (`<framework>.md`) use no `paths:` or broad scope as they apply across all layers.
    - Skip generating a file if it would be empty. Skipped files are omitted from the Step 7 report.
 
-**Rule file format (default: hybrid):**
+   **When `split_output: false`**: Generate single hybrid file per category with both sections.
+
+**Rule file format (hybrid example):**
 
 ```markdown
 ---
@@ -295,9 +297,10 @@ When `--update` is specified, re-scan the codebase and add new patterns while pr
 
 2. Check if output directory exists (default: `.claude/rules/`)
    - If not exists: Error "Run /extract-rules first to initialize rule files."
+   - If `split_output: true` and hybrid files exist (`.md` files containing both `## Principles` and `## Project-specific patterns`): warn that hybrid files were found — recommend running `--restructure` to migrate to split format
    - If `split_output: false` and `.local.md` files exist: warn that orphaned `.local.md` files were found — recommend deleting orphaned files manually or running `--restructure`
 
-3. Load existing rule files to understand current rules (if `split_output: true`, load both `<name>.md` and `<name>.local.md`)
+3. Load existing rule files to understand current rules (load both `<name>.md` and `<name>.local.md` when split)
 
 ### Step U2: Re-scan Codebase
 
@@ -407,7 +410,7 @@ Apply the same criteria as Full Extraction Mode (see `references/extraction-crit
    - Framework-specific → `frameworks/<framework>.md`
    - Project-level → `project.md`
 
-   **When `split_output: true`**: Conversation-extracted **project-specific patterns** always go to `.local.md` files. Principles may be added to shared files. `project.md` is always a single file — project-level items go there regardless of `split_output`. Promoting patterns to shared files should be done manually or via organization-level merge.
+   **By default** (`split_output: true`): Conversation-extracted **project-specific patterns** always go to `.local.md` files. Principles may be added to shared files. `project.md` is always a single file — project-level items go there regardless of `split_output`. Promoting patterns to shared files should be done manually or via organization-level merge.
 
 2. Check for duplicates: Skip if already exists or covered
 
@@ -424,15 +427,17 @@ Apply the same criteria as Full Extraction Mode (see `references/extraction-crit
 - Use `--from-conversation` after significant discussions about coding style
 - Generated rules are meant to be reviewed and refined by humans
 
-### Split output mode (`split_output: true`)
+### Split output mode (default)
 
-When enabled in `extract-rules.local.md`, Principles and Project-specific patterns are separated into two files:
+By default (`split_output: true`), Principles and Project-specific patterns are separated into two files:
 - `<name>.md` — Principles only (portable, mergeable across projects)
 - `<name>.local.md` — Project-specific patterns only (local)
 - Classification is mechanical: `## Principles` → shared file, `## Project-specific patterns` → local file
 - `project.md` is never split (inherently project-specific)
 
-To migrate existing single-file rules to split format: set `split_output: true` and run `--restructure` to reorganize while preserving existing rules, or delete the rules directory and run `/extract-rules` to regenerate from scratch.
+To split existing hybrid files into separate files: run `--restructure` (with default `split_output: true`) to reorganize while preserving existing rules.
+
+To merge split files into single hybrid files: set `split_output: false` and run `--restructure` to reorganize while preserving existing rules, or delete the rules directory and run `/extract-rules` to regenerate from scratch.
 
 ## Extraction Criteria
 

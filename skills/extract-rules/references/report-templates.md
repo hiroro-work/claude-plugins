@@ -10,6 +10,7 @@ Reference templates for each mode's output report.
 **Project**: [project name]
 **Languages**: [detected languages]
 **Frameworks**: [detected frameworks]
+**Integrations**: [detected integrations]
 **Analyzed files**: [count]
 
 ### Generated Files
@@ -18,6 +19,7 @@ Reference templates for each mode's output report.
 |------|------------|----------|
 | languages/typescript.md | 3 | 5 |
 | frameworks/react.md | 2 | 8 |
+| integrations/rails-inertia.md | 1 | 4 |
 | project.md | - | architecture, conventions |
 
 **Output**: `<output_dir>` (default: .claude/rules/)
@@ -37,6 +39,11 @@ Reference templates for each mode's output report.
 
 ```markdown
 ## Update Complete
+
+### New files:
+| File | Principles | Patterns |
+|------|------------|----------|
+| frameworks/nextjs.md | 2 | 3 |
 
 ### Added to languages/typescript.md:
 #### Principles
@@ -62,6 +69,7 @@ Reference templates for each mode's output report.
 **Project**: [project name]
 **Languages**: [detected languages]
 **Frameworks**: [detected frameworks]
+**Integrations**: [detected integrations]
 
 ### Structural Changes
 

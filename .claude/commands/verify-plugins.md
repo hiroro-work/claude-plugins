@@ -34,6 +34,8 @@ allowed-tools: Read, Glob, Grep, Bash(jq *), Bash(for *), Bash(echo *), Bash(if 
 | ask-gemini | skills/ask-gemini/SKILL.md |
 | ask-copilot | skills/ask-copilot/SKILL.md |
 | security-scanner | skills/security-scanner/SKILL.md |
+| extract-rules | skills/extract-rules/SKILL.md |
+| merge-rules | skills/merge-rules/SKILL.md |
 
 #### エージェント依存プラグイン（plugins/配下）
 
@@ -160,6 +162,8 @@ Skill(skill: "check-cli-updates")
 | ask-gemini | N/A | ✅ | ✅ |
 | ask-copilot | N/A | ✅ | ✅ |
 | security-scanner | N/A | ✅ | ✅ |
+| extract-rules | N/A | ✅ | ✅ |
+| merge-rules | N/A | ✅ | ✅ |
 
 ### 動作テスト
 | 対象 | スキル/エージェント | 結果 | 備考 |

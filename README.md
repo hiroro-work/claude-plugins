@@ -14,6 +14,7 @@ Claude Code plugins for integrating with AI coding assistants.
 | translate | Agent + Skill | AI-powered translation with /tr command (configurable quality) |
 | security-scanner | Skill | Scan plugins and skills for security risks |
 | extract-rules | Skill | Extract project-specific coding rules from codebase for AI agents |
+| merge-rules | Skill | Merge portable coding rules from multiple projects into a unified rule set |
 | caffeinate | Plugin | Manage macOS caffeinate to prevent system sleep |
 
 ## Installation
@@ -24,7 +25,7 @@ Claude Code plugins for integrating with AI coding assistants.
 npx skills add hiroro-work/claude-plugins
 ```
 
-Available skills: `ask-claude`, `ask-codex`, `ask-gemini`, `ask-copilot`, `security-scanner`, `extract-rules`
+Available skills: `ask-claude`, `ask-codex`, `ask-gemini`, `ask-copilot`, `security-scanner`, `extract-rules`, `merge-rules`
 
 > Note: Agent features (peer, translate) and hook features (caffeinate) are only available via Claude Code Plugin Marketplace.
 
@@ -47,6 +48,7 @@ Available skills: `ask-claude`, `ask-codex`, `ask-gemini`, `ask-copilot`, `secur
 /plugin install translate@hiropon-plugins
 /plugin install security-scanner@hiropon-plugins
 /plugin install extract-rules@hiropon-plugins
+/plugin install merge-rules@hiropon-plugins
 /plugin install caffeinate@hiropon-plugins
 ```
 
@@ -60,6 +62,7 @@ Available skills: `ask-claude`, `ask-codex`, `ask-gemini`, `ask-copilot`, `secur
 - **translate**: No external dependencies (runs as Claude subagent)
 - **security-scanner**: No external dependencies
 - **extract-rules**: No external dependencies
+- **merge-rules**: No external dependencies (requires extract-rules output from multiple projects)
 - **caffeinate**: macOS only (`caffeinate` command)
 
 ## Usage
@@ -108,6 +111,18 @@ Extract project-specific coding rules and domain knowledge from your codebase, g
 Output files are generated in `.claude/rules/` directory.
 
 **Configuration** (optional): Create `.claude/extract-rules.local.md` with YAML frontmatter to customize target directories, exclusions, output language, and split output mode. See SKILL.md for details.
+
+### Skill Plugin (merge-rules)
+
+Merge extract-rules output from multiple projects into a unified portable rule set. Promotes `.local.md` patterns shared across projects.
+
+```bash
+/merge-rules                    # Merge using config file
+/merge-rules --config <path>    # Merge using specified config file
+/merge-rules --dry-run          # Show what would be merged without writing
+```
+
+**Configuration** (required): Create `.claude/merge-rules.local.md` with YAML frontmatter listing source projects. See SKILL.md for details.
 
 ## License
 

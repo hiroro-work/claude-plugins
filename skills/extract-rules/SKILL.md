@@ -97,6 +97,29 @@ When a framework has distinct architectural layers, generate layer-specific file
 - `<framework>-<layer>.md` — Layer-specific rules with scoped `paths:` (e.g., `app/models/**`)
 - In split mode, both cross-layer and layer-specific files get `.local.md` counterparts
 
+**Integration libraries** (Inertia, Pundit, Devise, Turbo, etc.):
+When integration libraries are detected alongside a layered framework:
+- `integrations/<framework>-<integration>.md` — Integration-specific rules
+- Separated from layer files into dedicated `integrations/` directory
+- Framework name is included because rules differ by host framework
+  (e.g., Rails: `render inertia:` vs Laravel: `Inertia::render()`)
+- In split mode, integration files also get `.local.md` counterparts
+
+Example output with integrations:
+```text
+.claude/rules/
+├── languages/
+│   └── ruby.md
+├── frameworks/
+│   ├── rails.md
+│   ├── rails-controllers.md
+│   └── rails-models.md
+├── integrations/
+│   ├── rails-inertia.md
+│   └── rails-pundit.md
+└── project.md
+```
+
 ## Processing Flow
 
 ### Mode Detection
@@ -154,7 +177,11 @@ Identify frameworks by their config files (e.g., `next.config.*`, `playwright.co
 
 If a framework has distinct layers with separate directories (e.g., Rails: `app/models/`, `app/controllers/`, `app/views/`; Django: `models.py`, `views.py`; Spring: `controller/`, `service/`, `repository/`), detect them for layer-specific rule files. Only split when corresponding directories actually exist.
 
-**Output:** List of detected languages, frameworks, and architectural layers
+**5. Detect integration libraries** (for layered frameworks):
+
+Read `references/integration-criteria.md` for detection rules and classification criteria.
+
+**Output:** List of detected languages, frameworks, architectural layers, and integration libraries
 
 ### Step 3: Collect Sample Files
 
@@ -177,6 +204,9 @@ Collect target files for analysis:
 4. Filter by detected language extensions
 
 5. Sample files per category, distributed across directories for representative coverage
+   - Target: 10-15 files per category (language/framework)
+   - For large projects (100+ files per category): prioritize diversity across directories over quantity
+   - For small projects (<10 files per category): analyze all files
 
 **Note:** Using `git ls-files` ensures that nested `.gitignore` files in subdirectories are automatically respected. Untracked files (e.g., `.env`, local configs) are excluded, which helps protect sensitive information.
 
@@ -184,9 +214,12 @@ Collect target files for analysis:
 
 Read `references/extraction-criteria.md` before proceeding to understand the classification criteria.
 
-For each detected language and framework:
+For each detected language, framework, and **integration library**:
 
 1. Use Grep/Read to collect relevant code patterns
+
+1.5. **Separate integration-specific patterns** (for layered frameworks with integrations):
+   See `references/integration-criteria.md` "Pattern routing" section.
 
 2. **Classify each pattern** (see `references/extraction-criteria.md`):
    - **General style choice** (uses only language built-ins) → Abstract principle + hints
@@ -218,6 +251,8 @@ Extract explicit coding rules and guidelines from these documents.
 
 ### Step 6: Generate Output
 
+Read `references/security.md` before generating output to ensure sensitive information is not included.
+
 1. Check if output directory exists
    - If exists: Error "Output directory already exists. Use `--restructure` to reorganize, `--update` to add new patterns, or delete the directory manually to start fresh."
    - If not exists: Create directory
@@ -228,6 +263,7 @@ Extract explicit coding rules and guidelines from these documents.
    - `frameworks/<framework>.md` for framework-specific rules
    - `project.md` for project-specific rules
    - **Layered frameworks**: `<framework>.md` (cross-layer) + `<framework>-<layer>.md` per detected layer with scoped `paths:`
+   - **Integration libraries**: See `references/integration-criteria.md` "Output structure" section.
 
    **By default** (`split_output: true`): Generate 2 files per category (except project.md):
    - `<name>.md` — `## Principles` only (portable)
@@ -279,7 +315,22 @@ For **Project-specific patterns** section:
 - TypeScript: `**/*.ts`, `**/*.tsx`
 - Python: `**/*.py`
 - React: `**/*.tsx`, `**/*.jsx`
+- Integration libraries: scope `paths:` to layers where the integration is used
+  (e.g., Inertia in controllers: `app/controllers/**`)
 - (project.md: no paths frontmatter = applies to all files)
+
+### Step 6.5: Security Self-Check
+
+After generating all rule files, verify no sensitive information was included:
+
+1. Grep generated/updated files for patterns that may indicate secrets:
+   - Long hex strings: `[0-9a-fA-F]{20,}`
+   - Base64-like strings: `[A-Za-z0-9+/=]{40,}`
+   - Keyword-adjacent literals: `(key|token|secret|password|credential)\s*[:=]\s*["'][^"']+`
+   - Internal URLs: `(internal|staging|localhost:[0-9]+)`
+2. If found, redact with placeholders (e.g., `API_KEY_REDACTED`) and warn the user
+
+**Note:** This check applies to all modes that generate or update rule files (Full Extraction, Update, Restructure, Conversation Extraction).
 
 ### Step 7: Report Summary
 
@@ -323,11 +374,16 @@ For each extracted principle/pattern:
 
 ### Step U4: Append New Rules
 
-1. Append new principles to `## Principles` section
-2. Append new project-specific patterns to `## Project-specific patterns` section
-3. **When `split_output: true`**: Principles go to `<name>.md`, patterns go to `<name>.local.md`. Create missing files with proper frontmatter.
-4. For `project.md`: always append to the single file
-5. Maintain file structure and formatting
+1. **New category detected** (e.g., new framework/language): Create new rule files following Step 6 format. Report as "New" in Step U5.
+2. Append new principles to `## Principles` section
+3. Append new project-specific patterns to `## Project-specific patterns` section
+4. **When `split_output: true`**: Principles go to `<name>.md`, patterns go to `<name>.local.md`. Create missing files with proper frontmatter.
+5. For `project.md`: always append to the single file
+6. Maintain file structure and formatting
+
+### Step U4.5: Security Self-Check
+
+Run Security Self-Check (same as Step 6.5) on new/updated files.
 
 ### Step U5: Report Changes
 
@@ -355,11 +411,15 @@ Compare old and new file structures, display planned changes (Keep/New/Remove pe
 
 ### Step R4: Merge and Write
 
-1. Fresh extraction results as base, route existing rules to appropriate new files by category/scope/layer
+1. Fresh extraction results as base, route existing rules to appropriate new files by category/scope/layer/integration
 2. **Existing rules take priority** on conflict (respect manual edits and conversation-extracted rules)
 3. Unmatched rules → `project.md` as fallback; preserve custom sections in the most relevant file
 4. Apply `split_output` setting (handle hybrid ↔ split transitions), deduplicate
 5. **Write new files first**, then remove old files no longer in the new structure
+
+### Step R4.5: Security Self-Check
+
+Run Security Self-Check (same as Step 6.5) on all generated files.
 
 ### Step R5: Report Summary
 
@@ -408,6 +468,7 @@ Apply the same criteria as Full Extraction Mode (see `references/extraction-crit
 1. Categorize each extracted item:
    - Language-specific → `languages/<lang>.md`
    - Framework-specific → `frameworks/<framework>.md`
+   - Integration-specific → `integrations/<framework>-<integration>.md`
    - Project-level → `project.md`
 
    **By default** (`split_output: true`): Conversation-extracted **project-specific patterns** always go to `.local.md` files. Principles may be added to shared files. `project.md` is always a single file — project-level items go there regardless of `split_output`. Promoting patterns to shared files should be done manually or via organization-level merge.
@@ -416,7 +477,9 @@ Apply the same criteria as Full Extraction Mode (see `references/extraction-crit
 
 3. Append using the same format as Step 6 (see Format guidelines)
 
-4. Report what was added. See `references/report-templates.md` for format.
+4. Run Security Self-Check (same as Step 6.5) on updated files.
+
+5. Report what was added. See `references/report-templates.md` for format.
 
 ---
 
@@ -449,16 +512,4 @@ Key decision questions:
 
 ## Security Considerations
 
-**Sensitive Information Protection:**
-
-- `git ls-files` only analyzes tracked files, automatically excluding untracked `.env`, credentials, and other gitignored files
-- **Warning:** If `.env` or credential files are accidentally tracked in git, they WILL be included in analysis
-- Hardcoded secrets in source code may appear in examples
-- When generating rule files, avoid including:
-  - API keys, tokens, or credentials found in code
-  - Internal URLs or endpoints
-  - Customer names or personal information
-  - High-entropy strings that may be secrets
-- If sensitive information is detected in samples, redact with placeholders (e.g., `API_KEY_REDACTED`)
-- Review generated rule files before committing to repository
-- **Conversation extraction:** Same rules apply - do not extract sensitive information from conversation history (API keys, credentials, internal URLs mentioned in chat)
+Read `references/security.md` before generating output. Key points: redact secrets, use `git ls-files` for tracked files only, never include API keys/credentials/internal URLs in rule files.

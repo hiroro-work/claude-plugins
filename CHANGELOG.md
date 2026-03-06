@@ -1,5 +1,26 @@
 # Changelog
 
+## 2026-03-06
+
+### extract-rules v1.5.0
+
+- feat: Add integration library detection and separation
+  - Detect integration libraries (Inertia, Pundit, Devise, Turbo, etc.) from dependency files
+  - Separate integration-specific rules into `integrations/` directory (e.g., `integrations/rails-inertia.md`)
+  - Distinguish between framework layers (inherent architecture) and integrations (optional libraries)
+  - Framework name included in integration file names (rules differ by host framework)
+  - Works with all modes: Full Extraction, Update, Restructure, Conversation Extraction
+
+### merge-rules v1.0.0
+
+- feat: New skill to merge extract-rules output from multiple projects
+  - YAML config file for specifying source projects
+  - Merges portable principles (.md) across projects with deduplication
+  - Promotes .local.md patterns shared across 2/3+ of projects to common patterns
+  - Outputs .md files only (no .local.md)
+  - `--dry-run` option for preview without writing
+  - Conflict detection and reporting
+
 ## 2026-03-03
 
 ### extract-rules v1.4.0

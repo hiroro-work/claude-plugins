@@ -19,6 +19,7 @@ allowed-tools: Bash(which *), Skill(ask-claude), Skill(ask-codex), Skill(ask-gem
 | translate | /tr | tr, tr-hq | なし |
 | caffeinate | /caffeinate | - | macOS only |
 | security-scanner | /security-scanner | - | なし |
+| merge-rules | /merge-rules | - | 複数プロジェクトの extract-rules 出力 + config（テスト対象外） |
 
 ## 作業手順
 
@@ -108,6 +109,7 @@ allowed-tools: Bash(which *), Skill(ask-claude), Skill(ask-codex), Skill(ask-gem
 | translate | /tr | ✅/⚠️ | ... |
 | caffeinate | /caffeinate | ✅/⚠️ | ... |
 | security-scanner | /security-scanner | ✅/⚠️ | ... |
+| merge-rules | /merge-rules | N/A | テスト対象外（複数プロジェクト必要） |
 
 ### エージェント
 

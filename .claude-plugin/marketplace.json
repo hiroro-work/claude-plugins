@@ -65,7 +65,18 @@
       "description": "Extract project-specific coding rules from codebase for AI agents",
       "source": "./",
       "skills": ["./skills/extract-rules"],
-      "version": "1.4.0",
+      "version": "1.5.0",
+      "author": {
+        "name": "hiropon"
+      },
+      "category": "workflow"
+    },
+    {
+      "name": "merge-rules",
+      "description": "Merge portable coding rules from multiple projects into a unified rule set",
+      "source": "./",
+      "skills": ["./skills/merge-rules"],
+      "version": "1.0.0",
       "author": {
         "name": "hiropon"
       },

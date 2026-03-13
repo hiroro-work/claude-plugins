@@ -109,19 +109,47 @@ Reference templates for each mode's output report.
 
 ## PR Review Extraction Mode (Step P5)
 
+**Single PR:**
+
 ```markdown
 ## Extracted from PR Review
 
 **PR**: #123 - PR title
 **Comments analyzed**: 15 (3 bot comments filtered)
 
-### Added to languages/typescript.md:
-#### Principles
-- Immutability (spread, map/filter, const)
-
+### Added to frameworks/rails.local.md:
 #### Project-specific patterns
-- `ApiResponse<T>` - API response wrapper
+- `fetchWithRetry(url, options)` - API call wrapper with retry
 
 ### No changes:
-- Early returns - Already documented
+- No project-specific rules found in general feedback
+```
+
+**Multiple PRs:**
+
+```markdown
+## Extracted from PR Review (cross-PR analysis)
+
+**PRs analyzed**: 5
+| PR | Title | Comments |
+|----|-------|----------|
+| #123 | Feature A | 12 |
+| #456 | Fix B | 8 |
+| org/other#78 | Refactor C | 15 |
+| #789 | Feature D | 6 |
+| #101 | Update E | 9 |
+
+**Total comments**: 50 (7 bot comments filtered)
+
+### Added to frameworks/rails.md:
+#### Principles (organizational emphasis — recurring across PRs)
+- DRY厳格 (ビジネス値の定数化を徹底, ビューへのハードコード禁止)
+
+### Added to frameworks/rails.local.md:
+#### Project-specific patterns
+- `fetchWithRetry(url, options)` - API call wrapper with retry
+
+### Skipped (general knowledge, single PR only):
+- const over let (PR #123 only)
+- Early returns (PR #456 only)
 ```

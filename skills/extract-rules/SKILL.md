@@ -16,51 +16,39 @@ Analyzes existing codebase to extract project-specific coding rules and domain k
 /extract-rules --update             # Re-scan and add new patterns (preserve existing)
 /extract-rules --restructure        # Re-analyze, reorganize structure, merge existing rules
 /extract-rules --from-conversation  # Extract rules from conversation and append
-/extract-rules --from-pr <number>   # カレントリポのPRレビューコメントからルール抽出
-/extract-rules --from-pr <URL>      # 指定リポのPRレビューコメントからルール抽出
+/extract-rules --from-pr 123                   # カレントリポのPR指定
+/extract-rules --from-pr owner/repo#123        # 他リポのPR指定（URL形式も可）
+/extract-rules --from-pr 100..110              # 範囲指定（カレントリポ）
+/extract-rules --from-pr owner/repo#100..110   # 範囲指定（他リポ）
+# 複数指定可（スペース区切り）→ 横断分析で組織重視の原則を検出
 ```
 
 ## Configuration
 
-Users can configure extraction settings in `extract-rules.local.md`:
-
+Settings file: `extract-rules.local.md` (YAML frontmatter only, no markdown body)
 - Project-level: `.claude/extract-rules.local.md` (takes precedence)
 - User-level: `~/.claude/extract-rules.local.md`
 
-**File format:** YAML frontmatter only (no markdown body). The file uses `.md` extension for consistency with other Claude Code config files, but contains only YAML between `---` delimiters.
+| Setting | Default | Description |
+|---------|---------|-------------|
+| `target_dirs` | `["."]` | Analysis target directories |
+| `exclude_dirs` | `[".git", ".claude"]` | Exclude directories (in addition to .gitignore) |
+| `exclude_patterns` | `[]` | Exclude file patterns (e.g., `*.generated.ts`, `*.d.ts`) |
+| `output_dir` | `.claude/rules` | Output directory |
+| `language` | (none) | Report output language (e.g., `ja`) |
+| `split_output` | `true` | Separate Principles (.md) and patterns (.local.md) |
 
 ```yaml
 ---
-# Target directories for analysis
-# Default: "." (all directories not excluded by .gitignore)
-# Set specific directories to limit scope
 target_dirs:
   - .
-
-# Directories to exclude (in addition to .gitignore)
-# These are applied even if not in .gitignore
 exclude_dirs:
   - .git
   - .claude
-
-# File patterns to exclude (in addition to .gitignore)
 exclude_patterns:
   - "*.generated.ts"
-  - "*.d.ts"
-  - "*.min.js"
-
-# Note: .gitignore patterns are automatically applied
-# Common exclusions like node_modules/, dist/, build/ are typically in .gitignore
-
-# Output directory
 output_dir: .claude/rules
-
-# Output language for reports
 language: ja
-
-# Split output into shared (.md) and local (.local.md) files
-# Default: true (Principles and Project-specific patterns in separate files)
-# Set false for single file per category with both Principles and patterns
 split_output: true
 ---
 ```
@@ -122,6 +110,8 @@ Example output with integrations:
 └── project.md
 ```
 
+**Format switching:** Run `--restructure` after changing `split_output` setting to switch between split and hybrid formats.
+
 ## Processing Flow
 
 ### Mode Detection
@@ -132,7 +122,7 @@ Check arguments to determine mode:
 - `--update` → **Update Mode** (Step U1-U5)
 - `--restructure` → **Restructure Mode** (Step R1-R5)
 - `--from-conversation` → **Conversation Extraction Mode** (Step C1-C4)
-- `--from-pr <number or URL>` → **PR Review Extraction Mode** (Step P1-P5)
+- `--from-pr <number|owner/repo#number|range> [...]` → **PR Review Extraction Mode** (Step P1-P5)
 
 ---
 
@@ -211,8 +201,6 @@ Collect target files for analysis:
    - For large projects (100+ files per category): prioritize diversity across directories over quantity
    - For small projects (<10 files per category): analyze all files
 
-**Note:** Using `git ls-files` ensures that nested `.gitignore` files in subdirectories are automatically respected. Untracked files (e.g., `.env`, local configs) are excluded, which helps protect sensitive information.
-
 ### Step 4: Analyze by Category
 
 Read `references/extraction-criteria.md` before proceeding to understand the classification criteria.
@@ -288,9 +276,9 @@ paths:
 
 ## Principles
 
-- Immutability (spread, map/filter/reduce, const)
-- Declarative style (declarative transforms, no imperative loops)
-- Type safety (strict mode, explicit annotations, no any)
+- FP only (no classes, pure functions, composition over inheritance)
+- Strict null handling (no non-null assertions, explicit narrowing required)
+- Barrel exports required (re-export from index.ts per directory)
 
 ## Project-specific patterns
 
@@ -454,9 +442,10 @@ Analyze the current conversation context to identify coding style discussions, p
 
 Look for user preferences and classify them (same as Full Extraction Mode):
 
-**1. General style preferences** → Abstract to principles:
-   - "Use type instead of interface" → Type safety principle
-   - "Avoid mutations" → Immutability principle
+**1. General best practice feedback** → Skip (do NOT extract):
+   - "Use const" "No magic numbers" "DRY" "Early returns" → General knowledge, AI already knows
+   Only extract if the project/team has made a specific choice beyond general best practices:
+   - "We use FP only, no classes" → Team-specific paradigm choice
 
 **2. Project-specific patterns** → Extract with concrete examples:
    - "Use `RefOrNull<T>` for nullable refs" → Include type definition
@@ -488,45 +477,16 @@ Apply the same criteria as Full Extraction Mode (see `references/extraction-crit
 
 ## PR Review Extraction Mode
 
-When `--from-pr <number or URL>` is specified, extract rules from PR review comments (human comments only).
-URL指定時は他プロジェクトのPRも対象にできる（例: `https://github.com/owner/repo/pull/123`）。
+When `--from-pr` is specified, extract rules from PR review comments (human comments only).
+Single or multiple PRs can be specified. Numbers and URLs can be mixed. Cross-repository PRs are allowed.
 
 Read `references/pr-review-mode.md` for the full processing steps (P1-P5). Key flow:
 1. Check prerequisites (`gh` CLI authentication)
-2. Fetch review comments from GitHub API (3 endpoints), filter bot comments
-3. Extract principles and patterns (same criteria as `references/extraction-criteria.md`)
-4. Append to existing rule files (same as Step C4)
+2. Parse all PR arguments, validate each PR exists
+3. Fetch review comments from GitHub API (3 endpoints per PR), filter bot comments
+4. Extract principles and patterns (same criteria as `references/extraction-criteria.md`)
+5. **Multiple PRs**: Cross-PR frequency analysis — general best practices that are repeatedly pointed out across different PRs are promoted as organizational emphasis (reframed with specific application context, not just restated)
+6. Append to existing rule files (same as Step C4)
 
 ---
 
-## Important Notes
-
-- This skill uses AI to understand intent, not just pattern matching
-- Both code AND documentation are analyzed
-- Use `--from-conversation` after significant discussions about coding style
-- Use `--from-pr <number>` after PRs with significant code review feedback
-- Generated rules are meant to be reviewed and refined by humans
-
-### Split output mode (default)
-
-By default (`split_output: true`), Principles and Project-specific patterns are separated into two files:
-- `<name>.md` — Principles only (portable, mergeable across projects)
-- `<name>.local.md` — Project-specific patterns only (local)
-- Classification is mechanical: `## Principles` → shared file, `## Project-specific patterns` → local file
-- `project.md` is never split (inherently project-specific)
-
-To split existing hybrid files into separate files: run `--restructure` (with default `split_output: true`) to reorganize while preserving existing rules.
-
-To merge split files into single hybrid files: set `split_output: false` and run `--restructure` to reorganize while preserving existing rules, or delete the rules directory and run `/extract-rules` to regenerate from scratch.
-
-## Extraction Criteria
-
-For detailed criteria on what to extract and how to classify patterns, read `references/extraction-criteria.md`.
-
-Key decision questions:
-- **Principle extraction**: "Would a general AI write code differently without this principle?" → Yes = extract, No = skip
-- **Concrete example**: "Would AI writing new code produce inconsistent results without knowing this pattern?" → Yes = include example, No = principle only
-
-## Security Considerations
-
-Read `references/security.md` before generating output. Key points: redact secrets, use `git ls-files` for tracked files only, never include API keys/credentials/internal URLs in rule files.

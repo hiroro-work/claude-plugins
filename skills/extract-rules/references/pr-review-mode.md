@@ -1,6 +1,6 @@
 # PR Review Extraction Mode
 
-When `--from-pr <number>` is specified, extract rules from PR review comments (human comments only).
+When `--from-pr <number or URL>` is specified, extract rules from PR review comments (human comments only).
 
 ## Step P1: Load Settings and Check Prerequisites
 
@@ -16,11 +16,18 @@ When `--from-pr <number>` is specified, extract rules from PR review comments (h
    - If `gh` is not installed: Error "gh CLI is not installed. Install it first: https://cli.github.com/"
    - If not authenticated: Error "gh CLI is not authenticated. Run `gh auth login` first."
 
-## Step P2: Validate PR and Get Repository Info
+## Step P2: Parse Argument and Get Repository Info
 
-1. Get repository info: `gh repo view --json nameWithOwner` → extract `{owner}/{repo}`
-2. Validate PR exists: `gh pr view <number> --json number,title,state`
-   - If PR not found: Error "PR #<number> not found."
+Parse the argument to determine the target:
+
+- **Number** (e.g., `123`): Use as PR number, get repository from `gh repo view --json nameWithOwner`
+- **URL** (e.g., `https://github.com/owner/repo/pull/123`): Extract `{owner}/{repo}` and PR number from the URL path
+
+Validate PR exists:
+
+- Number: `gh pr view <number> --json number,title,state`
+- URL: `gh pr view <URL> --json number,title,state`
+- If PR not found: Error "PR not found."
 
 ## Step P3: Fetch PR Review Comments
 

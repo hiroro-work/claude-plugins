@@ -8,6 +8,7 @@
   - Fetches inline review comments, general PR comments, and review bodies via `gh` CLI
   - Filters out bot comments automatically
   - Uses PR diff context for better pattern understanding
+  - Supports both PR number (current repo) and GitHub URL (any repo)
 
 ## 2026-03-06
 

@@ -16,7 +16,8 @@ Analyzes existing codebase to extract project-specific coding rules and domain k
 /extract-rules --update             # Re-scan and add new patterns (preserve existing)
 /extract-rules --restructure        # Re-analyze, reorganize structure, merge existing rules
 /extract-rules --from-conversation  # Extract rules from conversation and append
-/extract-rules --from-pr <number>   # PRレビューコメントからルール抽出
+/extract-rules --from-pr <number>   # カレントリポのPRレビューコメントからルール抽出
+/extract-rules --from-pr <URL>      # 指定リポのPRレビューコメントからルール抽出
 ```
 
 ## Configuration
@@ -131,7 +132,7 @@ Check arguments to determine mode:
 - `--update` → **Update Mode** (Step U1-U5)
 - `--restructure` → **Restructure Mode** (Step R1-R5)
 - `--from-conversation` → **Conversation Extraction Mode** (Step C1-C4)
-- `--from-pr <number>` → **PR Review Extraction Mode** (Step P1-P5)
+- `--from-pr <number or URL>` → **PR Review Extraction Mode** (Step P1-P5)
 
 ---
 
@@ -487,7 +488,8 @@ Apply the same criteria as Full Extraction Mode (see `references/extraction-crit
 
 ## PR Review Extraction Mode
 
-When `--from-pr <number>` is specified, extract rules from PR review comments (human comments only).
+When `--from-pr <number or URL>` is specified, extract rules from PR review comments (human comments only).
+URL指定時は他プロジェクトのPRも対象にできる（例: `https://github.com/owner/repo/pull/123`）。
 
 Read `references/pr-review-mode.md` for the full processing steps (P1-P5). Key flow:
 1. Check prerequisites (`gh` CLI authentication)

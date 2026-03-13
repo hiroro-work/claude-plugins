@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-03-13
+
+### extract-rules v1.6.0
+
+- feat: Add `--from-pr` mode to extract coding rules from PR review comments
+  - Fetches inline review comments, general PR comments, and review bodies via `gh` CLI
+  - Filters out bot comments automatically
+  - Uses PR diff context for better pattern understanding
+
 ## 2026-03-06
 
 ### extract-rules v1.5.0

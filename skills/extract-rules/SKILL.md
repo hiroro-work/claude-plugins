@@ -1,8 +1,8 @@
 ---
 name: extract-rules
-description: Extract project-specific coding rules and domain knowledge from existing codebase, generating markdown documentation for AI agents. Use this skill when onboarding a new project, after significant code review discussions about coding style, when coding conventions need to be documented, or when the team's coding patterns should be captured for consistency. Also consider running with --from-conversation after sessions where coding preferences were discussed or corrected.
+description: Extract project-specific coding rules and domain knowledge from existing codebase, generating markdown documentation for AI agents. Use this skill when onboarding a new project, after significant code review discussions about coding style, when coding conventions need to be documented, or when the team's coding patterns should be captured for consistency. Also consider running with --from-conversation after sessions where coding preferences were discussed or corrected, or --from-pr after PRs with significant review feedback.
 model: opus
-allowed-tools: Read, Glob, Grep, Write, Bash(ls *), Bash(mkdir *), Bash(git ls-files *), Bash(wc *), Bash(head *), Bash(tail *), Bash(sort *), Bash(uniq *), Bash(tree *)
+allowed-tools: Read, Glob, Grep, Write, Bash(ls *), Bash(mkdir *), Bash(git ls-files *), Bash(wc *), Bash(head *), Bash(tail *), Bash(sort *), Bash(uniq *), Bash(tree *), Bash(gh pr view *), Bash(gh pr diff *), Bash(gh api *), Bash(gh auth status *), Bash(gh repo view *)
 ---
 
 # Extract Rules
@@ -16,6 +16,7 @@ Analyzes existing codebase to extract project-specific coding rules and domain k
 /extract-rules --update             # Re-scan and add new patterns (preserve existing)
 /extract-rules --restructure        # Re-analyze, reorganize structure, merge existing rules
 /extract-rules --from-conversation  # Extract rules from conversation and append
+/extract-rules --from-pr <number>   # PRレビューコメントからルール抽出
 ```
 
 ## Configuration
@@ -130,6 +131,7 @@ Check arguments to determine mode:
 - `--update` → **Update Mode** (Step U1-U5)
 - `--restructure` → **Restructure Mode** (Step R1-R5)
 - `--from-conversation` → **Conversation Extraction Mode** (Step C1-C4)
+- `--from-pr <number>` → **PR Review Extraction Mode** (Step P1-P5)
 
 ---
 
@@ -483,11 +485,24 @@ Apply the same criteria as Full Extraction Mode (see `references/extraction-crit
 
 ---
 
+## PR Review Extraction Mode
+
+When `--from-pr <number>` is specified, extract rules from PR review comments (human comments only).
+
+Read `references/pr-review-mode.md` for the full processing steps (P1-P5). Key flow:
+1. Check prerequisites (`gh` CLI authentication)
+2. Fetch review comments from GitHub API (3 endpoints), filter bot comments
+3. Extract principles and patterns (same criteria as `references/extraction-criteria.md`)
+4. Append to existing rule files (same as Step C4)
+
+---
+
 ## Important Notes
 
 - This skill uses AI to understand intent, not just pattern matching
 - Both code AND documentation are analyzed
 - Use `--from-conversation` after significant discussions about coding style
+- Use `--from-pr <number>` after PRs with significant code review feedback
 - Generated rules are meant to be reviewed and refined by humans
 
 ### Split output mode (default)

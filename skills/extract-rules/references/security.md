@@ -13,3 +13,4 @@
 - If sensitive information is detected in samples, redact with placeholders (e.g., `API_KEY_REDACTED`)
 - Review generated rule files before committing to repository
 - **Conversation extraction:** Same rules apply - do not extract sensitive information from conversation history (API keys, credentials, internal URLs mentioned in chat)
+- **PR review extraction:** Same rules apply - do not extract sensitive information from PR review comments (API keys, credentials, internal URLs, personal names mentioned in code review)

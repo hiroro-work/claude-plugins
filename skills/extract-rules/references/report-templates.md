@@ -106,3 +106,22 @@ Reference templates for each mode's output report.
 ### No changes:
 - Functional style - Already documented
 ```
+
+## PR Review Extraction Mode (Step P5)
+
+```markdown
+## Extracted from PR Review
+
+**PR**: #123 - PR title
+**Comments analyzed**: 15 (3 bot comments filtered)
+
+### Added to languages/typescript.md:
+#### Principles
+- Immutability (spread, map/filter, const)
+
+#### Project-specific patterns
+- `ApiResponse<T>` - API response wrapper
+
+### No changes:
+- Early returns - Already documented
+```

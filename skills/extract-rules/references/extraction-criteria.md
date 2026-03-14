@@ -2,34 +2,39 @@
 
 Reference guide for determining what to extract and how to classify patterns.
 
+## Core Principle: Claude's Knowledge Gap
+
+The purpose of rule extraction is to capture what Claude would get wrong or produce differently without seeing this specific codebase. Claude already has extensive knowledge of languages, frameworks, and general best practices. Rules should fill the gap between Claude's general knowledge and this project/team's actual conventions.
+
 ## Principle Extraction Criteria
 
-**Goal:** Extract only project/team-specific coding principles that AI cannot determine from general knowledge.
+**Goal:** Extract principles where Claude's default behavior would produce code inconsistent with this project's conventions.
 
 ### Extract these principles
 
-Principles where the **project/team has made a specific choice** that differs from or goes beyond general best practices:
+Principles where **Claude would produce something different** without being told:
 
-- **FP only (classes prohibited)** - Team chose a specific paradigm and prohibits the alternative
-- **Zustand only (Redux prohibited)** - Team chose a specific library over common alternatives
-- **No ORM, raw SQL only** - Team chose an unconventional approach for specific reasons
-- **Barrel exports required** - Team requires a specific module organization pattern
+- **FP only (classes prohibited)** - Claude might use classes since both paradigms are valid; this team chose one
+- **Zustand only (Redux prohibited)** - Claude might suggest Redux as it's more widely documented
+- **No ORM, raw SQL only** - Claude would default to ORM as the standard approach
+- **Barrel exports required** - Claude might not add index.ts re-exports unless told
+- **Anti-patterns the team has deliberately rejected** - Things Claude would naturally do that this team avoids (e.g., "No utility file creation — add to existing modules" / "No default exports — named exports only")
 
 ### Do NOT extract these
 
-Principles that are **general software engineering best practices** — knowledge any experienced developer or AI already has:
+Principles that **Claude already knows and would follow by default**:
 
 - Language/framework best practices documented in official style guides
 - Common code review feedback applicable to any project (const over let, no magic numbers, DRY, SOLID, early returns, etc.)
 - Patterns where only one practical approach exists (PascalCase for React components, snake_case for Python, etc.)
 
-**Rule of thumb:** If you would give this advice on ANY codebase regardless of context, it is general knowledge — do not extract it.
+**Rule of thumb:** If Claude would produce correct, consistent code without this rule, it is general knowledge — do not extract it.
 
 ### Decision criterion
 
-> "Is this a project/team-specific choice that differs from or goes beyond general best practices?"
-> - **Yes** → Extract it (e.g., "classes prohibited, FP only", "Zustand only, no Redux")
-> - **No** → Skip it (e.g., const over let, no magic numbers, DRY, early returns)
+> "Would Claude produce code that is different from this project's conventions without knowing this rule?"
+> - **Yes** → Extract it (e.g., Claude would use classes, but this team uses FP only)
+> - **No** → Skip it (e.g., Claude already uses const over let, avoids magic numbers)
 
 ---
 

@@ -35,7 +35,7 @@ Reference templates for each mode's output report.
 3. Re-run with `/extract-rules --update` when codebase evolves
 ````
 
-## Update Mode (Step U5)
+## Update Mode (Step U6)
 
 ```markdown
 ## Update Complete
@@ -58,7 +58,12 @@ Reference templates for each mode's output report.
 ### Unchanged files:
 - project.md
 
-**Tip**: Review added rules and remove any that are incorrect or redundant.
+### Potentially stale rules:
+| File | Pattern | Reason |
+|------|---------|--------|
+| languages/typescript.local.md | `useOldHook()` | Symbol not found in codebase |
+
+**Tip**: Review added rules and remove any that are incorrect or redundant. Check stale rules — they may have been renamed or removed.
 ```
 
 ## Restructure Mode (Step R5)

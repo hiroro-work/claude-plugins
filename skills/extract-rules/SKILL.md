@@ -7,7 +7,7 @@ allowed-tools: Read, Glob, Grep, Write, Bash(ls *), Bash(mkdir *), Bash(git ls-f
 
 # Extract Rules
 
-Analyzes existing codebase to extract project-specific coding rules and domain knowledge, generating structured markdown documentation for AI agents.
+Analyzes existing codebase to identify what Claude would get wrong without project-specific guidance, extracting coding rules and domain knowledge as structured markdown documentation for AI agents.
 
 ## Usage
 
@@ -119,7 +119,7 @@ Example output with integrations:
 Check arguments to determine mode:
 
 - No arguments → **Full Extraction Mode** (Step 1-7)
-- `--update` → **Update Mode** (Step U1-U5)
+- `--update` → **Update Mode** (Step U1-U6)
 - `--restructure` → **Restructure Mode** (Step R1-R5)
 - `--from-conversation` → **Conversation Extraction Mode** (Step C1-C4)
 - `--from-pr <number|owner/repo#number|range> [...]` → **PR Review Extraction Mode** (Step P1-P5)
@@ -203,7 +203,7 @@ Collect target files for analysis:
 
 ### Step 4: Analyze by Category
 
-Read `references/extraction-criteria.md` before proceeding to understand the classification criteria.
+Read `references/extraction-criteria.md` before proceeding to understand the classification criteria. The core question for every pattern is: **"Would Claude produce something different without knowing this?"** — extract only what fills the gap between Claude's general knowledge and this project's actual conventions.
 
 For each detected language, framework, and **integration library**:
 
@@ -229,7 +229,7 @@ For each detected language, framework, and **integration library**:
 
 Determine appropriate detection methods based on language and project structure.
 
-### Step 5: Analyze Documentation
+### Step 5: Analyze Documentation and Existing Rules
 
 Also analyze non-code documentation:
 
@@ -239,6 +239,8 @@ Also analyze non-code documentation:
 - Existing CLAUDE.md
 
 Extract explicit coding rules and guidelines from these documents.
+
+**Deduplication check:** Read any files under `.claude/rules/` to build a set of already-documented rules. Rules extracted in Step 4 that overlap with these existing rules should be skipped to avoid duplication. Note: CLAUDE.md is NOT a deduplication source — rules should exist in `.claude/rules/` even if also mentioned in CLAUDE.md, because rule files are portable across projects via merge-rules. This check applies to all modes (Full Extraction, Update, Conversation, PR Review).
 
 ### Step 6: Generate Output
 
@@ -352,7 +354,22 @@ Execute Step 2-5 from Full Extraction Mode:
 - Analyze by category
 - Analyze documentation
 
-### Step U3: Compare and Merge
+### Step U3: Staleness Check
+
+Before adding new rules, check existing project-specific patterns for staleness:
+
+1. Collect patterns from `## Project-specific patterns` sections:
+   - When `split_output: true`: from `.local.md` files
+   - When `split_output: false`: from `## Project-specific patterns` sections in `.md` files
+2. For each pattern that has an inline code signature (`` `symbol` ``), verify the symbol still exists in the codebase using Grep
+   - Skip patterns without searchable symbols (e.g., principles, anti-patterns like "No default exports")
+   - For combination patterns (e.g., `` `pathFor() + url()` ``), check each symbol individually
+3. Patterns whose symbols can no longer be found → Flag as potentially stale in the Step U6 report
+4. Do NOT auto-delete stale rules — only report them for user review
+
+This prevents rule files from growing indefinitely as the codebase evolves.
+
+### Step U4: Compare and Merge
 
 For each extracted principle/pattern:
 
@@ -363,22 +380,22 @@ For each extracted principle/pattern:
 
 2. **Preserve manual edits**: Do not modify existing rules
 
-### Step U4: Append New Rules
+### Step U5: Append New Rules
 
-1. **New category detected** (e.g., new framework/language): Create new rule files following Step 6 format. Report as "New" in Step U5.
+1. **New category detected** (e.g., new framework/language): Create new rule files following Step 6 format. Report as "New" in Step U6.
 2. Append new principles to `## Principles` section
 3. Append new project-specific patterns to `## Project-specific patterns` section
 4. **When `split_output: true`**: Principles go to `<name>.md`, patterns go to `<name>.local.md`. Create missing files with proper frontmatter.
 5. For `project.md`: always append to the single file
 6. Maintain file structure and formatting
 
-### Step U4.5: Security Self-Check
+### Step U5.5: Security Self-Check
 
 Run Security Self-Check (same as Step 6.5) on new/updated files.
 
-### Step U5: Report Changes
+### Step U6: Report Changes
 
-Report what was added per file. See `references/report-templates.md` for format.
+Report what was added per file. Also report any stale rules found in Step U3. See `references/report-templates.md` for format.
 
 ---
 
@@ -435,8 +452,12 @@ When `--from-conversation` is specified, extract rules from the conversation his
 
 Analyze the current conversation context to identify coding style discussions, preferences, and corrections.
 
+- **User corrections are the highest-value signal** — look for patterns where:
+  - The user rejected Claude's approach and redirected (e.g., "no, we do X instead", "don't use Y here")
+  - The user modified Claude's generated code in a way that reveals a convention
+  - The user explained why a particular approach is preferred in this project
 - Focus on user instructions, code review feedback, and explicit style preferences
-- Note: If context was compacted, history may be limited — extract what is available
+- Note: If context was compacted, history may be limited — extract what is available. Run `--from-conversation` soon after corrections happen, not at the end of a long session, to avoid losing context to compaction.
 
 ### Step C3: Extract Principles and Patterns
 

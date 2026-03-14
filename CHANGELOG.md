@@ -1,5 +1,21 @@
 # Changelog
 
+## 2026-03-14
+
+### extract-rules v1.7.0
+
+- feat: Reframe extraction criteria around "Claude's knowledge gap"
+  - Core question changed from "Is this project-specific?" to "Would Claude produce something different without this rule?"
+  - Anti-pattern extraction added (things Claude would naturally do that the team has rejected)
+- feat: Add staleness check in `--update` mode
+  - Verifies referenced symbols in `.local.md` still exist in codebase
+  - Reports potentially stale rules for user review (no auto-deletion)
+- feat: Add deduplication check against existing CLAUDE.md and `.claude/rules/`
+  - Prevents extracting rules already documented elsewhere
+- improve: Enhance `--from-conversation` mode
+  - User corrections explicitly identified as highest-value signal
+  - Guidance to run soon after corrections (before context compaction)
+
 ## 2026-03-13
 
 ### extract-rules v1.6.0

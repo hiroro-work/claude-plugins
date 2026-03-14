@@ -37,6 +37,7 @@ Settings file: `extract-rules.local.md` (YAML frontmatter only, no markdown body
 | `output_dir` | `.claude/rules` | Output directory |
 | `language` | (none) | Report output language (e.g., `ja`) |
 | `split_output` | `true` | Separate Principles (.md) and patterns (.local.md) |
+| `resolve_references` | `true` | Resolve file references during restructure |
 
 ```yaml
 ---
@@ -50,6 +51,7 @@ exclude_patterns:
 output_dir: .claude/rules
 language: ja
 split_output: true
+resolve_references: true
 ---
 ```
 
@@ -140,7 +142,7 @@ Search for `extract-rules.local.md`:
 - If only one exists, use that file
 - If neither exists, use default settings
 
-**Extract settings** (`target_dirs`, `exclude_dirs`, `exclude_patterns`, `output_dir`, `language`, `split_output`) from the config file. See Configuration section above for defaults.
+**Extract settings** (`target_dirs`, `exclude_dirs`, `exclude_patterns`, `output_dir`, `language`, `split_output`, `resolve_references`) from the config file. See Configuration section above for defaults.
 
 ### Step 2: Detect Project Type
 
@@ -413,14 +415,20 @@ When `--restructure` is specified, re-analyze the codebase to determine the opti
 
 Execute Step 2-5 from Full Extraction Mode to determine the ideal file structure.
 
+### Step R2.5: Resolve File References
+
+Skip this step if `resolve_references` is `false`. Default is `true`.
+
+Scan existing rule content (loaded in R1) for file references (Markdown links, text references like "See `<path>`", `@path` references), resolve them, extract rules from referenced files, and merge into the R1 snapshot. Rules from references are treated as existing rules (take priority on conflict in R4). See `references/resolve-references.md` for detailed processing steps.
+
 ### Step R3: Show Restructure Plan and Confirm
 
-Compare old and new file structures, display planned changes (Keep/New/Remove per file), and wait for user confirmation before proceeding.
+Compare old and new file structures, display planned changes (Keep/New/Remove per file), and wait for user confirmation before proceeding. If references were resolved in R2.5, include the number of rules extracted from referenced files in the plan display so the user understands where additional rules came from.
 
 ### Step R4: Merge and Write
 
-1. Fresh extraction results as base, route existing rules to appropriate new files by category/scope/layer/integration
-2. **Existing rules take priority** on conflict (respect manual edits and conversation-extracted rules)
+1. Fresh extraction results as base, route existing rules (including rules extracted from resolved references) to appropriate new files by category/scope/layer/integration
+2. **Existing rules take priority** on conflict (respect manual edits, conversation-extracted rules, and reference-extracted rules)
 3. Unmatched rules → `project.md` as fallback; preserve custom sections in the most relevant file
 4. Apply `split_output` setting (handle hybrid ↔ split transitions), deduplicate
 5. **Write new files first**, then remove old files no longer in the new structure
@@ -431,7 +439,7 @@ Run Security Self-Check (same as Step 6.5) on all generated files.
 
 ### Step R5: Report Summary
 
-Report structural changes, content merge summary, and unmatched rules. See `references/report-templates.md` for format.
+Report structural changes, content merge summary, unmatched rules, and reference resolution results. See `references/report-templates.md` for format.
 
 ---
 

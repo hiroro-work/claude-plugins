@@ -93,6 +93,20 @@ Reference templates for each mode's output report.
 ### Unmatched Rules (→ project.md)
 - (none)
 
+### Resolved References
+
+| Source File | Referenced File | Extracted |
+|-------------|----------------|-----------|
+| project.md | docs/conventions.md | 2 principles, 3 patterns |
+| languages/typescript.md | @docs/ts-guidelines.md | 1 principle |
+
+### Unresolved References
+
+| Source File | Reference | Reason |
+|-------------|-----------|--------|
+| project.md | https://wiki.example.com/style | URL (skipped) |
+| frameworks/react.md | docs/old-patterns.md | File not found |
+
 **Tip**: Review merged files for rules that may have been placed in the wrong category.
 ```
 

@@ -2,6 +2,14 @@
 
 ## 2026-03-14
 
+### extract-rules v1.8.0
+
+- feat: Add `resolve_references` setting for `--restructure` mode
+  - Scan existing rule files for references (Markdown links, text references, `@path`) and resolve them
+  - Extract rules from referenced files and merge into the restructure pipeline
+  - Referenced rules treated as existing rules (take priority on conflict)
+  - Detailed processing steps externalized to `references/resolve-references.md`
+
 ### extract-rules v1.7.0
 
 - feat: Reframe extraction criteria around "Claude's knowledge gap"

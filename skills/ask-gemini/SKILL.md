@@ -38,7 +38,7 @@ gemini "How do I implement a binary search in Python?"
 **Use a specific model:**
 
 ```bash
-gemini -m gemini-2.5-pro "Review this code for potential issues"
+gemini -m gemini-3.1-pro-preview "Review this code for potential issues"
 ```
 
 **Let Gemini make changes automatically:**

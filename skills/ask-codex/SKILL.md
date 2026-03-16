@@ -45,7 +45,7 @@ codex exec -C /path/to/project "Explain the architecture of this codebase"
 **Use a specific model:**
 
 ```bash
-codex exec -m o4-mini "Write a function that validates email addresses"
+codex exec -m gpt-5.3-codex "Write a function that validates email addresses"
 ```
 
 **Let Codex make changes automatically:**

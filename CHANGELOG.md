@@ -2,6 +2,12 @@
 
 ## 2026-03-16
 
+### ask-codex v1.1.3 / ask-gemini v1.1.2
+
+- fix: Update outdated model names in SKILL.md examples
+  - ask-codex: `o4-mini` → `gpt-5.3-codex` (Codex CLI flagship model)
+  - ask-gemini: `gemini-2.5-pro` → `gemini-3.1-pro-preview` (gemini-3-pro-preview was deprecated on 2026-03-09)
+
 ### extract-rules v1.9.0
 
 - feat: Add `.examples.md` generation for Good/Bad code examples per rule category

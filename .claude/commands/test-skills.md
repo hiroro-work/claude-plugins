@@ -15,7 +15,7 @@ allowed-tools: Bash(which *), Skill(ask-claude), Skill(ask-codex), Skill(ask-gem
 | ask-codex | /ask-codex | - | `codex` CLI |
 | ask-gemini | /ask-gemini | - | `gemini` CLI |
 | ask-copilot | /ask-copilot | - | `copilot` CLI |
-| peer | /ask-peer | peer | なし |
+| peer | /ask-peer | - | なし |
 | translate | /tr | tr, tr-hq | なし |
 | caffeinate | /caffeinate | - | macOS only |
 | security-scanner | /security-scanner | - | なし |
@@ -115,7 +115,6 @@ allowed-tools: Bash(which *), Skill(ask-claude), Skill(ask-codex), Skill(ask-gem
 
 | 対象 | エージェント | 結果 | 備考 |
 |------|------------|------|------|
-| peer | peer | ✅/⚠️ | ... |
 | translate | tr | ✅/⚠️ | ... |
 | translate | tr-hq | ✅/⚠️ | ... |
 

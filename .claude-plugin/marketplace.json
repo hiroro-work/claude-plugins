@@ -94,9 +94,10 @@
     },
     {
       "name": "peer",
-      "source": "./plugins/peer",
       "description": "Peer engineer for code review, planning, and brainstorming",
-      "version": "1.0.0",
+      "source": "./",
+      "skills": ["./skills/ask-peer"],
+      "version": "2.0.0",
       "author": {
         "name": "hiropon"
       },
@@ -106,7 +107,7 @@
       "name": "translate",
       "source": "./plugins/translate",
       "description": "AI-powered translation plugin with /tr command (--hq for high-quality)",
-      "version": "1.1.0",
+      "version": "1.1.1",
       "author": {
         "name": "hiropon"
       },
@@ -125,8 +126,9 @@
     },
     {
       "name": "dev-workflow-bundle",
-      "source": "./plugins/dev-workflow",
       "description": "Development workflow bundle (includes peer + extract-rules + dev-workflow)",
+      "source": "./",
+      "skills": ["./skills/dev-workflow", "./skills/ask-peer", "./skills/extract-rules"],
       "version": "1.0.0",
       "author": {
         "name": "hiropon"

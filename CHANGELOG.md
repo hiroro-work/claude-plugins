@@ -2,6 +2,21 @@
 
 ## 2026-03-26
 
+### translate v1.1.1
+
+- fix: Strengthen agent prompts to prevent chat mode on short inputs
+  - tr (haiku): Change role to "translation engine", explicitly prohibit greetings/questions/self-introduction
+  - tr-hq (sonnet): Add task boundary constraint while preserving expert role definition
+  - Add short English input example (`hello` → `こんにちは`) to both agents
+
+### peer v2.0.0 (BREAKING)
+
+- refactor: Convert from plugin to standalone skill
+  - Embed peer agent personality directly in SKILL.md
+  - Remove `plugins/peer/` directory (agent file + plugin.json)
+  - Spawn peer subagent via Agent tool instead of dedicated agent type
+  - **Breaking**: `subagent_type: "peer"` is no longer available. Use `/ask-peer` skill instead.
+
 ### dev-workflow v1.0.0 / dev-workflow-bundle v1.0.0
 
 - feat: Add guided development workflow skill
@@ -10,9 +25,8 @@
   - Peer plan review and code review with `.claude/rules/` reference
   - Review loops with max 3 iterations
   - Automatic rule extraction via extract-rules `--from-conversation`
-- feat: Add dev-workflow-bundle plugin
-  - All-in-one install: includes peer + extract-rules + dev-workflow
-  - Bundle uses symlinks to avoid duplicate maintenance
+- feat: Add dev-workflow-bundle (skills-only)
+  - All-in-one install: dev-workflow + ask-peer + extract-rules
 
 ## 2026-03-25
 

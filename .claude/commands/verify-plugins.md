@@ -36,12 +36,12 @@ allowed-tools: Read, Glob, Grep, Bash(jq *), Bash(for *), Bash(echo *), Bash(if 
 | security-scanner | skills/security-scanner/SKILL.md |
 | extract-rules | skills/extract-rules/SKILL.md |
 | merge-rules | skills/merge-rules/SKILL.md |
+| ask-peer | skills/ask-peer/SKILL.md |
 
 #### エージェント依存プラグイン（plugins/配下）
 
 | プラグイン | plugin.json | スキル | エージェント |
 |-----------|-------------|--------|------------|
-| peer | plugins/peer/.claude-plugin/plugin.json | skills/ask-peer/SKILL.md | agents/peer.md |
 | translate | plugins/translate/.claude-plugin/plugin.json | skills/tr/SKILL.md | agents/tr.md, agents/tr-hq.md |
 | caffeinate | plugins/caffeinate/.claude-plugin/plugin.json | skills/caffeinate/SKILL.md | N/A |
 
@@ -73,7 +73,7 @@ Globを使って効率的に確認できます。
 
 ### Step 3: バージョン整合性チェック
 
-**plugins/配下のプラグイン（peer, translate, caffeinate）**：
+**plugins/配下のプラグイン（translate, caffeinate）**：
 1. marketplace.json のバージョンを取得
 2. plugin.json のバージョンを取得
 3. 一致を確認
@@ -103,7 +103,7 @@ Skill(skill: "test-skills")
 このスキルでは以下がテストされます：
 
 - 各スキル動作（/ask-claude, /ask-codex, /ask-gemini, /ask-copilot, /ask-peer, /tr, /security-scanner）
-- 各エージェント動作（peer, tr, tr-hq）
+- 各エージェント動作（tr, tr-hq）
 - 外部CLI依存のスキルは、CLIがインストールされていない場合スキップ
 
 ### Step 7: CLI更新確認（`--full` 指定時のみ）
@@ -135,26 +135,24 @@ Skill(skill: "check-cli-updates")
 | ask-codex | ✅ | ✅ |
 | ask-gemini | ✅ | ✅ |
 | ask-copilot | ✅ | ✅ |
+| ask-peer | ✅ | ✅ |
 | security-scanner | ✅ | ✅ |
 
 ### ファイル存在（エージェント依存プラグイン）
 | プラグイン | plugin.json | スキル | エージェント | 状態 |
 |-----------|-------------|--------|------------|------|
-| peer | ✅ | ✅ | ✅ | ✅ |
 | translate | ✅ | ✅ | ✅ | ✅ |
 | caffeinate | ✅ | ✅ | N/A | ✅ |
 
 ### バージョン整合性
 | プラグイン | marketplace | plugin.json | 状態 |
 |-----------|-------------|-------------|------|
-| peer | 1.0.0 | 1.0.0 | ✅ |
 | translate | 1.0.0 | 1.0.0 | ✅ |
 | caffeinate | 1.0.0 | 1.0.0 | ✅ |
 
 ### 構文検証
 | 対象 | JSON | フロントマター | 状態 |
 |------|------|---------------|------|
-| peer | ✅ | ✅ | ✅ |
 | translate | ✅ | ✅ | ✅ |
 | caffeinate | ✅ | ✅ | ✅ |
 | ask-claude | N/A | ✅ | ✅ |

@@ -15,7 +15,7 @@ allowed-tools: Read, Write, Edit, Glob, Grep, TodoWrite, EnterPlanMode, ExitPlan
 
 ## Prerequisites
 
-- **peer plugin**: Required for plan/code review. If unavailable, ask user directly instead.
+- **ask-peer skill**: Required for plan/code review. If unavailable, ask user directly instead.
 - **extract-rules skill**: Required for rule update. If unavailable, skip with message.
 
 ## Configuration

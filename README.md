@@ -10,7 +10,7 @@ Claude Code plugins for integrating with AI coding assistants.
 | ask-codex | Skill | Get a second opinion from OpenAI Codex |
 | ask-gemini | Skill | Get a second opinion from Google Gemini |
 | ask-copilot | Skill | Get a second opinion from GitHub Copilot |
-| peer | Agent + Skill | Peer engineer for code review, planning, and brainstorming |
+| peer | Skill | Peer engineer for code review, planning, and brainstorming |
 | translate | Agent + Skill | AI-powered translation with /tr command (configurable quality) |
 | security-scanner | Skill | Scan plugins and skills for security risks |
 | extract-rules | Skill | Extract project-specific coding rules from codebase for AI agents |
@@ -25,9 +25,9 @@ Claude Code plugins for integrating with AI coding assistants.
 npx skills add hiroro-work/claude-plugins
 ```
 
-Available skills: `ask-claude`, `ask-codex`, `ask-gemini`, `ask-copilot`, `security-scanner`, `extract-rules`, `merge-rules`
+Available skills: `ask-claude`, `ask-codex`, `ask-gemini`, `ask-copilot`, `ask-peer`, `security-scanner`, `extract-rules`, `merge-rules`
 
-> Note: Agent features (peer, translate) and hook features (caffeinate) are only available via Claude Code Plugin Marketplace.
+> Note: Agent features (translate) and hook features (caffeinate) are only available via Claude Code Plugin Marketplace.
 
 ### Via Claude Code Plugin Marketplace (Full features)
 
@@ -71,14 +71,9 @@ Available skills: `ask-claude`, `ask-codex`, `ask-gemini`, `ask-copilot`, `secur
 
 These plugins provide `/ask-*` commands for getting second opinions from other AI assistants.
 
-### Agent + Skill Plugin (peer)
+### Skill Plugin (peer)
 
-The peer plugin provides both an agent and a skill:
-
-- **Agent**: Automatically triggered by Claude Code when peer consultation is needed
-- **Skill**: Invoke with `/ask-peer` command for explicit consultation
-
-Use cases:
+Invoke with `/ask-peer` command. Spawns a peer engineer subagent for:
 
 - Planning review before implementation
 - Code review after completing work

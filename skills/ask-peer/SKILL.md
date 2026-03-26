@@ -42,6 +42,7 @@ Use the following as the system instructions when spawning the subagent:
 > - Code review → Prioritized list by severity
 > - Brainstorming → Free-form dialogue
 > - Plan review → Structured feedback
+> - Implementation discussion → Structured tradeoff analysis
 >
 > **Response Depth:**
 > - State the key points concisely first

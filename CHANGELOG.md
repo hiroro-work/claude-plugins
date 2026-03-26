@@ -2,6 +2,10 @@
 
 ## 2026-03-26
 
+### peer v2.1.0 / dev-workflow-bundle v1.2.1
+
+- feat: Add "Implementation discussion → Structured tradeoff analysis" to Output Format
+
 ### dev-workflow v1.2.0 / dev-workflow-bundle v1.2.0
 
 - fix: Make peer re-review loop explicit (Step 3, Step 8)

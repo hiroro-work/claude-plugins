@@ -1,7 +1,7 @@
 ---
 name: dev-workflow
-description: Guided development workflow with automated plan review, implementation, testing, and code review. Orchestrates plan → peer review → implement → lint/format/test → code review → rules update.
-allowed-tools: Read, Write, Edit, Glob, Grep, TodoWrite, EnterPlanMode, ExitPlanMode, Skill(ask-peer), Skill(extract-rules), Skill(simplify), Bash(pwd), Bash(pnpm run *), Bash(npm run *), Bash(yarn run *), Bash(bundle exec *), Bash(make lint *), Bash(make format *), Bash(make test *), Bash(python -m pytest *), Bash(poetry run *), Bash(cargo test *), Bash(cargo clippy *), Bash(cargo fmt *), Bash(go test *), Bash(go vet *), Bash(git diff *), Bash(git status *), Bash(git log *)
+description: Guided development workflow with automated plan review, implementation, testing, and code review. Orchestrates plan → peer review → implement → check/test → code review → rules update.
+allowed-tools: Read, Write, Edit, Glob, Grep, TodoWrite, EnterPlanMode, ExitPlanMode, Skill(ask-peer), Skill(extract-rules), Skill(simplify), Bash(pwd), Bash(pnpm run *), Bash(pnpm exec *), Bash(npm run *), Bash(yarn run *), Bash(bun run *), Bash(bundle exec *), Bash(make lint *), Bash(make format *), Bash(make test *), Bash(make typecheck *), Bash(make check *), Bash(python -m pytest *), Bash(poetry run *), Bash(uv run *), Bash(cargo test *), Bash(cargo clippy *), Bash(cargo fmt *), Bash(go test *), Bash(go vet *), Bash(git diff *), Bash(git status *), Bash(git log *)
 ---
 
 # Dev Workflow
@@ -9,7 +9,7 @@ allowed-tools: Read, Write, Edit, Glob, Grep, TodoWrite, EnterPlanMode, ExitPlan
 ## Usage
 
 ```text
-/dev-workflow --init         # Project setup (detect lint/format/test commands)
+/dev-workflow --init         # Project setup (detect check/test commands)
 /dev-workflow <task>         # Execute workflow (default)
 ```
 
@@ -26,11 +26,22 @@ Settings file: `dev-workflow.local.md` (YAML frontmatter only)
 
 ```yaml
 ---
-lint_command: "pnpm run lint:fix"
-format_command: "pnpm run format"
-test_command: "pnpm run test"
+check_commands:
+  - "pnpm run lint:fix"
+  - "pnpm run format"
+  - "pnpm run typecheck"
+test_commands:
+  - "pnpm run test:unit"
+  - "pnpm run test:e2e"
+  - "Skill(test-runner)"
 ---
 ```
+
+- **check_commands**: 静的チェック（lint, format, typecheck等）。常に全実行
+- **test_commands**: テスト実行。変更内容に応じて全実行 or 関連テストのみをAIが判断
+- `Skill(`で始まるエントリはスキル呼び出しとして処理（コマンドとスキルの混在OK）
+- 配列の順序通りに実行
+- Note: `Skill()`で指定するスキルはプロジェクトにインストール済みである必要がある
 
 ## Mode Detection
 
@@ -43,7 +54,9 @@ test_command: "pnpm run test"
 
 1. Detect project type from config files (package.json, Gemfile, pyproject.toml, Cargo.toml, go.mod, Makefile)
 2. Detect package manager from lock files (JS/TS only)
-3. Infer appropriate lint/format/test commands for the detected project type
+3. Infer check/test commands for the detected project type
+   - check_commands: lint, format, typecheckなど静的チェック系を検出
+   - test_commands: package.json scripts等からtest関連キー（test, test:unit, test:e2e, test:integration等）を複数検出
 4. Present detected commands to user for confirmation
 5. Save to `.claude/dev-workflow.local.md`
 
@@ -81,11 +94,15 @@ test_command: "pnpm run test"
 
 1. `Skill(simplify)`: Review changed code for reuse, quality, and efficiency, then fix any issues found
 
-### Step 7: Lint / Format / Test (max 3 retries)
+### Step 7: Check / Test (max 3 retries)
 
-1. Run `lint_command`, `format_command`, `test_command` in order (only configured commands)
-2. On failure: fix and retry. After 3 retries, report to user and stop
-3. **Only execute commands from the configuration file**
+1. Run `check_commands` in order (always run all)
+   - 失敗時は修正してリトライ（test_commandsには進まない）
+2. Run `test_commands` in order
+   - `Skill(`で始まるエントリはスキル呼び出し、それ以外はシェルコマンドとして実行
+   - 変更内容に基づき全テスト実行か関連テストのみかをAIが判断（迷ったら全実行）
+3. After 3 retries, report to user and stop
+4. **Only execute commands/skills from the configuration file**
 
 ### Step 8: Peer Code Review (max 3 iterations)
 

@@ -115,10 +115,10 @@
     },
     {
       "name": "dev-workflow",
-      "description": "Guided development workflow: plan → peer review → implement → test → code review → rules update",
+      "description": "Guided development workflow: plan → peer review → implement → check/test → code review → rules update",
       "source": "./",
       "skills": ["./skills/dev-workflow"],
-      "version": "1.0.0",
+      "version": "1.1.0",
       "author": {
         "name": "hiropon"
       },
@@ -129,7 +129,7 @@
       "description": "Development workflow bundle (includes peer + extract-rules + dev-workflow)",
       "source": "./",
       "skills": ["./skills/dev-workflow", "./skills/ask-peer", "./skills/extract-rules"],
-      "version": "1.0.0",
+      "version": "1.1.0",
       "author": {
         "name": "hiropon"
       },

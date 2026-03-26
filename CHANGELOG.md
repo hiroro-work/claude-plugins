@@ -2,6 +2,18 @@
 
 ## 2026-03-26
 
+### dev-workflow v1.1.0 / dev-workflow-bundle v1.1.0 (BREAKING)
+
+- **BREAKING**: Remove `lint_command`/`format_command`/`test_command`. Re-run `/dev-workflow --init` required
+- feat: Replace single command config with array-based categories
+  - `lint_command`/`format_command`/`test_command` → `check_commands`/`test_commands`
+  - `check_commands`: Multiple static checks (lint, format, typecheck, etc.) as array
+  - `test_commands`: Multiple test commands (unit, e2e, integration, etc.) as array
+- feat: Support `Skill()` entries in test_commands for skill-based test execution
+- feat: Improve Init Mode to detect multiple check/test commands
+- fix: Clarify Step 7 flow (check failure blocks test execution, fallback to run all tests when uncertain)
+- chore: Expand allowed-tools (`bun run`, `pnpm exec`, `uv run`, `make typecheck`, `make check`)
+
 ### translate v1.1.1
 
 - fix: Strengthen agent prompts to prevent chat mode on short inputs

@@ -2,6 +2,13 @@
 
 ## 2026-03-27
 
+### dev-workflow v1.7.0 / dev-workflow-bundle v1.7.0
+
+- feat: Add test review perspectives to plan creation, plan review, and code review
+  - Step 2: Require test plan in implementation plan (what to test, test types, scope — or why no tests are needed)
+  - Step 3: Change review category from "test strategy" to "test plan adequacy" for explicit presence/scope check
+  - Step 8: Add "missing or insufficient tests for changes" to Correctness & edge cases category
+
 ### dev-workflow v1.6.0 / dev-workflow-bundle v1.6.0
 
 - feat: Pre-register review iterations in Step 1 TodoWrite checklist as sub-items (Step 3-1/3-2/3-3, Step 8-1/8-2/8-3)

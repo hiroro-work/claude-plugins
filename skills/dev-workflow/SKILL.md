@@ -73,16 +73,22 @@ test_commands:
 1. Read `.claude/dev-workflow.local.md` (project-level, priority) or `~/.claude/dev-workflow.local.md` (user-level)
 2. If neither exists, prompt user to run `/dev-workflow --init` and stop
 3. Resolve `reviewer` from config. If not specified or not in the supported list (ask-peer, ask-claude, ask-codex, ask-gemini, ask-copilot), use `ask-peer`
-4. Register all workflow phases with `TodoWrite`. Do NOT skip any phase:
+4. Register all workflow phases with `TodoWrite`, including review iterations. Do NOT skip any phase:
    - Step 2: Create Plan
    - Step 3: Plan Review
+   - Step 3-1: Plan Review - iteration 1
+   - Step 3-2: Plan Review - iteration 2
+   - Step 3-3: Plan Review - iteration 3
    - Step 4: Finalize Plan
    - Step 5: Implement
    - Step 6: Simplify
    - Step 7: Check / Test
    - Step 8: Code Review (MANDATORY)
+   - Step 8-1: Code Review - iteration 1
+   - Step 8-2: Code Review - iteration 2
+   - Step 8-3: Code Review - iteration 3
    - Step 9: Update Rules
-   Mark each phase `in_progress` when starting and `completed` when done. Phase items must always remain in the list — implementation sub-tasks in Step 5 are additions, not replacements.
+   Mark each item `in_progress` when starting and `completed` when done. These items must always remain in the list — implementation sub-tasks in Step 5 are additions, not replacements.
 
 ### Step 2: Create Plan
 
@@ -91,22 +97,25 @@ test_commands:
 3. Analyze the task and codebase, create implementation plan
 4. **No code changes in this phase**
 
-### Step 3: Plan Review (3 iterations)
+### Step 3: Plan Review
 
-1. Register 3 review iterations in TodoWrite: `Plan Review: iteration 1`, `iteration 2`, `iteration 3` (all pending)
-2. For each iteration, mark it `in_progress`, then call the reviewer skill resolved in Step 1 (e.g. `Skill(ask-peer)`): Review the plan.
+Mark `Step 3: Plan Review` as `in_progress`. Process each pending iteration item (Step 3-1, 3-2, 3-3) in order:
+
+1. Mark the iteration item as `in_progress`. Call the reviewer skill resolved in Step 1 (e.g. `Skill(ask-peer)`): Review the plan.
    - Instruct reviewer to read `.claude/rules/` for project conventions
    - Request feedback organized into three categories:
      a. **Scope & feasibility**: scope appropriateness, dependencies, risks, `.claude/rules/` compliance
      b. **Approach & alternatives**: simpler methods, architectural fit with existing code
      c. **Completeness**: edge cases, error handling, test strategy
    - Reviewer should only report actionable findings. If none, explicitly state "No actionable findings"
-3. If reviewer returned "No actionable findings": mark current and remaining iterations as `completed` (skip) and proceed to Step 4.
-4. Otherwise: apply improvements, reject inapplicable points with reason. Mark current iteration as `completed`. Proceed to the next iteration with:
+2. If reviewer returned "No actionable findings": mark this and remaining iteration items as `completed` (skip). Mark `Step 3: Plan Review` as `completed` and proceed to Step 4.
+3. Otherwise: apply improvements, reject inapplicable points with reason. Mark this iteration item as `completed`. Continue to the next pending iteration item (back to step 1) with:
    - the updated plan
    - a summary of changes made and rejections with reasons
    - the same three-category structure, `.claude/rules/` reference, and "No actionable findings" requirement
-5. If all 3 iterations completed and actionable feedback still remains, present the unresolved points to user for decision.
+4. If all 3 iteration items are completed and actionable feedback still remains, present the unresolved points to user for decision.
+
+Mark `Step 3: Plan Review` as `completed`.
 
 ### Step 4: Finalize Plan
 
@@ -132,10 +141,11 @@ test_commands:
 
 > **GATE**: Verify TodoWrite shows Steps 2-7 as completed. Mark Step 8 as `in_progress`.
 
-### Step 8: Code Review (3 iterations) -- MANDATORY, DO NOT SKIP
+### Step 8: Code Review -- MANDATORY, DO NOT SKIP
 
-1. Register 3 review iterations in TodoWrite: `Code Review: iteration 1`, `iteration 2`, `iteration 3` (all pending)
-2. For each iteration, mark it `in_progress`, then call the reviewer skill resolved in Step 1 (e.g. `Skill(ask-peer)`): Review code changes.
+Mark `Step 8: Code Review` as `in_progress`. Process each pending iteration item (Step 8-1, 8-2, 8-3) in order:
+
+1. Mark the iteration item as `in_progress`. Call the reviewer skill resolved in Step 1 (e.g. `Skill(ask-peer)`): Review code changes.
    - Include `git diff <base-commit>` (base-commit recorded in Step 2) to capture all changes since workflow start
    - Instruct reviewer to also read `.claude/rules/`
    - Request feedback organized into three categories:
@@ -143,12 +153,14 @@ test_commands:
      b. **Conventions & consistency**: adherence to `.claude/rules/`, naming, file structure, patterns
      c. **Simplicity & maintainability**: unnecessary complexity, duplication, unclear abstractions
    - Reviewer should only report actionable findings. If none, explicitly state "No actionable findings"
-3. If reviewer returned "No actionable findings": mark current and remaining iterations as `completed` (skip) and proceed to Step 9.
-4. Otherwise: fix genuine issues, reject inapplicable points with reason. Re-run Step 7 if code was modified. Mark current iteration as `completed`. Proceed to the next iteration with:
+2. If reviewer returned "No actionable findings": mark this and remaining iteration items as `completed` (skip). Mark `Step 8: Code Review` as `completed` and proceed to Step 9.
+3. Otherwise: fix genuine issues, reject inapplicable points with reason. Re-run Step 7 if code was modified. Mark this iteration item as `completed`. Continue to the next pending iteration item (back to step 1) with:
    - the latest `git diff <base-commit>`
    - a summary of fixes made and rejections with reasons
    - the same three-category structure, `.claude/rules/` reference, and "No actionable findings" requirement
-5. If all 3 iterations completed and actionable feedback still remains, present the unresolved points to user for decision.
+4. If all 3 iteration items are completed and actionable feedback still remains, present the unresolved points to user for decision.
+
+Mark `Step 8: Code Review` as `completed`.
 
 ### Step 9: Update Rules
 

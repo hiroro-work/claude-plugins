@@ -2,6 +2,14 @@
 
 ## 2026-03-27
 
+### dev-workflow v1.6.0 / dev-workflow-bundle v1.6.0
+
+- feat: Pre-register review iterations in Step 1 TodoWrite checklist as sub-items (Step 3-1/3-2/3-3, Step 8-1/8-2/8-3)
+  - Iterations visible from workflow start, making skipping structurally harder
+  - Step 3/8 rewritten as "process each pending iteration item" instead of loop description
+  - Eliminates natural-language loop that AI tends to short-circuit after 1 pass
+  - Skip remaining only when reviewer returns "No actionable findings"
+
 ### dev-workflow v1.5.0 / dev-workflow-bundle v1.5.0
 
 - feat: Pre-register 3 review iterations as TodoWrite items in Step 3/8

@@ -97,7 +97,7 @@
       "description": "Peer engineer for code review, planning, and brainstorming",
       "source": "./",
       "skills": ["./skills/ask-peer"],
-      "version": "2.1.0",
+      "version": "2.2.0",
       "author": {
         "name": "hiropon"
       },
@@ -129,7 +129,7 @@
       "description": "Development workflow bundle (includes peer + extract-rules + dev-workflow)",
       "source": "./",
       "skills": ["./skills/dev-workflow", "./skills/ask-peer", "./skills/extract-rules"],
-      "version": "1.7.0",
+      "version": "1.7.1",
       "author": {
         "name": "hiropon"
       },

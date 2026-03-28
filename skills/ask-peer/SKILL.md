@@ -9,9 +9,10 @@ Get a second opinion from a peer engineer (Claude subagent).
 
 ## Process
 
-1. Spawn a subagent (Agent tool) with the peer personality below and the user's consultation request
-2. Include relevant context in the prompt (plan, code changes via `git diff HEAD`, error details, etc.)
-3. Present the peer's feedback to the user
+1. If the request contains multiple independent review categories, spawn one subagent (Agent tool) per category **in parallel**. Otherwise, spawn a single subagent
+2. Each subagent receives the peer personality below + the full consultation request including all caller instructions
+3. For parallel reviews, merge results in category order as unified feedback
+4. Present the peer's feedback to the user
 
 ## Peer Agent Personality
 

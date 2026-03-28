@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-03-28
+
+### peer v2.2.0 / dev-workflow-bundle v1.7.1
+
+- feat: Add autonomous parallel review — when a review request contains multiple independent categories, ask-peer spawns one subagent per category in parallel and merges results
+
 ## 2026-03-27
 
 ### dev-workflow v1.7.0 / dev-workflow-bundle v1.7.0

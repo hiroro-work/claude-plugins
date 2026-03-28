@@ -1,6 +1,6 @@
 ---
 name: dev-workflow
-description: Guided development workflow with automated plan review, implementation, testing, and code review. Orchestrates plan → review → implement → check/test → code review → rules update.
+description: Guided development workflow that orchestrates plan → review → implement → check/test → code review → rules update. Use this skill whenever the user wants to develop a feature, fix a bug, refactor code, or make any code changes following a structured process — even if they don't explicitly mention "workflow" and simply describe what they want built or fixed.
 allowed-tools: Read, Write, Edit, Glob, Grep, TodoWrite, EnterPlanMode, ExitPlanMode, Skill(ask-peer), Skill(ask-claude), Skill(ask-codex), Skill(ask-gemini), Skill(ask-copilot), Skill(extract-rules), Skill(simplify), Bash(pwd), Bash(pnpm run *), Bash(pnpm exec *), Bash(npm run *), Bash(yarn run *), Bash(bun run *), Bash(bundle exec *), Bash(make lint *), Bash(make format *), Bash(make test *), Bash(make typecheck *), Bash(make check *), Bash(python -m pytest *), Bash(poetry run *), Bash(uv run *), Bash(cargo test *), Bash(cargo clippy *), Bash(cargo fmt *), Bash(go test *), Bash(go vet *), Bash(git diff *), Bash(git status *), Bash(git log *), Bash(git rev-parse *)
 ---
 
@@ -42,7 +42,7 @@ test_commands:
 - **reviewer**: Reviewer skill name (default: `ask-peer`). Choose from: ask-peer, ask-claude, ask-codex, ask-gemini, ask-copilot. Unsupported values fall back to `ask-peer`
 - **review_iterations**: Max iterations for Plan Review (Step 3) and Code Review (Step 8) (default: `3`, must be a positive integer). Can be overridden per invocation with `-i N` / `--iterations N`
 - **check_commands**: Static checks (lint, format, typecheck, etc.). Always run all in order
-- **test_commands**: Test execution. AI decides whether to run all tests or only related ones based on changes
+- **test_commands**: Test execution. Scope is determined per change (see Step 7)
 - Entries starting with `Skill(` are treated as skill invocations (commands and skills can be mixed)
 - Executed in array order
 - Note: Skills specified with `Skill()` must be installed in the project
@@ -56,15 +56,7 @@ test_commands:
 
 ## Init Mode
 
-1. Detect project type from config files (package.json, Gemfile, pyproject.toml, Cargo.toml, go.mod, Makefile)
-2. Detect package manager from lock files (JS/TS only)
-3. Infer check/test commands for the detected project type
-   - check_commands: Detect static checks (lint, format, typecheck, etc.)
-   - test_commands: Detect test-related keys from package.json scripts, etc. (test, test:unit, test:e2e, test:integration, etc.)
-4. Ask user which reviewer skill to use (default: ask-peer)
-   - Options: ask-peer, ask-claude, ask-codex, ask-gemini, ask-copilot
-5. Present detected commands and reviewer to user for confirmation
-6. Save to `.claude/dev-workflow.local.md`
+Read `references/init-mode.md` and follow the procedure.
 
 ---
 
@@ -87,10 +79,10 @@ test_commands:
    - Step 5: Implement
    - Step 6: Simplify
    - Step 7: Check / Test
-   - Step 8: Code Review (MANDATORY)
+   - Step 8: Code Review
    - Step 8-1 through Step 8-N: Code Review - iteration 1 through N (generate N items based on resolved N)
    - Step 9: Update Rules
-   Mark each item `in_progress` when starting and `completed` when done. These items must always remain in the list — implementation sub-tasks in Step 5 are additions, not replacements.
+   Mark each item `in_progress` when starting and `completed` when done. Registering all phases upfront gives the user visibility into overall progress and prevents steps from being accidentally dropped. Implementation sub-tasks in Step 5 are additions, not replacements.
 
 ### Step 2: Create Plan
 
@@ -132,6 +124,8 @@ Mark `Step 3: Plan Review` as `completed`.
 
 ### Step 6: Simplify
 
+Implementation often introduces unnecessary complexity that's easier to spot in a dedicated pass after the code works.
+
 1. `Skill(simplify)`: Review changed code for reuse, quality, and efficiency, then fix any issues found
 
 ### Step 7: Check / Test (max 3 retries)
@@ -140,13 +134,15 @@ Mark `Step 3: Plan Review` as `completed`.
    - On failure, fix and retry (do not proceed to test_commands)
 2. Run `test_commands` in order
    - Entries starting with `Skill(` are skill invocations; others are shell commands
-   - AI decides whether to run all tests or only related ones based on changes (when in doubt, run all)
+   - Scope decision: run only tests covering changed modules/files when the change is localized and test boundaries are clear. Run all tests when changes are cross-cutting (shared utilities, config, DB schema) or when unsure
 3. After 3 retries, report to user and stop
 4. **Only execute commands/skills from the configuration file**
 
-> **GATE**: Verify TodoWrite shows Steps 2-7 as completed. Mark Step 8 as `in_progress`.
+> **GATE**: Verify Steps 2-7 are completed (check TodoWrite status; if status is inconsistent, verify actual completion by reviewing work done). Mark Step 8 as `in_progress`.
 
-### Step 8: Code Review -- MANDATORY, DO NOT SKIP
+### Step 8: Code Review
+
+Code review catches bugs, convention violations, and design issues that tests alone miss — skipping it risks shipping preventable defects. Always run this step even when tests pass cleanly.
 
 Mark `Step 8: Code Review` as `in_progress`. Process each pending iteration item (Step 8-1 through 8-N) in order:
 

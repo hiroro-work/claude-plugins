@@ -2,6 +2,14 @@
 
 ## 2026-03-28
 
+### dev-workflow v1.10.0 / dev-workflow-bundle v1.10.0
+
+- feat: Enhance `--init` test_commands detection with test skill auto-detection and generation
+  - Detect existing test skills in `.claude/skills/` (e.g., `test-file`, `run-tests`) and propose `Skill(<name>)`
+  - Auto-generate `run-tests` skill when 3+ distinct test scopes detected (with overwrite protection)
+  - Fall back to direct commands for 1-2 test scopes, or project-type standard commands
+- refactor: Extract Init Mode instructions to `references/init-mode.md` for progressive disclosure
+
 ### dev-workflow v1.9.0 / dev-workflow-bundle v1.9.0
 
 - feat: Make review iteration count configurable (default: 3, positive integer)

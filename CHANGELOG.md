@@ -2,6 +2,13 @@
 
 ## 2026-03-28
 
+### dev-workflow v1.8.0 / dev-workflow-bundle v1.8.0
+
+- feat: Improve plan approval flow — reviewer reviews the plan before user approval
+  - Step 2: Add instruction to proceed directly to Step 3 without asking user for approval
+  - Step 4: Add explicit user approval flow (present → collaborate → accept → ExitPlanMode)
+  - Step 3: Carry unresolved review points forward to Step 4 instead of asking user mid-review
+
 ### peer v2.2.0 / dev-workflow-bundle v1.7.1
 
 - feat: Add autonomous parallel review — when a review request contains multiple independent categories, ask-peer spawns one subagent per category in parallel and merges results

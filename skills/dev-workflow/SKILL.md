@@ -96,6 +96,7 @@ test_commands:
 2. `EnterPlanMode`
 3. Analyze the task and codebase, create implementation plan (must include test plan: what to test, test types, scope — or why no tests are needed)
 4. **No code changes in this phase**
+5. Do not ask the user to approve the plan yet. Proceed to Step 3 first for plan review.
 
 ### Step 3: Plan Review
 
@@ -113,13 +114,15 @@ Mark `Step 3: Plan Review` as `in_progress`. Process each pending iteration item
    - the updated plan
    - a summary of changes made and rejections with reasons
    - the same three-category structure, `.claude/rules/` reference, and "No actionable findings" requirement
-4. If all 3 iteration items are completed and actionable feedback still remains, present the unresolved points to user for decision.
+4. If all 3 iteration items are completed and actionable feedback still remains, carry the unresolved points forward to Step 4.
 
 Mark `Step 3: Plan Review` as `completed`.
 
 ### Step 4: Finalize Plan
 
-1. `ExitPlanMode` to begin implementation
+1. Present the reviewed plan to the user (include any unresolved review points from Step 3)
+2. Collaborate with the user to refine the plan as needed (normal Plan Mode interaction)
+3. After the user accepts, `ExitPlanMode` and begin implementation
 
 ### Step 5: Implement
 

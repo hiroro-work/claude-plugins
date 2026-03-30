@@ -75,7 +75,7 @@ Read `references/init-mode.md` and follow the procedure.
    - Step 4: Finalize Plan
    - Step 5: Implement
    - Step 6: Simplify
-   - Step 7: Check / Test
+   - Step 7: Check / Test [check: {check_commands} | test: {test_commands}]
    - Step 8: Code Review
    - Step 8-1 through Step 8-N: Code Review - iteration 1 through N (generate N items based on resolved N)
    - Step 9: Update Rules

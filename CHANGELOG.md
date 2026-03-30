@@ -2,6 +2,12 @@
 
 ## 2026-03-30
 
+### dev-workflow v1.14.0 / dev-workflow-bundle v1.14.0
+
+- fix: Embed check_commands/test_commands values in TodoWrite Step 7 description to prevent context loss
+  - Step 7 registered as `Step 7: Check / Test [check: {check_commands} | test: {test_commands}]`
+  - Settings values stay visible through TodoWrite progress checks, reducing risk of AI forgetting commands mid-workflow
+
 ### dev-workflow v1.13.0 / dev-workflow-bundle v1.13.0
 
 - feat: Add test prerequisites check & setup to `run-tests` skill template

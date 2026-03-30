@@ -2,6 +2,17 @@
 
 ## 2026-03-30
 
+### dev-workflow v1.12.0 / dev-workflow-bundle v1.12.0
+
+- feat: Subagent-based test execution to reduce main context consumption
+  - `--init` generates canonical `run-tests` skill with Agent-based subagent execution
+  - All test execution goes through `Skill(run-tests)` — no more direct shell commands or arbitrary skill names
+  - Subagent returns structured summary (SUCCESS / TEST_FAILED / EXECUTION_ERROR) instead of raw test output
+  - Includes stack trace excerpts and code locations for failures — enough to fix without re-running
+  - Scope decision delegated to `run-tests` skill via `--base-commit <sha>` argument
+  - Existing `run-tests` in current format is reused; outdated format is automatically regenerated (test commands are preserved)
+- docs: Add `run-tests` SKILL.md template to `references/init-mode.md`
+
 ### dev-workflow v1.11.0 / dev-workflow-bundle v1.11.0
 
 - feat: Add `review_iterations` default value (3) to `--init` generated config file

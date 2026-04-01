@@ -85,7 +85,7 @@ Read `references/init-mode.md` and follow the procedure.
 
 1. Record the current commit as base-commit (`git rev-parse HEAD`) for later diff comparison
 2. `EnterPlanMode`
-3. Analyze the task and codebase, create implementation plan (must include test plan: what to test, test types, scope — or why no tests are needed)
+3. Analyze the task and codebase, create implementation plan (must include test plan: what to test, test types, scope, and which existing test files to update or new test files to create — or justification why no tests are needed)
 4. **No code changes in this phase**
 5. Do not present the plan to the user or ask for approval/confirmation — presenting an unreviewed plan wastes user time and risks approval of a suboptimal approach. Immediately proceed to Step 3. The user will see the reviewed plan in Step 4.
 
@@ -96,11 +96,11 @@ This step is an internal review — the reviewer refines the plan before the use
 Mark `Step 3: Plan Review` as `in_progress`. Process each pending iteration item (Step 3-1 through 3-N) in order:
 
 1. Mark the iteration item as `in_progress`. Call the reviewer skill resolved in Step 1 (e.g. `Skill(ask-peer)`): Review the plan.
-   - Instruct reviewer to read `.claude/rules/` for project conventions
+   - Instruct reviewer to read all files under `.claude/rules/` for project conventions
    - Request feedback organized into three categories:
      a. **Scope & feasibility**: scope appropriateness, dependencies, risks, `.claude/rules/` compliance
      b. **Approach & alternatives**: simpler methods, architectural fit with existing code
-     c. **Completeness**: edge cases, error handling, test plan adequacy
+     c. **Completeness**: edge cases, error handling, test plan adequacy (verify specific test files are identified and existing related tests are covered for update)
    - Reviewer should only report actionable findings. If none, explicitly state "No actionable findings"
 2. If reviewer returned "No actionable findings": mark this and remaining iteration items as `completed` (skip). Mark `Step 3: Plan Review` as `completed` and proceed to Step 4.
 3. Otherwise: apply improvements, reject inapplicable points with reason. Mark this iteration item as `completed`.
@@ -149,10 +149,10 @@ Mark `Step 8: Code Review` as `in_progress`. Process each pending iteration item
 
 1. Mark the iteration item as `in_progress`. Call the reviewer skill resolved in Step 1 (e.g. `Skill(ask-peer)`): Review code changes.
    - Include `git diff <base-commit>` (base-commit recorded in Step 2) to capture all changes since workflow start
-   - Instruct reviewer to also read `.claude/rules/`
+   - Instruct reviewer to read all files under `.claude/rules/` and verify compliance against the diff — cite rule file path and violated rule text for each finding
    - Request feedback organized into three categories:
-     a. **Correctness & edge cases**: bugs, error handling gaps, race conditions, missing validations, missing or insufficient tests for changes
-     b. **Conventions & consistency**: adherence to `.claude/rules/`, naming, file structure, patterns
+     a. **Correctness & edge cases**: bugs, error handling gaps, race conditions, missing validations, missing or insufficient tests for changes (verify planned test files from Step 2 are present in the diff)
+     b. **Conventions & consistency**: per-rule compliance, naming, file structure, patterns
      c. **Simplicity & maintainability**: unnecessary complexity, duplication, unclear abstractions
    - Reviewer should only report actionable findings. If none, explicitly state "No actionable findings"
 2. If reviewer returned "No actionable findings": mark this and remaining iteration items as `completed` (skip). Mark `Step 8: Code Review` as `completed` and proceed to Step 9.

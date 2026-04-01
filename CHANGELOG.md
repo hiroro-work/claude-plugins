@@ -2,6 +2,14 @@
 
 ## 2026-04-01
 
+### dev-workflow v1.16.0
+
+- feat: Strengthen rules compliance checking and test coverage verification
+  - Step 2: Require specific test files (existing to update or new to create) in test plan, not just abstract descriptions
+  - Step 3: Plan reviewer verifies specific test files are identified and existing related tests are covered for update; read all files under `.claude/rules/`
+  - Step 8: Reviewer must read all files under `.claude/rules/` and verify compliance against the diff, citing rule file path and violated rule text
+  - Step 8: Verify planned test files from Step 2 are present in the diff
+
 ### dev-workflow v1.15.1
 
 - fix: Ensure re-review after modifications in Plan Review (Step 3) and Code Review (Step 8)

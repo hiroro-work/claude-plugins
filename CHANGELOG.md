@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-04-03
+
+### dev-workflow v1.18.0 / dev-workflow-bundle v1.18.0
+
+- feat: Improve init-mode run-tests generation for autonomous test execution
+  - Add Docker daemon readiness check as prerequisite when docker-compose is detected (daemon → services, two-step)
+  - Detect existing run-tests skills lacking Docker daemon check and offer regeneration
+  - Support `.yaml` extension variants for docker-compose detection
+  - Generalize run-tests template: category-based prerequisites, technology-agnostic allowed-tools
+  - Add async service retry rule in Process section (re-check with retries for up to 30 seconds)
+  - Align pseudo-execute flow with async retry rule
+
 ## 2026-04-02
 
 ### rules-review v1.0.0

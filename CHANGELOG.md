@@ -1,5 +1,24 @@
 # Changelog
 
+## 2026-04-02
+
+### rules-review v1.0.0
+
+- feat: New skill for `.claude/rules/` compliance checking
+  - Match rule files to changed files via `paths:` frontmatter globs
+  - Group rules by category (project, languages, frameworks, integrations, custom)
+  - Parallel review via sub-agents per group
+  - Standalone usage: `/rules-review --base-commit <sha>`
+
+### dev-workflow v1.17.0 / dev-workflow-bundle v1.17.0
+
+- feat: Add Step 7.5 (Rules Compliance Review) as dedicated rules enforcement step
+  - Runs `Skill(rules-review)` between Check/Test (Step 7) and Code Review (Step 8)
+  - 2-cycle max: fix violations → re-verify → escalate to user if unresolved
+  - Step 8 re-run after code modifications includes Step 7.5
+  - Step 8 retains lightweight rules check as safety net
+- feat: Bundle `rules-review` skill with `dev-workflow-bundle` plugin
+
 ## 2026-04-01
 
 ### dev-workflow v1.16.0

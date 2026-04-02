@@ -118,7 +118,7 @@
       "description": "Guided development workflow: plan → review → implement → check/test → code review → rules update",
       "source": "./",
       "skills": ["./skills/dev-workflow"],
-      "version": "1.16.0",
+      "version": "1.17.0",
       "author": {
         "name": "hiropon"
       },
@@ -126,10 +126,10 @@
     },
     {
       "name": "dev-workflow-bundle",
-      "description": "Development workflow bundle (includes peer + extract-rules + dev-workflow)",
+      "description": "Development workflow bundle (includes peer + extract-rules + dev-workflow + rules-review)",
       "source": "./",
-      "skills": ["./skills/dev-workflow", "./skills/ask-peer", "./skills/extract-rules"],
-      "version": "1.16.0",
+      "skills": ["./skills/dev-workflow", "./skills/ask-peer", "./skills/extract-rules", "./skills/rules-review"],
+      "version": "1.17.0",
       "author": {
         "name": "hiropon"
       },
@@ -141,6 +141,17 @@
       "source": "./",
       "skills": ["./skills/apply-rules"],
       "version": "1.1.0",
+      "author": {
+        "name": "hiropon"
+      },
+      "category": "workflow"
+    },
+    {
+      "name": "rules-review",
+      "description": "Check code changes for .claude/rules/ compliance using parallel sub-agent review",
+      "source": "./",
+      "skills": ["./skills/rules-review"],
+      "version": "1.0.0",
       "author": {
         "name": "hiropon"
       },

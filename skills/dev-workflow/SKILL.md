@@ -1,7 +1,7 @@
 ---
 name: dev-workflow
 description: Guided development workflow that orchestrates plan → review → implement → check/test → code review → rules update. Use this skill whenever the user wants to develop a feature, fix a bug, refactor code, or make any code changes following a structured process — even if they don't explicitly mention "workflow" and simply describe what they want built or fixed.
-allowed-tools: Read, Write, Edit, Glob, Grep, TodoWrite, EnterPlanMode, ExitPlanMode, Skill(ask-peer), Skill(ask-claude), Skill(ask-codex), Skill(ask-gemini), Skill(ask-copilot), Skill(extract-rules), Skill(simplify), Skill(run-tests), Bash(pwd), Bash(pnpm run *), Bash(pnpm exec *), Bash(npm run *), Bash(yarn run *), Bash(bun run *), Bash(bundle exec *), Bash(make lint *), Bash(make format *), Bash(make test *), Bash(make typecheck *), Bash(make check *), Bash(python -m pytest *), Bash(poetry run *), Bash(uv run *), Bash(cargo test *), Bash(cargo clippy *), Bash(cargo fmt *), Bash(go test *), Bash(go vet *), Bash(git diff *), Bash(git status *), Bash(git rev-parse *), Bash(test -f *)
+allowed-tools: Read, Write, Edit, Glob, Grep, TodoWrite, EnterPlanMode, ExitPlanMode, Skill(ask-peer), Skill(ask-claude), Skill(ask-codex), Skill(ask-gemini), Skill(ask-copilot), Skill(extract-rules), Skill(simplify), Skill(run-tests), Skill(rules-review), Bash(pwd), Bash(pnpm run *), Bash(pnpm exec *), Bash(npm run *), Bash(yarn run *), Bash(bun run *), Bash(bundle exec *), Bash(make lint *), Bash(make format *), Bash(make test *), Bash(make typecheck *), Bash(make check *), Bash(python -m pytest *), Bash(poetry run *), Bash(uv run *), Bash(cargo test *), Bash(cargo clippy *), Bash(cargo fmt *), Bash(go test *), Bash(go vet *), Bash(git diff *), Bash(git status *), Bash(git rev-parse *), Bash(test -f *)
 ---
 
 # Dev Workflow
@@ -16,6 +16,7 @@ allowed-tools: Read, Write, Edit, Glob, Grep, TodoWrite, EnterPlanMode, ExitPlan
 ## Prerequisites
 
 - **Reviewer skill** (`reviewer` setting, default: ask-peer): Required for plan/code review. Supported: ask-peer, ask-claude, ask-codex, ask-gemini, ask-copilot. If the configured skill is unavailable, ask user directly instead.
+- **rules-review skill**: Required for rules compliance review (Step 7.5). If unavailable, skip Step 7.5 with message.
 - **extract-rules skill**: Required for rule update. If unavailable, skip with message.
 
 ## Configuration
@@ -76,6 +77,7 @@ Read `references/init-mode.md` and follow the procedure.
    - Step 5: Implement
    - Step 6: Simplify
    - Step 7: Check / Test [check: {check_commands} | test: {test_commands}]
+   - Step 7.5: Rules Compliance Review
    - Step 8: Code Review
    - Step 8-1 through Step 8-N: Code Review - iteration 1 through N (generate N items based on resolved N)
    - Step 9: Update Rules
@@ -139,7 +141,23 @@ Implementation often introduces unnecessary complexity that's easier to spot in 
    - Returns structured summary: SUCCESS / TEST_FAILED / EXECUTION_ERROR
 3. After 3 retries, report to user and stop
 
-> **GATE**: Verify Steps 2-7 are completed (check TodoWrite status; if status is inconsistent, verify actual completion by reviewing work done). Mark Step 8 as `in_progress`.
+> **GATE**: Verify Steps 2-7 are completed (check TodoWrite status; if status is inconsistent, verify actual completion by reviewing work done). Mark Step 7.5 as `in_progress`.
+
+### Step 7.5: Rules Compliance Review
+
+Dedicated rules compliance check, separate from code review (Step 8). This ensures rule enforcement gets focused attention rather than competing with correctness and design concerns.
+
+1. `Skill(rules-review)` with `--base-commit <sha>` (base-commit recorded in Step 2) via `$ARGUMENTS`
+2. If result indicates no violations (e.g., "All rules compliant", "No applicable rules for changed files", "No changed files", "No rule files found"): mark completed, proceed to Step 8
+3. If violations found:
+   a. Fix all reported violations
+   b. Re-run Step 7 (Check / Test) to ensure fixes did not break anything
+   c. Re-run `Skill(rules-review)` with `--base-commit <sha>` for verification (2nd cycle)
+   d. If violations persist after 2 cycles, present remaining violations to user for decision. Wait for user response before marking completed.
+
+Mark `Step 7.5: Rules Compliance Review` as `completed` only after all violations are resolved or user has decided on remaining violations.
+
+> **GATE**: Verify Steps 2-7.5 are completed (check TodoWrite status; if status is inconsistent, verify actual completion by reviewing work done). Mark Step 8 as `in_progress`.
 
 ### Step 8: Code Review
 
@@ -149,15 +167,15 @@ Mark `Step 8: Code Review` as `in_progress`. Process each pending iteration item
 
 1. Mark the iteration item as `in_progress`. Call the reviewer skill resolved in Step 1 (e.g. `Skill(ask-peer)`): Review code changes.
    - Include `git diff <base-commit>` (base-commit recorded in Step 2) to capture all changes since workflow start
-   - Instruct reviewer to read all files under `.claude/rules/` and verify compliance against the diff — cite rule file path and violated rule text for each finding
+   - Thorough rules compliance has been verified in Step 7.5, but instruct reviewer to also flag any obvious `.claude/rules/` violations as a safety net — especially for code modified after Step 7.5
    - Request feedback organized into three categories:
      a. **Correctness & edge cases**: bugs, error handling gaps, race conditions, missing validations, missing or insufficient tests for changes (verify planned test files from Step 2 are present in the diff)
-     b. **Conventions & consistency**: per-rule compliance, naming, file structure, patterns
+     b. **Conventions & consistency**: naming, file structure, patterns, `.claude/rules/` compliance (lightweight check — Step 7.5 handles the thorough review)
      c. **Simplicity & maintainability**: unnecessary complexity, duplication, unclear abstractions
    - Reviewer should only report actionable findings. If none, explicitly state "No actionable findings"
 2. If reviewer returned "No actionable findings": mark this and remaining iteration items as `completed` (skip). Mark `Step 8: Code Review` as `completed` and proceed to Step 9.
 3. Otherwise: fix genuine issues, reject inapplicable points with reason. Mark this iteration item as `completed`.
-   - If code was modified: re-run Step 7, then MUST continue to the next pending iteration item (back to step 1) for re-review — do not skip even if you believe all issues are resolved
+   - If code was modified: re-run Step 7 and Step 7.5 (with same base-commit from Step 2), then MUST continue to the next pending iteration item (back to step 1) for re-review — do not skip even if you believe all issues are resolved
    - If all points were rejected (no modifications): mark remaining iteration items as `completed` (skip)
    Continue to the next pending iteration item with:
    - the latest `git diff <base-commit>`

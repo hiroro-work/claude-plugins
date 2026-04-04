@@ -67,7 +67,7 @@ Look for user preferences and classify them:
 
    **By default** (`split_output: true`): Conversation-extracted **project-specific patterns** always go to `.local.md` files. Principles may be added to shared files. `project.md` is always a single file — project-level items go there regardless of `split_output`. Promoting patterns to shared files should be done manually or via organization-level merge.
 
-3. Check for duplicates: Skip if already exists or covered
+3. Check for duplicates: Skip if already exists or covered. Also check cross-format duplicates: a project-specific pattern whose description semantically matches an existing principle name (use AI judgment: case-insensitive, synonyms). For example, `` `useAuth()` - auth hook interface `` matches `Auth hook interface (useAuth)` in `## Principles`. Skip such patterns — they have already been promoted to Principles via merge-rules
 
 4. Append using the same format as Step 6 in the main SKILL.md (see Format guidelines)
 

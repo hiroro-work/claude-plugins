@@ -1,12 +1,12 @@
 ---
 name: apply-rules
-description: Apply organization-wide rules (from merge-rules output) to the current project. Detects relevant languages/frameworks/integrations from the project's tech stack, merges with existing rules while preserving project-specific .local.md files, and cleans up non-conforming rule files. Use when onboarding a project to org standards, syncing rules after org-wide rule updates, or bootstrapping .claude/rules/ for a new project. Trigger whenever the user mentions applying org rules, syncing shared rules, importing team coding standards, or setting up project rules from a shared source.
+description: Apply organization-wide rules (from merge-rules output) to the current project. Detects tech stack, merges Principles, cleans up promoted patterns from .local.md, and fixes non-conforming files.
 allowed-tools: Read, Glob, Grep, Write, AskUserQuestion, Bash(ls *), Bash(mkdir *), Bash(wc *), Bash(mktemp *), Bash(rm -rf /var/folders/*), Bash(rm -rf /tmp/*), Bash(rm .claude/*), Bash(gh api *), Bash(gh auth status *)
 ---
 
 # Apply Rules
 
-Applies organization-wide rules (produced by merge-rules) to the current project. Detects the project's tech stack, selects relevant rules, merges them with existing extract-rules output, and ensures the final structure conforms to the extract-rules/merge-rules convention.
+Applies organization-wide rules (produced by merge-rules) to the current project. Detects the project's tech stack, selects relevant rules, merges them with existing extract-rules output, cleans up promoted patterns from `.local.md` files, and ensures the final structure conforms to the extract-rules/merge-rules convention.
 
 ## Usage
 
@@ -166,7 +166,7 @@ Read `references/detection-heuristics.md` for the full detection table mapping i
 2. If exists, read all files: `.md`, `.local.md`, `.examples.md`
 3. Parse frontmatter and body sections for each
 4. Categorize files the same way as source files
-5. **Detect hybrid format**: If any `.md` file contains `## Project-specific patterns` (hybrid format from `split_output: false`), note this. The merge step will convert hybrid to split format because the split format (separate `.md` and `.local.md`) is the standard expected by both extract-rules and merge-rules, and mixing formats causes confusion when rules flow back through the pipeline
+5. **Detect hybrid format**: If any target `.md` file contains `## Project-specific patterns` (hybrid format from extract-rules `split_output: false`), note this. The merge step will convert hybrid to split format because the split format (separate `.md` and `.local.md`) is the standard expected by both extract-rules and merge-rules, and mixing formats causes confusion when rules flow back through the pipeline. Note: source files from merge-rules should not contain `## Project-specific patterns` (promoted patterns are converted to Principles format)
 
 ### Step 5.5: Normalize File Names
 
@@ -188,10 +188,7 @@ For each filtered source rule file, determine the merge action:
 **6a. Merge `.md` files (Principles):**
 
 **Case: No existing `.md`**
-1. Copy source `.md`
-2. If source contains `## Project-specific patterns` (promoted patterns from merge-rules):
-   - Move that section to a new `.local.md` file instead
-   - The `.md` file keeps only `## Principles` and `## Examples` reference
+1. Copy source `.md` as-is (source from merge-rules contains only `## Principles`)
 
 **Case: Existing `.md` exists**
 1. **`paths:` frontmatter**: Union of all path patterns, deduplicate
@@ -216,36 +213,33 @@ For each filtered source rule file, determine the merge action:
      >
      > For each, choose: (a) Adopt org rule / (b) Keep project rule / (c) Keep both
      > Example: "1a, 2c" or "all a"
-4. **`## Project-specific patterns` from source**:
-   Promoted patterns from org rules belong in `.local.md`, not `.md`, because `.md` is reserved for portable principles. Keeping this boundary clean ensures that when this project's rules flow back into merge-rules, portable and local content don't get mixed.
-   - If target has a `.local.md` → Append promoted patterns not already present
-   - If no target `.local.md` → Create new `.local.md` with promoted patterns
-   - Never put promoted patterns into the target `.md`
 
-**6b. Preserve `.local.md` files:**
+**6b. Clean up promoted patterns from `.local.md` files:**
 
-`.local.md` files contain project-specific patterns discovered by extract-rules — conventions unique to this codebase that would be lost if overwritten by org rules. Preserving them ensures the project retains its domain knowledge while adopting shared standards.
+`.local.md` files contain project-specific patterns discovered by extract-rules. When org rules promote a pattern to a Principle, the original pattern in `.local.md` becomes redundant. apply-rules cleans up these duplicates while preserving genuinely project-specific patterns.
 
-- Existing `.local.md` content is never modified or overwritten
-- Only append: promoted patterns from source that don't already exist
-- **Duplicate detection**: Match patterns by inline code signature (backtick portion before ` - `). Use AI judgment for semantic equivalence (e.g., `useAuth()` and `useAuth() → { user, login, logout }` refer to the same pattern). Same logic as merge-rules Step 5
+- apply-rules does not write new patterns to `.local.md`
+- **Cross-format duplicate removal**: After merging Principles in Step 6a, scan target `.local.md` for patterns whose description matches a Principle name now present in the corresponding `.md` (e.g., `` `useAuth() → { user, login, logout }` - auth hook interface `` is a duplicate of `Auth hook interface (useAuth)` in `## Principles`). Use AI judgment for semantic equivalence (case-insensitive, synonyms)
+- Remove matched patterns from `.local.md`
+- If `.local.md` becomes empty after removal, delete the file
+- Preserve all patterns that do not match any Principle (genuinely project-specific)
 
 **6c. Merge `.examples.md` files:**
 
 **Case: No existing `.examples.md`**
-- Copy source `.examples.md`
-- Remove `## Project-specific Examples` unless corresponding promoted patterns were added to `.local.md`
+- Copy source `.examples.md` as-is (source from merge-rules contains only `## Principles Examples`)
 
 **Case: Existing `.examples.md` exists**
 1. **`## Principles Examples`**: Add examples from source for principles not already covered in target
-2. **`## Project-specific Examples`**: Preserve ALL existing entries (they correspond to existing `.local.md` patterns). Only ADD examples for newly promoted patterns from 6a. Never remove existing project-specific examples
+2. **`## Project-specific Examples`** (target only): Remove examples whose `###` title corresponds to patterns removed from `.local.md` in Step 6b. Preserve all other existing entries
 
 **6d. Ensure `## Examples` reference:**
-- Every `.md` and `.local.md` that has a corresponding `.examples.md` must end with:
+- Every `.md` and `.local.md` that still exists and has a corresponding `.examples.md` must end with:
   ```markdown
   ## Examples
   When in doubt: ./<name>.examples.md
   ```
+- If a `.local.md` was deleted in Step 6b (became empty), no reference is needed
 
 ### Step 7: Structure Conformance Check + Auto-cleanup
 
@@ -295,16 +289,20 @@ Display report. Report headers are always in English, content in the configured 
 - Integrations: rails-devise, rails-pundit
 
 ## Applied Rules
-| File | Action | Principles | Promoted → .local.md |
-|------|--------|------------|----------------------|
-| languages/ruby.md | Merged | +3 added, 7 kept | 1 promoted |
-| frameworks/rails.md | Created | 13 | 0 |
-| frameworks/rails-controllers.md | Created | 5 | 0 |
-| integrations/rails-devise.md | Merged | +1 added | 0 |
+| File | Action | Principles |
+|------|--------|------------|
+| languages/ruby.md | Merged | +3 added, 7 kept |
+| frameworks/rails.md | Created | 13 |
+| frameworks/rails-controllers.md | Created | 5 |
+| integrations/rails-devise.md | Merged | +1 added |
 
-## Preserved (untouched)
-- languages/ruby.local.md (project-specific)
-- frameworks/rails.local.md (project-specific)
+## Promoted Pattern Cleanup
+- languages/ruby.local.md: removed 1 pattern (now in Principles)
+- frameworks/rails.local.md: no duplicates found
+
+## Preserved
+- languages/ruby.local.md (2 remaining patterns)
+- frameworks/rails.local.md (3 patterns, untouched)
 
 ## User-approved Integrations
 - integrations/rails-pundit (not detected, approved by user)
@@ -332,11 +330,11 @@ Summary of user-confirmation points and automatic actions:
 | Principle in target, not in source | Auto-keep |
 | Same principle, different hints | Auto-union hints |
 | Same principle name, different content | **AskUserQuestion**: collect all conflicts, present together (adopt org / keep project / keep both) |
-| Promoted pattern not in target `.local.md` | Auto-append (duplicate check by inline code signature) |
-| Promoted pattern already in `.local.md` | Auto-skip |
 | Non-conforming file detected | **AskUserQuestion**: present migration plan as single list for confirmation |
 | `project.*` non-conforming file | Excluded from "all" — must be specified individually by number |
 | Target file name differs from source canonical name | **AskUserQuestion**: confirm renames (all / none / specify) |
 | Undetected integration rule (related framework) | **AskUserQuestion**: present as single list for approval (all / none / specify) |
-| Existing `.local.md` content | Never modified (append-only for promoted patterns) |
-| Existing `.examples.md` project-specific examples | Never removed (append-only for new promoted pattern examples) |
+| `.local.md` pattern matching a Principle | Auto-remove from `.local.md` (cross-format duplicate cleanup) |
+| `.local.md` pattern not matching any Principle | Preserved |
+| `## Project-specific Examples` for removed pattern | Auto-remove |
+| `## Project-specific Examples` for remaining pattern | Preserved |

@@ -47,6 +47,18 @@ Always generate one `.examples.md` per rule category (regardless of `split_outpu
 - No `paths:` frontmatter (prevents auto-loading into context)
 - Skip generating the file if no examples exist for any rule in the category
 
+## Relationship with merge-rules
+
+When merge-rules promotes project-specific patterns to Principles, it converts the pattern format and moves examples to `## Principles Examples`:
+- Pattern `` `useAuth() → { user, login, logout }` - auth hook interface `` → Principle `Auth hook interface (useAuth)`
+- Pattern example under `## Project-specific Examples` → moved to `## Principles Examples` with the converted principle name as `###` title
+
+After apply-rules applies merged org rules, a project's `.examples.md` may contain both:
+- `## Principles Examples` — includes examples for both original principles and promoted patterns
+- `## Project-specific Examples` — project-local patterns that were not promoted
+
+apply-rules automatically cleans up duplicates: when a `.local.md` pattern is removed because it matches a promoted Principle, the corresponding `## Project-specific Examples` entry is also removed.
+
 ## Good/Bad Contrast Guidelines
 
 - **Principles**: Use Good/Bad contrast. Good examples from actual codebase, Bad from actual anti-patterns or typical Claude-generated code

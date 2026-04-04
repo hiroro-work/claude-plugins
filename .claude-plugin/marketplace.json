@@ -65,7 +65,7 @@
       "description": "Extract project-specific coding rules from codebase for AI agents",
       "source": "./",
       "skills": ["./skills/extract-rules"],
-      "version": "1.10.1",
+      "version": "1.11.0",
       "author": {
         "name": "hiropon"
       },
@@ -76,7 +76,7 @@
       "description": "Merge portable coding rules from multiple projects into a unified rule set",
       "source": "./",
       "skills": ["./skills/merge-rules"],
-      "version": "1.1.1",
+      "version": "2.0.0",
       "author": {
         "name": "hiropon"
       },
@@ -129,7 +129,7 @@
       "description": "Development workflow bundle (includes peer + extract-rules + dev-workflow + rules-review)",
       "source": "./",
       "skills": ["./skills/dev-workflow", "./skills/ask-peer", "./skills/extract-rules", "./skills/rules-review"],
-      "version": "1.18.2",
+      "version": "1.18.3",
       "author": {
         "name": "hiropon"
       },
@@ -140,7 +140,7 @@
       "description": "Apply organization-wide rules to projects (filter by tech stack, merge with existing rules)",
       "source": "./",
       "skills": ["./skills/apply-rules"],
-      "version": "1.1.0",
+      "version": "2.0.0",
       "author": {
         "name": "hiropon"
       },

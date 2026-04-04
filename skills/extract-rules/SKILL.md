@@ -1,6 +1,6 @@
 ---
 name: extract-rules
-description: Extract project-specific coding rules and domain knowledge from existing codebase, generating markdown documentation for AI agents. Use this skill when onboarding a new project, after significant code review discussions about coding style, when coding conventions need to be documented, or when the team's coding patterns should be captured for consistency. Also consider running with --from-conversation after sessions where coding preferences were discussed or corrected, or --from-pr after PRs with significant review feedback.
+description: Extract project-specific coding rules and domain knowledge from existing codebase, generating markdown documentation for AI agents. Use when onboarding a new project, after code review discussions about coding style, or when coding conventions need documenting. Also consider running after sessions where coding preferences were discussed or corrected (--from-conversation), or after PRs with significant review feedback (--from-pr).
 model: opus
 allowed-tools: Read, Glob, Grep, Write, Bash(ls *), Bash(mkdir *), Bash(git ls-files *), Bash(wc *), Bash(head *), Bash(tail *), Bash(sort *), Bash(uniq *), Bash(tree *), Bash(gh pr view *), Bash(gh pr diff *), Bash(gh api *), Bash(gh auth status *), Bash(gh repo view *), Bash(node *)
 ---
@@ -356,6 +356,7 @@ For each extracted principle/pattern:
 1. **Check if already exists**: Compare with existing rules (check both shared and local files if `split_output: true`)
    - Exact match → Skip
    - Similar but different → Keep both (let user review)
+   - **Cross-format duplicate check**: A project-specific pattern may have been promoted to a Principle by merge-rules. Check if the pattern's description semantically matches an existing principle name in the corresponding `.md` file (use AI judgment: case-insensitive, synonyms). For example, `` `useAuth() → { user, login, logout }` - auth hook interface `` is a duplicate of `Auth hook interface (useAuth)` in `## Principles`. Skip patterns that already exist as Principles.
    - New → Add
 
 2. **Preserve manual edits**: Do not modify existing rules

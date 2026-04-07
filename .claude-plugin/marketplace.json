@@ -8,9 +8,8 @@
     {
       "name": "ask-claude",
       "description": "Get a second opinion from another Claude instance",
-      "source": "./",
-      "skills": ["./skills/ask-claude"],
-      "version": "1.1.2",
+      "source": "./plugins/ask-claude",
+      "version": "1.1.3",
       "author": {
         "name": "hiropon"
       },
@@ -19,9 +18,8 @@
     {
       "name": "ask-codex",
       "description": "Get a second opinion from OpenAI Codex",
-      "source": "./",
-      "skills": ["./skills/ask-codex"],
-      "version": "1.2.0",
+      "source": "./plugins/ask-codex",
+      "version": "1.2.1",
       "author": {
         "name": "hiropon"
       },
@@ -30,9 +28,8 @@
     {
       "name": "ask-gemini",
       "description": "Get a second opinion from Google Gemini",
-      "source": "./",
-      "skills": ["./skills/ask-gemini"],
-      "version": "1.2.0",
+      "source": "./plugins/ask-gemini",
+      "version": "1.2.1",
       "author": {
         "name": "hiropon"
       },
@@ -41,9 +38,8 @@
     {
       "name": "ask-copilot",
       "description": "Get a second opinion from GitHub Copilot",
-      "source": "./",
-      "skills": ["./skills/ask-copilot"],
-      "version": "1.0.2",
+      "source": "./plugins/ask-copilot",
+      "version": "1.0.3",
       "author": {
         "name": "hiropon"
       },
@@ -52,9 +48,8 @@
     {
       "name": "security-scanner",
       "description": "Scan plugins and skills for security risks (multi-agent support)",
-      "source": "./",
-      "skills": ["./skills/security-scanner"],
-      "version": "1.2.1",
+      "source": "./plugins/security-scanner",
+      "version": "1.2.2",
       "author": {
         "name": "hiropon"
       },
@@ -63,9 +58,8 @@
     {
       "name": "extract-rules",
       "description": "Extract project-specific coding rules from codebase for AI agents",
-      "source": "./",
-      "skills": ["./skills/extract-rules"],
-      "version": "1.11.0",
+      "source": "./plugins/extract-rules",
+      "version": "1.11.1",
       "author": {
         "name": "hiropon"
       },
@@ -94,9 +88,8 @@
     {
       "name": "peer",
       "description": "Peer engineer for code review, planning, and brainstorming",
-      "source": "./",
-      "skills": ["./skills/ask-peer"],
-      "version": "2.2.0",
+      "source": "./plugins/peer",
+      "version": "2.2.1",
       "author": {
         "name": "hiropon"
       },
@@ -115,9 +108,8 @@
     {
       "name": "dev-workflow",
       "description": "Guided development workflow: plan → review → implement → check/test → code review → rules update",
-      "source": "./",
-      "skills": ["./skills/dev-workflow"],
-      "version": "1.20.0",
+      "source": "./plugins/dev-workflow",
+      "version": "1.20.1",
       "author": {
         "name": "hiropon"
       },
@@ -126,9 +118,8 @@
     {
       "name": "dev-workflow-bundle",
       "description": "Development workflow bundle (includes peer + extract-rules + dev-workflow + rules-review)",
-      "source": "./",
-      "skills": ["./skills/dev-workflow", "./skills/ask-peer", "./skills/extract-rules", "./skills/rules-review"],
-      "version": "1.20.0",
+      "source": "./plugins/dev-workflow-bundle",
+      "version": "1.20.1",
       "author": {
         "name": "hiropon"
       },
@@ -137,9 +128,8 @@
     {
       "name": "apply-rules",
       "description": "Apply organization-wide rules to projects (filter by tech stack, merge with existing rules)",
-      "source": "./",
-      "skills": ["./skills/apply-rules"],
-      "version": "2.0.0",
+      "source": "./plugins/apply-rules",
+      "version": "2.0.1",
       "author": {
         "name": "hiropon"
       },
@@ -148,9 +138,8 @@
     {
       "name": "rules-review",
       "description": "Check code changes for .claude/rules/ compliance using parallel sub-agent review",
-      "source": "./",
-      "skills": ["./skills/rules-review"],
-      "version": "1.0.0",
+      "source": "./plugins/rules-review",
+      "version": "1.0.1",
       "author": {
         "name": "hiropon"
       },

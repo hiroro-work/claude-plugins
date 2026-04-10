@@ -22,9 +22,17 @@ allowed-tools: Read, Write, Edit, Glob, Grep, TodoWrite, EnterPlanMode, ExitPlan
 
 ## Configuration
 
-Settings file: `dev-workflow.local.md` (YAML frontmatter only)
-- Project-level: `.claude/dev-workflow.local.md` (takes precedence)
-- User-level: `~/.claude/dev-workflow.local.md`
+Settings files (YAML frontmatter only, merged across layers):
+1. `~/.claude/dev-workflow.local.md` — User global defaults (lowest priority)
+2. `.claude/dev-workflow.md` — Project shared settings (git tracked, team-shared)
+3. `.claude/dev-workflow.local.md` — Personal overrides (gitignored, highest priority)
+
+Merge strategy per key type:
+- **Scalar** (`reviewer`, `review_iterations`, `task_decomposition`, `custom_instructions`): higher layer wins (replaces)
+- **List** (`check_commands`): append — lower-layer items first, then higher-layer items, duplicates removed (keep first occurrence). `test_commands` is excluded from merge — always fixed to `["Skill(run-tests)"]`
+- **`hooks`**: deep-merge at the `hooks` level — each sub-key (`on_complete`) is merged as a list (append, deduplicated)
+
+Keys absent from a higher layer inherit from lower layers. Only specify keys you want to override or extend.
 
 ```yaml
 ---
@@ -74,8 +82,21 @@ Read `references/init-mode.md` and follow the procedure.
 
 ### Step 1: Load Settings
 
-1. Read `.claude/dev-workflow.local.md` (project-level, priority) or `~/.claude/dev-workflow.local.md` (user-level)
-2. If neither exists, prompt user to run `/dev-workflow --init` and stop
+1. Read settings from up to three layers and merge (type-aware):
+   ```
+   merged = {}
+   if ~/.claude/dev-workflow.local.md exists:  overlay its frontmatter onto merged
+   if .claude/dev-workflow.md exists:          overlay its frontmatter onto merged
+   if .claude/dev-workflow.local.md exists:    overlay its frontmatter onto merged
+   ```
+   "Overlay" = for each key present in the file:
+   - Scalar keys: `merged[key] = file[key]` (replace)
+   - List keys (`check_commands`): append `file[key]` items after `merged[key]`, then deduplicate (keep first occurrence)
+   - `hooks`: deep-merge — for each sub-key (e.g. `on_complete`), append and deduplicate the list
+   - `null` or empty (`[]`, `{}`) explicitly clears the key — lower-layer value is discarded, not inherited
+   - Key absent from the file: left untouched (inherit from lower layers)
+   If a file's YAML frontmatter is malformed (parse error), warn the user naming the file, skip that layer, and continue with remaining layers.
+2. If none of the three files exist, prompt user to run `/dev-workflow --init` and stop
 3. Resolve `reviewer` from config. If not specified or not in the supported list (ask-peer, ask-claude, ask-codex, ask-gemini, ask-copilot), use `ask-peer`
 4. Resolve **N** (review iteration count):
    1. If `-i` / `--iterations` option is present and is a positive integer, use it

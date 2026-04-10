@@ -35,7 +35,7 @@
    - If yes: collect entries as a list (`Skill(<name>)` or shell command strings)
    - If no: omit `hooks` from config
 7. Present detected commands, test approach, prerequisites (if any), review_iterations (default: 3), reviewer, and hooks (if configured) to user for confirmation
-8. On user approval, save `.claude/dev-workflow.local.md` (including reviewer, review_iterations, check_commands, test_commands, and hooks if configured) and write generated skill files (if any from 4b/4c)
+8. On user approval, save settings to `.claude/dev-workflow.md` (project shared, git tracked). If `.claude/dev-workflow.md` already exists, preserve any keys not managed by `--init` (e.g., `task_decomposition`, `custom_instructions`) by reading the existing file first and merging the new values into it. If the existing file has malformed YAML, warn the user and ask whether to overwrite it (losing unmanaged keys) or abort so they can fix it manually. Write generated skill files (if any from 4b/4c)
 9. Verify commands and skills work
    - Run each check_command and report pass/fail
    - **Pseudo-execute** `run-tests` (newly created skills are not registered in the current session, so `Skill(run-tests)` cannot be used):

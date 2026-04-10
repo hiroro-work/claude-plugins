@@ -1,3 +1,4 @@
 .claude/*
 !.claude/commands/
 !.claude/skills/
+!.claude/dev-workflow.md

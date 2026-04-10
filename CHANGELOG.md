@@ -2,6 +2,16 @@
 
 ## 2026-04-10
 
+### dev-workflow v1.24.0 / dev-workflow-bundle v1.24.0
+
+- feat(dev-workflow): Add 3-layer configuration with type-aware merge
+  - New project shared settings file: `.claude/dev-workflow.md` (git tracked, team-shared)
+  - Settings are merged across three layers: user global (`~/.claude/dev-workflow.local.md`) → project shared (`.claude/dev-workflow.md`) → personal override (`.claude/dev-workflow.local.md`)
+  - Merge strategy: scalar keys are replaced by higher layer; list keys (`check_commands`) are appended and deduplicated; `hooks` is deep-merged (`on_complete` list is appended). `null`/empty explicitly clears the key
+  - `--init` now saves to `.claude/dev-workflow.md` (project shared) instead of `.claude/dev-workflow.local.md`
+  - Existing `.claude/dev-workflow.local.md` continues to work as the highest-priority personal override layer — no migration needed
+  - Personal overrides (`.claude/dev-workflow.local.md`) are created manually with only the keys to override
+
 ### dev-workflow v1.23.0 / dev-workflow-bundle v1.23.0
 
 - feat(dev-workflow): Add `task_decomposition` setting to disable auto-decomposition in Normal sub-mode

@@ -157,10 +157,11 @@ Mark `Step 3: Plan Review` as `in_progress`. Process each pending iteration item
 
 1. Mark the iteration item as `in_progress`. Call the reviewer skill resolved in Step 1 (e.g. `Skill(ask-peer)`): Review the plan.
    - Instruct reviewer to read all files under `.claude/rules/` for project conventions
-   - Request feedback organized into three categories:
+   - Request feedback organized into four categories:
      a. **Scope & feasibility**: scope appropriateness, dependencies, risks, `.claude/rules/` compliance
      b. **Approach & alternatives**: simpler methods, architectural fit with existing code
      c. **Completeness**: edge cases, error handling, test plan adequacy (verify specific test files are identified and existing related tests are covered for update)
+     d. **Incrementality**: can this plan be split into smaller, independently verifiable units (e.g. hotfix vs refactor)? Step 1.5 checked at request level; this is the plan-level check — concrete plans often bundle independent work even when the task looks single-concern. If splittable, propose the split and order. For PR-level splits (distinct verification / rollback / regression attribution), recommend restarting via Step 1.5; for intra-PR splits, recommend staged commits
    - If `custom_instructions` is configured, include the instructions text in the review request and have the reviewer verify alignment and report conflicts
    - Reviewer should only report actionable findings. If none, explicitly state "No actionable findings"
 2. If reviewer returned "No actionable findings": mark this and remaining iteration items as `completed` (skip). Mark `Step 3: Plan Review` as `completed` and proceed to Step 4.
@@ -170,7 +171,7 @@ Mark `Step 3: Plan Review` as `in_progress`. Process each pending iteration item
    Continue to the next pending iteration item with:
    - the updated plan
    - a summary of changes made and rejections with reasons
-   - the same three-category structure, `.claude/rules/` reference, and "No actionable findings" requirement
+   - the same four-category structure, `.claude/rules/` reference, and "No actionable findings" requirement
 4. If all N iteration items are completed and actionable feedback still remains, carry the unresolved points forward to Step 4.
 
 Mark `Step 3: Plan Review` as `completed`.

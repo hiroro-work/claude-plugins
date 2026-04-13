@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-04-13
+
+### dev-workflow v1.26.0 / dev-workflow-bundle v1.26.0
+
+- feat(dev-workflow): Add `Incrementality` category to Step 3 Plan Review
+  - Reviewer is now asked whether the plan can be split into smaller, independently verifiable units (hotfix vs refactor, behavior change vs structural change)
+  - Catches cases where a task-level "single concern" still bundles independent work at the plan level, where Step 1.5 decomposition correctly passed
+  - Regression attribution concerns ("which change caused this?") are called out as a strong splittability signal
+
 ## 2026-04-11
 
 ### dev-workflow v1.25.1 / dev-workflow-bundle v1.25.1

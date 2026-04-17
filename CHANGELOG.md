@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-04-18
+
+### dev-workflow v1.27.0 / dev-workflow-bundle v1.27.0
+
+- feat(dev-workflow): Add simplicity-first audit to Step 2 / Plan Review / Code Review
+  - Step 2 gains a new `Simplicity self-audit` sub-step. Right after drafting the plan, each element must be traceable to an explicit user requirement, a known bug/constraint, or a documented `.claude/rules/` rule; elements without such a trigger must be dropped or annotated with an explicit rationale
+  - Inherited spec files under `.claude/plans/*.md` are treated as prior-session drafts, not confirmed requirements. Task-decomposition state files are the exception: user-approved subtask boundaries, order, `depends_on`, and purposes are honored as-is, while AI-authored descriptions within each subtask remain draft
+  - Step 3 category (a) Scope & feasibility is reframed to verify the author's self-audit, so the reviewer focuses on elements with weak or missing rationale rather than re-running the same traceability check
+  - Step 8 category (c) Simplicity & maintainability now explicitly flags speculative features without an explicit trigger, catching scope creep that slipped past earlier gates
+  - Addresses a failure mode where prior-session plan files were treated as confirmed requirements and carried forward unvetted elaboration into implementation
+
 ## 2026-04-13
 
 ### dev-workflow v1.26.0 / dev-workflow-bundle v1.26.0

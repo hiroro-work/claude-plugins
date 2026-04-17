@@ -141,13 +141,18 @@ After section A or B completes, the "effective task" is set for Step 2 onward: t
 2. `EnterPlanMode`
 3. Analyze the task and codebase, create implementation plan. Apply `custom_instructions` to shape plan priorities and structure (must include test plan: what to test, test types, scope, and which existing test files to update or new test files to create — or justification why no tests are needed)
    - **If a state file exists** (this run is executing one subtask of a decomposed parent): the "effective task" = the current `in_progress` subtask. Frame the plan around **just this subtask** while keeping the full parent task and other subtasks as background context so the plan stays consistent with the overall direction. Do not plan work belonging to other subtasks
-4. **No code changes in this phase**
-5. **Adjust N by difficulty** (skip if `-i` / `--iterations` was explicitly specified): A typo fix doesn't need 3 rounds of review. Based on the plan just created, assess task difficulty and reduce N to avoid unnecessary iterations — the configured value is a ceiling, not a target:
+4. **Simplicity self-audit**: Before proceeding to Step 3, audit the plan:
+   - Each plan element must be traceable to one of: (a) an explicit user requirement, (b) a known bug or constraint, or (c) a documented project rule under `.claude/rules/`. "Future-proofing", "UX polish", "consistency with other projects", or "might be useful later" are not sufficient triggers on their own.
+   - **Inherited spec files** (`.claude/plans/*.md` — full-spec drafts, archived plans, or AI-authored details within a task-decomposition state file): treat the content as a prior-session draft, not as confirmed user requirements. Cross-check each inherited design decision against the user's original ask surfaced by Step 1.5 / the user message — prior-session elaboration is the most common source of scope creep.
+     - **Exception — task-decomposition state files**: subtask boundaries, order, `depends_on`, and purposes were user-approved in a prior Step 1.5 and must be honored as-is. Only AI-authored descriptions, verification hints, and design elaborations within each subtask are draft.
+   - For each element that fails the audit, either (i) drop it from the plan, or (ii) add an explicit one-line rationale tying it to a concrete trigger (user requirement / bug / rule).
+5. **No code changes in this phase**
+6. **Adjust N by difficulty** (skip if `-i` / `--iterations` was explicitly specified): A typo fix doesn't need 3 rounds of review. Based on the plan just created, assess task difficulty and reduce N to avoid unnecessary iterations — the configured value is a ceiling, not a target:
    - **Simple** (typo fix, config tweak, straightforward bug fix with obvious solution): N = 1
    - **Moderate** (multi-file within one module, feature following existing patterns): N = min(2, N)
    - **Complex** (cross-module, new patterns, API changes, significant refactoring): keep N
    File count is a hint, not the sole criterion. If adjusted, mark excess TodoWrite iteration items (Step 3-x and Step 8-x) as `completed`. Log the assessed difficulty and effective N.
-6. Do not present the plan to the user or ask for approval/confirmation — presenting an unreviewed plan wastes user time and risks approval of a suboptimal approach. Proceed to Step 3. The user will see the reviewed plan in Step 4.
+7. Do not present the plan to the user or ask for approval/confirmation — presenting an unreviewed plan wastes user time and risks approval of a suboptimal approach. Proceed to Step 3. The user will see the reviewed plan in Step 4.
 
 ### Step 3: Plan Review
 
@@ -158,7 +163,7 @@ Mark `Step 3: Plan Review` as `in_progress`. Process each pending iteration item
 1. Mark the iteration item as `in_progress`. Call the reviewer skill resolved in Step 1 (e.g. `Skill(ask-peer)`): Review the plan.
    - Instruct reviewer to read all files under `.claude/rules/` for project conventions
    - Request feedback organized into four categories:
-     a. **Scope & feasibility**: scope appropriateness, dependencies, risks, `.claude/rules/` compliance
+     a. **Scope & feasibility**: verify the author's Step 2 simplicity self-audit (each plan element should already tie back to an explicit user requirement, known bug, or documented rule — flag only elements where the rationale is weak, missing, or looks like speculative "future-proofing" or unnecessary abstraction), dependencies, risks, `.claude/rules/` compliance
      b. **Approach & alternatives**: simpler methods, architectural fit with existing code
      c. **Completeness**: edge cases, error handling, test plan adequacy (verify specific test files are identified and existing related tests are covered for update)
      d. **Incrementality**: can this plan be split into smaller, independently verifiable units (e.g. hotfix vs refactor)? Step 1.5 checked at request level; this is the plan-level check — concrete plans often bundle independent work even when the task looks single-concern. If splittable, propose the split and order. For PR-level splits (distinct verification / rollback / regression attribution), recommend restarting via Step 1.5; for intra-PR splits, recommend staged commits
@@ -231,7 +236,7 @@ Mark `Step 8: Code Review` as `in_progress`. Process each pending iteration item
    - Request feedback organized into three categories:
      a. **Correctness & edge cases**: bugs, error handling gaps, race conditions, missing validations, missing or insufficient tests for changes (verify planned test files from Step 2 are present in the diff)
      b. **Conventions & consistency**: naming, file structure, patterns, `.claude/rules/` compliance (lightweight check — Step 7.5 handles the thorough review)
-     c. **Simplicity & maintainability**: unnecessary complexity, duplication, unclear abstractions
+     c. **Simplicity & maintainability**: unnecessary complexity, duplication, unclear abstractions, speculative features without explicit trigger (functionality beyond what the stated requirement needs — flag for removal)
    - If `custom_instructions` is configured, include the instructions text in the review request and have the reviewer verify compliance and report conflicts
    - Reviewer should only report actionable findings. If none, explicitly state "No actionable findings"
 2. If reviewer returned "No actionable findings": mark this and remaining iteration items as `completed` (skip). Mark `Step 8: Code Review` as `completed` and proceed to Step 9.

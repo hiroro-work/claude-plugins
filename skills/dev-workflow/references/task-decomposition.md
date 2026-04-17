@@ -49,14 +49,42 @@ When a state file is in play, surface parent progress with a single top-level `T
 
 Prerequisite: this section only applies when `task_decomposition` is `true` (the default). If `false`, Step 1.5 is skipped entirely and you don't need to read this section — the Normal sub-mode request becomes the "effective task" unchanged.
 
-1. Assess whether the task should be decomposed. Keep judgment lightweight and log a one-line rationale:
-   - **Do NOT decompose**: single-concern work (typo, config tweak, obvious bug fix, feature contained in one module), or changes that would break consistency if split
-   - **Decompose**: multiple independent features, cross-module changes where each module is independently verifiable, and-lists in the request ("implement X and Y and Z"), large refactors that benefit from staged rollout
+1. Assess whether the task should be decomposed. Keep judgment lightweight and log a one-line rationale that names **which primary signal** drove the decision (e.g. `decompose: 2 distinct verification paths — admin CRUD + chat insertion`, `no decompose: single verification path — bug fix affects one handler`).
+
+   When signals are mixed, err on the side of proposing decomposition — the cost of asking is low (a single yes/adjust/no dialogue), and smaller, independently shippable PRs cut review load and merge risk significantly. "Feature looks singular" is not sufficient grounds to skip decomposition; what matters is whether verification splits.
+
+   - **Decompose (proactively propose when any of these hold)**:
+     - The task splits into 2+ units where **each unit has a distinct verification path** (separate E2E, separate manual check, or separate acceptance criterion). This is the strongest signal
+     - "and/plus"-style requests (`X and Y`, `X に加えて Y も`, `X と Y を実装`)
+     - Cross-layer work where earlier layers are shippable standalone (e.g. data model → admin page → user-facing feature)
+     - Large refactors that benefit from staged rollout
+   - **Do NOT decompose (vetoes)**:
+     - Single-concern work with one verification path (typo, config tweak, obvious bug fix with an obvious solution)
+     - Changes where splitting would break atomicity (e.g. a cross-caller rename must land as one commit to keep the tree compiling)
+     - Subtasks so small that per-subtask PR / review overhead would exceed the benefit
+
+   **Precedence when signals conflict**: the primary signal (distinct verification paths) overrides all vetoes — a truly split verification surface is evidence that the atomicity / overhead concern is mis-framed. Otherwise vetoes override the non-primary positive signals (and-list, cross-layer, staged refactor).
 2. **If "do NOT decompose"**: mark `Step 1.5` as `completed`, set the "effective task" to the original request, and proceed to Step 2 without creating a state file
 3. **If "decompose"**:
    a. Draft a subtask list conforming to the "State file schema" above. `verification_hint` describes how completion will be observed (e.g. "migration runs clean", "new auth spec passes", "UI login → logout works end-to-end"). Keep each subtask small enough to ship as a single PR
    b. Validate the draft against the schema (DAG, unique ids, required fields). Revise if invalid
-   c. Present the proposal to the user as a plain message (not Plan Mode) and ask: `Proceed with this breakdown into <N> subtasks? (yes / adjust / no = run as one task)`
+   c. Present the proposal to the user as a plain message (not Plan Mode). List each subtask with its `verification_hint` so the user can judge the breakdown at a glance, then ask for confirmation. Use this shape:
+
+      ```text
+      Proposed breakdown into <N> subtasks:
+
+      1. <title>
+         Verification: <verification_hint>
+      2. <title>
+         Verification: <verification_hint>
+         (depends_on: [1])
+      ...
+
+      Proceed? (yes / adjust / no = run as one task)
+      ```
+
+      The `verification_hint` is shown as **advisory context** — it helps the user sanity-check the split, but a `yes` only locks in subtask boundaries, order, `depends_on`, and purposes. Verification hints remain AI-authored draft and may be refined in Step 2, consistent with Step 2's Simplicity self-audit which treats `verification_hint` as draft within otherwise-approved state files.
+
    d. On "adjust": iterate on the list (add / remove / merge / reorder / edit) and re-validate after each revision
    e. On "no": mark `Step 1.5` as `completed` and proceed to Step 2 as a single undecomposed task (no state file)
    f. On "yes", create the state file and pick the first subtask:

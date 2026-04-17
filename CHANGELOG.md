@@ -2,6 +2,19 @@
 
 ## 2026-04-18
 
+### dev-workflow v1.28.0 / dev-workflow-bundle v1.28.0
+
+- feat(dev-workflow): Refine Step 1.5 decomposition heuristic toward independently-verifiable units
+  - `references/task-decomposition.md` section B step 1 criteria reordered and rewritten. "The task splits into 2+ units where each unit has a distinct verification path" is now the strongest decompose signal, elevated above cross-module / and-list / staged-refactor heuristics
+  - When decomposition signals are mixed, the workflow now biases toward proposing decomposition (the yes/adjust/no dialogue is cheap, smaller shippable PRs cut review load). "Feature looks singular" is no longer sufficient grounds on its own
+  - Do NOT decompose criteria reframed around single verification path, atomicity-breaking splits, and a new guardrail against over-splitting (subtasks so small that per-PR overhead exceeds the benefit)
+  - Rationale log now names the **primary signal** that drove the decision (e.g. `decompose: 2 distinct verification paths — admin CRUD + chat insertion`), so decomposition bias can be audited after the fact
+  - Section B step 3.c decomposition-proposal dialogue now lists each subtask with its `verification_hint` (and `depends_on`), so the user can judge the breakdown at a glance before answering yes/adjust/no
+  - Clarified decompose vs. veto precedence: atomicity / over-split vetoes and the single-verification-path case override non-primary positive signals (and-list, cross-layer, staged refactor). Only the primary signal — genuinely distinct verification paths — overrides these vetoes. Resolves the ambiguity where a light "X and Y" request could decompose despite PR overhead outweighing benefit
+  - Clarified that `verification_hint` shown in the Step 1.5 proposal is advisory context for the split decision, not a user-approved completion contract — consistent with Step 2's existing treatment of `verification_hint` as AI-authored draft within otherwise-approved state files, so Step 2 can still refine hints without violating the yes the user gave in Step 1.5
+  - Addresses a failure mode where features with 2 distinct verification units (e.g. admin CRUD + chat insertion) were classified as "feature contained in one module" and shipped as a single oversized PR, requiring post-hoc splitting
+  - README.md "Decomposition judgment" section synced with the new criteria
+
 ### dev-workflow v1.27.0 / dev-workflow-bundle v1.27.0
 
 - feat(dev-workflow): Add simplicity-first audit to Step 2 / Plan Review / Code Review

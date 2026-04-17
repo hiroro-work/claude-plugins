@@ -298,8 +298,14 @@ Large requests that span multiple independent concerns can be split into subtask
 
 ### Decomposition judgment (lightweight)
 
-- **Not decomposed**: typo fix, config tweak, obvious bug fix, feature contained in one module, or anything that would break consistency if split
-- **Decomposed**: multiple independent features, cross-module changes where each module is independently verifiable, and-lists in the request ("implement X and Y and Z"), large refactors that benefit from staged rollout
+- **Decomposed (proactively proposed when any of these hold)**:
+  - The request splits into 2+ units where each unit has a **distinct verification path** (separate E2E, manual check, or acceptance criterion) — strongest signal
+  - "and/plus"-style requests ("implement X and Y and Z")
+  - Cross-layer work where earlier layers are shippable standalone (e.g. data model → admin page → user-facing feature)
+  - Large refactors that benefit from staged rollout
+- **Not decomposed (vetoes)**: single-concern work with one verification path (typo, config tweak, obvious bug fix), changes that would break atomicity if split (e.g. a cross-caller rename that must land as one commit), or subtasks so small that per-PR / review overhead exceeds the benefit
+- **Precedence**: the primary signal (distinct verification paths) overrides all vetoes; otherwise vetoes override the non-primary positive signals. When signals are mixed and no veto applies, the workflow errs on the side of proposing decomposition
+- The proposal itself shows each subtask's `verification_hint` so you can judge and redirect quickly. That hint is advisory context for the split decision — it is not locked in as a completion contract and may be refined during Step 2
 
 The assessment is always advisory: if the user rejects the proposal, the workflow falls back to single-task mode with no state file.
 

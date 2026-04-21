@@ -223,6 +223,7 @@ For each filtered source rule file, determine the merge action:
 - Remove matched patterns from `.local.md`
 - If `.local.md` becomes empty after removal, delete the file
 - Preserve all patterns that do not match any Principle (genuinely project-specific)
+- **Sync `paths:` frontmatter**: for any `.local.md` that still exists after cleanup, ensure its `paths:` frontmatter matches the sibling `.md`'s `paths:` (union and deduplicate with any existing entries on `.local.md`). This keeps project-specific patterns auto-loading under the same scope as the portable Principles. Older `.local.md` files generated before extract-rules propagated `paths:` to `.local.md` may be unscoped; this step retrofits the scope without requiring a full extract-rules re-run
 
 **6c. Merge `.examples.md` files:**
 

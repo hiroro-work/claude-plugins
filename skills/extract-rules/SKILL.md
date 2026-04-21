@@ -236,10 +236,10 @@ Read `references/security.md` before generating output to ensure sensitive infor
    - **Integration libraries**: See `references/integration-criteria.md` "Output structure" section.
 
    **By default** (`split_output: true`): Generate 3 files per category (except project.md which gets 2):
-   - `<name>.md` — `## Principles` only (portable)
-   - `<name>.local.md` — `## Project-specific patterns` only (local)
+   - `<name>.md` — `## Principles` only (portable), with `paths:` frontmatter
+   - `<name>.local.md` — `## Project-specific patterns` only (local), with the **same `paths:` frontmatter** as its `<name>.md` counterpart (so local patterns auto-load under the same scope)
    - `<name>.examples.md` — Examples for both (no `paths:` frontmatter, no auto-load)
-   - Layer-specific and regular files require `paths:` frontmatter independently. Cross-layer files (`<framework>.md`) use no `paths:` or broad scope as they apply across all layers.
+   - Layer-specific and regular files each define their own `paths:` independently (applies to both `.md` and `.local.md`). Cross-layer files (`<framework>.md` / `<framework>.local.md`) use no `paths:` or broad scope as they apply across all layers.
    - Skip generating a file if it would be empty. Skipped files are omitted from the Step 7 report.
 
    **When `split_output: false`**: Generate single hybrid file per category with both sections.
@@ -265,6 +265,10 @@ paths:
 - `RefOrNull<T extends { id: string }> = T | { id: null }` - nullable relationships
 - `pathFor(page) + url()` - Page Object navigation pair
 - `useAuthClient()` returns `{ user, login, logout }` - auth hook interface
+
+## Examples
+
+When in doubt: ./typescript.examples.md
 ```
 
 **Format guidelines:**

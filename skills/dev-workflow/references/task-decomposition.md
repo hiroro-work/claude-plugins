@@ -49,7 +49,7 @@ When a state file is in play, surface parent progress with a single top-level `T
 
 Prerequisite: this section only applies when `task_decomposition` is `true` (the default). If `false`, Step 1.5 is skipped entirely and you don't need to read this section — the Normal sub-mode request becomes the "effective task" unchanged.
 
-1. Assess whether the task should be decomposed. Keep judgment lightweight and log a one-line rationale that names **which primary signal** drove the decision (e.g. `decompose: 2 distinct verification paths — admin CRUD + chat insertion`, `no decompose: single verification path — bug fix affects one handler`).
+1. Assess whether the task should be decomposed. Keep judgment lightweight and log a one-line rationale **as a chat message to the user** (not a TodoWrite note or state-file field) that names **which primary signal** drove the decision (e.g. `decompose: 2 distinct verification paths — admin CRUD + chat insertion`, `no decompose: single verification path — bug fix affects one handler`). The chat line is the audit trail for the "do NOT decompose" path, which otherwise leaves no visible record — the yes/adjust/no dialogue below only fires on the "decompose" path.
 
    When signals are mixed, err on the side of proposing decomposition — the cost of asking is low (a single yes/adjust/no dialogue), and smaller, independently shippable PRs cut review load and merge risk significantly. "Feature looks singular" is not sufficient grounds to skip decomposition; what matters is whether verification splits.
 

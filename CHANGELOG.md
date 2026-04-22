@@ -2,6 +2,15 @@
 
 ## 2026-04-22
 
+### dev-workflow v1.32.0 / dev-workflow-bundle v1.32.0
+
+- feat(dev-workflow): Structured plan format with a mandatory Decisions section to cut Step 4 user-review fatigue
+  - New file `references/plan-format.md` — single source of truth for plan structure (Overview / Decisions / Design / Test plan / Risks), the (a)+(b) Decisions criterion, Subtask / Resume handling, the Step 2 self-check, the Step 3 (f) content-quality rubric, and the three literal Step 4 guidance lines
+  - Step 2 Create Plan: sub-step 3 now instructs authors to follow the template in `references/plan-format.md`; new sub-step 5 **Plan presentation format self-check** runs the author's first-pass judgment on the (a)+(b) Decisions criterion, and subsequent sub-steps shift forward by one (the difficulty-based N adjustment and "do not present" now sit at sub-steps 7 and 8)
+  - Step 3 Plan Review: adds review category **(f) Presentation & attention allocation (content quality)** — external re-check of the Decisions section's content (does each item genuinely pass (a)+(b), is there a judgment call buried in Design, are Overview/Design/Test plan/Decisions mutually consistent). Format compliance is not re-checked here — the Step 2 self-check is authoritative for structure, keeping the division of labor clean and preventing the "No actionable findings" short-circuit from bypassing format validation
+  - Step 4 Finalize Plan: sub-step 1 leads with one of three literal English guidance lines (Decisions present / empty-Normal / empty-Resume) drawn verbatim from `references/plan-format.md`. The "Decisions present" variant tells the user where their judgment is actually needed; the empty variants turn "no decisions" into a strong skim-and-approve signal rather than a mistakenly-dropped section
+  - README `## Plan format` section: user-facing summary of the template, the Decisions gate, and the recommended review procedure
+
 ### dev-workflow v1.31.0 / dev-workflow-bundle v1.31.0
 
 - feat(dev-workflow): Address plan self-audit and code-review rubric gaps from retrospective-2026-04-22 (findings F1 / F2 code-review-side / F3 planning-side / F4 / F5 code-review-side; see Explicit defers below for what each finding did not cover in this release)

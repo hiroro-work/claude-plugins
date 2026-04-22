@@ -449,6 +449,35 @@ The workflow begins at Step 2 (Step 1 is settings load, Step 1.5 is task decompo
 | 9.5 | Self-Retrospective | (Only if `self_retrospective.feedback` is set and difficulty is not Simple; or manually re-requested in the same session after a Simple auto-skip) Spawn a subagent to extract sanitized bundle-skill improvement signal, present it with a destination header, and submit on user approval. See `references/self-retrospective.md` |
 | 10 | Completion Hooks | Run `hooks.on_complete` (only if configured) |
 
+## Plan format
+
+Plans produced in Step 2 and presented in Step 4 follow a fixed structure so you can scan them quickly and focus on the parts that actually need your judgment. Full specification in [`references/plan-format.md`](references/plan-format.md).
+
+### Sections
+
+| Section | Required | Purpose |
+| --- | --- | --- |
+| Overview | Yes | Goal, difficulty, scope (files), approach — at most 5 bullets, one line each. 30-second scan |
+| Decisions | Yes | Up to 5 items where **your** judgment is actually needed, OR a fixed "no decisions" sentence (see below) |
+| Design | Yes | Detailed design body, structured by file or by step |
+| Test plan | Yes | Test files to add/update, test types, coverage — or justification for no tests |
+| Risks / Unknowns | Optional | Non-trivial risks or open questions |
+
+### The Decisions section
+
+This is the attention anchor. An item lands in Decisions only if **both** are true: (a) reasonable engineers could legitimately disagree, AND (b) switching later would require non-trivial rework. Preference-level choices that are cheap to reverse do not belong here — they stay in Design. Full criterion in [`references/plan-format.md`](references/plan-format.md) § Decisions criterion (AND condition).
+
+When no items qualify, the section is still rendered with one of two fixed sentences (one for Normal mode, one for Resume / subtask mode) — so "no decisions" becomes an unambiguous signal rather than a missing-by-mistake section. Canonical strings in [`references/plan-format.md`](references/plan-format.md) § Empty-Decisions fixed sentences.
+
+In Resume mode, subtask boundaries, order, and purposes were already approved in the parent run's Step 1.5 — only in-subtask judgment calls surface in Decisions. Details in [`references/plan-format.md`](references/plan-format.md) § Subtask / Resume handling.
+
+### How to review a plan quickly
+
+1. Read Overview (≤ 30 seconds).
+2. Read the guidance line at the top of the plan — Step 4 leads with one of three literal lines that tell you where to focus.
+3. If Decisions has items, engage with each one (the real work). If Decisions is empty, approve after a light skim.
+4. The rest of the plan has already been reviewed in Step 3 by the reviewer skill — skim only if something looks off.
+
 ## Prerequisites
 
 To get the full benefit of dev-workflow, the following skills are recommended:

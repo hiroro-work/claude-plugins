@@ -9,9 +9,12 @@ Project conventions under `.claude/rules/` and `CLAUDE.md` override these generi
 ## Frontmatter (SKILL.md)
 
 - [ ] `name` is present and matches the directory name (kebab-case).
+- [ ] `name` is 1–64 characters and matches `^[a-z0-9]+(-[a-z0-9]+)*$` (no consecutive hyphens, no leading/trailing hyphen).
 - [ ] `description` is present.
+- [ ] `description` is ≤ 1024 characters. If it overflows, suspect duplicated triggering cues or over-explanation.
 - [ ] `description` states **what the skill does** AND **when to use it** (trigger contexts). "When to use" lives in the description, not the body.
 - [ ] `description` includes concrete triggering cues — specific user phrasings, file types, domains, or contexts. Pushy phrasing is fine to combat under-triggering ("Use this whenever the user mentions ...").
+- [ ] For skills that are easy to mis-trigger, `description` also names negative triggers / exclusion criteria ("Don't use for ...", "Skip when ...") so the router can avoid false positives.
 - [ ] `description` avoids being abstract or generic ("A helpful skill" is too vague to route on).
 - [ ] `allowed-tools` (if present) lists only the tools the skill actually needs — no `Bash(*)` wildcards unless a concrete narrower pattern is impossible.
 - [ ] `compatibility` is set only when real tool / dependency requirements exist (rarely needed).
@@ -30,6 +33,7 @@ Project conventions under `.claude/rules/` and `CLAUDE.md` override these generi
 - [ ] The skill explains **why** load-bearing instructions matter, rather than leaning on heavy-handed `MUST` / `NEVER` / all-caps.
 - [ ] Rigid structures (mandatory ALL-CAPS musts, brittle templates) are used only where the rigidity carries real weight; otherwise the skill reframes the guidance to explain reasoning.
 - [ ] Language is specific and concrete — names the tool, step, or artifact rather than gesturing vaguely ("the file", "some output").
+- [ ] Terminology is consistent across SKILL.md and `references/` — the same concept uses the same word, not swapped synonyms (e.g., don't mix "template" / "view" / "layout" for the same thing).
 - [ ] The skill is written to generalize beyond the examples it was iterated on (not overfit to a single scenario).
 
 ## Output formats & examples
@@ -41,8 +45,10 @@ Project conventions under `.claude/rules/` and `CLAUDE.md` override these generi
 ## Bundled resources
 
 - [ ] `references/` files are linked from SKILL.md with a one-line statement of when to read them.
+- [ ] `references/` is a flat directory — no nested subdirectories. Use filename suffixes (`references/<variant>.md`) to separate domains instead.
 - [ ] A large reference file (>300 lines) includes a short table of contents at the top.
 - [ ] `scripts/` contain deterministic, reusable code — not prose (prose belongs in `references/`).
+- [ ] `scripts/` write success output to stdout and failure output to stderr; failure messages name the specific cause (missing file, wrong format, etc.) so the calling agent can self-correct.
 - [ ] `assets/` are only the templates / icons / fonts the skill's output actually consumes. Not a dumping ground for stale artifacts.
 - [ ] Directory layout uses the canonical names (`references/`, `scripts/`, `assets/`, `agents/`) so tooling and readers know where to look.
 

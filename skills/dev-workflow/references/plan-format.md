@@ -93,13 +93,14 @@ If the current subtask has no in-scope decisions, use the Resume-mode fixed sent
 
 ## Step 2 self-check
 
-After the Simplicity self-audit in Step 2, run this check on the Decisions section. Fix any failures before Step 3.
+After the Simplicity self-audit in Step 2, run this check on the plan. Fix any failures before Step 3.
 
 - [ ] Every Decisions item passes the (a)+(b) criterion — if in doubt, drop it to Design.
 - [ ] No choice that qualifies under (a)+(b) is buried inside Design instead of surfaced in Decisions.
 - [ ] If executing a subtask (state file active): Decisions does not re-surface subtask-boundary questions.
+- [ ] No section appears outside the enumerated template (Overview, Decisions, Design, Test plan, optionally Risks / Unknowns) — added "meta" sections such as introductions, methodology notes, or recap blocks belong inside Design or should be dropped entirely.
 
-This is the **author's first-pass judgment** on Decisions content; Step 3 category (f) re-checks the same content externally. The template itself enforces structural format (required section headings), so no structural checklist is needed.
+This is the **author's first-pass judgment** on plan content; Step 3 category (f) re-checks the same material externally. The template's required-headings list defines the closed set of sections; adherence to it is the only structural property checked here, captured by the final bullet above.
 
 ## Step 3 (f) content-quality rubric
 

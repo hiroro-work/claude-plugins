@@ -2,6 +2,19 @@
 
 ## 2026-04-24
 
+### dev-workflow v1.34.1 / dev-workflow-bundle v1.34.1
+
+- fix(dev-workflow): Extend the `language` config scope to cover all user-facing prose the skill produces, not just Step 9.5
+  - `language` now governs the Step 4 plan body (Overview / Decisions / Design / Test plan / Risks / Unknowns content) and the Step 2 difficulty-assessment log in addition to the Step 9.5 finding `Description` / `Suggested fix direction` paragraphs. Previously a Japanese user still received an English plan in Step 4 even though the rest of the conversation was Japanese
+  - Plan section headings (`Overview` / `Decisions` / `Design` / `Test plan` / `Risks` / `Unknowns`), the Step 4 literal guidance line, and the Step 9.5 schema tokens / terminal summary / destination header remain English regardless of the setting so the template-contract and machine-checkable strings stay load-bearing
+  - `## Configuration` entry rewritten to enumerate the three covered surfaces; Step 2 sub-step 7 and Step 4 sub-step 1 explicitly instruct writing the difficulty log and plan body prose in the resolved language
+- fix(dev-workflow): Forbid non-template sections in the plan via a new Step 2 self-check bullet
+  - `references/plan-format.md` § Step 2 self-check gains: "No section appears outside the enumerated template (Overview, Decisions, Design, Test plan, optionally Risks / Unknowns) — added 'meta' sections such as introductions, methodology notes, or recap blocks belong inside Design or should be dropped entirely". Header wording updated from "run this check on the Decisions section" to "run this check on the plan" to reflect the expanded scope; the trailing paragraph restates the template's required-headings list as the closed set of sections and the only structural property checked here
+- fix(dev-workflow): Close Step 2 sub-step 8 against confirmation-seeking transition phrases
+  - Step 2 sub-step 8 now explicitly forbids confirmation-seeking transition sentences such as "if this design looks good, I'll proceed to Step 3 (Plan Review)" or "shall I move on to Plan Review?" — they superficially read as natural conversation but constitute the same approval gate the step already prohibits and waste user attention on an unreviewed plan. The moment Step 2 ends, the workflow must advance to Step 3 without emitting any user-facing message about the plan or the transition
+- fix(dev-workflow): Close Step 8 short-circuit rationalizations when re-running Step 7 / Step 7.5 after a fix
+  - Step 8 iteration-loop sub-step 3 now mandates "Always re-run Step 7 and Step 7.5 — no exceptions" and explicitly disallows the common rationalizations: confidence in the fix, small diff size, modified paths that appear out of scope for the configured `check_commands` / `test_commands` (e.g. edits landing entirely under a local-skill directory or a docs-only path), or the re-run "would be a no-op". A genuine no-op outcome is the audit trail; skipping the re-run removes the trail. The only permissible skip remains the separate branch where no code was modified in the iteration
+
 ### dev-workflow v1.34.0 / dev-workflow-bundle v1.34.0
 
 - feat(dev-workflow): Submit Step 9.5 repo-mode retrospectives via `gh api` instead of `gh issue create` to run with the minimum GitHub token permissions

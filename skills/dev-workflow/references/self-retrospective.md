@@ -186,7 +186,7 @@ The destination header protects against a settings-layer hijack: since `self_ret
 
 Then ask for one of three responses:
 
-- **`approve`** — submit as-is to the configured destination (see below). In **repo mode**, also require an explicit second confirmation that `<owner/repo>` is the intended target before running `gh issue create`. This confirmation is a cheap gate against a destination-header lookalike that the user waves through on autopilot
+- **`approve`** — submit as-is to the configured destination (see below). In **repo mode**, also require an explicit second confirmation that `<owner/repo>` is the intended target before running the `gh api` POST. This confirmation is a cheap gate against a destination-header lookalike that the user waves through on autopilot
 - **`edit`** — the user provides revised text in chat (full replacement or surgical diff; accept either). Incorporate the edits and re-show the body (with the same destination header) for approval. Loop until the user approves or skips
 - **`skip`** — record the user's reason (if provided) and do not submit
 
@@ -195,19 +195,22 @@ The preview exists to catch sanitization misses. Always show it — even in path
 ### Submit
 
 - **repo mode (approve)**:
-  1. Write the approved body to `.claude/plans/retrospective-<slug>.md` via the `Write` tool (this file is also the archived artifact — no cleanup needed after submission). On same-slug collision with a previous run, append `-2`, `-3`, ... until an unused filename is found (same policy as path mode; prevents overwriting a previous run's archive and avoids confusion when two runs happen to share a slug).
+  1. Write the approved body to `.claude/plans/retrospective-<slug>.md` via the `Write` tool. The file is a staging input for the `gh api` POST in step 2 (read via `-F body=@<path>`) and is deleted in step 3 after a successful submission; the GitHub issue is the canonical record. On same-slug collision, append `-2`, `-3`, ... until an unused filename is found — a collision normally means a previous run's submission failed, and the suffix preserves that pending retry.
   2. Run:
 
      ```bash
-     gh issue create \
-       --repo <feedback> \
-       --title "[auto-retrospective] dev-workflow-bundle: <N> findings (<YYYY-MM-DD>)" \
-       --body-file <the-path-chosen-in-step-1>
+     gh api \
+       --method POST \
+       "/repos/<feedback>/issues" \
+       -f title="[auto-retrospective] dev-workflow-bundle: <N> findings (<YYYY-MM-DD>)" \
+       -F body=@<the-path-chosen-in-step-1>
      ```
 
-     No label attached.
+     `gh api` is preferred over `gh issue create` so the call runs with the minimum GitHub token permissions — only `Issues: write` on the target repo (no `repo` scope or metadata reads required). No label attached.
 
-- **path mode (approve)**: write to `<feedback>/dev-workflow-retrospective-<YYYY-MM-DD>-<slug>.md` via the `Write` tool. On same-day, same-slug collision, append `-2`, `-3`, ... until an unused filename is found.
+  3. On successful submission (exit 0), delete the staging file via `rm <the-path-chosen-in-step-1>`. On failure, see § 5 gh submission failure.
+
+- **path mode (approve)**: write to `<feedback>/dev-workflow-retrospective-<YYYY-MM-DD>-<slug>.md` via the `Write` tool. On same-day, same-slug collision, append `-2`, `-3`, ... until an unused filename is found. The written file is the deliverable in this mode and is not deleted.
 
 ### Terminal summary
 
@@ -219,7 +222,7 @@ Self-retrospective: <N> bundle findings (<submitted|skipped|failed>).
 
 - `submitted` — the submission succeeded
 - `skipped` — user chose `skip`, or pre-flight aborted, or zero findings
-- `failed` — submission was attempted but failed (e.g. `gh issue create` non-zero exit)
+- `failed` — submission was attempted but failed (e.g. `gh api` POST returned non-zero exit)
 
 This line guarantees the user knows Step 9.5 ran, even on a zero-finding run.
 
@@ -227,7 +230,7 @@ This line guarantees the user knows Step 9.5 ran, even on a zero-finding run.
 
 Submission-time errors (after user approval in section 4):
 
-- **gh submission failure** (`gh issue create` returned non-zero): report the error and the draft body back to the user in-chat so they can copy / retry manually. Emit terminal summary as `failed` and proceed to Step 10. Do not retry automatically
+- **gh submission failure** (`gh api` POST returned non-zero): report the error and the draft body back to the user in-chat so they can copy / retry manually. The staging file written under § 4 Submit repo mode (`.claude/plans/retrospective-<slug>.md`) is left in place on failure — point the user at it and suggest `gh api --method POST /repos/<feedback>/issues -f title=<title> -F body=@<path>` as the retry command. Emit terminal summary as `failed` and proceed to Step 10. Do not retry automatically
 - **Write failure in path mode** (disk full, permissions, etc.): report the error and the draft body back in-chat. Emit terminal summary as `failed` and proceed to Step 10
 
 Extraction-time errors (during §2):

@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-04-24
+
+### dev-workflow v1.34.0 / dev-workflow-bundle v1.34.0
+
+- feat(dev-workflow): Submit Step 9.5 repo-mode retrospectives via `gh api` instead of `gh issue create` to run with the minimum GitHub token permissions
+  - `references/self-retrospective.md` § 4 Submit repo mode step 2 now invokes `gh api --method POST /repos/<feedback>/issues -f title=... -F body=@<staging-file>`. `gh api` only needs a token with `Issues: write` on the target repo, whereas `gh issue create` additionally requires broader read scopes for label/assignee metadata lookups — switching narrows the blast radius of a leaked token
+  - `allowed-tools` in `SKILL.md` replaces `Bash(gh issue create *)` with `Bash(gh api --method POST /repos/*/issues *)` — pinned to the issue-creation endpoint so other `POST /repos/{o}/{r}/...` paths that carry higher blast radius (webhooks, deploy keys, `dispatches`, git refs/commits, repo transfer, releases) are NOT pre-approved. The two wildcards cover `<owner>/<repo>` in the URL and the trailing `-f title=... -F body=@<file>` flags. The § 5 "gh submission failure" retry hint and the README destination table / prerequisites entry are updated to the new invocation and call out the reduced token-scope requirement
+- feat(dev-workflow): Delete the Step 9.5 repo-mode staging file after a successful submission, preserve it on failure
+  - `references/self-retrospective.md` § 4 Submit repo mode gains sub-step 3: after the `gh api` POST returns exit 0, `rm` the staging file `.claude/plans/retrospective-<slug>.md`. On non-zero exit the file is left in place as a retry affordance — § 5 "gh submission failure" now surfaces the preserved path and a full `gh api` retry command
+  - Path mode unchanged (the written file is the user-facing deliverable in that mode). The path-mode bullet now explicitly notes the no-delete behavior so the mode asymmetry is visible at a glance
+
 ## 2026-04-23
 
 ### dev-workflow v1.33.0 / dev-workflow-bundle v1.33.0

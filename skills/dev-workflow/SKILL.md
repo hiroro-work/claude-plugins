@@ -1,7 +1,7 @@
 ---
 name: dev-workflow
 description: Guided development workflow that orchestrates plan → review → implement → check/test → code review → rules update. Use this skill whenever the user wants to develop a feature, fix a bug, refactor code, or make any code changes following a structured process — even if they don't explicitly mention "workflow" and simply describe what they want built or fixed.
-allowed-tools: Agent, Read, Write, Edit, Glob, Grep, TodoWrite, EnterPlanMode, ExitPlanMode, Skill(ask-peer), Skill(ask-claude), Skill(ask-codex), Skill(ask-gemini), Skill(ask-copilot), Skill(extract-rules), Skill(simplify), Skill(run-tests), Skill(rules-review), Bash(pwd), Bash(mkdir -p .claude/plans), Bash(rm .claude/plans/*), Bash(pnpm run *), Bash(pnpm exec *), Bash(npm run *), Bash(yarn run *), Bash(bun run *), Bash(bundle exec *), Bash(make lint *), Bash(make format *), Bash(make test *), Bash(make typecheck *), Bash(make check *), Bash(python -m pytest *), Bash(poetry run *), Bash(uv run *), Bash(cargo test *), Bash(cargo clippy *), Bash(cargo fmt *), Bash(go test *), Bash(go vet *), Bash(git diff *), Bash(git status *), Bash(git rev-parse *), Bash(test -f *), Bash(gh issue create *), Bash(gh auth status)
+allowed-tools: Agent, Read, Write, Edit, Glob, Grep, TodoWrite, EnterPlanMode, ExitPlanMode, Skill(ask-peer), Skill(ask-claude), Skill(ask-codex), Skill(ask-gemini), Skill(ask-copilot), Skill(extract-rules), Skill(simplify), Skill(run-tests), Skill(rules-review), Bash(pwd), Bash(mkdir -p .claude/plans), Bash(rm .claude/plans/*), Bash(pnpm run *), Bash(pnpm exec *), Bash(npm run *), Bash(yarn run *), Bash(bun run *), Bash(bundle exec *), Bash(make lint *), Bash(make format *), Bash(make test *), Bash(make typecheck *), Bash(make check *), Bash(python -m pytest *), Bash(poetry run *), Bash(uv run *), Bash(cargo test *), Bash(cargo clippy *), Bash(cargo fmt *), Bash(go test *), Bash(go vet *), Bash(git diff *), Bash(git status *), Bash(git rev-parse *), Bash(test -f *), Bash(gh api --method POST /repos/*/issues *), Bash(gh auth status)
 ---
 
 # Dev Workflow
@@ -68,7 +68,7 @@ self_retrospective:
 - **self_retrospective**: Optional. Emits sanitized improvement signal for the `dev-workflow-bundle` skills (`dev-workflow`, `ask-peer`, `extract-rules`, `rules-review`) at Step 9.5 (between Step 9 and Step 10). Raw conversation stays in-session; only abstracted text leaves
   - **feedback**: Destination string. Auto-detected:
     - Starts with `/`, `~/`, `./`, or `../` → local directory path → retrospective written as a markdown file under that directory
-    - Matches `^[\w.-]+/[\w.-]+$` → GitHub `owner/repo` → retrospective submitted via `gh issue create`
+    - Matches `^[\w.-]+/[\w.-]+$` → GitHub `owner/repo` → retrospective submitted via `gh api` POST to `/repos/<feedback>/issues`
     - Any other string (including empty) → warn and skip Step 9.5
   - If `feedback` is unset, Step 9.5 is not registered in TodoWrite and never executes — the workflow behaves as before
   - Step 9.5 is also hard-skipped when Step 2 assesses the task as **Simple** difficulty (typo fix, config tweak, obvious bug fix), regardless of config — Simple tasks rarely produce meaningful bundle-skill signal

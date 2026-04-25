@@ -23,7 +23,7 @@ Whole-issue `parse-error` is **not** an abort; the issue is left open with a tri
 
 Concretely, the recognized return points are the (d) `Skill(verify-diff)` empirical check and the (d2) `Skill(skill-review)` polish bullets inside the Apply accepted Findings sub-flow. Both carry a return-point no-stall reminder inline; the duplication with this section is intentional so the rule appears at the decision moment.
 
-**Non-fatal errors are recorded and skipped, not stops.** `comment-failed`, `close-failed`, `commit-failed`, `overflow=true`, and `release-bookkeeping-failed` (any non-zero exit from Step 3.7's release commit, or its scope-leak / version-skew guards) all continue with the next Finding or issue, or fall through to Step 4 — `references/triage-criteria.md` § Edge-case dispatch table is the authoritative list of dispositions.
+**Non-fatal errors are recorded and skipped, not stops.** `comment-failed`, `close-failed`, `commit-failed`, `overflow=true`, and `release-bookkeeping-failed` (Step 3.7 commit error, scope leak, version skew, or json invalid) all continue with the next Finding or issue, or fall through to Step 4 — `references/triage-criteria.md` § Edge-case dispatch table is the authoritative list of dispositions.
 
 **Fatal tool-level errors are out of scope** — irrecoverable `Edit` / `Read` / `Bash` failures halt with a diagnostic regardless.
 
@@ -187,26 +187,25 @@ The accepted-and-committed list, every per-Finding commit hash, and every (targe
 | `extract-rules` | `extract-rules` |
 | `rules-review` | `rules-review` |
 
-**(d) Bump set**: take the plugin names from (c) and always add `dev-workflow-bundle` to the set. **Skill bump and bundle bump are always paired.** The CHANGELOG subsection header is always rendered as `### <skill> v<new> / dev-workflow-bundle v<new>` — bundle-only subsections are never written, because a `dev-workflow-bundle` bump without an underlying skill bump is impossible by construction.
+**(d) Bump set**: take the plugin names from (c) and always add `dev-workflow-bundle` to the set. **Skill bump and bundle bump are always paired.** The CHANGELOG subsection header is always rendered as `### <skill> v<new> / dev-workflow-bundle v<new>` — bundle-only subsections are never written.
 
-**(e) Version-skew guard** (read-only): before any edit, run
+**(e) Read versions and check skew**: in a single `jq` invocation, read the `version` of every plugin in the bump set plus `dev-workflow-bundle`:
 
 ```bash
-jq -r '.plugins[] | select(.name == "dev-workflow") | .version' .claude-plugin/marketplace.json
-jq -r '.plugins[] | select(.name == "dev-workflow-bundle") | .version' .claude-plugin/marketplace.json
+jq -r '.plugins[] | select(.name | IN("dev-workflow","peer","extract-rules","rules-review","dev-workflow-bundle")) | "\(.name)=\(.version)"' .claude-plugin/marketplace.json
 ```
 
-If the two values disagree, abort release bookkeeping with no marketplace / CHANGELOG edits; record `release-bookkeeping=failed (version skew: dev-workflow=<v1>, dev-workflow-bundle=<v2>)` and proceed to Step 4. Per-Finding commits remain in HEAD untouched. Bumping both from a skewed base would only carry the mismatch forward by `+1`.
+(Filter the `IN(...)` list to just the plugin names actually in the bump set plus `dev-workflow-bundle` — no need to read versions you won't bump.) If the parsed `dev-workflow` and `dev-workflow-bundle` versions disagree, abort: record `release-bookkeeping=failed (version skew: dev-workflow=<v1>, dev-workflow-bundle=<v2>)` and proceed to Step 4 (per-Finding commits stay in HEAD).
 
-**(f) Patch bump computation**: for each plugin in the bump set, read its current version with `jq -r '.plugins[] | select(.name == "<plugin>") | .version' .claude-plugin/marketplace.json` and increment the third semver component by 1 (e.g. `1.34.2` → `1.34.3`). `major.minor` are never changed here.
+**(f) Patch bump computation**: from the parsed versions, increment the third semver component of each bump-set plugin by 1 (e.g. `1.34.2` → `1.34.3`). `major.minor` are never changed.
 
 **(g) Edit `marketplace.json`** for each bump-set plugin, one at a time:
 
-- Use the `Edit` tool. Build `old_string` to span the **plugin name AND the version line** as one contiguous block — typically `"name": "<plugin>",\n      "description": "...",\n      ...,\n      "version": "<old>",`. The block must contain the closing double-quote and trailing `,` of the `name` field.
-- **Name prefix-match warning**: `"name": "dev-workflow"` is a substring of `"name": "dev-workflow-bundle"`. The `Edit` tool requires `old_string` to be unique; if `old_string` ends at the `"` after `dev-workflow` (Bad: `"name": "dev-workflow"`), it matches both lines and Edit halts with a not-unique error. Always include the closing `"` and trailing `,` (Good: `"name": "dev-workflow",`).
+- Use the `Edit` tool. `old_string` must span the plugin name line and the version line as one contiguous block (e.g. `"name": "<plugin>",\n      ...\n      "version": "<old>",`).
+- **Name prefix-match warning**: `"name": "dev-workflow"` is a substring of `"name": "dev-workflow-bundle"`, so always include the closing `"` and trailing `,` of the `name` field — otherwise Edit halts with a not-unique error.
 - Do **not** use `replace_all` — multiple plugins may share the same version string.
-- Do **not** introduce `jq | ... > .tmp; mv .tmp ...` here. The project's allowed-tools policy forbids `Bash(mv *)` without a strong reason; the `Edit` path keeps allowed-tools minimal.
-- After each Edit, run `jq empty .claude-plugin/marketplace.json` to confirm the JSON still parses. A failure here means the Edit broke structure — jump to the failure handler in (j).
+
+After all Edits land, run `jq empty .claude-plugin/marketplace.json` once. On failure, revert via `git checkout HEAD -- .claude-plugin/marketplace.json`, record `release-bookkeeping=failed (json invalid)`, and proceed to Step 4.
 
 **(h) Update `CHANGELOG.md`**:
 
@@ -217,7 +216,7 @@ If the two values disagree, abort release bookkeeping with no marketplace / CHAN
   - `- fix(<skill>): <Finding 1-line summary> (auto-triage #<issue-N>)`
   - Optionally followed by a nested `  - Category: <category>; <1-line Reason>` line for parity with the existing CHANGELOG body style.
 
-**(i) Scope check**: run `git diff --name-only`. The result must list exactly `.claude-plugin/marketplace.json` and `CHANGELOG.md` and nothing else. If anything else appears (e.g. an editor or pre-edit hook touched another file), revert via `git checkout HEAD -- .claude-plugin/marketplace.json CHANGELOG.md`, record `release-bookkeeping=failed (scope leak)`, and proceed to Step 4. **Per-Finding commits are preserved** — they live in HEAD already and are not affected by this `git checkout`.
+**(i) Scope check**: run `git diff --name-only`. The result must list exactly `.claude-plugin/marketplace.json` and `CHANGELOG.md` and nothing else. If anything else appears, revert via `git checkout HEAD -- .claude-plugin/marketplace.json CHANGELOG.md`, record `release-bookkeeping=failed (scope leak)`, and proceed to Step 4. **Per-Finding commits stay in HEAD** through every Step 3.7 failure branch — `git checkout HEAD -- ...` only affects working-tree paths, not committed history.
 
 **(j) Stage and commit**: `git add .claude-plugin/marketplace.json CHANGELOG.md`, then commit using the same HEREDOC-with-`COMMIT_MSG_END` pattern as Step 3.4 (g):
 
@@ -232,15 +231,15 @@ COMMIT_MSG_END
 
 The trailing `(auto-triage YYYY-MM-DD)` in the subject distinguishes same-day re-runs in `git log`.
 
-On non-zero exit (typical case: a pre-commit hook rejection or unexpected staged content), recover with `git reset` + `git checkout HEAD -- .claude-plugin/marketplace.json CHANGELOG.md`, record `release-bookkeeping=failed (commit error)`, and proceed to Step 4. **Per-Finding commits are preserved.**
+On non-zero exit (typical case: a pre-commit hook rejection), recover with `git reset` + `git checkout HEAD -- .claude-plugin/marketplace.json CHANGELOG.md`, record `release-bookkeeping=failed (commit error)`, and proceed to Step 4.
 
 On zero exit, capture `git rev-parse HEAD` as the bookkeeping commit hash for the Step 4 summary line `release-bookkeeping=<hash>`.
 
 ### Step 4 — Emit summary
 
-Print to stdout (the only trace a routine leaves). The summary has two sections — first the **Per-Finding execution log** (one block per processed Finding so the actual iteration counts are visible at a glance), then the existing aggregate counters.
+Print to stdout (the only trace a routine leaves). The summary has two sections — first the **Per-Finding execution log**, then the aggregate counters.
 
-**Per-Finding execution log** — render one block per Finding in the order issues were processed and Findings appeared inside each issue. Source the data from the per-Finding memory record described in § 3.4 ("Per-Finding record kept in memory for the Step 4 execution log"). Use this exact shape so a human can scan iteration counts in one pass:
+**Per-Finding execution log** — one block per processed Finding in source order. Fields source from the per-Finding memory record in § 3.4. `[iter <iterations_used>/3]` always renders (including `disabled`, where `<iterations_used>=0`). For `parse-error` and `reject` dispositions, `target` / `verify-diff` / `skill-review` / `commit` all render as `—`.
 
 ```text
 issue #<N> Finding <n>: <accept|reject|conflict|parse-error>
@@ -249,12 +248,6 @@ issue #<N> Finding <n>: <accept|reject|conflict|parse-error>
   skill-review:  <converged-iter-<k>|notes-left-after-3|error|skipped|disabled>
   commit:        <hash> | —
 ```
-
-Notes:
-
-- `[iter <iterations_used>/3]` is always emitted, including for `disabled` (where `<iterations_used>=0`) — the fixed-width form keeps the column machine-parseable.
-- For `parse-error` Findings (whole-issue parse failure), set `target`, `verify-diff`, `skill-review`, and `commit` all to `—` — none of those steps run.
-- For `reject` Findings, set `target`, `verify-diff`, `skill-review`, and `commit` all to `—` for the same reason.
 
 **Aggregate summary** (printed after the per-Finding log):
 

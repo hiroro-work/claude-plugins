@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-04-25
+
+### dev-workflow v1.34.2 / dev-workflow-bundle v1.34.2
+
+- fix(dev-workflow): Require repo-wide grep before drafting plans for version/identifier string replacement tasks
+  - Step 2 sub-step 3 gains a new bullet: when the core operation is replacing a specific version string, identifier, or constant across the project (e.g. version bump, rename, migration), grep the entire repository for the old value before drafting the plan and enumerate the complete list of affected files in the Design section. Missing even one location is the primary regression source for this task class — surfacing the full target set at plan time blocks the "we forgot a place" failure mode rather than catching it at Step 7
+- fix(dev-workflow): Require pinned-dependency compatibility verification on runtime/language major-version upgrades
+  - Step 3 sub-step 1 (a) Scope & feasibility gains: when the plan proposes upgrading the base runtime or language major version, the reviewer must verify that all pinned dependencies (runtime and dev) explicitly cover the new version. Any dependency whose supported range does not include the new version must be flagged, and the plan must adopt the most conservative version all pinned dependencies safely support rather than leaving compatibility gaps for the user to catch at Step 4
+- fix(dev-workflow): Add a Scope-drift guard around `check_commands` so auto-fix writes outside the task scope are surfaced instead of silently accepted
+  - Step 7 sub-step 1 gains a "Scope-drift guard" bullet: before each command, record `git diff --name-only <base-commit>` as the task-scope snapshot. After the command, re-check the diff — any file newly appearing outside that snapshot was written by the command (auto-fix/write behavior sweeping unrelated drift). On detection, warn the user (listing both the in-scope files and the newly-appeared out-of-scope files), do **not** auto-revert / `git checkout` / delete the out-of-scope changes (leave the working tree as the command left it for user inspection), leave `Step 7: Check / Test` as `in_progress`, and wait for user direction. Positioned as the only allowed non-completing exit from the check_commands phase
+  - The `## No-Stall Principle` enumeration adds **Step 7 scope-drift stop** as a new permissible pause point alongside the existing entries (Step 1.5 dialogues, Step 4 plan approval, Step 7 fail-stop, Step 7.5 persisting violations, Step 8 unresolved findings, Completion subtask PR URL prompt). Required by the section's own "update the enumeration and the definition together" invariant — a pause point introduced only in the Step 7 definition would have left the closed-list claim false
+
 ## 2026-04-24
 
 ### dev-workflow v1.34.1 / dev-workflow-bundle v1.34.1

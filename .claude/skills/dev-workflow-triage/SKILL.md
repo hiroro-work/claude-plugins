@@ -100,6 +100,14 @@ Process accepted Findings one at a time in the order they appear. Same-file Find
 
 **Register per-Finding iteration TodoWrite items** — before processing each accepted Finding, create these items: `(d) verify-diff call`, `(d2) skill-review iter 1`, `(d2) skill-review iter 2`, `(d2) skill-review iter 3`. Mark `in_progress` before each iteration, `completed` after. On early convergence (skill-review returns no findings) or disable, mark remaining iteration items `completed` and append the reason directly to the item's `content` field as `— skipped: converged` or `— skipped: disabled` (TodoWrite has no dedicated note field). Steps (a)–(c), (f), (g) are deliberately not pre-registered — only the iteration loop is, because it is the loop that tends to exit early on the first "good enough" iteration when unmarked.
 
+**Per-Finding record kept in memory for the Step 4 execution log** — alongside the existing decision + reasoning store from § 3.3, also keep a small structured record per processed Finding so Step 4's Per-Finding execution log can render it. **TodoWrite is the progress UI, not a record source — it cannot be read back at runtime, so anything Step 4 needs has to be held in memory here.** The record fields:
+
+- `disposition`: `accept` / `reject` / `conflict` / `parse-error`
+- `target`: the edit target path from (b), or `—` when no edit was attempted
+- `verify_diff`: status token from (d) — `converged` / `unresolved` / `skipped` / `conflict` / `disabled` — paired with `iterations_used` from the JSON verdict (set to `0` when the call was skipped because `verify_diff_disabled=true`)
+- `skill_review`: terminal token from (d2) — `converged-iter-<k>` (where `<k>` is the iteration that returned "No actionable findings", 1–3), `notes-left-after-3`, `error`, `skipped` (when (d2) was bypassed because verify-diff returned `conflict`), or `disabled`
+- `commit`: the commit hash from (g), or `—` when no commit happened
+
 For each accepted Finding:
 
 - **(a) Re-read target file** — `skills/<target>/<file>`. For the first Finding this is HEAD state; for later same-file Findings it's the prior commit's result. Build `old_string` / `new_string` against this state
@@ -230,7 +238,25 @@ On zero exit, capture `git rev-parse HEAD` as the bookkeeping commit hash for th
 
 ### Step 4 — Emit summary
 
-Print to stdout (the only trace a routine leaves):
+Print to stdout (the only trace a routine leaves). The summary has two sections — first the **Per-Finding execution log** (one block per processed Finding so the actual iteration counts are visible at a glance), then the existing aggregate counters.
+
+**Per-Finding execution log** — render one block per Finding in the order issues were processed and Findings appeared inside each issue. Source the data from the per-Finding memory record described in § 3.4 ("Per-Finding record kept in memory for the Step 4 execution log"). Use this exact shape so a human can scan iteration counts in one pass:
+
+```text
+issue #<N> Finding <n>: <accept|reject|conflict|parse-error>
+  target:        skills/<target>/<file> | —
+  verify-diff:   <converged|unresolved|skipped|conflict|disabled> [iter <iterations_used>/3]
+  skill-review:  <converged-iter-<k>|notes-left-after-3|error|skipped|disabled>
+  commit:        <hash> | —
+```
+
+Notes:
+
+- `[iter <iterations_used>/3]` is always emitted, including for `disabled` (where `<iterations_used>=0`) — the fixed-width form keeps the column machine-parseable.
+- For `parse-error` Findings (whole-issue parse failure), set `target`, `verify-diff`, `skill-review`, and `commit` all to `—` — none of those steps run.
+- For `reject` Findings, set `target`, `verify-diff`, `skill-review`, and `commit` all to `—` for the same reason.
+
+**Aggregate summary** (printed after the per-Finding log):
 
 - Open issues received / processed / skipped for title mismatch
 - Counts per outcome: `accept`, `reject`, `conflict` are Finding-level (count one per Finding); `parse-error` is issue-level (count one per whole-issue parse-error, regardless of the number of Findings the issue contained)
@@ -240,5 +266,6 @@ Print to stdout (the only trace a routine leaves):
 - skill-review state: `enabled` or `disabled-after-errors`; count of Findings with `skill-review notes left`
 - Failure counts: `comment-failed` / `close-failed` / `commit-failed`, with (issue#, finding#) pairs
 - `overflow=true` notice if Step 2 hit the 200-issue cap
+- `release-bookkeeping`: one of `<commit-hash>` (success), `skipped (no commits)`, `failed (version skew: dev-workflow=<v1>, dev-workflow-bundle=<v2>)`, `failed (scope leak)`, or `failed (commit error)` — sourced from Step 3.7's outcome
 
 Always emit the summary, even on zero-activity runs — "ran but made no changes" must be distinguishable from "didn't run at all".

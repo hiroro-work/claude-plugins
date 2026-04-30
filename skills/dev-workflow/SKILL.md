@@ -225,7 +225,7 @@ Mark `Step 3: Plan Review` as `completed`.
 
 1. **This is the first time the user sees the plan.** Present the reviewed plan to the user (include any unresolved review points from Step 3). Lead with one of the literal guidance lines from [`references/plan-format.md`](references/plan-format.md) § Step 4 guidance lines, chosen by (i) whether Decisions has qualifying items and (ii) whether a state file is active. Use the chosen line **verbatim** (no paraphrasing, no concatenation). Write the plan body prose (Overview / Decisions / Design / Test plan / Risks / Unknowns content) in the resolved `language` (see §Configuration; default `ja`). Section headings (`Overview` / `Decisions` / `Design` / `Test plan` / `Risks` / `Unknowns`) and the Step 4 guidance line stay English.
 2. Collaborate with the user to refine the plan as needed (normal Plan Mode interaction). If the user requests material changes to scope or approach, add a new review iteration item (e.g. Step 3-(N+1)) and return to Step 3 to process it before asking for acceptance.
-3. Wait for explicit user acceptance. After the user accepts, `ExitPlanMode` and begin implementation
+3. Wait for explicit user acceptance. Before issuing `ExitPlanMode`, verify via `TodoWrite` that `Step 3: Plan Review` and every Step 3-x iteration item are `completed` — `ExitPlanMode` is the effective exit from Plan Mode, so issuing it while any Step 3 item is still `pending` or `in_progress` skips the internal review entirely. If any Step 3 item is not `completed`, return to Step 3 to process it (do not flip the row to `completed` without doing the review work) before asking for acceptance. After the user accepts and the precondition holds, `ExitPlanMode` and begin implementation
 
 ### Step 5: Implement
 

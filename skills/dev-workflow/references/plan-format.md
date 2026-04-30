@@ -111,6 +111,7 @@ Reviewer checks:
 - **(a)+(b) criterion, external verification** — does every Decisions item genuinely pass both? Flag items that look like style-level preferences smuggled in.
 - **Buried-decisions check** — does the Design body contain a judgment call that should have been surfaced in Decisions? (Inverse of the criterion — look for hidden choices, not just wrong ones.)
 - **Cross-section consistency** — e.g. does every file listed in Overview's Scope appear in Design? Does every test file promised in Test plan correspond to Design content? Do the choices made in Decisions actually drive the Design?
+- **Cross-file consistency (multi-file plans)** — when the plan edits more than one `SKILL.md` or `references/*.md` file, check that (i) synonymous sections across files use the same heading, (ii) cross-references between the edited files use consistent phrasing, and (iii) the same note isn't paraphrased redundantly across files. Skip this bullet for single-file plans.
 
 Reviewer does not re-check structural compliance (section presence, bullet count, etc.) — that is Step 2's responsibility.
 

@@ -240,6 +240,176 @@ After `Skill(skill-review)` returns, judge the result and proceed to (f).
 ```
 （callee contract が壊れたときの分岐が無く、orchestrator が無限 loop か沈黙に落ちる）
 
+### bundle 内 review 系スキルの Pattern A 統一
+**Good** (`skill-review/SKILL.md` の冒頭一行サマリ):
+```markdown
+The review walk runs in a fresh subagent (Pattern A — same shape as
+`verify-diff` and `rules-review`); Edit application stays in the main thread
+to keep the reviewer bias-free. Designed to be called from non-interactive
+routines such as `dev-workflow-triage` (d2) or `dev-workflow` `hooks.on_complete`;
+it never prompts the user.
+```
+（Skill ラッパー + 内部 Agent dispatch + main-thread Edit の 2 層構造、bias-free executor、bundle 内 review skill の design pattern 一貫性）
+**Bad** (review walk を全て orchestrator main thread で inline 実行):
+```markdown
+## Process
+
+1. Detect changed skill files (main thread)
+2. Read changed files (main thread)
+3. Walk best-practices.md against each file and flag findings (main thread)
+4. Apply mechanical fixes (main thread)
+5. Verify (main thread)
+```
+（bias-free executor が確保されない・review prose が main context に積もる・bundle 内の他 review skill と design pattern が乖離する）
+
+### Standalone interactive-only path の deprecate
+**Good** (`skill-review/SKILL.md` Process step 4):
+```markdown
+**Surface structural notes**:
+
+- Set `notes_remaining_count = len(structural_notes)`
+- Do not apply structural notes. They are reported through the verdict;
+  the caller decides whether and how to act on them.
+  The skill itself does not run a user-confirm dialogue
+```
+（structural change を常に notes_remaining_count に集計、`/skill-review` 直接利用時も user が verdict + notes を見て手動判断する形に統一）
+**Bad** (旧 skill-review Process step 4):
+```markdown
+4. **Apply improvements**: ... Confirm with the user first before structural
+   changes: moving content between files, deleting sections, or rewriting
+   large portions of a section. **When invoked as a sub-skill** (no human
+   in the loop), do **not** wait for confirmation: leave structural changes
+   unapplied and surface them via `notes_remaining_count` instead.
+   Standalone behavior is unchanged
+```
+（live caller が両方 sub-skill mode で interactive path に到達し得ない silent dead-code、caller 側で mode を渡す術もない）
+
+### Agent unavailable fallback の cross-reference 圧縮
+**Good** (`skill-review/SKILL.md` Step 3 末尾):
+```markdown
+**Agent unavailable fallback**: detect availability and fall back per the
+canonical write-up in `rules-review` SKILL.md `§ 5. Review` (the "Detecting
+Agent availability" / "Fallback when Agent is unavailable" paragraphs).
+The skill-review specialization: when falling back, walk the embedded
+checklist over each changed file inline-sequentially in the main thread
+and emit the same fenced JSON block defined above so Step 4's parser
+handles both paths identically.
+```
+（canonical へのポインタ + 1 行 specialization のみ）
+**Bad** (毎回 3 段落 inline で書き直し):
+```markdown
+**Agent unavailable fallback**: the `Agent` tool is considered unavailable
+when its schema is not exposed... Do not attempt a speculative call to
+detect availability... Fallback when Agent is unavailable: execute the
+same reviewer prompt inline sequentially... Do not substitute claude -p
+or external CLIs...
+（rules-review §5 と同一の長文を skill-review 側で再記述）
+```
+（canonical の更新が他 callee に伝播しない・冗長）
+
+### `--- LABEL ---` fence convention for Pattern A dispatch prompts
+**Good** (`skill-review/SKILL.md` Step 3 — Dispatch reviewer Agent):
+```markdown
+Invoke the `Agent` tool to dispatch a fresh reviewer. Assemble the dispatch
+prompt from the four sections below, each framed with a clear `--- LABEL ---`
+fence (same convention as `verify-diff` § Step 3 (a) Dispatch bias-free
+executor) so the reviewer can parse each payload unambiguously:
+
+- `--- BEST PRACTICES CHECKLIST ---`: the full content of `references/best-practices.md`
+- `--- CHANGED FILES ---`: each changed skill file's path, full content, and unified diff
+- `--- REVIEWER PROMPT ---`: the reviewer prompt and JSON schema below (verbatim)
+- `--- RESPONSE FORMAT ---`: the response format and constraints below (verbatim)
+```
+（fence convention 統一で template 流用容易、subagent 側 payload 境界明確）
+**Bad** (ad-hoc な `## Sub-heading` 方式):
+```markdown
+Invoke the Agent tool. Include:
+
+## Best Practices
+<full content>
+
+## Changed Files
+<each file>
+
+## Reviewer Prompt
+<prompt>
+```
+（subagent 側で section 終端境界が曖昧、bundle 内 dispatch prompt の流儀が揃わない）
+
+### Pattern A callee return JSON の first-match-wins parse-order
+**Good** (`skill-review/SKILL.md` Step 4 — Parse & apply):
+```markdown
+Parse the subagent's fenced JSON response. Evaluate in this order,
+**first match wins** (same evaluate-in-order discipline as `verify-diff`
+§ (b) Parse & apply, restricted to the cases that apply to a single-pass
+dispatch):
+
+1. **Verdict missing or malformed** — no fenced JSON block found, or JSON
+   parse fails → emit `{"status": "error", ..., "reason": "verdict parse failure"}` and stop
+2. **Schema violation** — required keys missing, values not arrays, or any
+   entry fails its expected shape → emit `{"status": "error", ...,
+   "reason": "verdict schema violation"}` and stop
+3. **Otherwise** — proceed with apply
+```
+（verify-diff (b) と同じ規律、loop の (3) Converged / (4) Divergence は single-pass で N/A なので圧縮）
+**Bad:**
+```markdown
+After receiving the subagent JSON, validate the schema and apply edits.
+If validation fails, emit an error verdict.
+```
+（評価順序が implicit で agent runtime によって再現性が崩れる、verify-diff との対応が見えない）
+
+### Subagent return JSON の per-entry shape validation
+**Good** (`skill-review/SKILL.md` Step 4 step 2):
+```markdown
+2. **Schema violation** — required keys (`mechanical_edits`, `structural_notes`)
+   are missing, values are not arrays, or any entry fails its expected shape
+   (`mechanical_edits` entries must have non-empty string `file`, `old_string`,
+   `new_string`; `structural_notes` entries must have non-empty string `file`,
+   `description`) → emit `{"status": "error", "applied_edits_count": 0,
+   "notes_remaining_count": 0, "reason": "verdict schema violation"}` and stop.
+   Validating entry shape here prevents a malformed entry from crashing the
+   `Edit` call later
+```
+（top-level keys だけでなく entry-level non-empty string も parse 時に検証）
+**Bad:**
+```markdown
+2. **Schema violation** — `mechanical_edits` or `structural_notes` keys missing
+   → emit error verdict
+```
+（entry-level shape を見ないと、後段 Edit が `Cannot read property 'old_string' of null` 系で crash する経路が残る）
+
+### `old_string` 1–3 lines context convention in dispatch prompts
+**Good** (`skill-review/SKILL.md` Step 3 reviewer prompt 内):
+```markdown
+> `old_string` must match exactly one location in the current file. Include
+> **1–3 lines of surrounding context** so the snippet is unique — short
+> one-liners collide and cause the Edit to fail.
+```
+そして apply 段で:
+```markdown
+- For each entry in `mechanical_edits`, re-`Read` the target file (so
+  `old_string` matches the current contents after any earlier edit landed),
+  then call `Edit`
+- If `old_string` is not found, skip that entry and continue with the next.
+  This is expected when the subagent emits multiple edits from a single
+  snapshot and a later edit overlaps a region an earlier one already
+  rewrote — the skip is a no-op fallback, not an error
+- Increment `applied_edits_count` only for entries whose `Edit` call
+  succeeded — skipped entries do not count
+```
+（dispatch prompt 内に context 量を明示、apply 段で skip-on-overlap を no-op fallback と明文化）
+**Bad** (dispatch prompt 内 convention 無し / skip 扱い未定義):
+```markdown
+> Return suggested edits as `{old_string, new_string}` pairs.
+```
+そして apply 段:
+```markdown
+- For each entry, call Edit with old_string and new_string.
+- If Edit fails, retry the dispatch.
+```
+（short one-liners が collide して Edit fail → retry-dispatch loop に落ちる、subagent quality drift と誤帰因しやすい）
+
 ### Aggregate counter warning string differentiation
 **Good** (Step 4 aggregate summary):
 ```text

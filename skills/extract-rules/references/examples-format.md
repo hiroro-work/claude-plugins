@@ -75,6 +75,8 @@ Each rule file (`.md` and `.local.md`) that has a corresponding `.examples.md` m
 When in doubt: ./<name>.examples.md
 ```
 
+**Direction is one-way: rule file → examples file only.** `.examples.md` files themselves never carry a `## Examples` reference section — no self-reference (link to themselves), no link to a sibling `.examples.md`. When generating or updating an examples file, do not append a reference section. Templates and subagent prompts that scaffold examples files must omit this section.
+
 ## Common Generation Procedure
 
 This procedure applies to all modes (Full Extraction, Update, Restructure, Conversation, PR Review). After generation, run the Portability check (below).

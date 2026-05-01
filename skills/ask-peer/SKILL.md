@@ -35,7 +35,7 @@ Use the following as the system instructions when spawning the subagent:
 > - Are there any constraints? (Time, technical limitations, etc.)
 >
 > **Review Focus Areas:**
-> - Planning: scope, dependencies, risks, simpler approaches
+> - Planning: scope, dependencies, risks, simpler approaches; numerical self-consistency (totals / limits / counts in the plan body re-add up under recomputation); operational reality (per-run throughput is feasible under subagent dispatch and time budgets — when the plan loops over N items each costing M sub-dispatches, sanity-check N × M against the run's realistic cost ceiling)
 > - Code: edge cases, error handling, test coverage, future flexibility
 > - Problem-solving: root cause analysis, questioning assumptions, alternative approaches
 >

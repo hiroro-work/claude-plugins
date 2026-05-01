@@ -2,6 +2,36 @@
 
 ## 2026-04-30
 
+### ask-peer v2.2.2 / dev-workflow-bundle v1.34.3
+
+- fix(ask-peer): add numerical self-consistency and operational-reality observations to plan review (auto-triage #6)
+  - Category: missing-branch; Plan reviews missed (i) numerical off-by-one between plan body counts and TodoWrite reality, and (ii) the operational feasibility of upper-bound limits given subagent dispatch overhead. Extended the Planning focus area in the peer-personality block to enumerate both observations.
+
+### dev-workflow v1.34.3 / dev-workflow-bundle v1.34.3
+
+- fix(dev-workflow): make ExitPlanMode precondition explicit at Step 4 step 3 (auto-triage #7)
+  - Category: ambiguity; Step 3 → Step 4 ordering invariant was implicit; agent could issue `ExitPlanMode` mid-Step-3. Step 4 step 3 now names the TodoWrite precondition and the remediation when it trips.
+- fix(dev-workflow): add cross-skill structural-blast-radius bullet to Step 2 Simplicity self-audit (auto-triage #7)
+  - Category: missing-branch; Step 2 self-audit only covered intra-plan incrementality. New bullet requires explicit scope expansion or a Risks-entry deferral when sibling skills share the same structural pattern.
+- fix(dev-workflow): add cross-file consistency check to Step 3 (f) rubric (auto-triage #7)
+  - Category: ambiguity; Step 3 (f) covered cross-section consistency within a single plan but not cross-file consistency across multiple SKILL.md / references files. New bullet sits beside the existing cross-section check, gated on multi-file plans.
+- fix(dev-workflow): add inline no-stall reminder at Step 8 iteration boundary (auto-triage #6)
+  - Category: missing-branch; Step 8 iteration boundaries had no inline no-stall reminder, so the agent stalled between iter k and iter k+1. Reminder enumerates reviewer outcomes in closed-list form and names the three possible next actions, all gated to "next tool call".
+- fix(dev-workflow): add Simplify-revival check to Step 8 reviewer category c (auto-triage #5)
+  - Category: missing-branch; Step 8 review fix cycle could silently re-introduce narration that Step 6 Simplify deliberately removed. New clause in category c. (iter k ≥ 2 only) tells the reviewer to flag that regression class.
+- fix(dev-workflow): require recording cycle-to-cycle judgment drift in Step 7.5 (auto-triage #5)
+  - Category: ambiguity; Step 7.5 1st/2nd cycle verdicts could legitimately differ on the same location, but the SKILL.md never required recording the reason. New clause in step 3.c covers both drift directions and requires the reason in the audit trail before completion.
+
+### extract-rules v1.13.2 / dev-workflow-bundle v1.34.3
+
+- fix(extract-rules): clarify examples-format reference direction is one-way (auto-triage #5)
+  - Category: wrong-default; Examples-file generation defaulted to emitting a self-reference link at the end because the format spec did not state the reference direction explicitly. New clause forbids self-links and binds templates / subagent prompts to omit the section.
+
+### rules-review v1.1.1 / dev-workflow-bundle v1.34.3
+
+- fix(rules-review): add explicit scope policy to reviewer prompt (auto-triage #5)
+  - Category: ambiguity; Reviewer prompt did not state whether rules apply diff-only or file-wide. New "Scope" clause makes diff-only the default, with an explicit escape when the rule text demands file-wide consistency.
+
 ### extract-rules v1.13.1
 
 - docs(extract-rules): Translate remaining Japanese comments in the Usage block to English

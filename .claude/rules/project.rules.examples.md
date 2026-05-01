@@ -451,3 +451,15 @@ If validation fails, emit an error verdict.
   - Category: distribution-leak; The reviewer prompt leaked skill-bundle internal vocabulary to general-purpose reviewers...
 ```
 （`distribution-leak` / `scope-leak` のような新規記述的 token を発明すると CHANGELOG 全体の taxonomy 一貫性が崩れる。新 failure mode は既存 3 種にマップ可能か再検討する — 上記の例なら「default 値が generic でなく skill-bundle internal だった」= `wrong-default` にマップできる）
+
+### bundle skill SKILL.md prose のメタ文脈語彙汎化
+**Good** (`skills/dev-workflow/SKILL.md` Step 2 self-audit bullet):
+```markdown
+- **Cross-component structural-blast-radius**: if the plan fixes a structural pattern (shared base classes, cross-cutting middleware, mirrored services — for skill development these map to subagent dispatch shape, hook wiring, state-file handling) rather than content scoped to one component, check whether sibling components sharing that structure have the same defect.
+```
+（抽象原理「shared base classes, cross-cutting middleware, mirrored services」を主文に書き、skill 開発文脈の具体例「subagent dispatch shape, hook wiring, state-file handling」は括弧書きで添える）
+**Bad:**
+```markdown
+- **Cross-skill structural-blast-radius**: if the plan fixes a structural pattern (subagent dispatch shape, hook wiring, or state-file handling pattern) rather than content scoped to one skill, check whether sibling skills sharing that structure have the same defect.
+```
+（適用文脈固定の語彙が主文に直接埋まると、bundle skill を skill 開発以外の用途で利用する読者が読み解きづらい / 適用しにくい）

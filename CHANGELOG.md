@@ -2,6 +2,12 @@
 
 ## 2026-05-01
 
+### dev-workflow v1.34.5 / dev-workflow-bundle v1.34.5
+
+- fix(dev-workflow): add Distribution-aware fix direction guidance to retrospective producer §3 Sanitization to prevent skill-development vocabulary leak into bundle skills' SKILL.md prose (subtask 2 of meta-scope-leak)
+  - Category: wrong-default; The producer's §3 "Keep as-is" line allowed `suggested fix directions expressed in skill-level vocabulary` by default. The triage applier transcribes those directions mostly verbatim into target SKILL.md prose, so skill-development vocabulary leaked into bundle skills' user-visible distribution surface. Added a `§ Distribution-aware fix direction (bundle skill targets)` sub-section requiring abstract-principle-first phrasing with skill-development examples in parens when the target is one of the bundle skills and the fix lands in SKILL.md / references prose. The corresponding source-of-truth rule was added to `.claude/rules/project.rules.md` § SKILL.md の配布性 with a Good/Bad example in `.claude/rules/project.rules.examples.md`.
+- chore(release): synchronize dev-workflow and dev-workflow-bundle plugin versions to v1.34.5 (dev-workflow +2 jump from v1.34.3, dev-workflow-bundle +1 from v1.34.4 — pair-bump alignment)
+
 ### ask-peer v2.2.3 / dev-workflow-bundle v1.34.4
 
 - fix(ask-peer): generalize peer reviewer "operational reality" prompt to remove skill-bundle internal vocabulary (subtask 1 of meta-scope-leak)

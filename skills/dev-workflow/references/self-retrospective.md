@@ -127,7 +127,27 @@ Apply these rules to every candidate's `description` and `suggested fix directio
 - **Project-specific code identifiers** (types, functions, classes, domain terms) → strip, replace with structural description ("a validator function", "a message model"). Keep only the structural shape, not the names
 - **Dates, session IDs, ticket IDs, internal URLs** → strip entirely
 - **Credential-like literals** (API keys, tokens, bearer/auth header fragments, email addresses, IP addresses, hostnames beyond public domains, `.env` values) → strip entirely. When unsure, strip. This catches project-agnostic secrets that the identifier rules above would miss
-- **Keep as-is**: skill names (`dev-workflow`, `ask-peer`, `extract-rules`, `rules-review`), workflow step / phase labels (e.g. "Step 3", "Plan Review"), abstract behavior descriptions, suggested fix directions expressed in skill-level vocabulary
+- **Keep as-is**: skill names (`dev-workflow`, `ask-peer`, `extract-rules`, `rules-review`), workflow step / phase labels (e.g. "Step 3", "Plan Review"), abstract behavior descriptions, suggested fix directions expressed in skill-level vocabulary — but see § Distribution-aware fix direction (bundle skill targets) below for the bundle-skill-prose exception
+
+### Distribution-aware fix direction (bundle skill targets)
+
+The bundle skills listed in this file's Purpose header (`dev-workflow`, `ask-peer`, `extract-rules`, `rules-review`) are distributed for **general software development**, not for skill-development specifically. When a `Suggested fix direction` would land in one of those skills' SKILL.md prose or `references/*.md` prose, write the direction as **abstract principle first, with skill-development examples in parens** rather than skill-development vocabulary verbatim.
+
+Trigger: target skill is one of the bundle skills listed in the Purpose header AND the suggested fix targets prose under `skills/<target>/SKILL.md` or `skills/<target>/references/*.md` (i.e. user-visible distribution surface). Internal-tooling fixes (allowed-tools tightening, frontmatter validation, hook wiring inside the skill itself) do not land in user-visible prose, so this rule does not apply to them — write them in skill-development vocabulary as needed.
+
+Shape:
+
+> **Good** (abstract first, skill-dev example in parens):
+> "Add a Step 2 self-audit item that checks whether the plan fixes a structural pattern (shared base classes, cross-cutting middleware, mirrored services — for skill development these map to subagent dispatch shape, hook wiring, state-file handling) and, when it does, expand scope to siblings sharing that structure or note the deferral in Risks."
+>
+> **Bad** (skill-dev vocabulary verbatim):
+> "Add a Step 2 self-audit item that checks whether the plan fixes a subagent dispatch shape, hook wiring, or state-file handling pattern and, when it does, expand scope to sibling skills sharing that structure."
+
+Why: the producer's signal is generated in skill-development context (where the agent runs), but the fix lands in a SKILL.md that general users read. Without this shape, vocabulary scoped to skill-development leaks into general-purpose prose. The triage applier (`dev-workflow-triage` § 3.4 Apply accepted Findings) writes Suggested fix direction text mostly verbatim into the target SKILL.md, so the producer is the only generalization layer in the loop.
+
+Scope: this sub-section applies to `Suggested fix direction` only. `Description` continues to follow the main §3 bullets — abstract behavior descriptions are kept as-is without the abstract-first / parens-example transformation. The triage applier transcribes `Suggested fix direction` into target SKILL.md prose, while `Description` is consumed as context during issue triage and does not land verbatim in distributed prose.
+
+Source of truth: this sub-section is the operational expansion of `.claude/rules/project.rules.md` § SKILL.md の配布性. Update both files together when the rule changes.
 
 Edge-case judgments (is "the CI pipeline" a project term? is a framework name too specific?) are left to the model — trust the user-preview step to catch misses.
 

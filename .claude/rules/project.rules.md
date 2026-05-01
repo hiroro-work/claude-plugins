@@ -36,6 +36,8 @@
 - このリポジトリは配布用マーケットプレイスのため、SKILL.md にユーザー固有の情報（特定リポジトリ名 `owner/repo`、絶対パス、個人識別子等）をハードコードしない
 - リポジトリ情報やパスが必要な機能は設定ファイル（`.claude/<skill>.local.md` 等の frontmatter）経由で受け取る
 - `~/.claude/...` 配下のパス（例: `~/.claude/settings.json`、`~/.claude/stop-hook-git-check.sh`）は **Claude Code の標準 config root** であり、ユーザー固有パスではない。SKILL.md からこれらを参照する（`jq -r '...' ~/.claude/settings.json` 等）のは配布性違反にならない。「絶対パスをハードコードしない」原則の対象は、特定ユーザーの `/Users/<name>/...` や個別プロジェクト固有の絶対パスに限る
+- 配布される一般用途スキル（`skills/dev-workflow/references/self-retrospective.md` の Purpose 行に列挙される bundle skill — 現在は `dev-workflow` / `ask-peer` / `extract-rules` / `rules-review`）の SKILL.md prose / `references/*.md` prose には、**適用文脈固定の語彙**（Skill 開発、特定プロジェクトのアーキテクチャ、特定 framework 等）を直接埋めない。原理は抽象的な主文として書き、skill 開発文脈などの具体例は **括弧書き** で添える形式に統一する。Why: producer の出力が triage で skill prose に verbatim 反映されるため、bundle skill が配布物として読まれる際に過剰仕様になる（詳細機序は producer 側 § Distribution-aware fix direction 参照）
+- 上記ルールの Source of truth: 本ルール bullet が canonical な原則記述、producer 側 operational expansion は `skills/dev-workflow/references/self-retrospective.md` § Distribution-aware fix direction にあり双方向に相互参照している（片方を更新したら他方も合わせて更新すること）。bundle skill enum の追加が発生した際は producer の Purpose 行を 1 箇所更新すれば本ルール bullet の間接参照が追従する設計
 
 ## ローカルスキル設計
 

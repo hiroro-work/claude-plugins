@@ -295,6 +295,10 @@ This skill operates on an uncommitted working tree throughout: main thread `Edit
 
 In auto-derive mode the per-skill loop dispatches an `Agent` for each skill (and again per iteration), so the multiplier on hook-fire count is `N skills × iter` rather than the single dispatch loop of explicit-args mode. Same disposition (record and continue), but the higher fire count is normal for this mode.
 
+## Outer review loop interaction (caller-side note)
+
+When invoked from `dev-workflow-triage`'s § 3.4 (d-loop) at outer iter ≥ 2, the cumulative diff against `Base ref = HEAD` may include sibling-review polish edits (from `Skill(skill-review)` / `Skill(publicity-review)`) unrelated to the original Finding's `Description` / `Suggested fix direction`. The bias-free executor may judge those polish lines as "regression" and emit `unresolved` more frequently than it would in iter 1 — this is the expected disposition under outer-loop wrapping, not a `verify-diff` bug. Caller-side handling: the caller treats `unresolved` as a non-fatal warning (does not abort the Finding), and the outer loop's early-exit may absorb the noise once all three callees stop applying edits. See `dev-workflow-triage` SKILL.md `§ 3.4 Apply accepted Findings` (d-loop) Notes — Base ref behavior for the canonical write-up.
+
 ## Related
 
 - `prompt-tuning` — iterative empirical evaluation of a whole prompt against multi-scenario requirement checklists. Shares the anti-self-review philosophy (dispatch a fresh executor; never self-review) but operates at prompt-quality granularity, while `verify-diff` operates on a single diff with a single objective. `verify-diff` automates prompt-tuning's human-in-the-loop by having the executor emit `suggested_edits` from its unclear-points report. The auto-derive mode reuses the same intent-inference pattern from prompt-tuning and re-specializes it for diff-verification granularity.

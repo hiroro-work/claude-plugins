@@ -626,7 +626,7 @@ Finding N-3 を accept: 「Step 4 / Step 7.5 / Step 8」を一般化した呼称
 ```markdown
 ### Step 3: Plan Review
 ...
-   **Return-point no-stall reminder**: At each iteration boundary (regardless of reviewer outcome — findings reported, "No actionable findings", any non-error result), the next action — the next iteration's reviewer dispatch when more iteration items remain, or the Step 4 transition when this was the last iteration or "No actionable findings" was returned, or the Step 7 / Step 7.5 re-run when the plan was modified — must be issued in the **next tool call**. See `§ No-Stall Principle`.
+   **Return-point no-stall reminder**: At each iteration boundary (regardless of reviewer outcome — findings reported, "No actionable findings", any non-error result), the next action — the next iteration's reviewer dispatch when more iteration items remain, or the Step 4 transition when this was the last iteration or "No actionable findings" was returned — must be issued in the **next tool call**. See `§ No-Stall Principle`.
 
 ### Step 8: Code Review
 ...

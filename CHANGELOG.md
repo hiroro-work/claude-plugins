@@ -2,6 +2,15 @@
 
 ## 2026-05-06
 
+### dev-workflow v1.34.11 / dev-workflow-bundle v1.34.11
+
+- fix(dev-workflow): add shell content portability check to Step 3 Plan Review category (a) (auto-triage #14)
+  - Category: missing-branch; Step 3 reviewer categories had no explicit lens for shell portability / quoting / expansion / shell-flavor differences on plans containing shell content, surfacing such issues only at iter 2. New clause in category (a) Scope & feasibility names quoting / expansion / special-character handling / shell-flavor differences with concrete examples (zsh `nomatch` on unquoted globs, bash vs. POSIX drift) so iter-1 reviewers have a checkable signal at plan time rather than at Step 7.
+- fix(dev-workflow): add intra-patch self-duplication audit direction (iii) to Step 2 Cross-component pattern alignment (auto-triage #14)
+  - Category: wrong-default; Step 2 Simplicity self-audit's Cross-component pattern alignment bullet covered (i) propagating a fix outward and (ii) aligning a new component inward but had no explicit lens for "this very change itself lands the same processing pattern at multiple call sites within one patch". Same-class defects within a patch slipped past Step 2 and surfaced only as Step 8 class-level extension findings. New (iii) Intra-patch self-duplication direction names shared validators / common error handling / mirrored formatting-serialization logic at multiple call sites within one change and links back to (i)'s blast-radius treatment, with skill-development examples (producer / consumer JSON parse pattern, return-contract across callees) in parentheses.
+- fix(dev-workflow): add prose-integrity self-check to Step 8 per-iteration discipline (auto-triage #14)
+  - Category: ambiguity; Step 8 per-iteration discipline only mandated mechanical re-runs (Step 7 / Step 7.5) after a fix; prose semantic breakage (mid-word sentence cuts, broken logical connectives, paragraph-logic breakage) introduced by line-level fix patches surfaced only at iter k+1 as Major findings, costing an extra iter. New Prose-integrity self-check (post-fix) bullet names the three failure modes with concrete connective examples (`however` / `therefore` / `because` / `but`) so iter-1 agents catch breakage before the next reviewer dispatch.
+
 ### dev-workflow v1.34.10 / dev-workflow-bundle v1.34.10
 
 - feat(dev-workflow): emit Producer version line in self-retrospective issue body

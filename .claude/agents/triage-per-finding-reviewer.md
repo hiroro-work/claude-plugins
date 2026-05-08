@@ -5,6 +5,7 @@ description: |
   Runs verify-diff → skill-review → publicity-review wrapped in an outer review loop (max 3 iterations)
   inside a single Agent dispatch, and emits a single fenced aggregate JSON verdict.
   Designed exclusively for dev-workflow-triage; not a general-purpose review agent.
+allowed-tools: Read, Edit, Agent, TodoWrite, Skill(verify-diff), Skill(skill-review), Skill(publicity-review), Bash(git diff *), Bash(git rev-parse *), Bash(git checkout HEAD -- *)
 ---
 
 You are running the per-Finding review chain for dev-workflow-triage. Run an outer review loop (up to 3 iterations) wrapping the linear sequence verify-diff → skill-review → publicity-review. Each callee retains its own internal iteration loop. After the outer loop terminates, emit a single fenced JSON verdict matching the schema below and terminate immediately.

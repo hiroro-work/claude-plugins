@@ -6,7 +6,7 @@ Read this reference when executing any of the following:
 
 - **Step 2** — creating the plan (§ Template, § Step 2 self-check)
 - **Step 3** — peer plan review (§ Step 3 (f) content-quality rubric)
-- **Step 4** — presenting the plan to the user (§ Step 4 guidance lines, § Progressive disclosure at user-gates)
+- **Step 4** — presenting the plan to the user (§ Step 4 guidance lines, § Step 4 presentation order)
 - **Any user-facing prose output** — localization boundary (§ Localization granularity)
 
 ## Template
@@ -121,7 +121,7 @@ Reviewer does not re-check structural compliance (section presence, bullet count
 
 ## Step 4 guidance lines
 
-In Step 4, present the plan with one of these literal English guidance lines placed at the very top, above the plan body. The template depends on (i) whether Decisions has qualifying items and (ii) whether a state file is active.
+In Step 4, present the plan with one of these literal English guidance lines placed at the bottom of the plan output, after the summary preamble (see § Step 4 presentation order for the full sequence). The template depends on (i) whether Decisions has qualifying items and (ii) whether a state file is active.
 
 Rendering conventions for the variants below:
 
@@ -131,21 +131,21 @@ Rendering conventions for the variants below:
 
 **Decisions has one or more qualifying items (Normal or Resume):**
 
-> Decisions has items requiring your judgment — expand to review. Other sections are available on request. The plan has been reviewed in Step 3.
+> Decisions has items requiring your judgment — see the full plan above for details. The plan has been reviewed in Step 3.
 
 **Decisions is empty, Normal mode:**
 
-> No user decisions required — approve if the summary looks reasonable. Expand any section for details. The plan has been reviewed in Step 3 for correctness and convention compliance.
+> No user decisions required — approve if the approach looks reasonable. Full plan details appear above. The plan has been reviewed in Step 3 for correctness and convention compliance.
 
 **Decisions is empty, Resume mode (subtask execution):**
 
-> No user decisions required (subtask scoped — boundaries approved in prior Step 1.5). Expand any section for details.
+> No user decisions required (subtask scoped — boundaries approved in prior Step 1.5). Full plan details appear above.
 
 Pick exactly one variant and use its literal text verbatim — do not concatenate variants, do not reword the sentence content.
 
 ## Localization granularity
 
-Applies to all user-facing prose produced by this skill — plan body content, user-gate preambles, section inventory text, violation/finding lists, Completion summary, and Step 9.5 `Description` / `Suggested fix direction` paragraphs. The resolved `language` (see `SKILL.md` § Configuration) controls the output language.
+Applies to all user-facing prose produced by this skill — plan body content, user-gate preambles, violation/finding lists, Completion summary, and Step 9.5 `Description` / `Suggested fix direction` paragraphs. The resolved `language` (see `SKILL.md` § Configuration) controls the output language.
 
 **Two-way rule:**
 
@@ -163,7 +163,7 @@ Applies to all user-facing prose produced by this skill — plan body content, u
 
 ## User-gate summary preamble
 
-Each user-judgment gate that presents structured content (a plan body, a remaining-violations list, an unresolved-findings list) emits a short summary preamble at the top of the user-facing output — above any existing lead-in (e.g. the Step 4 guidance line) and above the structured content. The preamble names the *shape* of the situation (count, categories, what the gate is asking); it does not paraphrase, summarize, or re-list the structured content.
+Each user-judgment gate that presents structured content (a plan body, a remaining-violations list, an unresolved-findings list) emits a short summary preamble. For Step 7.5 and Step 8, it appears at the top of the user-facing output, above the structured content. For Step 4, it appears after the plan body per § Step 4 presentation order (the plan body is rendered first in natural reading order; the preamble follows the `---` separator). In all cases the preamble is above the guidance line. The preamble names the *shape* of the situation (count, categories, what the gate is asking); it does not paraphrase, summarize, or re-list the structured content.
 
 **Applies to:**
 
@@ -179,7 +179,7 @@ The other user-gates listed in `SKILL.md` § No-Stall Principle (Step 1.5 dialog
 - Technical jargon pairs the localized phrasing with the original technical term in parentheses on first use within the preamble (e.g. `品質ゲート（check_commands / Step 7.5）` for `language: ja`, `quality gate (check_commands / Step 7.5)` for `language: en`). When the localized phrasing and the original technical term coincide (typically under `language: en` for English-origin jargon), pair the term with its identifying handle instead (e.g. `Step 7.5 (Rules Compliance Review)`, `rules-review (the rules-compliance reviewer skill)`) so the parenthetical still adds disambiguating information.
 - Quoted heading anchors from rule files or other source files (e.g. a rule's section heading referenced from the preamble) are kept verbatim regardless of the resolved `language` — they are file-internal identifiers, not localizable prose.
 - Output language follows the resolved `language` (see `SKILL.md` § Configuration; default `ja`).
-- Mark the boundary between preamble and the rest of the output with a bold lead-in placed at the top of the preamble, above the first bullet (e.g. `**Summary**` — the lead-in text itself is localized to follow the resolved `language`). A fenced section is an acceptable alternative but is redundant when a bold lead-in is present — do not emit both.
+- Mark the boundary between preamble and the rest of the output with a bold lead-in placed at the top of the preamble, above the first bullet (`**Summary**` for `language: en`, `**概要**` for `language: ja` — the lead-in text is localized to follow the resolved `language`). A fenced section is an acceptable alternative but is redundant when a bold lead-in is present — do not emit both.
 
 **Content slots (per gate):**
 
@@ -200,20 +200,17 @@ Each gate's Optional slot conditions are independent — do not import Step 8's 
 
 When the structured content has only one item (a single remaining violation in Step 7.5, or a single unresolved finding in Step 8), the preamble SHOULD be omitted — a 3–5 item preamble above a single concrete item is padding noise that duplicates what the item itself states. The Step 4 preamble always has ≥ 3 items by construction, so this omission does not apply to Step 4. Do not announce the omission in the user-facing output (e.g. an "preamble omitted because only one item" line) — the announcement itself is padding noise; present the single concrete item directly.
 
-## Progressive disclosure at user-gates
+## Step 4 presentation order
 
-Step 4 plan approval follows a progressive disclosure protocol: present the summary preamble and a section inventory first, then expand individual sections on user request. Step 7.5 and Step 8 do **not** use progressive disclosure — they present preamble + content directly (violations/findings lists are typically short enough to show in full).
+Step 4 presents the full plan body in natural reading order (Overview → Decisions → Design → Test plan → Risks/Unknowns), followed by an approval summary at the bottom where the chat viewport naturally lands. Step 7.5 and Step 8 do **not** use this protocol — they present preamble + content directly.
 
-**Default output sequence (Step 4 only):**
+**Output sequence (Step 4 only):**
 
-1. Summary preamble per § User-gate summary preamble
-2. Guidance line per § Step 4 guidance lines
-3. Section inventory — a list of expandable section names with item counts where applicable
+1. `## Plan` header as a visual boundary separating the plan from prior conversation
+2. Full plan body in template order — `Overview`, `Decisions`, `Design`, `Test plan`, `Risks / Unknowns` (if present) — rendered in full, following § Localization granularity. Section headings render at `###` level (one below the `## Plan` container); sub-sections (Title, Goal, Scope, Decision N, Implementation, etc.) at `####`
+3. Horizontal rule (`---`) as a visual separator between the plan body and the approval summary
+4. Summary preamble per § User-gate summary preamble
+5. Guidance line per § Step 4 guidance lines
+6. **`ExitPlanMode` must be called in the same turn** — do not output additional text or wait for user input between the guidance line and the `ExitPlanMode` call. `ExitPlanMode` triggers the approval modal; delaying it to a subsequent turn causes the workflow to appear stalled with no visible approval mechanism
 
-**Section inventory format:**
-
-`Overview / Decisions (N items) / Design / Test plan / Risks / Unknowns` — include only sections present in the plan. When Decisions has ≥ 1 qualifying item, additionally list each item's **Question** line in the inventory (one line per item, beneath `Decisions (N items)`) to surface judgment-requiring content without full section expansion.
-
-The inventory ends with a prompt in the resolved `language` inviting the user to name sections they want to expand (e.g. `確認したいセクション名を指定してください。` for `language: ja`, `Name the sections you'd like to expand.` for `language: en`).
-
-**Expansion**: when the user names a section, render that section's full content following § Localization granularity. Multiple sections may be expanded in one request. The user may also approve, reject, or request refinement without expanding any section — progressive disclosure changes the default presentation order, not the approval protocol.
+The user may approve, reject, or request refinement via the approval modal. If the user requests changes, the plan re-enters Plan Mode interaction without repeating the full presentation sequence.

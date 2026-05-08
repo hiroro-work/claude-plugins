@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-05-08
+
+### dev-workflow v1.34.13 / dev-workflow-bundle v1.34.13
+
+- fix(dev-workflow): replace progressive disclosure with full-plan + approval-summary presentation order in Step 4
+  - Category: wrong-default; Step 4 used a progressive disclosure protocol (section inventory with on-demand expansion) that relied on HTML `<details>` tags in the VSCode extension environment, where they rendered as plain text. Additionally, the `ExitPlanMode` call was not mandated in the same turn as the plan text output, causing the approval modal to not appear — making the workflow look stalled with no visible way to approve. Replaced `§ Progressive disclosure at user-gates` with `§ Step 4 presentation order`: plan body renders in full in natural reading order (Overview → Decisions → Design → Test plan → Risks), followed by a `---` separator and an approval summary (preamble + guidance line) at the bottom where the chat viewport lands. Added explicit mandate that `ExitPlanMode` must be called in the same turn as the plan output. Updated guidance lines to remove "expand" references, removed stale "section inventory" mentions from `§ Localization granularity` and the `language` config description, and updated `§ User-gate summary preamble` to describe per-gate preamble positioning.
+
 ## 2026-05-07
 
 ### dev-workflow v1.34.12 / dev-workflow-bundle v1.34.12

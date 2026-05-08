@@ -1111,3 +1111,27 @@ If `triage_commit_count > 0`, push and render `... — pushed to origin` or
 `... — push-failed (<reason>)`.
 ```
 （実行順序 / どちらが最終 render を確定するかが prose から読めず、後追い読み手は section 順序とコード読みで再構築する必要がある）
+
+### Agent definition (`.claude/agents/<name>.md`) frontmatter `allowed-tools` requirement
+**Good** (`.claude/agents/triage-per-finding-reviewer.md` frontmatter):
+```yaml
+---
+name: triage-per-finding-reviewer
+description: |
+  Per-Finding review chain executor for dev-workflow-triage's § Apply accepted Findings (D) sub-step.
+  Runs verify-diff → skill-review → publicity-review wrapped in an outer review loop (max 3 iterations)
+  inside a single Agent dispatch, and emits a single fenced aggregate JSON verdict.
+  Designed exclusively for dev-workflow-triage; not a general-purpose review agent.
+allowed-tools: Read, Edit, Agent, TodoWrite, Skill(verify-diff), Skill(skill-review), Skill(publicity-review), Bash(git diff *), Bash(git rev-parse *), Bash(git checkout HEAD -- *)
+---
+```
+（callee 3 skills (`verify-diff` / `skill-review` / `publicity-review`) の `allowed-tools` union + `Skill(<name>)` 参照を明示。`Bash(*)` を避けて callee と同じ glob 粒度。nested dispatch が permission denied にならない）
+**Bad** (`name` / `description` のみで `allowed-tools` が抜けている):
+```yaml
+---
+name: triage-per-finding-reviewer
+description: |
+  Per-Finding review chain executor ...
+---
+```
+（agent dispatch 自体は通るが、subagent 内で `Skill(verify-diff)` 呼び出しが permission denied で fail。SKILL.md / marketplace.json と違って `/verify-plugins` の構造検証では検出されず、実 routine 走行で初めて surface する silent failure 経路）

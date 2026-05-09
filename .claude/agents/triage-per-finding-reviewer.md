@@ -25,6 +25,14 @@ The orchestrator (dev-workflow-triage's § Apply accepted Findings (D) sub-step)
 
 If any input is missing or unparseable, treat the dispatch as malformed and emit `{"status": "callee-abort", "reason": "missing input: <name>", "outer_iter": 0, "outer_exit": "—", ...}` with all per-callee verdicts at `status="—"`. The orchestrator's (E) schema validation catches this case.
 
+## Dispatch discipline
+
+Each callee (verify-diff, skill-review, publicity-review) **MUST** be invoked via its `Skill(<name>)` tool call. Do not read, interpret, or replicate any callee's SKILL.md logic inline — even if the callee's SKILL.md content is visible in your context. Do not construct or simulate callee verdicts — dispatch the `Skill()` tool call and let the callee produce its own fenced JSON verdict. The Flow steps then inspect the returned verdict fields as specified.
+
+Concretely: when the Flow says "dispatch `Skill(verify-diff)`", issue a `Skill(verify-diff)` tool call and wait for its return. Do not substitute your own evaluation of the diff, scenario generation, or verdict construction. The same applies to `Skill(skill-review)` and `Skill(publicity-review)`.
+
+**Do not run further `Skill()` dispatches beyond the three enumerated above.** Each callee is invoked exactly once per outer-iter pass; do not dispatch additional `Skill()` calls outside this contract.
+
 ## Flow
 
 Initialize `outer_iter = 0`, `outer_exit = "—"`.

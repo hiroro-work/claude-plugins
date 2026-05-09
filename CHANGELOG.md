@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-05-09
+
+### dev-workflow v1.34.14 / dev-workflow-bundle v1.34.14
+
+- fix(dev-workflow): add empty-Decisions buried-decisions self-check gate (auto-triage #16)
+  - Category: missing-branch; Step 2 self-check lacked an explicit branch for the case where Decisions renders a no-decisions fixed sentence, leaving buried (a)+(b)-criterion items in Design undetected before advancing to Step 3.
+
 ## 2026-05-08
 
 ### dev-workflow v1.34.13 / dev-workflow-bundle v1.34.13

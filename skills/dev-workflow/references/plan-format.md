@@ -97,6 +97,7 @@ If the current subtask has no in-scope decisions, use the Resume-mode fixed sent
 After the Simplicity self-audit in Step 2, run this check on the plan. Fix any failures before Step 3.
 
 - [ ] Every Decisions item passes the (a)+(b) criterion — if in doubt, drop it to Design.
+- [ ] **When Decisions renders an empty-Decisions fixed sentence** (§ Empty-Decisions fixed sentences): scan Design and Approach for any passage that answers a "why X over Y" question or introduces a fixed value, threshold, or boundary — these are (a)+(b) candidates that may have been overlooked when the author pre-judged the task as decision-free. If any surface, promote to Decisions before advancing to Step 3. Declaring "no decisions" does not discharge the buried-decisions check; it makes it more important to run.
 - [ ] No choice that qualifies under (a)+(b) is buried inside Design instead of surfaced in Decisions. **Promotion cues** — any one is sufficient to flag a Design passage as a Decisions candidate:
   - Design answers a "why X over Y" question or a "why this specific value / boundary / timing" question, but Decisions has no corresponding item.
   - The plan introduces a new enum / fixed-value set, but Decisions does not record that each member is necessary and non-overlapping with the others.

@@ -1135,3 +1135,41 @@ description: |
 ---
 ```
 （agent dispatch 自体は通るが、subagent 内で `Skill(verify-diff)` 呼び出しが permission denied で fail。SKILL.md / marketplace.json と違って `/verify-plugins` の構造検証では検出されず、実 routine 走行で初めて surface する silent failure 経路）
+
+### Subagent inline-execution prohibition for `Skill(<callee>)` dispatches in agent definitions
+**Good** (`.claude/agents/triage-per-finding-reviewer.md` の `## Inputs` と `## Flow` の間に `## Dispatch discipline` 節を新設):
+```markdown
+## Dispatch discipline
+
+Each callee (verify-diff, skill-review, publicity-review) **MUST** be invoked via
+its `Skill(<name>)` tool call. Do not read, interpret, or replicate any callee's
+SKILL.md logic inline — even if the callee's SKILL.md content is visible in your
+context. Do not construct or simulate callee verdicts — dispatch the `Skill()`
+tool call and let the callee produce its own fenced JSON verdict. The Flow steps
+then inspect the returned verdict fields as specified.
+
+Concretely: when the Flow says "dispatch `Skill(verify-diff)`", issue a
+`Skill(verify-diff)` tool call and wait for its return. Do not substitute your
+own evaluation of the diff, scenario generation, or verdict construction. The
+same applies to `Skill(skill-review)` and `Skill(publicity-review)`.
+
+**Do not run further `Skill()` dispatches beyond the three enumerated above.**
+Each callee is invoked exactly once per outer-iter pass; do not dispatch
+additional `Skill()` calls outside this contract.
+```
+（3 段落の意図的重複: positive obligation / concrete example / closed-set bound の 3 angle 補強。callee 内部スキーマの具体的 field 名は書かない）
+**Bad** (`## Dispatch discipline` 節が無い、または弱い 1 行のみ):
+```markdown
+## Inputs
+
+The orchestrator provides ... `target_file`, `description`, `suggested_fix_direction`, ...
+
+## Flow
+
+Initialize `outer_iter = 0`, `outer_exit = "—"`.
+
+For `k` in `1..3`:
+  1. Dispatch `Skill(verify-diff)` with `Description` / `Suggested fix direction` / ...
+  2. ...
+```
+（`allowed-tools` に `Skill(verify-diff)` があると callee SKILL.md が context に injected され、subagent が dispatch せず inline 実行して verify-diff 内部の `{"status": "converged", ...}` を返す failure mode が発生。orchestrator (E.2) schema violation で 3 連続 fail → `D_dispatch_disabled = true` で残り全 Finding が skip される。Flow に "dispatch `Skill()`" と書くだけでは positive obligation の reinforcement が不足）

@@ -251,6 +251,7 @@ Implementation often introduces unnecessary complexity that's easier to spot in 
 
 1. `Skill(simplify)`: Review changed code for reuse, quality, and efficiency, then fix any issues found. Pass `custom_instructions` as constraints for simplification
 2. Regardless of the outcome — whether `simplify` applied fixes, reported nothing to simplify, or returned any other non-error result — mark `Step 6: Simplify` as `completed` and proceed to Step 7 automatically. Per the No-Stall Principle, do not wait for user input.
+3. **If `Skill(simplify)` result is not observable** (e.g. context compaction occurred during or immediately after the call): inspect `git diff <base-commit>`. If the diff contains changes clearly attributable to a simplification pass, treat simplify as completed and proceed to Step 7. Otherwise (no simplify-attributed changes visible, or ambiguous), re-execute `Skill(simplify)` once — inspection-and-fix-class skills are idempotent — then proceed to Step 7.
 
 ### Step 7: Check / Test (max 3 retries)
 

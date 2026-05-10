@@ -2,6 +2,11 @@
 
 ## 2026-05-09
 
+### dev-workflow v1.34.16 / dev-workflow-bundle v1.34.16
+
+- fix(dev-workflow): semantic judgment of reviewer return at Step 3 / Step 8 (auto-triage #16 followup)
+  - Category: ambiguity; Step 3 / Step 8 reviewer-return handlers used exact-string matching (`"No actionable findings"`), which stalled the orchestrator when `Skill(ask-peer)` or other free-form-prose reviewers returned natural-language Markdown verdicts that did not contain that exact phrase. Replaced with semantic judgment matching Step 7.5's existing pattern (trust the orchestrator's natural-language interpretation, do not rely on exact-phrase matching since reviewer phrasing varies). Caller-side fix for the original auto-triage #16 F5 stall problem; the earlier callee-side fix (ask-peer return contract) was reverted because forcing a review-specific JSON schema onto a general-purpose consultation skill was the wrong layer of abstraction.
+
 ### dev-workflow v1.34.15 / dev-workflow-bundle v1.34.15
 
 - fix(dev-workflow): add result-recovery branch to Step 6 for unobservable Simplify output (auto-triage #17)

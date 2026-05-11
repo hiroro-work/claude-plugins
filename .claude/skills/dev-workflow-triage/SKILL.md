@@ -64,8 +64,21 @@ Claude Code on the Web's container auto-installs `~/.claude/stop-hook-git-check.
 - **Target issue repository**: `SonicGarden/dev-workflow-issues` (hardcoded — change this line to retarget)
 - **Bundle skills under triage scope**: `dev-workflow`, `ask-peer`, `extract-rules`, `rules-review`
 - **Edit target paths**: always `skills/<target>/SKILL.md` or `skills/<target>/references/*.md` (canonical source of truth). Never edit `.claude/skills/<target>/...` symlinks
+- **Output language**: `ja` (hardcoded). Applied per `§ Output language` below
 
 The issue body format (`### Finding <N>`, 4 labeled fields, `Findings: N` trailer) is produced by `skills/dev-workflow/references/self-retrospective.md`. Parse and reject conditions in the "Parse body" step below and in `references/triage-criteria.md` must stay aligned with that producer.
+
+## Output language
+
+User-facing prose produced by this skill is always in Japanese (`ja`). This is a project-local skill with no configurable language setting.
+
+**Localization boundary** (mirrors `dev-workflow`'s `references/plan-format.md` § Localization granularity):
+
+- **Translate**: generic technical concepts — e.g. "Open issues received" → `受信した未解決 issue 数`; "Counts per outcome" → `結果別の件数`; "Accepted-and-committed files" → `accept 済み・コミット済みファイル`
+- **Preserve verbatim**: structured tokens (`accept` / `reject` / `conflict` / `parse-error` / `converged` / `unresolved` and all other machine-parsed enum values), field labels in the per-Finding execution log (`target:` / `outer-loop:` / `verify-diff:` / `skill-review:` / `publicity:` / `commit:`), file paths, commit hashes, config key names, skill names (`Skill(verify-diff)` etc.), `§` section references
+- **First-use pairing**: on the first occurrence of a translated concept within each output block (Step 4 summary, GitHub issue comment), pair the localized phrasing with the original English term in parentheses (e.g. `受信した未解決 issue 数（Open issues received）`). Subsequent occurrences within the same block use the localized form alone
+
+**GitHub issue comments** (`§ Post triage comment`): the comment Reasoning field is in Japanese. Template structure labels (`Target`, `Category`, `Applied changes`, `Notes`, `Result`) and enum tokens stay English for cross-language searchability.
 
 ## Triage classes
 
@@ -102,6 +115,7 @@ fix(<target-skill>): <Finding 1-line summary> (auto-triage #<issue-N>)
   - On success, initialize `triage_commit_count=0`. The counter is incremented **only on zero-exit `git commit`** at `§ 3.4 Apply accepted Findings` sub-step (g) and `§ Step 3.7 Release bookkeeping` sub-step (j); a failed commit (pre-commit hook rejection, etc.) leaves it unchanged. Step 4 auto-cleanup checks `triage_commit_count == 0` to decide whether to delete the now-empty branch (the abort path above exits the run before Step 4 ever runs, so a separate "branch active" flag is redundant — reaching Step 4 already implies a successfully-created branch)
 - Resolve `current_version` once for the run (cached and reused by Step 3.3's Version-aware judgment for every Finding): run `current_version=$(jq -r '(.plugins[] | select(.name == "dev-workflow") | .version) // "unknown"' .claude-plugin/marketplace.json 2>/dev/null)`, then `[ -z "$current_version" ] && current_version=unknown`. The `// "unknown"` jq alternative handles missing entry (empty stream) and entry-without-version (`null`); the post-pipeline `-z` guard handles `jq` itself failing (missing/malformed `marketplace.json`). Hoisting this out of the per-issue / per-Finding hot path keeps the routine N×M `jq` invocations from accumulating on issue sets that touch every Finding through the stale-issue branch
 - Read `CHANGELOG.md` once and cache its contents for Step 3.3's Reject #7 leg (i) lookup. The same content serves every Finding that enters the stale-issue branch, so re-reading per Finding is wasted work
+
 
 After all pre-flight checks pass, register the **Workflow Phase Rows** in `TodoWrite` as a single call:
 
@@ -430,7 +444,7 @@ After this step terminates (any branch), apply the following boundary reminder b
 
 ### Step 4 — Emit summary
 
-Print to stdout (the only trace a routine leaves). The summary has two sections — first the **Per-Finding execution log**, then the aggregate counters.
+Print to stdout in Japanese (see `§ Output language`). This is the only trace a routine leaves. The summary has two sections — first the **Per-Finding execution log**, then the aggregate counters.
 
 Entry state: the `Step 4: Emit summary` row is already `in_progress` (flipped either by the Step 3.7 → Step 4 boundary reminder, or by the 0-open-issues path in Step 2). The final `completed` flip and the summary stdout output **must occur in the same tool-call burst**. See `§ No-Stall Principle` § Phase / per-issue TodoWrite transitions.
 

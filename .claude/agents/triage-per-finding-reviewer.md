@@ -33,7 +33,15 @@ Concretely: when the Flow says "dispatch `Skill(verify-diff)`", issue a `Skill(v
 
 **Do not run further `Skill()` dispatches beyond the three enumerated above.** Each callee is invoked exactly once per outer-iter pass; do not dispatch additional `Skill()` calls outside this contract.
 
-**Anti-pattern — inline execution via context injection**: the callee SKILL.md content may appear in your context because the callee names are in `allowed-tools` — this does not change the rule: always issue the `Skill()` tool call, never replicate callee logic inline. If you find yourself performing callee workflow steps, constructing intermediate artifacts, or assembling verdict fields without having issued a `Skill()` tool call, stop and issue the tool call instead.
+**Anti-pattern — inline execution via context injection**: the callee SKILL.md content may appear in your context because the callee names are in `allowed-tools` — this does not change the rule: always issue the `Skill()` tool call, never replicate callee logic inline. If you find yourself performing callee workflow steps, constructing intermediate artifacts, or assembling verdict fields without having issued a `Skill()` tool call, stop and issue the tool call instead. Concrete signs of inline execution (if you observe yourself doing any of these, STOP and issue the `Skill()` tool call instead):
+- Generating test scenarios, evaluation criteria, or gap/regression analysis for a diff (verify-diff internal)
+- Walking a best-practices checklist item by item against file contents (skill-review internal)
+- Scanning file contents for secrets, user-specific paths, or publicity concerns (publicity-review internal)
+
+**Pre-emit self-verification**: before constructing the aggregate JSON, verify your tool-use history for this invocation. For each outer-iter pass `k`, count the `Skill()` tool calls actually issued:
+- Each **enabled** callee (not `*_disabled`) must have exactly one `Skill(<name>)` tool call in iter `k`
+- Each **disabled** callee must have zero `Skill()` tool calls
+If the count is wrong — especially if it is zero for an enabled callee — you executed the callee's logic inline instead of dispatching the tool call. In that case, emit the aggregate JSON with `"status": "error"` and `"reason": "inline execution detected — missing Skill() tool call for <callee>"` so the orchestrator can handle the failure via its (E) error path.
 
 ## Flow
 
@@ -72,8 +80,8 @@ End the invocation with a single fenced JSON block matching this schema:
 
 ```json
 {
-  "status": "ok" | "callee-abort",
-  "reason": "<string when callee-abort>",
+  "status": "ok" | "callee-abort" | "error",
+  "reason": "<string when callee-abort|error>",
   "outer_iter": <int 1..3>,
   "outer_exit": "no-edits" | "callee-abort" | "max-iter",
   "verify_diff": {
@@ -106,7 +114,7 @@ End the invocation with a single fenced JSON block matching this schema:
 **Field disposition rules** (apply uniformly across all per-callee verdicts):
 
 - For every per-callee verdict — regardless of whether the callee was dispatched, disabled, or skipped via `status="—"` — emit the schema-defined fields as required and use schema-typed defaults (`0` for integer fields, `[]` for array fields) for any field whose value is unknown or omitted by the callee return. Concretely: `applied_edits_count: 0`, `iterations_used: 0`, `notes_remaining_count: 0`, `remaining_findings: []`, `reverted_paths: []`, `warnings: []` are the defaults. This applies uniformly to (i) `status="—"` (not dispatched in this run, e.g. callee-abort path), (ii) `status="disabled"` (orchestrator passed `*_disabled = true`), and (iii) successfully-dispatched callees whose return verdict omits an optional schema-defined field. The orchestrator's (E.2) schema check expects unconditional fields to always be present.
-- Conditional fields annotated `<string when X>` (e.g. `category_breakdown` "when unresolved", `reason` on `publicity_review` "when skipped|conflict", `reason` on `skill_review` "when status=error", and the top-level `reason` "when callee-abort"): **omit** the field entirely when the guard does not hold; do not emit `null` or `""`.
+- Conditional fields annotated `<string when X>` (e.g. `category_breakdown` "when unresolved", `reason` on `publicity_review` "when skipped|conflict", `reason` on `skill_review` "when status=error", and the top-level `reason` "when callee-abort|error"): **omit** the field entirely when the guard does not hold; do not emit `null` or `""`.
 - The top-level `outer_iter` and `outer_exit` are always emitted; their initial-state values (`0` and `"—"` from FLOW init) must be replaced with terminal values before emit (the FLOW guarantees this — observing the init values at top level is a schema violation).
 
 After emitting the JSON, do not produce any additional turn (mirrors callee return contract discipline). The orchestrator's (E) schema validation references this schema as the single source of truth for valid `status` enum values and field shapes.

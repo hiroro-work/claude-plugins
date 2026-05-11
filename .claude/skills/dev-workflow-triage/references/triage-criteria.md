@@ -71,7 +71,7 @@ Use this shape when building the `--body-file` content in the "Post triage comme
 ### Finding <n>: <accepted|rejected|conflict|parse-error>
 - **Target**: <skill name>
 - **Category**: <ambiguity|missing-branch|wrong-default|rules-conflict|other>
-- **Reasoning**: <1-2 sentences in English>
+- **Reasoning**: <1-2 sentences in Japanese (see SKILL.md § Output language)>
 - **Applied changes**: <file:section> at <commit-hash> | `—`
 - **Notes** (optional, only if warnings): `verify-diff unresolved (<n> gaps)`, `verify-diff skipped (<reason>)`, `verify-diff disabled after consecutive errors`, `skill-review notes left after applied-edits (<n>)`, `skill-review notes left after max iters (<n>)`, `skill-review error (<reason>)`, `skill-review disabled after consecutive errors`
 

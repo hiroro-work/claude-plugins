@@ -1173,3 +1173,107 @@ For `k` in `1..3`:
   2. ...
 ```
 （`allowed-tools` に `Skill(verify-diff)` があると callee SKILL.md が context に injected され、subagent が dispatch せず inline 実行して verify-diff 内部の `{"status": "converged", ...}` を返す failure mode が発生。orchestrator (E.2) schema violation で 3 連続 fail → `D_dispatch_disabled = true` で残り全 Finding が skip される。Flow に "dispatch `Skill()`" と書くだけでは positive obligation の reinforcement が不足）
+
+### Routing-identifier permissive / content strict layering
+**Good** (`dev-workflow-triage/SKILL.md` § Step 3 prelude / Body parse):
+```markdown
+> Every open issue proceeds directly to body parse — there is no title-level
+> pre-check. Body parse is the canonical discriminator between triage candidates
+> and unparseable issues; title format may evolve (grammar variations like
+> `1 finding` vs `N findings`) without breaking triage routing.
+
+#### 3.2 Body parse
+
+- **Trailer** (optional cross-check): `^Findings: (\d+)$` near the end. When
+  present, the captured count cross-checks against the number of `### Finding`
+  headings; the heading count is canonical regardless of whether the trailer
+  is present.
+- **Parse-error conditions** (strict — these gate triage validity):
+  - Zero `### Finding` headings in the body
+  - Trailer is **present** and its count disagrees with the `### Finding`
+    heading count
+  - Any Finding's Target skill is outside the 4-skill bundle
+  - Any of the 4 required fields is missing in any Finding
+  - Category is outside the 5-value set
+```
+（identifier layer は廃止 / permissive、content layer の 4 fields + enum 検証は strict 維持）
+**Bad** (identifier layer に strict check を残す):
+```markdown
+#### 3.1 Title match
+
+- Match `^\[auto-retrospective\] dev-workflow-bundle: \d+ findings`. On mismatch,
+  skip the issue and record `title-mismatch-skip`.
+
+#### 3.2 Body parse
+
+- **Trailer** (required): `^Findings: (\d+)$` must be present near the end.
+  Absence is a parse-error condition.
+```
+（`\d+ findings` で `1 finding` 単数形が silent skip される、trailer 欠落で本来 triage 可能な issue が parse-error 経路に倒れる。identifier と content を同水準の strict 検証で書くと grammar 揺れ / format 揺れで silent skip 経路が開く）
+
+### Vacuous-truth gap in per-element ALL-quantifier close predicates
+**Good** (`dev-workflow-triage/SKILL.md` § 3.6 Close decision):
+```markdown
+Close the issue if **both** legs hold (2-leg AND predicate):
+
+1. **Whole-state gate**: the body parse produced at least one `### Finding`
+   entry — i.e. this is NOT a whole-issue parse-error path. Whole-issue
+   parse-error issues are left open and surface via the per-issue comment;
+   no close decision is made here.
+2. **Per-element check**: every parsed Finding was either accepted (commit
+   landed in this run's triage branch) or rejected with reason cited in the
+   per-Finding comment.
+
+> Per-element ALL-quantifier alone is insufficient — must be gated by the
+> whole-state predicate to avoid vacuous-true regression on empty / aborted
+> state (zero Findings vacuously satisfies "every Finding is OK").
+```
+（whole-state gate で zero-record / abort-state を弾いてから per-element check を評価）
+**Bad** (per-element ALL-quantifier 単独):
+```markdown
+Close the issue if **every parsed Finding** was either accepted or rejected
+with reason cited.
+```
+（whole-issue parse-error で Finding 配列が空のまま close 判定に入ると vacuous-true で auto-close が起動する silent regression。plan 段で behavior が抽象的に扱われるため Step 3 reviewer が見落とし、Step 8 Code Review で Critical-severity finding として初めて catch される）
+
+### Closed-list extension audit across SKILL.md ↔ `references/*.md`
+**Good** (SKILL.md parse-error 条件追加と同時に reference 表も同期):
+```markdown
+# .claude/skills/dev-workflow-triage/SKILL.md
+**Parse-error conditions** (closed list):
+- Zero `### Finding` headings in the body                          # ← 新規追加
+- Trailer is present and its count disagrees with heading count
+- Any of the 4 required fields missing
+- Target skill outside the 4-skill bundle
+- Category outside the 5-value set
+
+# .claude/skills/dev-workflow-triage/references/triage-criteria.md
+> Source of truth: SKILL.md § Parse body parse-error conditions;
+> this table mirrors that list — keep in sync.
+
+| Edge case | Disposition |
+|---|---|
+| Zero `### Finding` headings        | parse-error / leave open |   # ← 同期追加
+| Trailer present & count mismatch   | parse-error / leave open |
+| 4 required fields missing          | parse-error / leave open |
+| Target skill outside bundle        | parse-error / leave open |
+| Category outside 5-value set       | parse-error / leave open |
+```
+（SKILL.md 側 closed list 追加 → reference 側 table 行追加を 2-step audit で同時に。source-of-truth directive 行で bidirectional 追従義務を明文化）
+**Bad** (片側だけ追加):
+```markdown
+# SKILL.md
+**Parse-error conditions**:
+- Zero `### Finding` headings in the body   # ← 新規追加
+- ... (既存 4 条件)
+
+# triage-criteria.md
+| Edge case | Disposition |
+|---|---|
+| Trailer present & count mismatch   | parse-error |
+| 4 required fields missing          | parse-error |
+| Target skill outside bundle        | parse-error |
+| Category outside 5-value set       | parse-error |
+# "Zero `### Finding` headings" 行が抜けたまま
+```
+（SKILL.md と reference の closed list が drift し、reference 側 Category 行を読んだ reader / downstream consumer が古い列挙で判断する経路が残る。Code Review iter 2+ で Major-severity な cross-file inconsistency finding として上がる）

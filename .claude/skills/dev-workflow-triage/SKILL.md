@@ -66,7 +66,7 @@ Claude Code on the Web's container auto-installs `~/.claude/stop-hook-git-check.
 - **Edit target paths**: always `skills/<target>/SKILL.md` or `skills/<target>/references/*.md` (canonical source of truth). Never edit `.claude/skills/<target>/...` symlinks
 - **Output language**: `ja` (hardcoded). Applied per `§ Output language` below
 
-The issue body format (`### Finding <N>`, 4 labeled fields, `Findings: N` trailer) is produced by `skills/dev-workflow/references/self-retrospective.md`. Parse and reject conditions in the "Parse body" step below and in `references/triage-criteria.md` must stay aligned with that producer.
+The issue body format (`### Finding <N>` headings and 4 labeled fields per Finding) is produced by `skills/dev-workflow/references/self-retrospective.md`. The producer may also emit a trailing `Findings: N` line as a self-consistency cross-check, but the `### Finding` heading count is the canonical Finding count on the consumer side. Parse and reject conditions in the "Parse body" step below and in `references/triage-criteria.md` must stay aligned with that producer.
 
 ## Output language
 
@@ -143,15 +143,12 @@ Do **not** parallelize. Same-skill edits race; `gh issue comment` is non-idempot
 
 If Step 2 reported `0` open issues, this whole prelude (and the per-issue sub-steps that follow) is skipped — the 0-issues bullet in `§ List open issues` already flipped Step 3 / Step 3.7 / Step 4 phase rows in one `TodoWrite` call and proceeds directly to summary emission.
 
-Otherwise, for each issue (in source order from Step 2's listing): the per-issue `TodoWrite` row registered in Step 2 is flipped to `in_progress` in the same tool-call burst as the next concrete action (typically the body parse or the first `Read`); the row is flipped to `completed` at the end of `§ Close decision` (or earlier — see `§ Title match` for the title-mismatch skip path). Three completion paths exist:
+Otherwise, for each issue (in source order from Step 2's listing): the per-issue `TodoWrite` row registered in Step 2 is flipped to `in_progress` in the same tool-call burst as the next concrete action (typically the body parse or the first `Read`); the row is flipped to `completed` at the end of `§ Close decision`. Two completion paths exist:
 
-- **Normal path** (3.1 title match → 3.2 parse OK → 3.3–3.4 → 3.5 → 3.6): per-issue row flips to `completed` immediately after Step 3.6's Close decision settles (zero/non-zero exit alike — `close-failed` does not block the row flip)
-- **Whole-issue parse-error path** (3.1 → 3.2 parse-error → 3.4 skipped → 3.5 → 3.6 close-call skipped, reminder dispatch fires): per-issue row flips to `completed` immediately after Step 3.5 finishes posting the triage comment. Step 3.6 skips the close call by definition for `parse-error`, but the reminder dispatch at the bottom of `§ Close decision` still applies — that dispatch is the path's terminal action, not 3.5
-- **Title-mismatch skip path** (3.1 mismatch → no comment, no close): per-issue row flips to `completed` at the moment of the mismatch decision (skipped → still "processed" in terms of the audit log). The flip is idempotent — when this is a non-first issue, the prior issue's `§ Close decision` reminder #1 has already moved this row from `pending` to `in_progress`, so the §3.1 flip simply settles it to `completed`. When this is the very first issue (so reminder #1 has never fired), the row goes `pending → completed` directly
+- **Normal path** (§ 3.2 parse OK → § 3.3–§ 3.4 → § 3.5 → § 3.6): per-issue row flips to `completed` immediately after Step 3.6's Close decision settles (zero/non-zero exit alike — `close-failed` does not block the row flip)
+- **Whole-issue parse-error path** (§ 3.2 parse-error → § 3.4 skipped → § 3.5 → § 3.6 close-call skipped, reminder dispatch fires): per-issue row flips to `completed` at the reminder dispatch at the bottom of `§ Close decision` — that dispatch is the path's terminal action (Step 3.6 skips the close call by definition for `parse-error`, but the reminder dispatch still fires there, co-located with the row flip)
 
-#### 3.1 Title match
-
-If the title doesn't match `^\[auto-retrospective\] dev-workflow-bundle: \d+ findings`, skip the issue (no comment, no close). The per-issue row is flipped to `completed` here per `§ Process each issue serially` § Title-mismatch skip path (the flip is idempotent — current status is `in_progress` for non-first issues because the prior issue's reminder #1 already moved this row, and `pending` only for the very first issue). Skipping does not bypass the reminder dispatch — apply the dispatch at the end of `§ Close decision` (reminder #1 if more issues remain, reminder #2 if this was the last one) before advancing.
+Every open issue proceeds directly to body parse; there is no title-level pre-check. Body parse is the canonical discriminator between triage candidates and unparseable issues.
 
 #### 3.2 Parse body
 
@@ -159,12 +156,13 @@ Extract Finding records. The producer (`skills/dev-workflow/references/self-retr
 
 - Heading: line matching `^### Finding \d+$`
 - Field labels (one per line, bold + colon + value): `^\*\*Target skill:\*\*\s*(.+)$`, `^\*\*Category:\*\*\s*(.+)$`, `^\*\*Description:\*\*\s*(.+)$`, `^\*\*Suggested fix direction:\*\*\s*(.+)$`
-- Trailer: `^Findings: (\d+)$` near the end
+- **Trailer (optional cross-check)**: `^Findings: (\d+)$` near the end. When present, the captured count cross-checks against the number of `### Finding` headings; mismatch is a parse-error condition. The heading count is canonical regardless of whether the trailer is present, so trailer absence is **not** a parse-error
 - **Producer version line (optional)**: between the `# dev-workflow-bundle retrospective (auto-generated)` header and the first `### Finding 1`, match `^\*\*Producer version:\*\* dev-workflow v(\d+\.\d+\.\d+)$`. Capture the matched group into the per-issue value `producer_version`. **Absent** (no matching line — backward-compat with issues created before the producer added the line) and **malformed** (e.g. `**Producer version:** dev-workflow vfoo` or a non-3-tuple value) both fall back to `producer_version = "unknown"`. Missing or malformed Producer version is **not** a parse-error condition — Step 3.3's Version-aware judgment treats `unknown` as "older than everything" so the stale-issue reject path engages safely
 
-Classify the **whole issue** as `parse-error` (jump to Post triage comment; continue to Close decision, where the close rule "close only if every Finding is accept/reject" leaves the issue open) if any of:
+Classify the **whole issue** as `parse-error` (jump to Post triage comment; continue to Close decision, where `§ 3.6 Close decision`'s leg 1 — Parse body completed successfully — fails and leaves the issue open) if any of:
 
-- Trailer `Findings: N` count disagrees with the number of `### Finding` headings
+- Zero `### Finding` headings found in the body (the issue carries no Finding sections — likely a manually filed bug report or other non-retrospective content; surface as parse-error so the human filer sees a triage comment and the issue stays open via `§ 3.6 Close decision`'s leg 1 — Parse body completed successfully — gate. Without this parse-error classification, `§ 3.6 Close decision`'s leg 2 per-Finding ALL-quantifier would be vacuously true on zero Findings, which is precisely the case leg 1 was added to prevent)
+- Trailer `Findings: N` is present and its count disagrees with the number of `### Finding` headings
 - Any Finding's `Target skill` is outside the 4-skill bundle (`dev-workflow`, `ask-peer`, `extract-rules`, `rules-review`)
 - Any Finding's `Category` is outside the 5-value set (`ambiguity`, `missing-branch`, `wrong-default`, `rules-conflict`, `other`) — mirrors the producer's own validation in `self-retrospective.md`
 - Any of the 4 required fields is missing in any Finding
@@ -343,16 +341,21 @@ After every Finding in the issue is classified (or immediately, if the whole iss
 
 #### 3.6 Close decision
 
-Close the issue only if every Finding is `accept` or `reject` (no `parse-error`, no `conflict`). Otherwise leave open for human review.
+Close the issue only when **both** legs hold:
+
+1. § 3.2 Parse body completed successfully (i.e. did not classify the whole issue as `parse-error`) — this leg gates the zero-Findings case, where leg 2 would otherwise be vacuously true; AND
+2. Every Finding's disposition is `accept` or `reject` (no `parse-error`, no `conflict`).
+
+Otherwise leave open for human review.
 
 - When closing: `gh issue close <N> --repo ...` with `--reason completed` (any accepts) or `--reason "not planned"` (all rejects). Drop `--reason` if `no_reason_flag=true` (gh < 2.28)
 - Non-zero exit: record `close-failed`, continue
 
-After the per-issue row reaches its terminal sub-step (`§ Close decision` for the normal and parse-error paths; the title-mismatch decision in `§ Title match` for the skip path), apply **exactly one** of the two return-point reminders below — reminder #1 if more unprocessed issues remain in the per-issue queue, reminder #2 if this was the last issue.
+After the per-issue row reaches its terminal sub-step (`§ Close decision` for both the normal and parse-error paths), apply **exactly one** of the two return-point reminders below — reminder #1 if more unprocessed issues remain in the per-issue queue, reminder #2 if this was the last issue.
 
 **If more unprocessed issues remain in the per-issue queue (apply reminder #1):**
 
-> **Return-point no-stall reminder**: Closing this issue (regardless of disposition — `accept-close`, `not-planned-close`, `close-failed`, `close-skipped (parse-error or all-conflict)`, `title-mismatch-skip`, any non-error result) is mid-run workflow when more issues remain. Ensure the just-finished per-issue row is `completed` (already flipped on the title-mismatch path; flip it now on the normal / parse-error paths) and mark the next per-issue row `in_progress` in the **next tool call** — never insert an interstitial summary or acknowledgment turn before resuming with the next issue's body parse / first `Read`. See `§ No-Stall Principle`.
+> **Return-point no-stall reminder**: Closing this issue (regardless of disposition — `accept-close`, `not-planned-close`, `close-failed`, `close-skipped (parse-error or all-conflict)`, any non-error result) is mid-run workflow when more issues remain. Ensure the just-finished per-issue row is `completed` (flip it now on the normal / parse-error paths) and mark the next per-issue row `in_progress` in the **next tool call** — never insert an interstitial summary or acknowledgment turn before resuming with the next issue's body parse / first `Read`. See `§ No-Stall Principle`.
 
 **Otherwise (this is the last issue in the queue — apply reminder #2):**
 
@@ -448,7 +451,7 @@ Print to stdout in Japanese (see `§ Output language`). This is the only trace a
 
 Entry state: the `Step 4: Emit summary` row is already `in_progress` (flipped either by the Step 3.7 → Step 4 boundary reminder, or by the 0-open-issues path in Step 2). The final `completed` flip and the summary stdout output **must occur in the same tool-call burst**. See `§ No-Stall Principle` § Phase / per-issue TodoWrite transitions.
 
-**Per-Finding execution log** — one block per processed Finding in source order. Fields source from the per-Finding memory record in § Apply accepted Findings (terminal-iter rendering follows § Apply accepted Findings (D) Terminal-iter flattening paragraph). When the run produced zero Finding records (e.g. the 0-open-issues path, or a run where every issue ended in title-mismatch with no Findings parsed), still render the `Per-Finding execution log` heading and emit a single placeholder line `(none — 0 Findings logged)` under it before the aggregate summary. **Each field renders its written value, or `—` if the record-write point was never reached** — this rule applies uniformly across all dispositions (`accept` / `reject` / `conflict` / `parse-error`), driven by which sub-steps actually ran for that Finding, not by the disposition itself. **Reject reasons (including the Reject #7 stale-issue 4-element cite format `Already addressed (producer_version <X.Y.Z> < current_version <Y.Z.W>; CHANGELOG entry: <token>; SKILL.md cite: <quoted passage>)`) are surfaced via the Step 3.5 Post triage comment template — the GitHub issue comment is the canonical record. They are intentionally NOT rendered in this per-Finding execution log block to keep the log scannable; render only the listed fields below.** The `verify-diff` and `publicity` lines each carry an `[iter ...]` clause that follows these cases (the orchestrator passes `Max iterations = 2` to publicity-review via the (D) subagent prompt template's FLOW publicity-review dispatch branch, so the publicity denominator renders as `/2`; verify-diff renders as `/3` per its own default):
+**Per-Finding execution log** — one block per processed Finding in source order. Fields source from the per-Finding memory record in § Apply accepted Findings (terminal-iter rendering follows § Apply accepted Findings (D) Terminal-iter flattening paragraph). When the run produced zero Finding records (e.g. the 0-open-issues path, or a run where every issue ended in whole-issue parse-error with no Findings parsed), still render the `Per-Finding execution log` heading and emit a single placeholder line `(none — 0 Findings logged)` under it before the aggregate summary. **Each field renders its written value, or `—` if the record-write point was never reached** — this rule applies uniformly across all dispositions (`accept` / `reject` / `conflict` / `parse-error`), driven by which sub-steps actually ran for that Finding, not by the disposition itself. **Reject reasons (including the Reject #7 stale-issue 4-element cite format `Already addressed (producer_version <X.Y.Z> < current_version <Y.Z.W>; CHANGELOG entry: <token>; SKILL.md cite: <quoted passage>)`) are surfaced via the Step 3.5 Post triage comment template — the GitHub issue comment is the canonical record. They are intentionally NOT rendered in this per-Finding execution log block to keep the log scannable; render only the listed fields below.** The `verify-diff` and `publicity` lines each carry an `[iter ...]` clause that follows these cases (the orchestrator passes `Max iterations = 2` to publicity-review via the (D) subagent prompt template's FLOW publicity-review dispatch branch, so the publicity denominator renders as `/2`; verify-diff renders as `/3` per its own default):
 
 - `verify_diff` ∈ {`converged`, `unresolved`, `skipped`, `conflict`} (verify-diff was dispatched in (D)): render `<token> [iter <iterations_used>/3]`
 - `verify_diff` = `disabled` (verify-diff was skipped in (D) because `verify_diff_disabled=true`): render `disabled [iter —]`
@@ -473,7 +476,7 @@ issue #<N> Finding <n>: <accept|reject|conflict|parse-error>
 
 **Aggregate summary** (printed after the per-Finding log):
 
-- Open issues received / processed / skipped for title mismatch
+- Open issues received / processed
 - Counts per outcome: `accept`, `reject`, `conflict` are Finding-level (count one per Finding); `parse-error` is issue-level (count one per whole-issue parse-error, regardless of the number of Findings the issue contained)
 - Accepted-and-committed files (relative paths) with commit hashes
 - verify-diff state: `enabled` or `disabled-after-errors`; count of Findings with `verify-diff unresolved (<n> gaps)`; count of Findings with `verify-diff skipped (<reason>)` broken down by reason

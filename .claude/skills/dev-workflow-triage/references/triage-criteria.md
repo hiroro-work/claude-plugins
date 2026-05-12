@@ -31,9 +31,12 @@ Quick reference for per-case dispositions. SKILL.md's procedural prose is author
 |---|---|
 | `gh` not authenticated | Abort run with summary "gh not authenticated" |
 | Open-issue list empty | Emit summary "no open issues" and exit |
-| Title doesn't match `^\[auto-retrospective\] dev-workflow-bundle: \d+ findings` | Skip the issue — no comment, no close |
-| `Findings: N` line disagrees with `### Finding` count, or required field missing | Whole issue → `parse-error`; post comment; leave open |
+| Zero `### Finding` headings found in the body | Whole issue → `parse-error`; post comment; leave open (prevents silent auto-close of non-retrospective issues) |
+| `Findings: N` trailer is **present** AND disagrees with `### Finding` count | Whole issue → `parse-error`; post comment; leave open |
+| `Findings: N` trailer is **absent** | Not a parse-error — `### Finding` heading count is canonical; proceed with normal triage |
+| Any of the 4 required fields missing in any Finding | Whole issue → `parse-error`; post comment; leave open |
 | `Target skill` outside the 4-skill bundle | Whole issue → `parse-error`; post comment; leave open |
+| `Category` outside the 5-value set (`ambiguity`/`missing-branch`/`wrong-default`/`rules-conflict`/`other`) | Whole issue → `parse-error`; post comment; leave open |
 | Description text names a skill other than the declared `Target skill` | Per-Finding `reject` (out-of-scope target in description) |
 | `marketplace.json` has no `dev-workflow` plugin entry (or file missing) at producer or consumer time | Treat the resolved version as `unknown`. Producer emits `**Producer version:** dev-workflow vunknown`; consumer's `producer_version == "unknown"` triggers Reject #7 stale-issue path on every Finding (still gated by the (i)+(ii) AND with doubt fall-through, so false rejects remain bounded) |
 | `producer_version < current_version` (or either side `unknown`) AND CHANGELOG entry for `<target-skill>` exists between the two AND current SKILL.md no longer reproduces the concern | Per-Finding `reject` (Reject #7 stale-issue); reason includes `producer_version`, `current_version`, CHANGELOG entry, and SKILL.md cite |
@@ -85,4 +88,4 @@ Template notes:
 - One Finding section per `### Finding <n>` in the source issue, in source order.
 - `Applied changes`: `skills/<target>/<file>:<heading>` at commit hash when committed; `—` otherwise. Use heading names, not line numbers (line numbers churn).
 - `Notes`: include only when a warning fired; omit the bullet entirely on clean runs.
-- Whole-issue `parse-error` (see SKILL.md § Parse body): still emit one `### Finding <n>` section per parseable Finding and set the label to `parse-error`; the Reasoning cites the triggering parse-error condition (e.g. "Target skill outside bundle"). If the body couldn't be parsed into Findings at all (heading/count mismatch, no extractable Findings), emit a single `### Whole issue: parse-error` section instead, with the triggering condition in Reasoning and `Applied changes: —`.
+- Whole-issue `parse-error` (see SKILL.md § Parse body): still emit one `### Finding <n>` section per parseable Finding and set the label to `parse-error`; the Reasoning cites the triggering parse-error condition (e.g. "Target skill outside bundle"). If the body couldn't be parsed into Findings at all (zero `### Finding` headings, trailer-mismatch with no extractable Findings, or any other parse-error condition that left no Findings to render), emit a single `### Whole issue: parse-error` section instead, with the triggering condition in Reasoning and `Applied changes: —`.

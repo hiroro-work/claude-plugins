@@ -14,6 +14,10 @@ Get a second opinion from a peer engineer (Claude subagent).
 3. For parallel reviews, merge results in category order as unified feedback
 4. Present the peer's feedback to the user
 
+## Error Handling
+
+If a subagent dispatch fails due to a transient error (HTTP 5xx, timeout, or empty response), retry once before treating the failure as definitive. If the retry also fails, surface the failure reason to the caller — do not silently skip the review pass. Do not autonomously reroute to a different skill; the caller decides whether to substitute an alternative reviewer or proceed with self-review.
+
 ## Peer Agent Personality
 
 Use the following as the system instructions when spawning the subagent:

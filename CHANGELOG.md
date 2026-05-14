@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-05-14
+
+### dev-workflow v1.34.18 / dev-workflow-bundle v1.34.18
+
+- fix(dev-workflow): add prerequisites fallback branch to Step 7.5 (auto-triage #22)
+  - Category: missing-branch; Step 7.5 lacked a defined fallback branch when `check_commands` is undefined or empty, leaving executor behavior unspecified. Added explicit continuation flow so the skill proceeds deterministically when no check commands are configured.
+- fix(dev-workflow): clarify bulk-vs-split execution strategy default in Step 7.5 (auto-triage #22)
+  - Category: wrong-default; Step 7.5 execution strategy defaulted to bulk-run without documenting the rationale or the conditions under which split execution is appropriate. Added bulk-first default with split-on-error fallback and explicit criteria for when split-first is the better choice.
+- fix(dev-workflow): add progress visibility instructions to Step 7.5 (auto-triage #22)
+  - Category: ambiguity; Step 7.5 provided no guidance on what to output during command execution, leaving executor choice between silent execution and verbose logging undefined. Added explicit progress display instructions covering command number, result, and error details.
+- fix(dev-workflow): add Cross-component sibling coverage check to Step 3 Plan Review (auto-triage #22)
+  - Category: missing-branch; Step 3 scope & feasibility category lacked a sub-check for structural patterns shared across sibling components, leaving reviewers without guidance to flag plans that fix one component while leaving affected siblings unchanged. Added Cross-component sibling coverage sub-check with three directions: structural-fix propagation, new-component alignment, and intra-patch uniformity.
+
+### peer v2.2.4 / dev-workflow-bundle v1.34.18
+
+- fix(ask-peer): add error handling section for subagent dispatch failures (auto-triage #22)
+  - Category: missing-branch; ask-peer had no defined behavior when subagent dispatch fails due to transient errors (HTTP 5xx, timeout, or empty response). Added `## Error Handling` section specifying retry-once policy, failure surfacing to the caller, and prohibition on autonomous skill rerouting.
+
 ## 2026-05-12
 
 ### dev-workflow v1.34.17 / dev-workflow-bundle v1.34.17

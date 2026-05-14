@@ -263,6 +263,7 @@ Implementation often introduces unnecessary complexity that's easier to spot in 
 2. Run `Skill(run-tests)` with `--base-commit <sha>` (from Step 2) via `$ARGUMENTS`
    - The skill handles scope decision and test execution internally via subagent
    - Returns structured summary: SUCCESS / TEST_FAILED / EXECUTION_ERROR
+   - **Bulk-vs-split execution**: when the change is cross-cutting (shared components, mirrored services, or parallel handlers) and the test suite includes long-duration categories (E2E, integration tests with external dependencies), prefer passing scoped or split arguments rather than requesting a single bulk run. A single command bundling long-running jobs makes intermediate progress opaque and failure recovery harder — scope-targeted execution lets each category succeed or fail independently.
 3. After 3 retries, report to user and stop
 
 > **Coverage note (TypeScript multi-tsconfig)**: For projects with Project References or multiple `tsconfig*.json` files, a single `tsc --noEmit` may miss changed files that belong to other tsconfigs. `--init` auto-registers a per-tsconfig `tsc -p <path> --noEmit` in this case (see `references/init-mode.md` for detection rules). If coverage still looks incomplete, re-run `--init` or append the missing command manually.

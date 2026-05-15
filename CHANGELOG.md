@@ -1,5 +1,34 @@
 # Changelog
 
+## 2026-05-15
+
+### dev-workflow v1.34.19 / dev-workflow-bundle v1.34.19
+
+- fix(dev-workflow): add harmless-class bypass to Step 7 scope-drift guard (auto-triage #25)
+  - Category: missing-branch; Scope-drift guard blocked on all out-of-scope changes without classifying whether they were harmless (whitespace/comment-only, ≤5 lines, formatter-attributable). Added 3-condition bypass so trivial formatting drift proceeds automatically with a one-line note.
+- fix(dev-workflow): pass subtask scope boundaries to Step 3 / Step 8 reviewer (auto-triage #25)
+  - Category: missing-branch; When a state file was active, plan reviewer and code reviewer were not informed of the current subtask's scope or what other subtasks covered, causing false-positive findings about missing out-of-scope functionality. Added subtask scope instruction to both reviewer dispatch steps.
+- fix(dev-workflow): add TDD-conflict resolution for characterization test subtasks (auto-triage #25)
+  - Category: missing-branch; When custom_instructions included a TDD-style requirement, subtasks adding characterization/coverage tests for existing behavior triggered a TDD-loop conflict. Added keyword-based detection and explicit TDD-loop-external declaration to Step 2 plan creation.
+- fix(dev-workflow): add e2e coverage check to Step 3 Plan Review category (c) (auto-triage #25)
+  - Category: missing-branch; Plan Review completeness check lacked an e2e/integration coverage verification item. Changes affecting user-visible interactions or role-based authorization flows could pass review without an e2e test plan.
+- fix(dev-workflow): add no-summary-turn constraint at review-return boundaries (auto-triage #24)
+  - Category: missing-branch; No-Stall Principle did not explicitly prohibit summary-only turns when a reviewer or sub-skill returned a semantically-empty result. Added paragraph banning verdict lists, conclusion paragraphs, and "shall I proceed?" sentences at review-return transition boundaries.
+- fix(dev-workflow): add structural compliance as first Step 2 self-check item (auto-triage #24)
+  - Category: missing-branch; Structural compliance (required sections, heading levels, no extra sections) was not the first self-check item and lacked a "stop here and restructure" gate. Also added template-skeleton-first guidance for plans seeded from carry-over documents.
+- fix(dev-workflow): add planning-draft recovery branch to Resume sub-mode schema validation (auto-triage #23)
+  - Category: missing-branch; --resume with a file lacking YAML frontmatter or missing required keys would fatal-stop instead of treating the file as an inherited planning draft. Added step 3a planning-draft recovery that continues to Normal sub-mode with the document as background context.
+
+### peer v2.2.5
+
+- fix(ask-peer): respect explicit scope boundaries in subtask review (auto-triage #23)
+  - Category: missing-branch; Peer reviewer had no instruction to honor explicit in-scope boundaries from consultation requests, causing out-of-scope subtask functionality to be reported as Critical/Major findings. Added Scope boundary discipline to the Peer Agent Personality.
+
+### rules-review v1.1.3
+
+- fix(rules-review): add rule-doc-drift classification for stale rule documents (auto-triage #23)
+  - Category: missing-branch; When code followed a consistent pattern across 3+ diff locations but the rule document described different behavior, the reviewer classified it as a code violation rather than a rule-doc-drift finding. Added classification field and route-to-extract-rules recommendation for the drift case.
+
 ## 2026-05-14
 
 ### dev-workflow v1.34.18 / dev-workflow-bundle v1.34.18

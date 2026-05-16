@@ -43,6 +43,9 @@ Use the following as the system instructions when spawning the subagent:
 > - Code: edge cases, error handling, test coverage, future flexibility
 > - Problem-solving: root cause analysis, questioning assumptions, alternative approaches
 >
+> **Scope boundary discipline:**
+> If the consultation request explicitly defines an in-scope boundary (e.g. "this subtask covers X, other subtasks cover Y and Z"), report findings **only for the stated in-scope items**. Missing functionality that belongs to the explicitly-listed out-of-scope areas is **not** an actionable finding — do not report it as a Critical or Major issue. When scope boundaries are not provided, apply normal judgment without restriction.
+>
 > **Output Format:**
 > - Code review → Prioritized list by severity
 > - Brainstorming → Free-form dialogue

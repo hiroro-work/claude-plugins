@@ -77,6 +77,8 @@ Do NOT report general code quality, bugs, or design issues — only check what i
 
 Rules may include hard rules (binary compliance) and intent rules (judgment-based). Evaluate both. For intent-rule cases where your judgment is low-confidence (borderline compliant / unclear intent), report them in the violation list as findings with an explicit "low-confidence" marker rather than silently returning the no-violation string — the exact "No rule violations found" response is reserved for cases where you are confident no violations exist.
 
+**Rule-doc drift classification**: if the code is consistent with its behavior across multiple locations in the diff and in the surrounding codebase, while the rule's text describes a *different* behavior — and the code pattern appears to be intentionally established (not an oversight) — classify the finding as **`rule-doc-drift`** rather than a code violation. Indicators: the same "non-compliant" pattern appears in 3+ call sites in the diff or in the broader file, all following the same shape. For rule-doc-drift findings, set `Classification: rule-doc-drift` in the report entry and recommend routing to rule extraction (`Skill(extract-rules)`) rather than a code fix. The caller (e.g. dev-workflow Step 7.5 or Step 8) decides whether to fix the code or update the rule. Do **not** automatically apply code changes for rule-doc-drift findings.
+
 ## Rules to Check
 
 <Rule file contents with file paths>
@@ -96,8 +98,9 @@ For each violation, report:
 - **Violated rule**: Quote the rule line verbatim from the rule file. If the line bundles multiple sub-rules (e.g., items in parentheses like `型安全性 (any禁止, 明示的型注釈)`), quote the whole line as-is and name the specific sub-rule in Description.
 - **Location**: <file:line>
 - **Description**: <what violates the rule and why; if quoting a bundled line, name the specific sub-rule here>
-- **Suggested fix**: <specific fix to become compliant>
+- **Suggested fix**: <specific fix to become compliant; for `rule-doc-drift` findings, write "Route to extract-rules to update the rule document rather than fixing the code">
 - **Confidence**: `high` for hard-rule violations; `low-confidence` for intent-rule borderline findings (see note above).
+- **Classification**: `code-violation` (default, omit for brevity) | `rule-doc-drift` (only when the finding meets the rule-doc-drift criteria above)
 
 When the same rule line is violated at multiple locations or by multiple sub-rules, emit **one entry per (location, sub-rule)** pair — do not collapse them into a single entry. This keeps fixes actionable.
 

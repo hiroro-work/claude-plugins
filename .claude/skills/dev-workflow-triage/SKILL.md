@@ -1,7 +1,7 @@
 ---
 name: dev-workflow-triage
 description: Triage open issues in the dev-workflow-bundle retrospective repo. Read each open issue, judge each Finding (accept / reject), apply accepted fixes to the bundle skills (dev-workflow, ask-peer, extract-rules, rules-review), post a triage comment, and close the issue. Designed for non-interactive routine execution (no plan mode, no user prompts) on Claude Code on the Web.
-allowed-tools: Read, Edit, Write, TodoWrite, Skill(verify-diff), Skill(skill-review), Skill(publicity-review), Bash(gh auth status), Bash(gh --version), Bash(gh issue list *), Bash(gh issue comment *), Bash(gh issue close *), Bash(git diff *), Bash(git add *), Bash(git commit *), Bash(git reset), Bash(git checkout HEAD -- *), Bash(git fetch *), Bash(git push *), Bash(git rev-parse *), Bash(git config --get *), Bash(git for-each-ref *), Bash(git ls-remote *), Bash(git symbolic-ref *), Bash(git switch *), Bash(git branch *), Bash(date *), Bash(jq *), Bash(mkdir -p *)
+allowed-tools: Read, Edit, Write, TodoWrite, Skill(verify-diff), Skill(skill-review), Skill(publicity-review), Bash(gh auth status), Bash(gh --version), Bash(gh issue list *), Bash(gh issue comment *), Bash(gh issue close *), Bash(git diff *), Bash(git add *), Bash(git commit *), Bash(git reset), Bash(git checkout HEAD -- *), Bash(git fetch *), Bash(git push *), Bash(git rev-parse *), Bash(git config --get *), Bash(git for-each-ref *), Bash(git symbolic-ref *), Bash(git switch *), Bash(git branch *), Bash(date *), Bash(jq *), Bash(mkdir -p *)
 ---
 
 # Dev Workflow Triage

@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-05-17
+
+### dev-workflow v1.35.0 / dev-workflow-bundle v1.35.0
+
+- feat(dev-workflow): introduce Step 10 Interactive Commits and reorder post-Step-8 phases. **Default: enabled** — set `interactive_commits: false` in `.claude/dev-workflow.md` or `~/.claude/dev-workflow.local.md` to opt out. The new step runs after `hooks.on_complete` and proposes commit groupings + messages for user approval, then iterates per-commit. `extract-rules` and `self-retrospective` now run after the commit phase. If your downstream automation relies on `/dev-workflow` ending with an uncommitted tree (e.g. an external CI that commits and pushes for you), set `interactive_commits: false`.
+- feat(dev-workflow): `hooks.on_complete` now executes as Step 9 (before extract-rules), shifted from its former post-Update-Rules timing. Hook entries that assumed rules had already been updated at hook-run time may need to be revisited.
+- feat(dev-workflow): renumber post-Step-8 phases to monotonic execution order — old `Step 9` (Update Rules) → `Step 11`, old `Step 9.5` (Self-Retrospective) → `Step 11.5`, old `Step 10` (Completion Hooks) → `Step 9`. All cross-references in SKILL.md and `references/self-retrospective.md` updated.
+
 ## 2026-05-15
 
 ### dev-workflow v1.34.19 / dev-workflow-bundle v1.34.19

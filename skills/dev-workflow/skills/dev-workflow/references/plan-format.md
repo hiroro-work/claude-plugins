@@ -148,7 +148,9 @@ Pick exactly one variant and use its literal text verbatim — do not concatenat
 
 ## Localization granularity
 
-Applies to all user-facing prose produced by this skill — plan body content, user-gate preambles, violation/finding lists, Completion summary, and Step 9.5 `Description` / `Suggested fix direction` paragraphs. The resolved `language` (see `SKILL.md` § Configuration) controls the output language.
+Applies to all user-facing prose produced by this skill — plan body content, user-gate preambles, violation/finding lists, Step 10 commit-plan / per-commit gate framing prose (verbatim git output and file paths remain English), Completion summary, and Step 11.5 `Description` / `Suggested fix direction` paragraphs. The resolved `language` (see `SKILL.md` § Configuration) controls the output language.
+
+Source of truth: `SKILL.md` § Configuration `language` bullet maintains the same enumeration — keep in sync when categories are added or removed.
 
 **Two-way rule:**
 
@@ -174,7 +176,7 @@ Each user-judgment gate that presents structured content (a plan body, a remaini
 - Step 7.5 persistent-violations decision
 - Step 8 unresolved-findings decision
 
-The other user-gates listed in `SKILL.md` § No-Stall Principle (Step 1.5 dialogues, Step 7 scope-drift stop, Completion subtask PR URL prompt) do not emit a preamble — their structured content is either a single short prompt or already self-explanatory, and a 3–5 item summary above them would be padding noise.
+The other user-gates listed in `SKILL.md` § No-Stall Principle (Step 1.5 dialogues, Step 7 scope-drift stop, Step 10 commit-plan approval / per-commit accept / fold-or-defer / ambiguous-adjust clarifier gates, Completion subtask PR URL prompt) do not emit a preamble — their structured content is either a single short prompt or already self-explanatory (Step 10's gates render the commit data verbatim via `git`-shaped output), and a 3–5 item summary above them would be padding noise.
 
 **Format constraints (closed list):**
 

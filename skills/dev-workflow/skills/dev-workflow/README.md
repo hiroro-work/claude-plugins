@@ -155,11 +155,12 @@ hooks:
 | `reviewer` | string | `ask-peer` | Reviewer skill name |
 | `review_iterations` | int | `3` | Max iterations for Plan / Code Review |
 | `task_decomposition` | bool | `true` | Whether Step 1.5 runs auto-decomposition in Normal sub-mode |
+| `interactive_commits` | bool | `true` | Whether Step 10 (Interactive Commits) groups working-tree changes into commits and iterates per-commit with the user |
 | `custom_instructions` | string | (none) | Free-form instructions applied across all phases |
 | `check_commands` | list&lt;string&gt; | (none) | Static checks (lint / format / typecheck, etc.) |
 | `test_commands` | list&lt;string&gt; | `["Skill(run-tests)"]` | Test execution (fixed) |
-| `hooks.on_complete` | list&lt;string&gt; | (none) | Hooks to run after Step 9 |
-| `self_retrospective.feedback` | string | (none) | Destination for Step 9.5 self-retrospective output (GitHub `owner/repo` or a local directory path). Unset = Step 9.5 is fully skipped |
+| `hooks.on_complete` | list&lt;string&gt; | (none) | Hooks to run as Step 9 (immediately after Step 8 Code Review, before Step 10 Interactive Commits when `interactive_commits: true`, otherwise before Completion) |
+| `self_retrospective.feedback` | string | (none) | Destination for Step 11.5 self-retrospective output (GitHub `owner/repo` or a local directory path). Unset = Step 11.5 is fully skipped |
 
 ### Details
 
@@ -206,6 +207,21 @@ task_decomposition: false
 
 Non-boolean values are ignored with a warning and fall back to `true`.
 
+#### `interactive_commits`
+
+Controls whether Step 10 (Interactive Commits) runs after `hooks.on_complete` (Step 9).
+
+- `true` (default): after Step 9, the workflow inspects the working tree, proposes a commit grouping (subjects + file lists), waits for user approval, then iterates per-commit — presenting subject / body / diff for each commit, staging via explicit pathspecs, and committing with a HEREDOC. The workflow itself never pushes — that stays the user's responsibility
+- `false`: Step 10 is omitted from TodoWrite and never executes. The workflow ends with an uncommitted tree as before — commit and push manually after the run
+
+```yaml
+interactive_commits: false
+```
+
+Non-boolean values are ignored with a warning and fall back to `true`. To opt out for one project, set `interactive_commits: false` in `.claude/dev-workflow.md`; to opt out personally, set it in `~/.claude/dev-workflow.local.md` or `.claude/dev-workflow.local.md`.
+
+When `true`, the per-commit loop also handles pre-commit hook auto-modifications via a `fold` / `defer` gate — the user chooses whether to amend the just-landed commit (`fold`) or leave the hook-edited files for a later commit-plan iteration (`defer`). The full procedure (commit-style deduction, mid-loop adjust, cancel semantics, partial-completion reporting) lives in `skills/dev-workflow/SKILL.md` § Step 10.
+
 #### `custom_instructions`
 
 Free-form instructions applied as a guiding principle across planning, implementation, review, and simplify phases. Example:
@@ -235,7 +251,7 @@ To use a different test runner, re-run `--init` to regenerate `run-tests`.
 
 #### `hooks.on_complete`
 
-Hooks to run after Step 9 (Update Rules). Entry format:
+Hooks to run as Step 9 (immediately after Step 8 Code Review, before Step 10 Interactive Commits when `interactive_commits: true`, otherwise before Completion). Entry format:
 
 - `Skill(<name>)` form → invokes the skill
 - Any other string → executed as a shell command
@@ -251,15 +267,15 @@ Commands not covered by `allowed-tools` require user approval at runtime. Invali
 
 #### `self_retrospective.feedback`
 
-Opt-in feedback channel that turns on **Step 9.5: Self-Retrospective**. After a normal run, a subagent scans the session's conversation for signals about how the bundled skills (`dev-workflow`, `ask-peer`, `extract-rules`, `rules-review`) performed, sanitizes the findings, and submits them to the configured destination. The raw conversation (jsonl) never leaves the session — only abstracted, project-agnostic text is emitted.
+Opt-in feedback channel that turns on **Step 11.5: Self-Retrospective**. After a normal run, a subagent scans the session's conversation for signals about how the bundled skills (`dev-workflow`, `ask-peer`, `extract-rules`, `rules-review`) performed, sanitizes the findings, and submits them to the configured destination. The raw conversation (jsonl) never leaves the session — only abstracted, project-agnostic text is emitted.
 
-Unset by default. When unset, Step 9.5 is never registered and the workflow behaves exactly as before. When set, the destination is auto-detected from the string shape:
+Unset by default. When unset, Step 11.5 is never registered and the workflow behaves exactly as before. When set, the destination is auto-detected from the string shape:
 
 | Shape of `feedback` | Mode | Behavior |
 | --- | --- | --- |
 | Starts with `/`, `~/`, `./`, `../` | **path** | Write a markdown file `<feedback>/dev-workflow-retrospective-<YYYY-MM-DD>-<slug>.md` |
 | Matches `^[\w.-]+/[\w.-]+$` | **repo** | Submit via `gh api --method POST /repos/<feedback>/issues` (requires `gh` installed and authenticated; the backing token only needs `Issues: write` on the target repo) |
-| Anything else (incl. empty) | — | Warn and skip Step 9.5 |
+| Anything else (incl. empty) | — | Warn and skip Step 11.5 |
 
 Examples:
 
@@ -275,7 +291,7 @@ self_retrospective:
   feedback: "~/retrospectives/dev-workflow"
 ```
 
-**Hard-skip on Simple tasks (overridable on explicit request)**: Step 9.5 is automatically skipped when Step 2 assesses the task as Simple difficulty (typo fix, config tweak, obvious bug fix), regardless of this setting — Simple tasks rarely produce meaningful bundle-skill signal. If you later decide the skip was wrong, you can ask the assistant in the same session to "run the retrospective for this run anyway" — the skill will bypass the Simple hard-skip and execute the Step 9.5 procedure without touching TodoWrite. Cross-session re-runs are not supported.
+**Hard-skip on Simple tasks (overridable on explicit request)**: Step 11.5 is automatically skipped when Step 2 assesses the task as Simple difficulty (typo fix, config tweak, obvious bug fix), regardless of this setting — Simple tasks rarely produce meaningful bundle-skill signal. If you later decide the skip was wrong, you can ask the assistant in the same session to "run the retrospective for this run anyway" — the skill will bypass the Simple hard-skip and execute the Step 11.5 procedure without touching TodoWrite. Cross-session re-runs are not supported.
 
 **User preview + approval is always required**. Before submission, the assembled body is shown to the user along with a destination header (mode / resolved value / settings layer source). The user can `approve`, `edit` (revise inline), or `skip`. In repo mode, an additional explicit confirmation of `<owner/repo>` is asked before the `gh api` POST runs — this is a defense against a malicious commit to the git-tracked `.claude/dev-workflow.md` silently redirecting retrospectives.
 
@@ -445,9 +461,10 @@ The workflow begins at Step 2 (Step 1 is settings load, Step 1.5 is task decompo
 | 7 | Check / Test | Run check_commands + run-tests |
 | 7.5 | Rules Compliance Review | Verify `.claude/rules/` compliance via `rules-review` skill |
 | 8 | Code Review | Code review by reviewer (up to N iterations) |
-| 9 | Update Rules | Update rules via `extract-rules` |
-| 9.5 | Self-Retrospective | (Only if `self_retrospective.feedback` is set and difficulty is not Simple; or manually re-requested in the same session after a Simple auto-skip) Spawn a subagent to extract sanitized bundle-skill improvement signal, present it with a destination header, and submit on user approval. See `references/self-retrospective.md` |
-| 10 | Completion Hooks | Run `hooks.on_complete` (only if configured) |
+| 9 | Completion Hooks | Run `hooks.on_complete` (only if configured) |
+| 10 | Interactive Commits | (Only when `interactive_commits: true`) Group working-tree changes into commits and iterate per-commit with the user. The workflow never pushes — that stays the user's responsibility |
+| 11 | Update Rules | Update rules via `extract-rules` |
+| 11.5 | Self-Retrospective | (Only if `self_retrospective.feedback` is set and difficulty is not Simple; or manually re-requested in the same session after a Simple auto-skip) Spawn a subagent to extract sanitized bundle-skill improvement signal, present it with a destination header, and submit on user approval. See `references/self-retrospective.md` |
 
 ## Plan format
 
@@ -484,8 +501,8 @@ To get the full benefit of dev-workflow, the following skills are recommended:
 
 - **Reviewer skill** (specified via `reviewer` setting): Used for Plan / Code Review. If not installed, falls back to asking the user directly
 - **rules-review skill**: Required for Step 7.5 (rules compliance review). Step 7.5 is skipped if not installed
-- **extract-rules skill**: Required for Step 9 (rule update). Step 9 is skipped if not installed
-- **`gh` CLI, authenticated** (only if `self_retrospective.feedback` is set to an `owner/repo` value): required for Step 9.5 to submit via `gh api` POST to `/repos/<feedback>/issues`. The backing token only needs `Issues: write` on the target repo (no full `repo` scope). If `gh` is missing or unauthenticated, Step 9.5 aborts with an actionable message; switch `feedback` to a local path to disable the `gh` requirement
+- **extract-rules skill**: Required for Step 11 (rule update). Step 11 is skipped if not installed
+- **`gh` CLI, authenticated** (only if `self_retrospective.feedback` is set to an `owner/repo` value): required for Step 11.5 to submit via `gh api` POST to `/repos/<feedback>/issues`. The backing token only needs `Issues: write` on the target repo (no full `repo` scope). If `gh` is missing or unauthenticated, Step 11.5 aborts with an actionable message; switch `feedback` to a local path to disable the `gh` requirement
 
 ## Error / edge case behavior
 
@@ -506,10 +523,10 @@ To get the full benefit of dev-workflow, the following skills are recommended:
 | State file YAML parse error | Stops and instructs the user to back up and repair manually (no automatic recovery) |
 | State file has `depends_on` cycle or dangling id | Stops with a clear error describing the invalid edge |
 | Leftover `in_progress` subtask on resume | Asks the user whether to resume it or pick a different pending subtask |
-| `self_retrospective.feedback` not a string / empty / neither path nor `owner/repo` | Warns and skips Step 9.5 (workflow continues normally) |
-| `self_retrospective.feedback` is `owner/repo` but `gh auth status` fails | Early warning at Step 1; Step 9.5 aborts with an actionable message at runtime |
-| Step 9.5 subagent returns malformed / unsanitized content | Abort Step 9.5 with `skipped` terminal summary; no retry in the same session |
-| Step 9.5 submission (`gh api` POST / path `Write`) fails after approval | Report error + draft body in-chat so user can retry manually; terminal summary `failed`; workflow continues to Step 10 |
+| `self_retrospective.feedback` not a string / empty / neither path nor `owner/repo` | Warns and skips Step 11.5 (workflow continues normally) |
+| `self_retrospective.feedback` is `owner/repo` but `gh auth status` fails | Early warning at Step 1; Step 11.5 aborts with an actionable message at runtime |
+| Step 11.5 subagent returns malformed / unsanitized content | Abort Step 11.5 with `skipped` terminal summary; no retry in the same session |
+| Step 11.5 submission (`gh api` POST / path `Write`) fails after approval | Report error + draft body in-chat so user can retry manually; terminal summary `failed`; workflow continues to Completion |
 
 ## Notes
 

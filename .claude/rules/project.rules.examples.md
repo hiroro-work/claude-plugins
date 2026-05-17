@@ -1277,3 +1277,214 @@ with reason cited.
 # "Zero `### Finding` headings" 行が抜けたまま
 ```
 （SKILL.md と reference の closed list が drift し、reference 側 Category 行を読んだ reader / downstream consumer が古い列挙で判断する経路が残る。Code Review iter 2+ で Major-severity な cross-file inconsistency finding として上がる）
+
+### Step renumbering propagation (Generic rule + Individual overrides)
+**Good** (Plan の Design § F):
+```markdown
+#### F. cross-reference 一括更新
+
+**Generic rule (mechanical sweep)**:
+- 旧 Step 9 (Update Rules) → 新 Step 11
+- 旧 Step 9.5 → 新 Step 11.5
+- 旧 Step 10 (Completion Hooks) → 新 Step 9
+- 旧 `runs after Step 10` 系 → `runs after Step 11.5`
+
+**Individual overrides (mechanical sweep を適用しない)** — line 番号は pre-edit reference:
+- L66: `Runs after Step 9` → `Runs as Step 9 (immediately after Step 8).`
+  理由: `on_complete` は新番号で Step 9 そのもので、generic rule を機械適用すると `Runs after Step 11` という意味的誤りになる
+- Step 8 return-point reminder: `Step 9 transition` → `Step 9 (Completion Hooks) transition` で disambiguate
+- L116 (No-summary turn 段落): `runs after Step 10` → `runs after Step 11.5`、`returning no new rules at Step 9` → `Step 11`
+```
+（2 階層に分けて記述：mechanical sweep が安全な参照群 + 個別 override が必要な参照群）
+**Bad** (全部 mechanical sweep に倒す):
+```markdown
+**Cross-reference update**: 旧 Step 9 → 新 Step 11 / 旧 Step 9.5 → 新 Step 11.5 / 旧 Step 10 → 新 Step 9 を全部 sed -i で機械置換
+```
+（`on_complete: Runs after Step 9` の `Step 9` まで `Step 11` に書き換わって、hook の section 自体が `Runs after Step 11` と書かれる意味的誤りが発生）
+
+### TodoWrite single-row for unknown sub-iteration count
+**Good** (`dev-workflow/SKILL.md` Step 1 sub-step 7):
+```markdown
+- Step 10: Interactive Commits (only if `interactive_commits` is `true`; single row — per-commit iteration is handled inline within Step 10 because the commit count is not known until the proposal phase)
+```
+（commit 数が approval gate 通過時に確定するため registration 時には per-commit 展開できない旨を annotation で明示）
+**Bad** (per-commit row に展開):
+```markdown
+- Step 10: Interactive Commits
+- Step 10-1: Commit 1
+- Step 10-2: Commit 2
+- Step 10-N: Commit N
+```
+（N が未確定なので registration できない。mid-flight で TodoWrite を書き換える stall surface が増える）
+
+### Behavior-change default-flip → CHANGELOG opt-out note + downstream automation visibility
+**Good** (CHANGELOG.md entry):
+```markdown
+### dev-workflow v1.35.0 / dev-workflow-bundle v1.35.0
+
+- feat(dev-workflow): introduce Step 10 Interactive Commits and reorder post-Step-8 phases. **Default: enabled** — set `interactive_commits: false` in `.claude/dev-workflow.md` or `~/.claude/dev-workflow.local.md` to opt out. The new step runs after hooks.on_complete and proposes commit groupings + messages for user approval, then iterates per-commit. extract-rules and self-retrospective now run after the commit phase.
+```
+そして Plan の Risks § 3:
+```markdown
+3. **Default `true` の behavior change 波及**: 全 dev-workflow ユーザーの next workflow run で Interactive Commits gate 起動。CHANGELOG entry で `interactive_commits: false` opt-out を明示 + minor bump (1.35.0) を compatibility signal とする。**Downstream automation 補足**: 「dev-workflow 終了時の uncommitted state」依存の user 側 automation がある場合 minor bump では signal 強度不足の可能性 → CHANGELOG note で visibility 確保
+```
+（CHANGELOG entry 冒頭に opt-out 手順を loud に表記 + downstream automation note）
+**Bad** (minor bump だけで signal とする):
+```markdown
+### dev-workflow v1.35.0
+
+- feat(dev-workflow): introduce Step 10 Interactive Commits.
+```
+（default flip の事実が entry から読み取れず、opt-out 方法も書かれていない。`hooks.on_complete` 終了後に uncommitted state を期待する user 側 automation が silent breakage する）
+
+### Multi-form gate vocabulary disambiguation in § No-Stall Principle
+**Good** (`dev-workflow/SKILL.md` § No-Stall Principle):
+```markdown
+- **Step 10 commit-plan approval gate** — accept the proposed commit grouping (subjects + file lists) for the working-tree changes; fires once on the initial plan and re-fires whenever a `Mid-loop adjust` file-regrouping / split-adding branch rebuilds the un-landed portion of the plan
+- **Step 10 per-commit accept gate** — accept each individual commit (subject / body / files / diff) before it lands; repeats N times where N is the approved commit count, judged per § Approval token closed list inside Step 10
+- **Step 10 fold-or-defer gate** — after a pre-commit hook auto-modifies the working tree following a zero-exit commit, ask the user whether to amend the just-landed commit (`fold`) or leave the changes uncommitted for a later iteration (`defer`); judged per the distinct `fold` / `defer` / `cancel` binary classifier in Step 10's `Post-commit auto-modify cycle bound` paragraph (not the per-commit-accept-gate enum)
+- **Step 10 ambiguous-adjust clarifier** — when a `Mid-loop adjust` request cannot be classified into branches a–g, ask the user a clarifying question and re-enter the gate that issued the request
+```
+（4 gate を別 bullet で列挙、fold-or-defer の binary classifier が per-commit accept gate の enum とは区別される旨を明示）
+**Bad** (merge して 1 bullet):
+```markdown
+- **Step 10 user-gates**: commit-plan approval / per-commit accept / fold-or-defer / clarification — judged per § Approval token closed list
+```
+（fold/defer の binary semantics が accept/adjust/cancel の 4 値 enum に conflate されて、reader が「fold は adjust ですか？」のような取り違えをする）
+
+### `git status --porcelain=v1 --untracked-files=all -z` canonical pattern
+**Good** (`dev-workflow/SKILL.md` Step 10 Procedure):
+```markdown
+1. **Collect changes**: run `git status --porcelain=v1 --untracked-files=all -z` once (the `=v1` form pins format; `--untracked-files=all` overrides any user-side `status.showUntrackedFiles=no` config; `-z` emits NUL-separated entries with no C-style quoting so filenames containing spaces, quotes, or non-ASCII characters are recoverable verbatim). Parse the NUL-separated output: entries prefixed `??` are untracked, others are tracked changes.
+
+...
+
+- **c. Stage**: run `git add -- "<file-1>" "<file-2>" ..." in a single invocation with one explicit pathspec per file (verbatim filenames recovered from Procedure 1's `-z` output — never the C-quoted form). The `--` separator + double-quoting handle spaces, quotes, and non-ASCII characters; `-A` and other bulk forms are forbidden because they may stage unrelated drift
+```
+（`=v1` format pin + `--untracked-files=all` user config override + `-z` C-quoting 抑制 + multi-pathspec single call + `--` separator + double-quote + `-A` 禁止）
+**Bad** (`-z` 省略 + bulk staging):
+```markdown
+1. Run `git status --porcelain` to list changes.
+- Stage: `git add -A`
+```
+（filename に space を含むケースで C-quoted 形式が emit されて downstream pathspec mismatch、`-A` で unrelated drift staging）
+
+### Untracked-file `Read` fallback for all-changes diff presentation
+**Good** (`dev-workflow/SKILL.md` Step 10):
+```markdown
+1. ...Then run `git diff <base-commit>` once to capture the per-file diff for **tracked** files; for **untracked** files the diff is empty, so for each untracked path also `Read` its file contents and treat that as the "diff" to present at `Per-commit loop`'s `Present` step (since `git diff` omits untracked paths by design)
+
+...
+
+- **a. Present**: show the current commit's `subject`, `body` (if any), file list, and the diff of those files. Tracked files use the per-file portion of the diff captured at Procedure 1; **untracked** files use the full file contents (also captured at Procedure 1) shown as a "new file" hunk — make the untracked status explicit in the presentation so the user can distinguish "added file" from "modified file" before approving
+```
+（tracked / untracked 2 経路明示、once Procedure 1 で in-memory に保持して reuse、UI 上 untracked status を明示）
+**Bad** (`git diff` のみで untracked 無視):
+```markdown
+1. Run `git diff <base-commit>` to capture all changes.
+- Present: show subject, body, file list, and the diff.
+```
+（untracked files が presentation から silent に欠落、user が新規 file の存在を把握できないまま approve）
+
+### Counter lifecycle: zero-exit-only increment + amend exclusion
+**Good** (`dev-workflow/SKILL.md` Step 10 landed_count lifecycle):
+```markdown
+4. **Per-commit loop**: initialize `landed_count = 0` at the start of the loop; then process each commit in order:
+   ...
+   - **d. Commit**: ...On zero exit, **increment `landed_count` by 1**.
+   - **e. Non-zero-exit retry (commit-attempt failure)**: ...Then **stop Step 10**. **Do not increment `landed_count`**. Do not auto-recover ...
+
+5. **Post-commit auto-modify cycle bound**: ... On `fold`: ... `git commit --amend --no-edit` ... to incorporate them. The amend re-commits the same logical commit — `landed_count` is **not** re-incremented.
+```
+（4 点 explicit: initialize / zero-exit increment / 失敗 path no increment / amend no re-increment）
+**Bad** (lifecycle 不完全):
+```markdown
+4. Per-commit loop: for each commit, run git add then git commit. Increment landed_count after commit. On failure, stop.
+5. If hook auto-modifies, do git commit --amend.
+```
+（amend が landed_count を再 increment するかが ambiguous、failure path で increment するかが implicit。downstream routing の bistability が崩れる）
+
+### Routing on `<counter> > 0` vs config-flag alone
+**Good** (`dev-workflow/SKILL.md` Completion subtask continuation):
+```markdown
+5. **If a next subtask exists**: branch on **whether Step 10 actually landed any commits this run** (use the landed_count from Step 10 — taking the config flag alone would mis-route the case where `interactive_commits: true` met the Step 10 skip conditions and exited at zero commits):
+   - `landed_count > 0`: tell the user the current subtask's changes have already been committed by Step 10 — open a PR for those commits, then start a new session with `/dev-workflow --resume <slug>` once the PR is up
+   - `landed_count == 0` (either because `interactive_commits: false` or because Step 10 was skipped): tell the user to commit the current subtask's changes and open a PR *before* resuming
+```
+（counter で routing、`landed_count == 0` の 2 cause を OR で union 説明）
+**Bad** (config-flag で routing):
+```markdown
+5. **If a next subtask exists**:
+   - `interactive_commits: true`: Step 10 で commit 済み — PR を開いてから resume
+   - `interactive_commits: false`: commit してから resume
+```
+（`interactive_commits: true` だが skip 条件で 0 commits 終了した case が「commit 済み」branch に倒れて、user に "PR を開いてから resume" と案内するが実際は commit が無い silent regression）
+
+### 2-stage grep audit for cross-file Step renumbering
+**Good** (Plan Test plan step 5):
+```markdown
+5. **Cross-ref sweep (line-by-line checklist)** — § F / § I / § J で列挙した line ごとに phrase 確認。**line 番号はすべて pre-edit reference** であり、最終確認は phrase / heading anchor で行う。2 段階 grep で漏れ検出:
+   1. 旧 section heading 句（`Step 9: Update Rules|Step 9\.5: Self-Retrospective|Step 10: Completion Hooks`）が 0 hit
+   2. `\b(Step 9|Step 9\.5|Step 10)\b` の残り hit が新ナンバリング下の正規参照であることを目視確認
+```
+（phrase-only + word-boundary の 2 段で false-negative / false-positive を両方抑え、pre-edit line number と最終 phrase anchor 確認を明示）
+**Bad** (broad grep のみ):
+```markdown
+5. `grep -rn "Step 9" skills/` で残り参照を確認
+```
+（旧 section heading の取り残しと新ナンバリング下の正規参照が両方 hit して切り分けできず、reviewer が手で目視する必要が出る）
+
+### Token defined-once + cross-reference (re-render 禁止)
+**Good** (`dev-workflow/SKILL.md` § Step 10 + § Completion):
+```markdown
+# § Step 10 (canonical definition site)
+**Localized summary tokens** (per [`references/plan-format.md`](references/plan-format.md) § Localization granularity). These tokens are defined here as the single source of truth — `§ Completion` below references the same paired form rather than re-rendering it:
+
+- `language: ja`: `Step 10 部分完了: <N>/<total> コミット適用済み`
+- `language: en`: `Step 10 partial completion: <N>/<total> commits landed`
+
+# § Completion (cross-reference, no re-render)
+**Step 10 partial-state line**: if Step 10 ended via its `Mid-loop cancel` branch, emit the localized partial-completion token defined at § Step 10's "Localized summary tokens" paragraph. On a normal completion path, omit this line.
+```
+（canonical 定義は § Step 10 に 1 箇所、§ Completion は bold-prose paragraph reference 形式で参照）
+**Bad** (§ Completion でも再記述):
+```markdown
+# § Step 10
+**Localized summary tokens**:
+- `language: ja`: `Step 10 部分完了: <N>/<total> コミット適用済み`
+- `language: en`: `Step 10 partial completion: <N>/<total> commits landed`
+
+# § Completion
+**Step 10 partial-state line**: if Step 10 ended via Mid-loop cancel:
+- `language: ja`: `Step 10 部分完了: <N>/<total> コミット適用済み`
+- `language: en`: `Step 10 partial completion: <N>/<total> commits landed`
+```
+（同じ token を 2 箇所に記述すると wording 更新時に drift する）
+
+### Step 4 user material change: Recommendation/Alternative swap + 「user 既選択」 annotation
+**Good** (Decision 2 を user が Alternative 採用に変更した後の plan rewrite):
+```markdown
+#### Decision 2. `interactive_commits` のデフォルト値 — **user 既選択: `true`（opt-out）**
+- **Question**: 新 Step 10 をデフォルトで実行するか
+- **Recommendation**: デフォルト `true`（opt-out）。**user が Step 4 gate でこちらを選択**。理由: 「dev-workflow は clean な commit 状態で終わる」を canonical flow として位置づける
+- **Alternative**: デフォルト `false`（opt-in）。silent behavior change を避けたい場合の選択肢。コスト: 配布されるスキルの canonical flow が "commit しない" 状態に留まる
+- **CHANGELOG note**: default `true` 採用により merge 直後の next workflow run で全 user の挙動が変わる ...
+```
+そして関連節も新 Recommendation 文脈に sweep:
+```markdown
+- Scope adjusted: 4 files (`.claude/dev-workflow.md` no longer in scope since default `true` means no opt-in needed in this repo)
+- Design § B: default true + non-boolean fallback direction flipped (warn + default true)
+- Risks # 3 rewritten: now describes default `true` behavior change risk + mitigation
+```
+（Recommendation/Alternative swap + 「user 既選択」 annotation + Scope / Design / Risks の同期 sweep）
+**Bad** (旧 Recommendation を残したまま新 Alternative を併記):
+```markdown
+#### Decision 2. `interactive_commits` のデフォルト値
+- **Recommendation (旧)**: デフォルト `false`（opt-in）
+- **Recommendation (新 — user 選択)**: デフォルト `true`（opt-out）
+
+#### Risks
+3. デフォルト `false` の silent behavior change 回避（旧 plan の Risk）
+3b. デフォルト `true` の全 user behavior change 波及（新 plan の Risk）
+```
+（旧 / 新 が併記されると plan size 肥大 + Step 3-(N+1) reviewer が「どちらが live なのか」と困惑して再指摘）

@@ -109,7 +109,7 @@
       "name": "dev-workflow",
       "description": "Guided development workflow: planning, review, implementation, testing, and rule maintenance",
       "source": "./skills/dev-workflow",
-      "version": "1.36.0",
+      "version": "1.36.1",
       "author": {
         "name": "hiropon"
       },
@@ -120,7 +120,7 @@
       "description": "Development workflow bundle (includes peer + extract-rules + dev-workflow + rules-review)",
       "source": "./plugins/dev-workflow-bundle",
       "skills": ["./skills/ask-peer", "./skills/dev-workflow", "./skills/extract-rules", "./skills/rules-review"],
-      "version": "1.36.0",
+      "version": "1.36.1",
       "author": {
         "name": "hiropon"
       },

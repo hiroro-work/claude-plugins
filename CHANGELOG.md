@@ -2,6 +2,31 @@
 
 ## 2026-05-18
 
+### dev-workflow v1.36.1 / dev-workflow-bundle v1.36.1
+
+- fix(dev-workflow): add Upstream-handoff agreement override audit to Step 2 Simplicity self-audit (auto-triage #27)
+  - Category: missing-branch; Step 2 § Simplicity self-audit had no branch to surface plan-vs-prior-session-agreed-upstream-document overrides as Decisions items, so reviewer-driven overrides reached Step 4 user gate without explicit user-decision opportunity. New bullet enumerates the diff in Decisions with uphold/overwrite Recommendation/Alternative and an explicit override marker.
+- fix(dev-workflow): add Temporary-workaround minimal coupling audit to Step 2 Simplicity self-audit (auto-triage #27)
+  - Category: wrong-default; Step 2 § Simplicity self-audit had no audit item for declared-temporary plan elements, so initial drafts defaulted to permanent-element-depth integration and triggered user pushback. New bullet sets minimal coupling as first-class Recommendation, deep integration as Alternative with explicit removal-cost rationale, and requires Removability as a Risks evaluation axis.
+- fix(dev-workflow): add Pre-existing vs regression discrimination to Step 7 test_commands loop (auto-triage #27)
+  - Category: missing-branch; Step 7 retry path had no formal sub-step to discriminate test-skill TEST_FAILED reports as regression vs pre-existing. New sub-bullet names the two paths (trust test-skill's own classification if present; otherwise re-run at base-commit), defines the informational disposition for pre-existing failures (not counted toward retry budget, not auto-fixed), and recommends the regression-vs-pre-existing return contract as a verification-class skill convention.
+- fix(dev-workflow): add Late-stage scaffolding self-audit to Step 5 Implement (auto-triage #27)
+  - Category: ambiguity; Step 5 had no explicit guidance to re-apply Step 2 § Simplicity self-audit rigor to structural elements newly added during implementation. Late-stage scaffolding correctness gaps surfaced first at Step 8 iter 1. New item 3 names 4 audit legs (sibling symmetry, error-path symmetry, boundary-value coverage, reference-site sweep) for newly introduced elements.
+- fix(dev-workflow): add Cross-file closed-list extension audit to Step 3 (a) (auto-triage #26)
+  - Category: missing-branch; Step 3 (a) review had no explicit sub-check for closed lists mirrored across SKILL.md + references/*.md sibling files. Mirror copies drifted past Step 3 review. New sub-check requires Test plan to enumerate every reference site as a sweep target.
+- fix(dev-workflow): add State-variable lifecycle completeness to Step 3 (c) Completeness (auto-triage #26)
+  - Category: missing-branch; Step 3 (c) had no explicit sub-check requiring Design to symmetrically specify init / advance / non-advance / reference-sites for new state variables. Counter increment semantics surfaced only at Step 8 iter 2 as Major findings. New sub-check enumerates the 4 lifecycle points with symmetric success/failure path specification as the general principle.
+- fix(dev-workflow): add Internal convention citation verification to Step 3 (a) (auto-triage #26)
+  - Category: wrong-default; Step 3 (a) Premise challenge required verification only for external requirements / known bugs / project rules — internal-convention citations could pass through without primary-source verification. New sub-check requires reviewer to verify via grep/Read; if not found, treat as new convention requiring full justification.
+- fix(dev-workflow): add Internal cross-reference stability to Step 3 (a) (auto-triage #26)
+  - Category: ambiguity; Step 3 (a) did not actively check for raw sub-step number references in cross-ref prose. Rules-compliance violation surfaced only at Step 7.5. New sub-check requires references to use stable phrase anchors (section headings, bold-prose labels, quoted phrases) — refactor-resilient anchoring as general principle.
+- fix(dev-workflow): add CHANGELOG signal placement check to Step 3 (c) (auto-triage #26)
+  - Category: missing-branch; Step 3 had no self-audit for CHANGELOG signal placement when plan flips a distributed default. Behavior-change signals could end up buried in late bullets. New sub-check verifies first-line visibility, opt-out colocation, and bump-strength alignment on three axes.
+- fix(dev-workflow): add External CLI behavior verification to Step 3 (a) (auto-triage #26)
+  - Category: missing-branch; Shell content portability check covered shell-level concerns but not CLI sub-command semantics (git diff omits untracked, porcelain C-quoting, amend pre-staging, gh list truncation). New sub-check extends External library primary-source verification (category (e)) to CLI/shell domain. Unverified items lift to Risks as stale-CLI-assumption.
+- fix(dev-workflow): add Closed-list reference sweep to Step 3 (c) (auto-triage #26)
+  - Category: ambiguity; Closed-list modifications (enum / branch set / gate count / status token) needed an explicit sweep across reference sites (count claims, sibling enum fields, disposition mapping tables, render rules). New sub-check requires class-level extension audit across all reference sites; canonical change is necessary but not sufficient.
+
 ### dev-workflow v1.36.0 / dev-workflow-bundle v1.36.0
 
 - feat(dev-workflow): relax `test_commands` from fixed `["Skill(run-tests)"]` to a list-replace key (default unchanged; higher-priority config layer's list replaces lower as a whole — no item-level merge or dedup). Project config can append additional structural-check skills. Step 7 iterates the list in order; any TEST_FAILED / EXECUTION_ERROR halts the loop immediately.

@@ -301,6 +301,13 @@ Implementation often introduces unnecessary complexity that's easier to spot in 
 
 Dedicated rules compliance check, separate from code review (Step 8). This ensures rule enforcement gets focused attention rather than competing with correctness and design concerns.
 
+**Responsibility scope** (so the same rule class is not double-reviewed across passes and no class slips through every pass):
+- **Step 7.5 owns** the mechanical walk of every matched `.claude/rules/` rule against the diff — hard rules (explicit prohibitions, naming, reference form, import paths, placement, file structure) are evaluated strictly; intent-style rules (judgment-based principles, prose conventions) are evaluated best-effort with low-confidence markers per `rules-review` SKILL.md.
+- **Step 6 Simplify** covers reuse, prose quality, dead code, and redundancy; rule compliance is not its primary responsibility — if `Skill(simplify)` surfaces rule findings as a side effect, treat them as bonus and do not extend its reviewer prompt to take on `.claude/rules/` walks.
+- **Step 8 Code Review** covers correctness, edge cases, conventions / consistency lightly (a safety-net pass for files modified after Step 7.5), and simplicity / maintainability — the thorough rules check stays at Step 7.5.
+
+When a rule violation is reported in both passes (Step 7.5 and Step 8), treat Step 7.5 as authoritative and skip the duplicate fix attempt in Step 8 to avoid double-counting in the iteration budget.
+
 1. **Always invoke `Skill(rules-review)` with `--base-commit <sha>` (base-commit recorded in Step 2) via `$ARGUMENTS`.** Do not substitute an inline rules-walk based on perceived scope, change size, or any other self-judgment of the diff's complexity — small / "obvious" / single-file changes still go through the external skill. The skip-to-fallback path is documented in Prerequisites and fires only on objective skill unavailability (the `Skill(rules-review)` call itself fails after one retry), never on subjective judgment that an inline equivalent would suffice. The external skill enforces consistent coverage across runs; inline substitution silently degrades that coverage and the user has no visible signal that it happened.
 2. Judge the result semantically: if the skill reports that there is nothing to act on — no actionable violations, no changed files, no applicable rules, no rule files found, or any other "nothing to report" outcome regardless of exact wording — mark `Step 7.5: Rules Compliance Review` as `completed` and proceed to Step 8 automatically. Per the No-Stall Principle, do not wait for user input and do not rely on exact-phrase matching; trust semantic judgment since the skill's phrasing may evolve across versions.
 3. If violations found:

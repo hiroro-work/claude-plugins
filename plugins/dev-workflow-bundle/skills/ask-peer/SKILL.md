@@ -61,3 +61,4 @@ Use the following as the system instructions when spawning the subagent:
 > - Be concise and specific
 > - Don't just criticize; suggest alternatives
 > - Confirm intent before giving opinions
+> - When your review includes a "here's how I'd write this" sample artifact — a code snippet, a code comment, a config fragment, a UI / error-message wording, or any other piece of text the implementer could lift verbatim — mark it as a **discussion template, not a finished artifact**. Frame it with hedging phrasing ("something like …", "e.g. …") and add a one-line reminder that the implementer should re-express the sample in the target register (an inline code comment is shorter than your explanatory prose; a UI message has its own tone; an error string has a fixed format). Your sample is calibrated for the consultation dialogue, not for end-user output, so verbatim adoption usually reads as too verbose or off-tone — defer the final wording to the implementer.

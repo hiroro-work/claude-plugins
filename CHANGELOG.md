@@ -1,5 +1,36 @@
 # Changelog
 
+## 2026-05-19
+
+### dev-workflow v1.36.2 / dev-workflow-bundle v1.36.2
+
+- fix(dev-workflow): add Phase-boundary self-audit to Step 1 TodoWrite registration (auto-triage #31)
+  - Category: wrong-default; Step 1 sub-step 7 registered all phases in TodoWrite but did not enforce phase-completion audit at each top-level Step boundary, so phases like Step 6 Simplify could be silently skipped. Added a Phase-boundary self-audit clause: name the entering Step number and verify the prior Step's TodoWrite row is `completed` before advancing.
+- fix(dev-workflow): add Rejection self-question to Step 8 to override Minor-label rejections on readability findings (auto-triage #30)
+  - Category: missing-branch; Step 8 sub-step 3 allowed rejecting Minor-label findings on the label alone, even for code-intent / readability / placement-consistency findings users typically re-raise at the commit gate. Added a Rejection self-question sub-bullet: apply on yes/ambiguous, reject only on confident-no.
+- fix(dev-workflow): add Natural-language quality self-check to Step 8 post-fix hooks (auto-triage #30)
+  - Category: ambiguity; Step 8 fix loops added natural-language content (comments, config annotations, error messages) without any quality self-check. Step 7 / Step 7.5 cannot evaluate NL quality, so awkward additions slipped to the commit gate. Added a Natural-language quality self-check sub-bullet after Prose-integrity self-check.
+- fix(dev-workflow): forbid inline substitution of Step 7.5 Skill(rules-review) on subjective scope judgment (auto-triage #30)
+  - Category: wrong-default; Step 7.5 step 1 did not prohibit the agent self-judging "minimum scope, do inline" and replacing the external `Skill(rules-review)` call. Tightened step 1 to "Always invoke" + explicit ban on scope / size / complexity substitution, with the Prerequisites fallback preserved for objective skill unavailability only.
+- fix(dev-workflow): enforce always-run Step 3 with closed-list handling for user-provided analysis (auto-triage #29)
+  - Category: missing-branch; Step 3 had no branch for "user task prompt already contained design analysis" and the agent skipped Step 3 unilaterally. Added an Always-run preamble + closed-list of 3 handling rules: (i) reviewer skill always invoked, (ii) user analysis fed into dispatch payload as additional context, (iii) explicit user override is the only skip path with a Completion-summary warning.
+- fix(dev-workflow): explicit Responsibility scope for Step 7.5 rules-review vs Step 6 / Step 8 (auto-triage #29)
+  - Category: ambiguity; Step 7.5 / Step 6 Simplify / Step 8 Code Review responsibility boundary for rule compliance was implicit. Added a Responsibility scope section to Step 7.5 preamble naming Step 7.5 as owner of the `.claude/rules/` mechanical walk (hard rule strict / intent-style best-effort), Step 6 / Step 8 carve-outs, and Step 7.5 as authoritative on duplicate flags.
+
+### peer v2.2.6 / dev-workflow-bundle v1.36.2
+
+- fix(ask-peer): require a recommended default for functionally-equivalent style alternatives (auto-triage #31)
+  - Category: missing-branch; Core Principles "Provide concrete alternatives" did not require the reviewer to name a recommended default when the alternatives are functionally equivalent (same observable behavior, differing only in placement / ordering / style), so callers round-tripped on coin-flip decisions. Extended the bullet to require a recommended default (including "keep as-is").
+- fix(ask-peer): require surfacing at least one upper-level design alternative during plan review (auto-triage #31)
+  - Category: missing-branch; Planning review focus area covered scope / risks / simpler approaches / numerical / operational reality but did not require the reviewer to surface upper-level design alternatives at the structural layer. Added an "upper-level design alternatives" clause naming concrete categories (firing-point selection, responsibility split, suppression-flag necessity, lifecycle boundary choices).
+- fix(ask-peer): mark reviewer sample artifacts as discussion templates rather than finished output (auto-triage #30)
+  - Category: other; Reviewer-provided code / comment / wording examples calibrated for the consultation dialogue were copy-pasted verbatim into code where they read as too verbose or off-tone. Added a Communication Style bullet directing the reviewer to mark sample artifacts as discussion templates with hedge phrasing, register-mismatch reminder, and defer-final-wording-to-implementer disposition.
+
+### rules-review v1.1.4 / dev-workflow-bundle v1.36.2
+
+- fix(rules-review): add scope-note to compliant Output Format to remind users about unwritten conventions (auto-triage #31)
+  - Category: ambiguity; When rules-review concluded "No rule violations found", users had no signal that the check covers only documented `.claude/rules/` rules; unwritten project-specific vocabulary / style conventions remained invisible. Added a Scope note blockquote outside the fenced output template so the literal `No rule violations found` runtime string stays unchanged (preserves exact-match contract per § 6. Aggregate Results) while reader-facing documentation surfaces the limitation and guides to `Skill(extract-rules)`.
+
 ## 2026-05-18
 
 ### dev-workflow v1.36.1 / dev-workflow-bundle v1.36.1

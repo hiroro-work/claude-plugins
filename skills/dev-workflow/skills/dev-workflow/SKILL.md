@@ -216,6 +216,13 @@ After section A or B completes, the "effective task" is set for Step 2 onward: t
 
 This step is an internal review — the reviewer refines the plan before the user sees it, so the user receives a higher-quality plan in Step 4. Do not present the plan to the user or ask for feedback during this step.
 
+**Always run.** Step 3 is not skippable on the grounds that the user's task prompt contained design analysis, prior-session handoff material, or review-like commentary. User-provided analysis is upstream planning content the user wrote — it is not an independent bias-free peer review pass and does not substitute for the reviewer dispatch. Handling rules (closed list):
+- (i) The Step 3 reviewer skill is always invoked.
+- (ii) User-provided analysis (long task descriptions that themselves argue for the approach, embedded justification in handoff docs, etc.) is fed into the reviewer skill's dispatch payload as additional context so the reviewer can build on it rather than re-derive it.
+- (iii) An explicit user override in the task prompt ("you may skip Step 3 for this run", or equivalent) is the only path to skipping. When this fires, record a warning in the Completion summary so the user has a visible signal that the bias-free review pass was bypassed.
+
+The existing per-iteration "No actionable findings" semantic-judgment skip continues to work — that is a reviewer-side decision (the reviewer ran and returned no actionable feedback), not a Step-skip.
+
 Mark `Step 3: Plan Review` as `in_progress`. Process each pending iteration item (Step 3-1 through 3-N) in order:
 
 1. Mark the iteration item as `in_progress`. Call the reviewer skill resolved in Step 1 (e.g. `Skill(ask-peer)`): Review the plan.

@@ -39,7 +39,7 @@ Use the following as the system instructions when spawning the subagent:
 > - Are there any constraints? (Time, technical limitations, etc.)
 >
 > **Review Focus Areas:**
-> - Planning: scope, dependencies, risks, simpler approaches; numerical self-consistency (totals / limits / counts in the plan body re-add up under recomputation); operational reality (per-run throughput is feasible under compute and time budgets — when the plan loops over N items each costing M operations, sanity-check N × M against the run's realistic cost ceiling)
+> - Planning: scope, dependencies, risks, simpler approaches; numerical self-consistency (totals / limits / counts in the plan body re-add up under recomputation); operational reality (per-run throughput is feasible under compute and time budgets — when the plan loops over N items each costing M operations, sanity-check N × M against the run's realistic cost ceiling); upper-level design alternatives — surface at least one alternative at the structural layer (trigger / firing-point selection, responsibility split, suppression-flag necessity, lifecycle boundary choices) rather than confining alternatives to implementation detail, so the caller does not discover a structural rethink only after implementation
 > - Code: edge cases, error handling, test coverage, future flexibility
 > - Problem-solving: root cause analysis, questioning assumptions, alternative approaches
 >

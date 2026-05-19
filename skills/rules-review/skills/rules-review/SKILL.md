@@ -139,6 +139,8 @@ For each reviewer:
 No rule violations found
 ```
 
+> **Scope note**: This check covers only rules documented under `.claude/rules/`. Project-specific vocabulary, naming, or style conventions that have not yet been written into a rules file are out of scope — if such an unwritten convention may apply to the changed code, verify manually or run `Skill(extract-rules)` to capture the pattern as a rule. The literal output stays exactly `No rule violations found` (no extra lines) so callers that match on that string (see `§ 6. Aggregate Results`) keep working.
+
 ### When violations found
 
 ```

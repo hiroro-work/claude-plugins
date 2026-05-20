@@ -156,6 +156,7 @@ hooks:
 | `review_iterations` | int | `3` | Max iterations for Plan / Code Review |
 | `task_decomposition` | bool | `true` | Whether Step 1.5 runs auto-decomposition in Normal sub-mode |
 | `interactive_commits` | bool | `true` | Whether Step 10 (Interactive Commits) groups working-tree changes into commits and iterates per-commit with the user |
+| `compact_rules` | bool | `false` | Whether Step 11 sub-step 3 dispatches `Skill(extract-rules) --compact` and opens the compaction approval gate (experimental, opt-in) |
 | `custom_instructions` | string | (none) | Free-form instructions applied across all phases |
 | `check_commands` | list&lt;string&gt; | (none) | Static checks (lint / format / typecheck, etc.) |
 | `test_commands` | list&lt;string&gt; | `["Skill(run-tests)"]` | Test execution (fixed) |
@@ -222,6 +223,23 @@ interactive_commits: false
 Non-boolean values are ignored with a warning and fall back to `true`. To opt out for one project, set `interactive_commits: false` in `.claude/dev-workflow.md`; to opt out personally, set it in `~/.claude/dev-workflow.local.md` or `.claude/dev-workflow.local.md`.
 
 When `true`, the per-commit loop also handles pre-commit hook auto-modifications via a `fold` / `defer` gate — the user chooses whether to amend the just-landed commit (`fold`) or leave the hook-edited files for a later commit-plan iteration (`defer`). The full procedure (commit-style deduction, mid-loop adjust, cancel semantics, partial-completion reporting) lives in `skills/dev-workflow/SKILL.md` § Step 10.
+
+#### `compact_rules`
+
+Controls whether Step 11 sub-step 3 (Char-count compaction gate) dispatches `Skill(extract-rules) --compact` and opens the compaction approval gate. The compaction mode introduced in v1.38.0 is currently **experimental**, so this setting defaults to opt-in.
+
+- `false` (default): sub-step 3 is skipped entirely. `Skill(extract-rules) --compact` is never invoked, the compaction approval gate never opens, and § Completion's compaction reminder is automatically omitted. Sub-steps 1 (`--from-conversation`) and 2 (`--update`) still run as usual
+- `true`: the workflow invokes `Skill(extract-rules) --compact` (no file arguments — extract-rules resolves the target set internally) and may enter the Step 11 compaction approval gate when over-threshold rule files are found. Per-file accept / reject / adjust / cancel disposition follows the local closed list documented in `skills/dev-workflow/SKILL.md` § Step 11
+
+```yaml
+compact_rules: true
+```
+
+Non-boolean values are ignored with a warning and fall back to `false`. To opt in for one project, set `compact_rules: true` in `.claude/dev-workflow.md`; to opt in personally, set it in `~/.claude/dev-workflow.local.md` or `.claude/dev-workflow.local.md`.
+
+**Behavior change from v1.38.0**: v1.38.0 ran sub-step 3 unconditionally. From v1.39.0 onward sub-step 3 is gated behind `compact_rules: true`. Users who adopted v1.38.0 compaction and want to retain that behavior must explicitly set `compact_rules: true`.
+
+Note: this is distinct from `extract-rules`'s own `compaction_threshold` setting — `compaction_threshold` only takes effect when `compact_rules` is `true` (i.e. sub-step 3 actually runs). Setting `compaction_threshold` to a very large number in `extract-rules.local.md` keeps the dispatch running but produces `status: "no-actionable"`, while `compact_rules: false` skips the `Skill()` dispatch entirely.
 
 #### `custom_instructions`
 
@@ -464,7 +482,7 @@ The workflow begins at Step 2 (Step 1 is settings load, Step 1.5 is task decompo
 | 8 | Code Review | Code review by reviewer (up to N iterations) |
 | 9 | Completion Hooks | Run `hooks.on_complete` (only if configured) |
 | 10 | Interactive Commits | (Only when `interactive_commits: true`) Group working-tree changes into commits and iterate per-commit with the user. The workflow never pushes — that stays the user's responsibility |
-| 11 | Update Rules | Update rules via `extract-rules` |
+| 11 | Update Rules | Update rules via `extract-rules`. Sub-step 3 (Char-count compaction gate) runs only when `compact_rules: true` (experimental, opt-in) |
 | 11.5 | Self-Retrospective | (Only if `self_retrospective.feedback` is set and difficulty is not Simple; or manually re-requested in the same session after a Simple auto-skip) Spawn a subagent to extract sanitized bundle-skill improvement signal, present it with a destination header, and submit on user approval. See `references/self-retrospective.md` |
 
 ## Plan format
@@ -514,6 +532,7 @@ To get the full benefit of dev-workflow, the following skills are recommended:
 | `reviewer` unset or unsupported value | Falls back to `ask-peer` |
 | `review_iterations` is not a positive integer | Uses default `3` |
 | `task_decomposition` is not a boolean | Warns and falls back to `true` |
+| `compact_rules` is not a boolean | Warns and falls back to `false` |
 | `custom_instructions` is not a string | Warns and ignores |
 | `hooks.on_complete` has invalid format | Warns and ignores |
 | `check_commands` failure | Fix and retry (up to 3 times); if still failing, reports to user and stops |

@@ -1709,3 +1709,49 @@ git commit -m "feat(dev-workflow-triage): ..."
 # Bad 3: .claude/plans/ を .gitignore に追加 → team-shared な plan が消える
 ```
 （flag order を逆にすると `git` が ambiguous で fail、bulk staging は stop-hook の干渉を取り込む、.gitignore 追加は team-shared な plan を消す。3 つとも anti-pattern）
+
+### Per-commit accept gate: render commit body verbatim in a fenced code block, not as a prose promise
+**Good** (Step 10 per-commit accept gate での Present step、4 要素 closed list):
+````markdown
+**Commit 1 (single — full PR)**
+
+**Subject**:
+```
+feat(ask-agy): new skill wrapping Antigravity CLI; extend dev-workflow reviewer list + bump v1.37.0
+```
+
+**Body**:
+```
+Add ask-agy plugin to wrap Antigravity (`agy`) CLI for second-opinion
+consultations, mirroring the ask-gemini sibling. Anticipates the gemini-cli →
+antigravity-cli transition (gemini-cli AI Pro/Ultra request serving stops
+2026-06-18; ask-gemini remains active until the cutoff).
+
+Extends the dev-workflow supported-reviewer closed list from 5 to 6 values
+(ask-agy appended), swept across canonical and bundle copy.
+```
+
+**Files** (pathspec, excluding `.claude/plans/`):
+- 12 modified tracked files
+- 新規: `skills/ask-agy/skills/ask-agy/SKILL.md`
+- 新規 symlink: `.claude/skills/ask-agy`
+
+**Diff** (per-file):
+（tracked files は `git diff <base-commit>` portion、untracked は `Read` で取得した new-file hunk として hunks 列挙）
+````
+（Subject / Body / Files / Diff の 4 要素を closed list として独立 fenced code block + 列挙で render。body は **必ず** fenced code block で独立提示、empty body の場合は `(no body)` プレースホルダを明示）
+
+**Bad** (Body を prose で「含む」と宣言するだけで実 rendering なし):
+````markdown
+**Commit 1 (single — full PR)**
+
+**Subject**: `feat(ask-agy): new skill wrapping Antigravity CLI; extend dev-workflow reviewer list + bump v1.37.0`
+
+**Files** (pathspec, excluding `.claude/plans/`):
+- 12 modified tracked files
+- 新規: `skills/ask-agy/skills/ask-agy/SKILL.md`
+- 新規 symlink: `.claude/skills/ask-agy`
+
+Body 含め、diff full preview。User accept gate を経て land します。
+````
+（"Body 含め" と prose で宣言しながら実際の body が rendered されない。user が "bodyはどれですか？" と返して 1 turn 余分にかかる。Body を `-m` 引数渡しで git commit に含めるなら、accept gate で必ず別 fenced code block として visible にする必要がある — material content を user の approval 判断時に隠してはいけない）

@@ -1236,47 +1236,7 @@ with reason cited.
 ```
 （whole-issue parse-error で Finding 配列が空のまま close 判定に入ると vacuous-true で auto-close が起動する silent regression。plan 段で behavior が抽象的に扱われるため Step 3 reviewer が見落とし、Step 8 Code Review で Critical-severity finding として初めて catch される）
 
-### Closed-list extension audit across SKILL.md ↔ `references/*.md`
-**Good** (SKILL.md parse-error 条件追加と同時に reference 表も同期):
-```markdown
-# .claude/skills/dev-workflow-triage/SKILL.md
-**Parse-error conditions** (closed list):
-- Zero `### Finding` headings in the body                          # ← 新規追加
-- Trailer is present and its count disagrees with heading count
-- Any of the 4 required fields missing
-- Target skill outside the 4-skill bundle
-- Category outside the 5-value set
-
-# .claude/skills/dev-workflow-triage/references/triage-criteria.md
-> Source of truth: SKILL.md § Parse body parse-error conditions;
-> this table mirrors that list — keep in sync.
-
-| Edge case | Disposition |
-|---|---|
-| Zero `### Finding` headings        | parse-error / leave open |   # ← 同期追加
-| Trailer present & count mismatch   | parse-error / leave open |
-| 4 required fields missing          | parse-error / leave open |
-| Target skill outside bundle        | parse-error / leave open |
-| Category outside 5-value set       | parse-error / leave open |
-```
-（SKILL.md 側 closed list 追加 → reference 側 table 行追加を 2-step audit で同時に。source-of-truth directive 行で bidirectional 追従義務を明文化）
-**Bad** (片側だけ追加):
-```markdown
-# SKILL.md
-**Parse-error conditions**:
-- Zero `### Finding` headings in the body   # ← 新規追加
-- ... (既存 4 条件)
-
-# triage-criteria.md
-| Edge case | Disposition |
-|---|---|
-| Trailer present & count mismatch   | parse-error |
-| 4 required fields missing          | parse-error |
-| Target skill outside bundle        | parse-error |
-| Category outside 5-value set       | parse-error |
-# "Zero `### Finding` headings" 行が抜けたまま
-```
-（SKILL.md と reference の closed list が drift し、reference 側 Category 行を読んだ reader / downstream consumer が古い列挙で判断する経路が残る。Code Review iter 2+ で Major-severity な cross-file inconsistency finding として上がる）
+**See pattern**: `### Sibling enum field の symmetric extension audit` — same class-level extension audit applies cross-file (SKILL.md closed list ↔ `references/*.md` table); add new case to both files in the same commit, embed `Source of truth: SKILL.md ... keep in sync` directive in the reference file. Skipping the reference side surfaces as Major cross-file inconsistency finding in Code Review iter 2+.
 
 ### Step renumbering propagation (Generic rule + Individual overrides)
 **Good** (Plan の Design § F):
@@ -1369,22 +1329,7 @@ with reason cited.
 ```
 （filename に space を含むケースで C-quoted 形式が emit されて downstream pathspec mismatch、`-A` で unrelated drift staging）
 
-### Untracked-file `Read` fallback for all-changes diff presentation
-**Good** (`dev-workflow/SKILL.md` Step 10):
-```markdown
-1. ...Then run `git diff <base-commit>` once to capture the per-file diff for **tracked** files; for **untracked** files the diff is empty, so for each untracked path also `Read` its file contents and treat that as the "diff" to present at `Per-commit loop`'s `Present` step (since `git diff` omits untracked paths by design)
-
-...
-
-- **a. Present**: show the current commit's `subject`, `body` (if any), file list, and the diff of those files. Tracked files use the per-file portion of the diff captured at Procedure 1; **untracked** files use the full file contents (also captured at Procedure 1) shown as a "new file" hunk — make the untracked status explicit in the presentation so the user can distinguish "added file" from "modified file" before approving
-```
-（tracked / untracked 2 経路明示、once Procedure 1 で in-memory に保持して reuse、UI 上 untracked status を明示）
-**Bad** (`git diff` のみで untracked 無視):
-```markdown
-1. Run `git diff <base-commit>` to capture all changes.
-- Present: show subject, body, file list, and the diff.
-```
-（untracked files が presentation から silent に欠落、user が新規 file の存在を把握できないまま approve）
+**See pattern**: `### \`git status --porcelain=v1 --untracked-files=all -z\` canonical pattern` — companion: when presenting all changes to user (e.g. Step 10 per-commit accept gate), `git diff <base-commit>` omits untracked files by design. For untracked paths use `Read` to fetch contents as a "new file" hunk; mark untracked-vs-modified explicitly in the UI so the user can distinguish before approving.
 
 ### Counter lifecycle: zero-exit-only increment + amend exclusion
 **Good** (`dev-workflow/SKILL.md` Step 10 landed_count lifecycle):
@@ -1404,21 +1349,7 @@ with reason cited.
 ```
 （amend が landed_count を再 increment するかが ambiguous、failure path で increment するかが implicit。downstream routing の bistability が崩れる）
 
-### Routing on `<counter> > 0` vs config-flag alone
-**Good** (`dev-workflow/SKILL.md` Completion subtask continuation):
-```markdown
-5. **If a next subtask exists**: branch on **whether Step 10 actually landed any commits this run** (use the landed_count from Step 10 — taking the config flag alone would mis-route the case where `interactive_commits: true` met the Step 10 skip conditions and exited at zero commits):
-   - `landed_count > 0`: tell the user the current subtask's changes have already been committed by Step 10 — open a PR for those commits, then start a new session with `/dev-workflow --resume <slug>` once the PR is up
-   - `landed_count == 0` (either because `interactive_commits: false` or because Step 10 was skipped): tell the user to commit the current subtask's changes and open a PR *before* resuming
-```
-（counter で routing、`landed_count == 0` の 2 cause を OR で union 説明）
-**Bad** (config-flag で routing):
-```markdown
-5. **If a next subtask exists**:
-   - `interactive_commits: true`: Step 10 で commit 済み — PR を開いてから resume
-   - `interactive_commits: false`: commit してから resume
-```
-（`interactive_commits: true` だが skip 条件で 0 commits 終了した case が「commit 済み」branch に倒れて、user に "PR を開いてから resume" と案内するが実際は commit が無い silent regression）
+**See pattern**: `### Counter lifecycle: zero-exit-only increment + amend exclusion` — companion: downstream routing decisions (Completion / cleanup / next-subtask) MUST branch on the actual counter value (`landed_count > 0`), not the config-flag intent (`interactive_commits: true`). The flag says "intended to commit", the counter says "actually committed". Routing on the flag mis-routes the `enabled-but-skipped` case to the "already committed" branch and silently misleads the user.
 
 ### 2-stage grep audit for cross-file Step renumbering
 **Good** (Plan Test plan step 5):
@@ -1461,33 +1392,7 @@ with reason cited.
 ```
 （同じ token を 2 箇所に記述すると wording 更新時に drift する）
 
-### Step 4 user material change: Recommendation/Alternative swap + 「user 既選択」 annotation
-**Good** (Decision 2 を user が Alternative 採用に変更した後の plan rewrite):
-```markdown
-#### Decision 2. `interactive_commits` のデフォルト値 — **user 既選択: `true`（opt-out）**
-- **Question**: 新 Step 10 をデフォルトで実行するか
-- **Recommendation**: デフォルト `true`（opt-out）。**user が Step 4 gate でこちらを選択**。理由: 「dev-workflow は clean な commit 状態で終わる」を canonical flow として位置づける
-- **Alternative**: デフォルト `false`（opt-in）。silent behavior change を避けたい場合の選択肢。コスト: 配布されるスキルの canonical flow が "commit しない" 状態に留まる
-- **CHANGELOG note**: default `true` 採用により merge 直後の next workflow run で全 user の挙動が変わる ...
-```
-そして関連節も新 Recommendation 文脈に sweep:
-```markdown
-- Scope adjusted: 4 files (`.claude/dev-workflow.md` no longer in scope since default `true` means no opt-in needed in this repo)
-- Design § B: default true + non-boolean fallback direction flipped (warn + default true)
-- Risks # 3 rewritten: now describes default `true` behavior change risk + mitigation
-```
-（Recommendation/Alternative swap + 「user 既選択」 annotation + Scope / Design / Risks の同期 sweep）
-**Bad** (旧 Recommendation を残したまま新 Alternative を併記):
-```markdown
-#### Decision 2. `interactive_commits` のデフォルト値
-- **Recommendation (旧)**: デフォルト `false`（opt-in）
-- **Recommendation (新 — user 選択)**: デフォルト `true`（opt-out）
-
-#### Risks
-3. デフォルト `false` の silent behavior change 回避（旧 plan の Risk）
-3b. デフォルト `true` の全 user behavior change 波及（新 plan の Risk）
-```
-（旧 / 新 が併記されると plan size 肥大 + Step 3-(N+1) reviewer が「どちらが live なのか」と困惑して再指摘）
+**See pattern**: `### Plan rewrite triggered by user material change at Step 4 gate` — swap-direction specialization: when user chooses Alternative, swap Recommendation/Alternative positions, add 「user 既選択」 annotation to new Recommendation heading, and sweep Scope / Design / Risks to new context in one pass. Keeping both 旧/新 entries side-by-side hits the buried-decisions / scope-creep finding from Step 3-(N+1) reviewer.
 
 ### Temporary-workaround skill integration: single hook point over state-machine weave
 **Good** (`.claude/skills/dev-workflow-triage/SKILL.md` `(f.5)` 1 段落挿入):
@@ -1617,40 +1522,7 @@ End every invocation with a single fenced JSON block. The schema depends on the 
 ```
 （`End every invocation` / `Do not produce any additional turn` のような terminal-action verb は orchestrator main thread に prompt-injection として「turn を閉じろ」指示を与え、fenced JSON return contract を導入しても stall が再発する）
 
-### Entry-side pre-invocation reminder + return-point reminder as orthogonal coverage (2-stage serial dependency with callee wording fix)
-**Good** (`dev-workflow-triage/SKILL.md` `§ 3.4 Apply accepted Findings` の (d) Skill(verify-diff) 本文直前):
-```markdown
-- **(d) Skill(verify-diff)**:
-  > **Pre-invocation reminder**: the next tool call after `Skill(verify-diff)` returns is `Skill(skill-review)` (on `converged` / `unresolved` / `skipped` — `verify-diff`'s 4-value status enum folds verdict parse failure / schema violation into `skipped`, so there is no separate orchestrator-side `error` branch here) or the next Finding's `(a)` Re-read (on `conflict`). Treat verify-diff's JSON verdict as a return value to parse, not a turn boundary — emit the parse → status branch → next dispatch as the next tool call (not as a prose summary turn between the JSON verdict and the next dispatch). See `§ No-Stall Principle`.
-
-  Invoke `Skill(verify-diff)` with Description / Suggested fix direction / Target file ...
-
-  **Return-point no-stall reminder**: At verify-diff return boundary (regardless of outcome — converged, unresolved, skipped, conflict, any non-error result), the next action must be issued in the next tool call. See `§ No-Stall Principle`.
-```
-そして Risks 節に:
-```markdown
-1. **(A) と (B) は直列依存**: pre-invocation reminder (B) は orchestrator main thread が読む prose で、callee SKILL.md の prompt-injection を override する強度は (A) の wording 修正に依存する。`End every invocation` / `Do not produce any additional turn` が残っていると (B) reminder の効果が相殺される。(A) → (B) はセットで適用する
-3. **冗長性増加と Simplify-revival check**: pre-invocation + return-point reminder の両側配置で bullet 長が増える。Simplify-revival check 段階で intentional に retain する判断が必要。SKILL.md prose にも intentional reinforcement の rationale を 1 行残す
-```
-（entry-side reminder と return-point reminder の両側配置で stall decision boundary を直交カバー、直列依存 risk を Risks 節に明記、冗長性を意図的 retain）
-
-**Bad** (return-point reminder のみ / (A) を省略して (B) のみ適用):
-```markdown
-- **(d) Skill(verify-diff)**:
-  Invoke `Skill(verify-diff)` with Description / Suggested fix direction / Target file ...
-
-  **Return-point no-stall reminder**: At verify-diff return boundary, the next action must be issued in the next tool call.
-```
-（return-point reminder は callee return 後の bullet 直後で読まれるが、callee 側 prompt-injection で既に turn が閉じている場合は救えない。entry-side reminder が無いと「決定の瞬間」をカバーできない）
-
-または:
-```markdown
-- **(d) Skill(verify-diff)**:
-  > **Pre-invocation reminder**: ... See `§ No-Stall Principle`.
-
-  Invoke `Skill(verify-diff)` ...
-```
-で `verify-diff/SKILL.md` の `End every invocation with a single fenced JSON block.` は **未修正**のまま — (A) を省略して (B) だけ適用すると callee 側 prompt-injection が orchestrator reminder を相殺、stall mitigation が partial fix で終わる
+**See pattern**: `### Callee-side terminal-action verbs prompt-inject orchestrator turn-end ...` — orchestrator-side counterpart (B) of the 2-stage serial pair. Place a `**Pre-invocation reminder**` immediately BEFORE the `Skill(<callee>)` dispatch (naming the next tool call per status branch + framing JSON as return value, not turn boundary) AND retain the existing return-point reminder AFTER the dispatch — two reminders give orthogonal coverage of the decision boundary. CRITICAL: (B) depends on (A) — callee-side wording fix must land first; (B) alone is relaxed by callee prompt-injection. The duplication is intentional reinforcement-by-repetition (do NOT consolidate at Simplify-revival check).
 
 ### Anchor-mismatch sibling pre-extraction for sibling-symmetric directive placement
 **Good** (Design 節で pre-extraction step を明示):
@@ -1680,35 +1552,7 @@ End every invocation with a single fenced JSON block. The schema depends on the 
 ```
 （implementation 段階で「skill-review はどこに置けば 3 callee 横断で揃うか」が判定不能になり、Step 3 plan review iter 2 で blocker C1 finding として発覚。Design 節で全 sibling の anchor section 構造を 1 行ずつ diff して structural asymmetry を pre-implementation で検出する必要があった）
 
-### Stop-hook auto-stages unrelated files: scope each commit with `git commit -m <msg> -- <paths>`
-**Good** (Web 環境で `.claude/plans/*.md` が auto-staged された状態での per-commit):
-```bash
-# 各 commit を pathspec で scope（-m を必ず -- の前に置く、git commit -m <msg> -- <paths>）
-git commit -m "feat(dev-workflow-triage): add (f.5) Skill(verify-bundle-sync) check before commit" \
-  -- .claude/skills/dev-workflow-triage/SKILL.md
-```
-そして commit-plan proposal で:
-```markdown
-**除外（untracked だが本 PR scope 外）**:
-- `.claude/plans/*.md` (handoff / plan / 草稿)
-- `.claude/zenn-drafts/*` (記事下書き)
-
-これらは別タスクで対応。.gitignore には追加しない（team-shared な plan として残す）。
-```
-（pathspec で scope すれば stop-hook が auto-stage した unrelated files は commit に含まれない）
-**Bad** (flag order を逆にする / bulk staging に倒す):
-```bash
-# Bad 1: flag order が逆 → git が ambiguous で fail
-git commit -- .claude/skills/dev-workflow-triage/SKILL.md \
-  -m "feat(dev-workflow-triage): add (f.5) ..."
-
-# Bad 2: bulk staging で stop-hook の auto-stage 結果が混入
-git add -A
-git commit -m "feat(dev-workflow-triage): ..."
-
-# Bad 3: .claude/plans/ を .gitignore に追加 → team-shared な plan が消える
-```
-（flag order を逆にすると `git` が ambiguous で fail、bulk staging は stop-hook の干渉を取り込む、.gitignore 追加は team-shared な plan を消す。3 つとも anti-pattern）
+**See pattern**: `### \`git status --porcelain=v1 --untracked-files=all -z\` canonical pattern` — Web-env specialization: stop-hook can auto-stage `.claude/plans/*.md` etc., so per-commit must scope with `git commit -m <msg> -- <path-1> <path-2> ...` (flag order: `-m` BEFORE `--`). `git add -A` / bulk staging pulls in stop-hook drift; do NOT add team-shared plan dirs to `.gitignore` — exclude them via commit pathspec instead.
 
 ### Per-commit accept gate: render commit body verbatim in a fenced code block, not as a prose promise
 **Good** (Step 10 per-commit accept gate での Present step、4 要素 closed list):
@@ -1755,3 +1599,98 @@ Extends the dev-workflow supported-reviewer closed list from 5 to 6 values
 Body 含め、diff full preview。User accept gate を経て land します。
 ````
 （"Body 含め" と prose で宣言しながら実際の body が rendered されない。user が "bodyはどれですか？" と返して 1 turn 余分にかかる。Body を `-m` 引数渡しで git commit に含めるなら、accept gate で必ず別 fenced code block として visible にする必要がある — material content を user の approval 判断時に隠してはいけない）
+
+### Threshold magic numbers anchored on observable platform signals + buffer ratio (not arbitrary)
+**Good** (`skills/extract-rules/skills/extract-rules/SKILL.md` Configuration table):
+```text
+| `compaction_threshold` | `32000` | Char count threshold for `--compact` mode (file is compacted if char count exceeds this). Set to a very large number (e.g. `99999999`) to opt out of compaction. The default `32000` is 80% of Claude Code's per-file warning threshold (40k chars, observed in Claude Code 2.1.x) to leave headroom for subsequent rule additions |
+```
+（observable platform signal (40k chars warning, observed in 2.1.x) を anchor に、80% buffer ratio で 32000 を導出。description 内に anchor + rationale + version-sensitivity を明記）
+**Bad:**
+```text
+| `compaction_threshold` | `30000` | Char count threshold for `--compact` mode |
+```
+（magic number 30000 の出所が読み取れず、後追い保守で「なぜ 30000？」が解けなくなる。warning 閾値が変わった場合の更新判断材料もない）
+
+### Opt-out via large sentinel value, not boolean disable flag, for numeric threshold config
+**Good** (`compaction_threshold` の opt-out path):
+```yaml
+---
+compaction_threshold: 99999999   # opt out of compaction (effectively infinite)
+---
+```
+（既存 numeric pipeline を変更せず、large sentinel value で「実質的に無限大」を表現。Configuration table description に opt-out path を 1 行明記）
+**Bad:**
+```yaml
+---
+compaction_enabled: false           # boolean disable flag — adds new schema field
+compaction_threshold: 32000         # what does this mean when enabled=false?
+---
+```
+（新 boolean を追加すると `enabled=false` × `threshold=N` の組み合わせ semantics が ambiguous になる + downstream pipeline 全体に boolean check を追加する必要が出る）
+
+### Char count vs byte count distinction for multibyte content (`wc -m` vs `wc -c`)
+**Good** (peer review finding triage):
+```markdown
+Reject 理由: peer は `wc -c` (byte count) を測定した可能性が高い。warning message の `47.6k chars` / `97.0k chars` は char count（`wc -m` 相当、Claude Code が warning で出力する単位）。日本語多言語ファイルでは byte ≠ char で peer の測定値 (66045 / 112387) は byte 単位、warning message の 47.6k / 97.0k は char 単位として整合的。Plan の数値は warning message からの直接引用で正しい。
+```
+（reviewer の measurement unit と plan の数値 unit を明示的に整合 check、byte vs char の乖離を rationale として reject reason に明記）
+**Bad:**
+```markdown
+Plan の 47.6k と peer の 66045 が乖離している → plan を peer の値に合わせて修正
+```
+（unit を確認せず numeric mismatch を「plan が wrong」と即断、warning message が char 単位なのに byte で書き直す regression が発生）
+
+### Subagent dispatch prompt body lives in `references/<mode>-prompt.md`, not inline in SKILL.md
+**Good** (`skills/verify-diff/skills/verify-diff/SKILL.md` A2 § Dispatch payload assembly):
+```markdown
+- `--- INFERENCE PROMPT ---`: the body of `references/auto-derive-prompt.md` § Executor prompt injected verbatim, with `<skill-name>` substituted by the current skill's name. The reference holds the two-phase Phase 1 INFER INTENT (1–2 sentences) + Phase 2 VERIFY (scenarios + checklist) prompt
+- `--- RESPONSE FORMAT ---`: `references/auto-derive-prompt.md` § Response format injected verbatim — output schema (including `inferred_intent` and per-entry `file` for `suggested_edits`) plus the "1–3 lines of surrounding context" convention. Single canonical home for the response format; do not duplicate the schema body in this SKILL.md
+```
+（prompt body は `references/auto-derive-prompt.md` に切り出し、SKILL.md は schema source-of-truth として残す。references file には「Single canonical home ... do not duplicate」note を入れる）
+**Bad** (SKILL.md inline で 50+ 行の executor prompt 全文を埋める):
+```markdown
+**Executor prompt (include verbatim in the executor prompt):**
+
+> You are a fresh executor of the target file. You have **not** seen the original Finding framing — only the scenarios and checklist below. **Actually execute each scenario** against the target as written; do not merely read and judge. ...
+> （以下 50 行続く）
+```
+（SKILL.md が 600 行を超えやすくなる + 同 prompt を再利用する別 mode が出た時に重複が発生）
+
+### Step 1.5 (or pre-implementation) check: user-specified step number / location reference may be stale
+**Good** (Step 1.5 decompose 判定後の補足説明):
+```markdown
+注: ユーザー指示は「Step 9」と書いていましたが、現行 dev-workflow では Step 11 が Update Rules です（Step 9 は Completion Hooks）。extract-rules の呼び出しは Step 11 にあるので、そちらに gate を組み込みます。
+```
+（user 指示の step number を SKILL.md 実体と semantic match させ、mismatch を明示報告して plan に正しい step を反映）
+**Bad** (silent に user 指示を「正しい意図」に解釈):
+```markdown
+Step 9 に gate を組み込みます。
+（実際には Step 11 に組み込むが、user の言葉そのままに「Step 9」と書く → 後段でずれた step に変更を入れて user が confused）
+```
+（user 指示の literal step number と実体の semantic mismatch を確認せず、後段で wrong step に edit が入る silent regression）
+
+### Reference site sweep: `references/plan-format.md` § User-gate summary preamble Applies-to list extension for new user-gates
+**Good** (新 user-gate 追加の 2 ファイル同期更新):
+```markdown
+# skills/dev-workflow/skills/dev-workflow/SKILL.md § No-Stall Principle
+**Explicit user-gates (the only permissible pause points):**
+- **Step 11 compaction approval gate** — accept/reject/adjust/cancel the proposed compaction edits per rule file (defined in Step 11 sub-step 3)
+
+# skills/dev-workflow/skills/dev-workflow/references/plan-format.md § User-gate summary preamble
+**Applies to:** Step 4 plan approval / Step 7.5 persistent violations / Step 8 unresolved findings / Step 10 commit-plan approval / Step 10 per-commit accept / Step 10 fold-or-defer / Step 11 compaction approval
+
+**Content slots** (per gate):
+- Step 11 compaction approval: per-file char count delta (before → after), 4-heuristic class tags, mechanical_edits sample
+```
+（SKILL.md `§ No-Stall Principle` + `references/plan-format.md` § User-gate summary preamble の Applies-to list + Content slots を **同 commit** で update）
+**Bad** (SKILL.md だけ更新):
+```markdown
+# SKILL.md だけに新 gate 追加
+**Step 11 compaction approval gate** — ...
+
+# plan-format.md の Applies-to list は更新漏れ
+**Applies to:** Step 4 plan approval / Step 7.5 ... / Step 10 fold-or-defer
+（Step 11 compaction approval が抜けたまま）
+```
+（preamble が間違った gate set を表示、user-gate summary を読んだ user / reviewer が「Step 11 で gate が立つはずなのに preamble に無い」と confused になる）

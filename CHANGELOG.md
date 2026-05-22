@@ -2,6 +2,10 @@
 
 ## 2026-05-22
 
+### dev-workflow v1.40.0 / dev-workflow-bundle v1.40.0
+
+- feat(dev-workflow): switch Step 6 callee from `Skill(simplify)` to `Skill(tidy)` — completes the `local-simplify-replacement` migration (paired with `tidy v1.0.0` published in `dev-workflow-bundle v1.39.3`). Step heading renamed to `Step 6: Tidy`; all SKILL.md / README.md prose references aligned with the `tidy` name. **Behavior change**: runs that previously resolved `Skill(simplify)` to upstream's renamed `code-review` skill (correctness-only since claude-code v2.1.147) now resolve to the bundle-provided `tidy` cleanup-and-fix behavior, restoring v2.1.146-era semantics. No opt-out — re-pin to `dev-workflow-bundle v1.39.x` to keep the prior callee.
+
 ### tidy v1.0.0 / dev-workflow-bundle v1.39.3
 
 - feat(tidy): introduce new bundle skill that replicates the cleanup-and-fix behavior dropped from upstream simplify in claude-code v2.1.147. Pattern A (Skill wrapper + Agent dispatch + main-thread Edit + iteration loop + fenced JSON return contract); siblings with `verify-diff` / `skill-review`. Scope expands beyond `skill-review`'s `skills/<name>/` filter to cover all changed files (tracked + untracked, with cross-ecosystem lockfile / build-artifact / binary exclusion). Step 6 of `dev-workflow` will be wired to `Skill(tidy)` in a follow-up subtask.

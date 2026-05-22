@@ -158,7 +158,7 @@
     },
     {
       "name": "tidy",
-      "description": "Review changed code for reuse, quality, and efficiency, then apply cleanup edits. Replaces the cleanup behavior dropped from upstream simplify in claude-code v2.1.147.",
+      "description": "Review changed code for reuse, quality, and efficiency, then apply cleanup edits.",
       "source": "./skills/tidy",
       "version": "1.0.0",
       "author": {

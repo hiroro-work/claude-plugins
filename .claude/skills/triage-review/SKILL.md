@@ -14,7 +14,7 @@ The generic regimen (sub-skill return discipline, Step-boundary non-stalling, To
 
 **Permissible fatal-abort exits** (emit the Step 6 summary in `pre-flight aborted` form and stop):
 
-- Step 1 Pre-flight failures: `detached HEAD`, `current branch is not a triage-* branch`, `dirty working tree`
+- Step 1 Pre-flight failures: `detached HEAD`, `current branch is not a triage-* branch`, `uncommitted tracked-file changes` (untracked files are intentionally ignored — see § Step 1 check 3 rationale)
 
 0-result paths (no changes between main and HEAD) are **not** aborts — they emit a dedicated summary form (form 2) and exit cleanly.
 
@@ -62,7 +62,7 @@ Run the environment checks below in order; fatal abort on the first failure. The
 
 1. `git symbolic-ref -q HEAD >/dev/null` — non-zero exit means detached HEAD → abort with reason `detached HEAD: switch to the triage-* branch before invocation`
 2. `triage_branch_short = git rev-parse --abbrev-ref HEAD` — capture the current branch name. Verify it matches the `triage-*` glob (shell: `case "$triage_branch_short" in triage-*) ;; *) abort ;; esac`). If it does not → abort with reason `current branch is not a triage-* branch: <triage_branch_short> — fetch origin and switch to the latest triage-* branch before invocation`
-3. `git status --porcelain --untracked-files=all` — non-empty output indicates a dirty working tree → abort with reason `working tree is dirty: <line count> uncommitted entries — stash or commit before running`. `--untracked-files=all` overrides any user-side `status.showUntrackedFiles=no` config that would otherwise mask untracked files
+3. `git status --porcelain --untracked-files=no` — non-empty output indicates uncommitted modifications to tracked files → abort with reason `working tree has uncommitted tracked-file changes: <line count> entries — stash or commit before running`. `--untracked-files=no` deliberately excludes untracked files so leftover staging artifacts (e.g. `.claude/plans/*.md` from prior sessions, files matching gitignore patterns that were never staged) do not block invocation — the review walks `main..HEAD` only, so untracked-file presence does not affect the diff inputs to the callees
 
 ## Step 2 — Capture changed files
 

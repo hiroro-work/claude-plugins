@@ -9,6 +9,20 @@ These instructions are dispatched to the subagent spawned in SKILL.md Step CP2 (
 - **Apply phase**: the main thread (Skill wrapper) applies `mechanical_edits` via `Edit`. The subagent does **not** call `Edit` directly — this preserves the bias-free executor property (the analysis subagent is fresh per dispatch, while the apply phase stays in the main thread's working-tree context)
 - **`structural_notes` disposition**: the main thread surfaces these as user-facing notes (e.g. `dev-workflow` Step 11 user-gate). They are never auto-applied. Reserve `structural_notes` for proposals that cannot be safely expressed as mechanical edits
 
+## Forbidden tool calls
+
+You are an **analysis-only** subagent. Your sole output is the fenced JSON verdict block defined in § Per-iter response schema below. The main thread (the Skill wrapper that dispatched you) owns every file-writing action.
+
+**Do not call any of these tools from this subagent dispatch**:
+
+- `Edit` — propose edits as `mechanical_edits` entries in the JSON verdict; do not call `Edit` yourself
+- `Write` — propose new-file or full-rewrite cases as `structural_notes`; do not call `Write` yourself
+- Any other file-writing or working-tree-mutating tool (`NotebookEdit`, `Bash(rm *)`, `Bash(mv *)`, `Bash(cp *)`, `Bash(sed -i *)`, `Bash(jq ... > file)`, equivalent shell redirections) — do not call them; surface the intent as a `structural_note` instead
+
+This is **not** a soft contract — it is a hard constraint of the 2-layer Pattern A architecture (subagent analyzes / main thread applies). Inline tool invocations from this subagent break the bias-free executor property and produce non-reproducible file state that the main thread's apply phase cannot reason about. If you find yourself reasoning "I should just apply this directly" — that is precisely the anti-pattern this section forbids. Emit the edit as a `mechanical_edits` entry and stop; the main thread will apply it.
+
+The same rule applies class-wide to Pattern A sibling skills whose dispatched subagents are likewise analysis-only. Sibling Pattern A subagent prompts may cross-reference this section rather than re-stating it inline.
+
 ## Heuristics
 
 Apply these four heuristics during analysis. Each is a closed criterion — only emit an edit / note when the criterion is met. Do not invent new merge / drop patterns beyond these four.
@@ -59,6 +73,7 @@ Each entry in `mechanical_edits`:
 ```
 
 - `old_string` must match exactly one location in the target file. Include **1–3 lines of surrounding context** so the snippet is unique within the file (short one-liners collide and cause the `Edit` to fail)
+- **Verbatim character-class preservation (load-bearing)**: emit `old_string` (and `new_string`) with the **exact byte sequence** present in the source file — do **not** normalize character classes during extraction. Specifically: preserve fullwidth / halfwidth distinctions for parentheses (`()` vs `（）`), brackets (`[]` vs `［］`), digits, and Latin letters; preserve dash / hyphen variants (ASCII `-` vs em-dash `—` vs en-dash `–` vs minus `−`); preserve whitespace classes (ASCII space vs ideographic space `　` vs non-breaking space); preserve ellipsis (`...` vs `…`) verbatim from the source. Silent normalization during extraction is a recurring failure mode for mixed-language (e.g. Japanese + English) rule files: the subagent reads the file content and unconsciously normalizes lookalike characters when emitting `old_string`, producing a string that visually matches the source but byte-mismatches the actual file, causing `Edit` to skip with no-op fallback. The result is a low `applied_edits_count` for what would otherwise be a clean apply — debug-wise often misread as "no-op fallback for overlapping edits" when the actual cause is character-class mismatch. If you find yourself "cleaning up" punctuation while extracting `old_string`, stop — emit the bytes verbatim
 - The main thread re-`Read`s the file before each `Edit`, so subsequent entries in the same batch see the result of earlier landed edits. If a later entry's `old_string` is not found because an earlier edit rewrote that region, the main thread treats the entry as a no-op fallback and continues with the next entry — this is expected when multiple edits emit from the same iter-1 snapshot
 - The `file` field must match the dispatch's target file path. The main thread enforces a scope rail: any entry whose `file` does not match is skipped without writing (no `Edit` call is issued), and the rejected path is recorded but no working-tree side effect occurs
 

@@ -12,9 +12,11 @@ Daily local review of the latest `dev-workflow-triage` output branch. After `dev
 
 The generic regimen (sub-skill return discipline, Step-boundary non-stalling, TodoWrite phase transitions, intentional reinforcement-by-repetition for inline reminders, fatal tool-level errors out of scope) is defined in `.claude/skills/dev-workflow-triage/SKILL.md` § No-Stall Principle and applies here without modification. The skill-specific deltas below override or extend that canonical regimen.
 
+**Zero designed user-gate points.** This routine has **no** user-judgment gates between Step 1 Pre-flight and Step 6 summary emission. Every sub-skill return — per-file `Skill(prompt-tuning)`, `Skill(skill-review)`, `Skill(publicity-review)` — is a return value to parse-and-proceed-past, never a checkpoint to confirm with the user. The only user-facing output is the Step 6 summary at the end. Specifically forbidden between any two sub-skill dispatches and between the final sub-skill return and Step 6 summary emission: user-facing pause phrases (`なにか判断が必要ですか？` / `判断を求めていますか？` / `X ファイル目完了。続けますか？` / `次は <step> です` framing without immediately issuing the next tool call / English equivalents such as `shall I proceed?` / `does this need your judgment?`), prose that ends a response without a subsequent tool call when more dispatches remain, and any framing that surfaces a sub-skill's return as a deliverable mid-loop. If you find yourself drafting such prose, that is precisely the anti-pattern this routine forbids — emit the next tool call in the same response instead. See § No-Stall Principle in `.claude/skills/dev-workflow-triage/SKILL.md` for the canonical Stall mitigation pattern (callee-side fenced JSON + orchestrator-side pre/return-point reminders).
+
 **Permissible fatal-abort exits** (emit the Step 6 summary in `pre-flight aborted` form and stop):
 
-- Step 1 Pre-flight failures: `detached HEAD`, `current branch is not a triage-* branch`, `dirty working tree`
+- Step 1 Pre-flight failures: `detached HEAD`, `current branch is not a triage-* branch`, `uncommitted tracked-file changes` (untracked files are intentionally ignored — see § Step 1 check 3 rationale)
 
 0-result paths (no changes between main and HEAD) are **not** aborts — they emit a dedicated summary form (form 2) and exit cleanly.
 
@@ -24,7 +26,7 @@ The generic regimen (sub-skill return discipline, Step-boundary non-stalling, To
 - Step 4 `Skill(skill-review)` boundary
 - Step 5 `Skill(publicity-review)` boundary
 
-`Skill(skill-review)` and `Skill(publicity-review)` terminate with a single fenced JSON verdict — branch on it directly. `Skill(prompt-tuning)` returns free-form prose (or a fenced Skip return contract when the host blocks recursive `Agent` dispatch) — parse per § Step 3.
+**Skill(prompt-tuning) return shape.** `Skill(skill-review)` and `Skill(publicity-review)` terminate with a single fenced JSON verdict — branch on it directly. `Skill(prompt-tuning)` returns a verbose markdown response (Mode declaration / iter-0 verdict / iteration block / Alt 3 static-review findings / scenario design) followed by a structured return value at the end — either a fenced Skip return contract `{"status": "skipped", ...}` (Alt 3 / Alt 2 paths and when the host blocks recursive `Agent` dispatch) or, in empirical mode, an `Iteration N` table with a `Convergence check` line. The structured return value (fenced JSON or iteration table) is what § Step 3 (c) parses for the per-file classification token. **The preceding markdown prose is the subagent's internal reasoning and is not a deliverable** — do not re-render, summarize, or surface it to the user mid-loop. The orchestrator's response between two per-file dispatches should contain only (i) the per-file classification log line and (ii) the next tool call (the next file's `Skill(prompt-tuning)` dispatch, or `Skill(skill-review)` if the last file).
 
 **Non-fatal error classes** (record and continue, never halt):
 
@@ -62,7 +64,7 @@ Run the environment checks below in order; fatal abort on the first failure. The
 
 1. `git symbolic-ref -q HEAD >/dev/null` — non-zero exit means detached HEAD → abort with reason `detached HEAD: switch to the triage-* branch before invocation`
 2. `triage_branch_short = git rev-parse --abbrev-ref HEAD` — capture the current branch name. Verify it matches the `triage-*` glob (shell: `case "$triage_branch_short" in triage-*) ;; *) abort ;; esac`). If it does not → abort with reason `current branch is not a triage-* branch: <triage_branch_short> — fetch origin and switch to the latest triage-* branch before invocation`
-3. `git status --porcelain --untracked-files=all` — non-empty output indicates a dirty working tree → abort with reason `working tree is dirty: <line count> uncommitted entries — stash or commit before running`. `--untracked-files=all` overrides any user-side `status.showUntrackedFiles=no` config that would otherwise mask untracked files
+3. `git status --porcelain --untracked-files=no` — non-empty output indicates uncommitted modifications to tracked files → abort with reason `working tree has uncommitted tracked-file changes: <line count> entries — stash or commit before running`. `--untracked-files=no` deliberately excludes untracked files so leftover staging artifacts (e.g. `.claude/plans/*.md` from prior sessions, files matching gitignore patterns that were never staged) do not block invocation — the review walks `main..HEAD` only, so untracked-file presence does not affect the diff inputs to the callees
 
 ## Step 2 — Capture changed files
 
@@ -88,7 +90,7 @@ If `prompt_targets` is empty, emit summary line `prompt-tuning: skipped (no prom
 
 Otherwise, iterate through `prompt_targets` sequentially. For each `<file>`:
 
-(a) **Pre-invocation reminder**: the next tool call is `Skill(prompt-tuning)` dispatch. Its return is a value to parse, not a turn boundary. After parsing, the next action is the next file's dispatch, or the § Step 4 transition if this was the last file. See `§ No-Stall Principle`.
+(a) **Pre-invocation reminder**: the next tool call is `Skill(prompt-tuning)` dispatch. Its return — verbose markdown ending with a fenced JSON or `Iteration N` table — is the **structured return value** to parse, not a turn boundary and not a deliverable for the user. After the skill body emits its return value, the **same response must continue** with either the next file's `Skill(prompt-tuning)` dispatch (if more files remain) or the § Step 4 `Skill(skill-review)` dispatch (if this was the last file). Specifically forbidden between the JSON-parse and the next tool call: `なにか判断が必要ですか？` / `判断を求めていますか？` / `X ファイル目完了。続けますか？` / English `shall I proceed?` / any prose that ends without a subsequent tool call. See `§ No-Stall Principle` "Zero designed user-gate points" and "Skill(prompt-tuning) return shape" paragraphs.
 
 (b) Invoke `Skill(prompt-tuning)` with the **minimal natural-language form** below (verbatim — do not add scope, framing, or context; expansions cause the callee to follow procedural code literally with override-defensive interpretation):
 
@@ -103,11 +105,11 @@ Otherwise, iterate through `prompt_targets` sequentially. For each `<file>`:
 
 Record the per-file classification in a result list. `unparsed` and `error` are non-fatal — the next file's dispatch proceeds without halting the run.
 
-(d) **Return-point no-stall reminder**: after recording the verdict, immediately issue the next file's `Skill(prompt-tuning)` dispatch (if more files remain) or transition to § Step 4 (if this was the last file). Do not emit an interstitial summary turn. See `§ No-Stall Principle`.
+(d) **Return-point no-stall reminder**: after parsing the fenced JSON / `Iteration N` table at the end of the prompt-tuning response, the **next turn must begin with the next tool call** — either the next file's `Skill(prompt-tuning)` dispatch (if more files remain in `prompt_targets`) or the § Step 4 `Skill(skill-review)` dispatch (if this was the last file). Specifically forbidden between this point and the next tool call: user-facing pause phrases per § No-Stall Principle, prose summary turns that end without a tool call, re-rendering or paraphrasing the prompt-tuning response markdown (it is internal subagent reasoning per § No-Stall Principle "Skill(prompt-tuning) return shape" paragraph), and any "interstitial confirmation" framing. The per-file classification token (`converged` / `max-iter` / `skipped (agent unavailable)` / `error` / `unparsed`) is logged inline as part of the next tool call's preceding sentence, not as a standalone summary turn. See `§ No-Stall Principle`.
 
 ## Step 4 — Run `Skill(skill-review)`
 
-(a) **Pre-invocation reminder**: the next tool call is `Skill(skill-review)` dispatch. Its return is a fenced JSON verdict — parse it as a return value, branch on the `status` enum, and issue the next tool call (§ Step 5 dispatch). Do not insert prose between the verdict and the next action. See `§ No-Stall Principle`.
+(a) **Pre-invocation reminder**: the next tool call is `Skill(skill-review)` dispatch. Its return is a single fenced JSON verdict — parse it as a structured return value, branch on the `status` enum per § Step 4 (c), and **issue the next tool call (§ Step 5 `Skill(publicity-review)` dispatch) in the same response**. Specifically forbidden between the verdict-parse and the next tool call: user-facing pause phrases per § No-Stall Principle ("Zero designed user-gate points" paragraph), prose summaries of the skill-review verdict that end without a tool call, re-rendering the JSON block as a standalone deliverable. The verdict's per-field log line (`status` / `iterations_used` / `applied_edits_count` / `notes_remaining_count` / `framing`) is recorded inline as part of the next tool call's preceding sentence, not as a standalone turn. See `§ No-Stall Principle`.
 
 (b) Invoke `Skill(skill-review)` with the short form below. `skill-review` accepts the `Base ref` field in its own `## Invocation contract` (same pattern as `publicity-review`), so this form is contract-sanctioned. `Max iterations` is left at its default of `3`:
 
@@ -125,11 +127,11 @@ Do **not** append: triage branch name, the `changed_files` list, an explicit `gi
 
 (d) **Runtime framing-failed detection** (legacy guard): after parsing a successful verdict, check `iterations_used == 0 && status == "no-actionable-findings"`. When this signature appears **and** `changed_files` is non-empty (main..HEAD has changes), it indicates `skill-review` Step 1 early-returned despite the `Base ref: main` invocation — most likely a `skill-review` contract-parsing regression. Record `framing_status = "framing-failed (suspected — iter=0 on non-empty main..HEAD)"` and surface as a warning in Step 6 form 3. Otherwise `framing_status = "ok"`. With the contract-field invocation form in (b), this guard should rarely fire — its presence is preserved as a downstream-regression detector.
 
-(e) **Return-point no-stall reminder**: after recording the verdict, immediately issue `Skill(publicity-review)` dispatch (§ Step 5). Do not emit an interstitial summary. See `§ No-Stall Principle`.
+(e) **Return-point no-stall reminder**: after parsing the verdict and (d) `framing_status` derivation, the **next turn must begin with `Skill(publicity-review)` dispatch** (§ Step 5). Specifically forbidden between the framing-status assignment and the next tool call: user-facing pause phrases per § No-Stall Principle, prose summary turns that end without a tool call, "shall I proceed to publicity-review?" framing. See `§ No-Stall Principle`.
 
 ## Step 5 — Run `Skill(publicity-review)`
 
-(a) **Pre-invocation reminder**: the next tool call is `Skill(publicity-review)` dispatch. Its return is a fenced JSON verdict — parse and proceed to § Step 6. See `§ No-Stall Principle`.
+(a) **Pre-invocation reminder**: the next tool call is `Skill(publicity-review)` dispatch. Its return is a single fenced JSON verdict — parse it as a structured return value per § Step 5 (c), and **proceed to § Step 6 summary emission in the same response**. Specifically forbidden between the verdict-parse and the § Step 6 summary: user-facing pause phrases per § No-Stall Principle, prose summaries of the publicity-review verdict that end without proceeding to Step 6, re-rendering the JSON block as a standalone deliverable. See `§ No-Stall Principle`.
 
 (b) Invoke `Skill(publicity-review)` with the short form:
 
@@ -141,7 +143,7 @@ Base ref: main
 
 (c) **Parse the verdict** with the same first-match-wins discipline as § Step 4 (c). Extract `status`, `iterations_used`, `applied_edits_count`, `findings_count`, `remaining_findings`, `reverted_paths`, `reason`. Record as `publicity_review_result`.
 
-(d) **Return-point no-stall reminder**: after recording the verdict, immediately transition to § Step 6 summary emission. See `§ No-Stall Principle`.
+(d) **Return-point no-stall reminder**: after parsing the verdict, the **same response must continue** with § Step 6 summary emission (this is the routine's terminal user-facing output and the only place a user-facing summary belongs). Specifically forbidden between this point and the Step 6 summary render: user-facing pause phrases per § No-Stall Principle, "shall I emit the summary?" framing, prose turns that end without proceeding to Step 6. See `§ No-Stall Principle`.
 
 ## Step 6 — Emit summary
 

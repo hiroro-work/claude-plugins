@@ -61,13 +61,13 @@ Look for user preferences and classify them:
 
 ## Step C5: Append Principles and Patterns
 
-1. Read existing rule files (paths provided by main agent) to understand current rules
+1. Read existing rule files (paths provided by main agent) to understand current rules. Rule files live under `output_dir`; `.examples.md` files live under `examples_output_dir` (may differ from `output_dir`)
 
-2. Categorize each extracted item:
-   - Language-specific → `languages/<lang>.md`
-   - Framework-specific → `frameworks/<framework>.md`
-   - Integration-specific → `integrations/<framework>-<integration>.md`
-   - Project-level → `project.md`
+2. Categorize each extracted item (rule files written under `output_dir`):
+   - Language-specific → `<output_dir>/languages/<lang>.md`
+   - Framework-specific → `<output_dir>/frameworks/<framework>.md`
+   - Integration-specific → `<output_dir>/integrations/<framework>-<integration>.md`
+   - Project-level → `<output_dir>/project.md`
 
    **By default** (`split_output: true`): Conversation-extracted **project-specific patterns** always go to `.local.md` files. Principles may be added to shared files. `project.md` is always a single file — project-level items go there regardless of `split_output`. Promoting patterns to shared files should be done manually or via organization-level merge.
 
@@ -75,7 +75,7 @@ Look for user preferences and classify them:
 
 4. Append using the same format as Step 6 in the main SKILL.md (see Format guidelines)
 
-5. **Update `.examples.md`**: Follow the common generation procedure in `references/examples-format.md` to add examples for each new rule.
+5. **Update `.examples.md`**: Resolve the target path via `examples_output_dir` (`<examples_output_dir>/<name>.examples.md`). Create the file and any missing parent directories under `examples_output_dir` when absent. Follow the common generation procedure in `references/examples-format.md` to add examples for each new rule.
 
 6. Run Security Self-Check (same as Step 6.5 in the main SKILL.md) on updated files. Also read `references/security.md`.
 

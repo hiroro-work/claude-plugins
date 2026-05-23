@@ -69,7 +69,7 @@
       "name": "extract-rules",
       "description": "Extract project-specific coding rules from codebase for AI agents",
       "source": "./skills/extract-rules",
-      "version": "1.14.0",
+      "version": "1.15.0",
       "author": {
         "name": "hiropon"
       },
@@ -130,7 +130,7 @@
       "description": "Development workflow bundle (includes peer + extract-rules + dev-workflow + rules-review + tidy)",
       "source": "./plugins/dev-workflow-bundle",
       "skills": ["./skills/ask-peer", "./skills/dev-workflow", "./skills/extract-rules", "./skills/rules-review", "./skills/tidy"],
-      "version": "1.40.0",
+      "version": "1.41.0",
       "author": {
         "name": "hiropon"
       },

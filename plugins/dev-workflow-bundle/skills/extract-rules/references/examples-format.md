@@ -4,7 +4,7 @@ Reference guide for generating and updating `.examples.md` files.
 
 ## Purpose
 
-`.examples.md` files provide Good/Bad code examples that help Claude apply rules correctly. They are intentionally separated from rule files (no `paths:` frontmatter) so they are NOT auto-loaded into context — Claude reads them only when needed for clarification.
+`.examples.md` files provide Good/Bad code examples that help Claude apply rules correctly. By default they are written to `examples_output_dir` (default: `.claude/rules-extras/`), which sits outside Claude Code's `.claude/rules/**` recursive auto-load scope, so they are NOT auto-loaded into context — Claude reads them only when needed for clarification. When `examples_output_dir` is set to a path under `output_dir`, the resulting `.examples.md` files are auto-loaded along with the rule files. Auto-load behavior is determined by directory placement; the absence of `paths:` frontmatter does not by itself prevent auto-loading.
 
 ## File Structure
 
@@ -44,7 +44,7 @@ Always generate one `.examples.md` per rule category (regardless of `split_outpu
 ```
 ```
 
-- No `paths:` frontmatter (prevents auto-loading into context)
+- No `paths:` frontmatter (kept consistent across modes; auto-load behavior is controlled by `.examples.md`'s placement under `examples_output_dir`, not by frontmatter)
 - Skip generating the file if no examples exist for any rule in the category
 
 ## Relationship with merge-rules
@@ -68,12 +68,23 @@ See `extraction-criteria.md` "Example Quality Criteria" section for detailed qua
 
 ## Reference Section in Rule Files
 
-Each rule file (`.md` and `.local.md`) that has a corresponding `.examples.md` must end with a reference section:
+Each rule file (`.md` and `.local.md`) that has a corresponding `.examples.md` must end with a reference section. The reference path is the **relative path from the rule file's directory to the matching `.examples.md` file under `examples_output_dir`** — compute it against the live `output_dir` and `examples_output_dir` settings:
 
 ```markdown
 ## Examples
-When in doubt: ./<name>.examples.md
+When in doubt: <relative-path-to-examples-file>
 ```
+
+Concrete cases:
+
+- Default settings (`output_dir: .claude/rules`, `examples_output_dir: .claude/rules-extras`):
+  - Rule file `.claude/rules/languages/typescript.md` references `../../rules-extras/languages/typescript.examples.md`
+  - Rule file `.claude/rules/project.md` references `../rules-extras/project.examples.md`
+- Co-located settings (`examples_output_dir` set equal to `output_dir`, e.g. `.claude/rules`):
+  - Rule file `.claude/rules/languages/typescript.md` references `./typescript.examples.md`
+  - Rule file `.claude/rules/project.md` references `./project.examples.md`
+
+When `examples_output_dir` is changed and `--restructure` regenerates the rule layout, this reference section is rewritten with the new relative path so the link continues to point at the live examples file location. Modes that emit or maintain this reference section (Full Extraction Step 6, Update Step U5, Restructure Step R4, Conversation Step C5, PR Review Step P5) must use the same relative-path calculation so the format stays consistent across rebuilds.
 
 **Direction is one-way: rule file → examples file only.** `.examples.md` files themselves never carry a `## Examples` reference section — no self-reference (link to themselves), no link to a sibling `.examples.md`. When generating or updating an examples file, do not append a reference section. Templates and subagent prompts that scaffold examples files must omit this section.
 
@@ -93,7 +104,7 @@ For each new rule added:
 2. **For principles**: Find Good examples in the codebase; for Bad, look for older/refactored code or use typical Claude output as contrast
 3. **For project-specific patterns**: Find actual usage sites in the codebase
 4. **If no relevant code can be found** (e.g., the rule is about something not yet implemented): skip the example for now
-5. Append to the `.examples.md` file. Create `.examples.md` if it doesn't exist
+5. Append to `<examples_output_dir>/<name>.examples.md`. Create the file (and any missing parent directories under `examples_output_dir`) if it doesn't exist
 
 ## Portability check (post-generation)
 

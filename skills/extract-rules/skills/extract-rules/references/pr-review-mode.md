@@ -10,7 +10,7 @@ Single or multiple PRs can be specified. Multiple PRs enable cross-PR frequency 
 2. Check if output directory exists (default: `.claude/rules/`)
    - If not exists: Error "Run /extract-rules first to initialize rule files."
 
-3. Load existing rule files to understand current rules (if `split_output: true`, load `<name>.md`, `<name>.local.md`, and `<name>.examples.md`)
+3. Load existing rule files to understand current rules (if `split_output: true`, load `<output_dir>/<name>.md`, `<output_dir>/<name>.local.md`, and `<examples_output_dir>/<name>.examples.md`; when `examples_output_dir` differs from `output_dir`, also scan `<output_dir>/<name>.examples.md` for any legacy co-located files)
 
 4. Verify `gh` CLI is available and authenticated
    - Run `gh auth status` to confirm authentication
@@ -102,6 +102,6 @@ Same as Step C5 in Conversation Extraction Mode (see `references/conversation-mo
 2. When `split_output: true`: Project-specific patterns go to `.local.md` files
 3. Check for duplicates against existing rules
 4. Append using standard format
-5. Update `.examples.md`: Follow the common generation procedure in `examples-format.md` to add examples for each new rule.
+5. Update `.examples.md`: Resolve the target path via `examples_output_dir` (`<examples_output_dir>/<name>.examples.md`). Create the file and any missing parent directories under `examples_output_dir` when absent. Follow the common generation procedure in `examples-format.md` to add examples for each new rule.
 6. Run Security Self-Check (same as Step 6.5)
 7. Report what was added (see `report-templates.md` for format)

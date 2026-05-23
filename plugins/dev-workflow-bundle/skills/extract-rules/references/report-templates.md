@@ -148,7 +148,7 @@ Compaction Mode returns a fenced JSON block (the only output) — not a Markdown
 Compaction complete (threshold: 32000 chars)
 
 - .claude/rules/project.rules.local.md: 47600 → 31200 chars (under threshold, converged in 2 iters, 12 edits)
-- .claude/rules/project.rules.examples.md: 97000 → 30800 chars (under threshold, converged in 2 iters, 28 edits)
+- .claude/rules/languages/typescript.local.md: 41200 → 28500 chars (under threshold, converged in 1 iter, 8 edits)
 
 Total: 2 files compacted, 82600 chars saved
 ```
@@ -158,9 +158,9 @@ Total: 2 files compacted, 82600 chars saved
 ```text
 Compaction partial (threshold: 32000 chars)
 
-- .claude/rules/project.rules.local.md: 47600 → 31200 chars (under threshold, converged in 2 iters, 12 edits)
-- .claude/rules/project.rules.examples.md: 97000 → 45000 chars (over threshold, partial in 2 iters, 18 edits)
-  → 1 structural_note: consider splitting examples into per-language files
+- .claude/rules/languages/typescript.local.md: 41200 → 28500 chars (under threshold, converged in 1 iter, 8 edits)
+- .claude/rules/project.rules.local.md: 47600 → 35000 chars (over threshold, partial in 2 iters, 14 edits)
+  → 1 structural_note: consider splitting patterns into per-domain files
 
 Total: 2 files processed, 1 under threshold, 1 still over threshold
 ```

@@ -106,4 +106,4 @@
 
 ## Examples
 
-When in doubt: ./project.rules.examples.md
+When in doubt: ../rules-extras/project.rules.examples.md

@@ -37,7 +37,8 @@ Settings file: `extract-rules.local.md` (YAML frontmatter only, no markdown body
 | `target_dirs` | `["."]` | Analysis target directories |
 | `exclude_dirs` | `[".git", ".claude"]` | Exclude directories (in addition to .gitignore) |
 | `exclude_patterns` | `[]` | Exclude file patterns (e.g., `*.generated.ts`, `*.d.ts`) |
-| `output_dir` | `.claude/rules` | Output directory |
+| `output_dir` | `.claude/rules` | Output directory for rule files (`.md` and `.local.md`). This directory is inside Claude Code's `.claude/rules/**` recursive auto-load scope, so every file written here is injected into context on session start |
+| `examples_output_dir` | `.claude/rules-extras` | Output directory for `.examples.md` files. Defaults to a sibling directory **outside** `.claude/rules/**` so examples are not auto-loaded into context on session start. Set to `output_dir` (or any path under `output_dir`) to opt examples back into auto-load |
 | `language` | `ja` | Report language (e.g., `ja`) |
 | `split_output` | `true` | Separate Principles (.md) and patterns (.local.md) |
 | `resolve_references` | `true` | Resolve file references during restructure |
@@ -53,6 +54,7 @@ exclude_dirs:
 exclude_patterns:
   - "*.generated.ts"
 output_dir: .claude/rules
+examples_output_dir: .claude/rules-extras
 language: ja
 split_output: true
 resolve_references: true
@@ -62,36 +64,44 @@ compaction_threshold: 32000
 
 ## Output Structure
 
+Two output directories are involved: `output_dir` for rule files (`.md` / `.local.md`) and `examples_output_dir` for `.examples.md` files. The default values place rule files under Claude Code's `.claude/rules/**` recursive auto-load scope and examples in a sibling directory outside that scope, so examples do not consume context on session start. The `paths:` frontmatter on rule files is preserved as a human-facing category-scope hint — its loader-side semantics is not empirically verified, and the actual auto-load boundary is determined by directory placement only.
+
 **Default** (`split_output: true`):
 ```text
-.claude/rules/
+.claude/rules/                     # output_dir (inside auto-load scope)
 ├── languages/
 │   ├── typescript.md              # Principles only (portable)
-│   ├── typescript.local.md        # Project-specific patterns only
-│   ├── typescript.examples.md     # Examples for both (no auto-load)
-│   └── ...
+│   └── typescript.local.md        # Project-specific patterns only
 ├── frameworks/
 │   ├── react.md                   # Principles only (portable)
-│   ├── react.local.md             # Project-specific patterns only
-│   ├── react.examples.md          # Examples for both (no auto-load)
-│   └── ...
-├── project.md                     # Always single file (no split)
-└── project.examples.md            # Examples (no auto-load)
+│   └── react.local.md             # Project-specific patterns only
+└── project.md                     # Always single file (no split)
+
+.claude/rules-extras/              # examples_output_dir (outside auto-load scope)
+├── languages/
+│   └── typescript.examples.md     # Examples for both
+├── frameworks/
+│   └── react.examples.md          # Examples for both
+└── project.examples.md            # Examples
 ```
 
 Principles (portable across projects) and Project-specific patterns (local) are separated by default. This enables organizational rule sharing and AI-driven merge across projects.
 
 **Hybrid mode** (`split_output: false`):
 ```text
-.claude/rules/
+.claude/rules/                     # output_dir (inside auto-load scope)
 ├── languages/
-│   ├── typescript.md              # Principles + Project-specific patterns
-│   └── typescript.examples.md     # Examples (no auto-load)
+│   └── typescript.md              # Principles + Project-specific patterns
 ├── frameworks/
-│   ├── react.md                   # Principles + Project-specific patterns
-│   └── react.examples.md          # Examples (no auto-load)
-├── project.md                     # Domain, architecture, conventions
-└── project.examples.md            # Examples (no auto-load)
+│   └── react.md                   # Principles + Project-specific patterns
+└── project.md                     # Domain, architecture, conventions
+
+.claude/rules-extras/              # examples_output_dir (outside auto-load scope)
+├── languages/
+│   └── typescript.examples.md     # Examples
+├── frameworks/
+│   └── react.examples.md          # Examples
+└── project.examples.md            # Examples
 ```
 
 **Layered frameworks** (Rails, Django, Spring, etc.):
@@ -108,19 +118,30 @@ When integration libraries are detected alongside a layered framework:
   (e.g., Rails: `render inertia:` vs Laravel: `Inertia::render()`)
 - In split mode, integration files also get `.local.md` counterparts
 
-Example output with integrations (split mode — each category also gets `.examples.md`):
+Example output with integrations (split mode — each category also gets a `.examples.md` under `examples_output_dir`):
 ```text
-.claude/rules/
+.claude/rules/                     # output_dir
 ├── languages/
-│   ├── ruby.md / ruby.local.md / ruby.examples.md
+│   └── ruby.md / ruby.local.md
 ├── frameworks/
-│   ├── rails.md / rails.local.md / rails.examples.md
-│   ├── rails-controllers.md / .local.md / .examples.md
-│   └── rails-models.md / .local.md / .examples.md
+│   ├── rails.md / rails.local.md
+│   ├── rails-controllers.md / .local.md
+│   └── rails-models.md / .local.md
 ├── integrations/
-│   ├── rails-inertia.md / .local.md / .examples.md
-│   └── rails-pundit.md / .local.md / .examples.md
-├── project.md
+│   ├── rails-inertia.md / .local.md
+│   └── rails-pundit.md / .local.md
+└── project.md
+
+.claude/rules-extras/              # examples_output_dir
+├── languages/
+│   └── ruby.examples.md
+├── frameworks/
+│   ├── rails.examples.md
+│   ├── rails-controllers.examples.md
+│   └── rails-models.examples.md
+├── integrations/
+│   ├── rails-inertia.examples.md
+│   └── rails-pundit.examples.md
 └── project.examples.md
 ```
 
@@ -155,7 +176,7 @@ Search for `extract-rules.local.md`:
 - If only one exists, use that file
 - If neither exists, use default settings
 
-**Extract settings** (`target_dirs`, `exclude_dirs`, `exclude_patterns`, `output_dir`, `language`, `split_output`, `resolve_references`, `compaction_threshold`) from the config file. See Configuration section above for defaults.
+**Extract settings** (`target_dirs`, `exclude_dirs`, `exclude_patterns`, `output_dir`, `examples_output_dir`, `language`, `split_output`, `resolve_references`, `compaction_threshold`) from the config file. See Configuration section above for defaults.
 
 **`language` resolution:** skill config → Claude Code settings (`~/.claude/settings.json` `language` field) → default `ja`
 
@@ -228,26 +249,26 @@ Extract explicit coding rules and guidelines from these documents.
 
 Read `references/security.md` before generating output to ensure sensitive information is not included.
 
-1. Check if output directory exists
+1. Check if `output_dir` exists
    - If exists: Error "Output directory already exists. Use `--restructure` to reorganize, `--update` to add new patterns, or delete the directory manually to start fresh."
-   - If not exists: Create directory
+   - If not exists: Create `output_dir`. Also create `examples_output_dir` if it differs from `output_dir` and does not exist yet (when both resolve to the same path the single directory created above is reused).
 
-2. Generate rule files per category:
+2. Generate rule files per category. Rule files (`<name>.md` and `<name>.local.md`) are written under `output_dir`; `<name>.examples.md` files are written under `examples_output_dir` (default: `.claude/rules-extras` — outside Claude Code's `.claude/rules/**` auto-load scope, so examples do not consume context on session start).
 
-   - `languages/<lang>.md` for language-specific rules
-   - `frameworks/<framework>.md` for framework-specific rules
-   - `project.md` for project-specific rules
+   - `languages/<lang>.md` for language-specific rules (under `output_dir`)
+   - `frameworks/<framework>.md` for framework-specific rules (under `output_dir`)
+   - `project.md` for project-specific rules (under `output_dir`)
    - **Layered frameworks**: `<framework>.md` (cross-layer) + `<framework>-<layer>.md` per detected layer with scoped `paths:`
    - **Integration libraries**: See `references/integration-criteria.md` "Output structure" section.
 
-   **By default** (`split_output: true`): Generate 3 files per category (except project.md which gets 2):
-   - `<name>.md` — `## Principles` only (portable), with `paths:` frontmatter
-   - `<name>.local.md` — `## Project-specific patterns` only (local), with the **same `paths:` frontmatter** as its `<name>.md` counterpart (so local patterns auto-load under the same scope)
-   - `<name>.examples.md` — Examples for both (no `paths:` frontmatter, no auto-load)
+   **By default** (`split_output: true`): Generate 3 files per category (except project which gets 2):
+   - `<output_dir>/<name>.md` — `## Principles` only (portable), with `paths:` frontmatter
+   - `<output_dir>/<name>.local.md` — `## Project-specific patterns` only (local), with the **same `paths:` frontmatter** as its `<name>.md` counterpart (`paths:` is retained as a human-facing category-scope hint; loader-side semantics is not empirically verified, and auto-load is determined by directory placement only)
+   - `<examples_output_dir>/<name>.examples.md` — Examples for both. Whether the file is auto-loaded depends on `examples_output_dir`'s placement relative to `.claude/rules/**`: with the default `.claude/rules-extras` it is outside auto-load scope; with `examples_output_dir` set to `output_dir` (or any path under it) it is auto-loaded
    - Layer-specific and regular files each define their own `paths:` independently (applies to both `.md` and `.local.md`). Cross-layer files (`<framework>.md` / `<framework>.local.md`) use no `paths:` or broad scope as they apply across all layers.
    - Skip generating a file if it would be empty. Skipped files are omitted from the Step 7 report.
 
-   **When `split_output: false`**: Generate single hybrid file per category with both sections.
+   **When `split_output: false`**: Generate single hybrid file per category under `output_dir`, and the matching `<name>.examples.md` under `examples_output_dir`.
 
 **Rule file format (hybrid example):**
 
@@ -273,8 +294,10 @@ paths:
 
 ## Examples
 
-When in doubt: ./typescript.examples.md
+When in doubt: ../../rules-extras/languages/typescript.examples.md
 ```
+
+(The path above assumes default settings — `output_dir: .claude/rules` and `examples_output_dir: .claude/rules-extras`. See `references/examples-format.md` § Reference Section in Rule Files for the relative-path computation under non-default settings.)
 
 **Format guidelines:**
 
@@ -335,7 +358,7 @@ When `--update` is specified, re-scan the codebase and add new patterns while pr
    - If `split_output: true` and hybrid files exist (`.md` files containing both `## Principles` and `## Project-specific patterns`): warn that hybrid files were found — recommend running `--restructure` to migrate to split format
    - If `split_output: false` and `.local.md` files exist: warn that orphaned `.local.md` files were found — recommend deleting orphaned files manually or running `--restructure`
 
-3. Load existing rule files to understand current rules (load `<name>.md`, `<name>.local.md`, and `<name>.examples.md` when split)
+3. Load existing rule files to understand current rules (load `<output_dir>/<name>.md`, `<output_dir>/<name>.local.md`, and `<examples_output_dir>/<name>.examples.md` when split). When `examples_output_dir` does not yet exist (e.g. legacy projects where examples were co-located under `output_dir`), fall back to loading `<output_dir>/<name>.examples.md` so existing examples are not invisible to the merge step; `--restructure` can subsequently migrate them to `examples_output_dir`.
 
 ### Step U2: Re-scan Codebase
 
@@ -377,10 +400,10 @@ For each extracted principle/pattern:
 1. **New category detected** (e.g., new framework/language): Create new rule files following Step 6 format. Report as "New" in Step U6.
 2. Append new principles to `## Principles` section
 3. Append new project-specific patterns to `## Project-specific patterns` section
-4. **When `split_output: true`**: Principles go to `<name>.md`, patterns go to `<name>.local.md`. Create missing files with proper frontmatter.
-5. For `project.md`: always append to the single file
+4. **When `split_output: true`**: Principles go to `<output_dir>/<name>.md`, patterns go to `<output_dir>/<name>.local.md`. Create missing files with proper frontmatter.
+5. For `<output_dir>/project.md`: always append to the single file
 6. Maintain file structure and formatting
-7. **Update `.examples.md`**: Follow the common generation procedure in `references/examples-format.md` to add examples for each new rule.
+7. **Update `.examples.md`**: Resolve the target path via `examples_output_dir` (`<examples_output_dir>/<name>.examples.md`). Create the file (and any missing parent directories under `examples_output_dir`) when absent. Follow the common generation procedure in `references/examples-format.md` to add examples for each new rule.
 
 ### Step U5.5: Security Self-Check
 
@@ -401,8 +424,8 @@ When `--restructure` is specified, re-analyze the codebase to determine the opti
 ### Step R1: Load Settings and Snapshot Existing Rules
 
 1. Load settings (same as Step 1 in Full Extraction Mode)
-2. Check output directory exists → Error if not: "Run /extract-rules first to initialize rule files."
-3. Read and parse all existing rule files under output directory (`.md`, `.local.md`, and `.examples.md`)
+2. Check `output_dir` exists → Error if not: "Run /extract-rules first to initialize rule files."
+3. Read and parse all existing rule files: `<output_dir>/**/<name>.md` and `<output_dir>/**/<name>.local.md` (rule files), plus `<examples_output_dir>/**/<name>.examples.md` (examples files). When `examples_output_dir` differs from `output_dir`, also scan `<output_dir>/**/<name>.examples.md` to pick up legacy co-located examples written by older runs; treat such legacy files as candidates to migrate during Step R4.
 
 ### Step R2: Re-analyze Codebase
 
@@ -425,7 +448,7 @@ Compare old and new file structures, display planned changes (Keep/New/Remove pe
 3. Unmatched rules → `project.md` as fallback; preserve custom sections in the most relevant file
 4. Apply `split_output` setting (handle hybrid ↔ split transitions), deduplicate
 5. **Write new files first**, then remove old files no longer in the new structure
-6. **Handle `.examples.md`**: Rename/merge `.examples.md` files following the same structure changes as rule files. Generate new `.examples.md` for categories that didn't have one (see `references/examples-format.md`).
+6. **Handle `.examples.md`**: Write `.examples.md` files to `<examples_output_dir>/<name>.examples.md`, following the same structure changes as rule files. When R1 picked up legacy `<output_dir>/<name>.examples.md` files (co-located with rule files from older runs), move them to the new location under `examples_output_dir` and remove the legacy copies after the new file is written. Generate new `.examples.md` for categories that didn't have one (see `references/examples-format.md`).
 
 ### Step R4.5: Security Self-Check
 
@@ -469,8 +492,8 @@ Spawn a subagent using the Agent tool. The subagent performs all heavy processin
 Include in the agent prompt:
 - This skill's absolute directory path (where SKILL.md resides — needed to run bundled scripts)
 - Session file absolute path
-- Output directory path and `split_output` / `language` settings
-- List of existing rule file paths (for deduplication)
+- `output_dir` and `examples_output_dir` paths, plus `split_output` / `language` settings (the subagent must write rule files under `output_dir` and `.examples.md` files under `examples_output_dir`)
+- List of existing rule file paths (for deduplication) — include both rule files under `output_dir` and `.examples.md` files under `examples_output_dir`
 - The subagent instructions from `references/conversation-mode.md`
 
 After the subagent completes, report the results to the user.
@@ -485,11 +508,11 @@ Use the Pattern A iteration loop convention (sibling to `verify-diff` / `publici
 
 ### Step CP1: Load Settings and Resolve Targets
 
-1. Load settings from `extract-rules.local.md` (same as Step 1 in Full Extraction Mode). Also read `compaction_threshold` (default `32000`)
-2. Check the output directory exists. If not, emit `{"status": "error", "reason": "output directory not found"}` and stop
+1. Load settings from `extract-rules.local.md` (same as Step 1 in Full Extraction Mode). `compaction_threshold` (default `32000`) is the filter applied below in step 3
+2. Check `output_dir` exists. If not, emit `{"status": "error", "reason": "output directory not found"}` and stop
 3. Resolve targets:
-   - With explicit path arguments (caller-passed paths): use those paths. For each, `Read` the file content and measure its char count via the `Read` output length (do **not** use `Bash(wc -m)` — `Read` length matches Claude Code's char-count metric, while `wc -c` reports bytes which diverge for multi-byte content). Paths whose char count is `≤ compaction_threshold` are added **directly** to `files_processed` (they do **not** enter the Step CP2 iteration loop) as informational skip entries with the following fixed shape: `per_file_status: "skipped-below-threshold"`, `iterations_used: 0`, `applied_edits_count: 0`, `structural_notes: []`, `chars_before` = `chars_after` = the measured char count, `below_threshold: true`. Over-threshold paths join the Step CP2 target set as usual
-   - Without arguments: `Glob <output_dir>/**/*.md` (covers `.md` / `.local.md` / `.examples.md` uniformly — the glob does not distinguish by extension). For each file, `Read` and measure its char count; collect entries with char count `> compaction_threshold` into the target set. **Note**: discovery mode does **not** surface sub-threshold files in `files_processed` (they are silently filtered out) — only the explicit-paths branch above adds them as informational skip entries. This asymmetry is intentional: an unargumented `--compact` invocation reports only files that actually crossed the threshold, while caller-passed paths report every path the caller named so the caller can correlate input to output
+   - With explicit path arguments (caller-passed paths): use those paths. For each, `Read` the file content and measure its char count via the `Read` output length (do **not** use `Bash(wc -m)` — `Read` length matches Claude Code's char-count metric, while `wc -c` reports bytes which diverge for multi-byte content). Paths whose char count is `≤ compaction_threshold` are added **directly** to `files_processed` (they do **not** enter the Step CP2 iteration loop) as informational skip entries with the following fixed shape: `per_file_status: "skipped-below-threshold"`, `iterations_used: 0`, `applied_edits_count: 0`, `structural_notes: []`, `chars_before` = `chars_after` = the measured char count, `below_threshold: true`. Over-threshold paths join the Step CP2 target set as usual. Explicit-paths mode accepts paths under either `output_dir` or `examples_output_dir` — callers needing to compact `.examples.md` files when `examples_output_dir != output_dir` must use this mode (see the discovery-mode note below)
+   - Without arguments: `Glob <output_dir>/**/*.md` (covers `.md` / `.local.md` uniformly — and also `.examples.md` if any are still co-located under `output_dir` from legacy runs, since the glob does not distinguish by extension). For each file, `Read` and measure its char count; collect entries with char count `> compaction_threshold` into the target set. **Note**: discovery mode does **not** surface sub-threshold files in `files_processed` (they are silently filtered out) — only the explicit-paths branch above adds them as informational skip entries. This asymmetry is intentional: an unargumented `--compact` invocation reports only files that actually crossed the threshold, while caller-passed paths report every path the caller named so the caller can correlate input to output. **Discovery scope**: this branch scans `output_dir` only — when `examples_output_dir` differs from `output_dir` (including the default `.claude/rules-extras` configuration), `.examples.md` files under `examples_output_dir` are **not** discovered automatically. To compact those, invoke `--compact <path>` (or `--compact <path1> <path2> ...`) with explicit paths. Rationale: `.examples.md` files outside `.claude/rules/**` are already exempt from Claude Code auto-load, so they do not consume session-start context and the compaction priority is correspondingly lower; the explicit-paths route preserves the ability to compact them on demand
 
    Cache the per-file `Read` content keyed by path for reuse in Step CP2 (a) iter 1's dispatch payload — avoids a second `Read` of the same file before the first subagent dispatch
 4. If the target set is empty (no over-threshold files), emit `{"status": "no-actionable", "compaction_threshold": <int>, "files_processed": <informational skip entries from step 3, or [] in discovery mode>, "reason": "no files exceed threshold"}` and stop. In explicit-paths mode, `files_processed` carries the sub-threshold `skipped-below-threshold` entries collected in step 3 so the caller can correlate every input path to an output entry; in discovery mode (no path arguments) it is `[]` since sub-threshold files are silently filtered

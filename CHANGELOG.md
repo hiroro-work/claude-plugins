@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-05-23
+
+### extract-rules v1.15.0 / dev-workflow-bundle v1.41.0
+
+- feat(extract-rules): **Default change — `examples_output_dir: .claude/rules-extras`** — set `examples_output_dir: .claude/rules` (or any path under `output_dir`) in `.claude/extract-rules.local.md` or `~/.claude/extract-rules.local.md` to opt out and keep `.examples.md` co-located with rule files under `output_dir`. The new default routes `.examples.md` writes outside Claude Code's `.claude/rules/**` auto-load scope so examples no longer consume context on session start. Existing projects keep their already-written examples in place — run `Skill(extract-rules) --restructure` to migrate them to the new default location. Also fixes the SKILL.md / examples-format.md annotation that previously claimed `.examples.md` is "not auto-loaded" — that claim was based on an unverified `paths:` frontmatter assumption; the actual auto-load scope is directory-based. **Downstream automation note**: automated runs that invoke `extract-rules --update` from CI / scheduled jobs do not read CHANGELOG; on the first run after upgrading they will silently start writing examples to the new default path. Pin `examples_output_dir` explicitly in `.claude/extract-rules.local.md` if those pipelines need stable output locations.
+
 ## 2026-05-22
 
 ### dev-workflow v1.40.0 / dev-workflow-bundle v1.40.0

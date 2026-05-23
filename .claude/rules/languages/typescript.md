@@ -15,4 +15,4 @@ paths:
 
 ## Examples
 
-When in doubt: ./typescript.examples.md
+When in doubt: ../../rules-extras/languages/typescript.examples.md

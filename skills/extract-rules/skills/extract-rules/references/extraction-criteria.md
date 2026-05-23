@@ -36,6 +36,8 @@ Principles that **Claude already knows and would follow by default**:
 > - **Yes** → Extract it (e.g., Claude would use classes, but this team uses FP only)
 > - **No** → Skip it (e.g., Claude already uses const over let, avoids magic numbers)
 
+**Note**: In incremental modes (`--from-conversation` / `--from-pr`), the "Extract" action for **project-level patterns** is split into "stage on 1st observation" and "promote on 2nd observation" — see SKILL.md § Configuration `staging_output_dir` and `references/conversation-mode.md` § Step C5's "Check for duplicates and route per category" step for the 3-branch dedup. Principle extraction and language / framework / integration patterns bypass staging and land directly in canonical.
+
 ---
 
 ## Concrete Example Criteria

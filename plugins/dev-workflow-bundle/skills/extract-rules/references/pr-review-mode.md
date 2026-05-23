@@ -10,7 +10,7 @@ Single or multiple PRs can be specified. Multiple PRs enable cross-PR frequency 
 2. Check if output directory exists (default: `.claude/rules/`)
    - If not exists: Error "Run /extract-rules first to initialize rule files."
 
-3. Load existing rule files to understand current rules (if `split_output: true`, load `<output_dir>/<name>.md`, `<output_dir>/<name>.local.md`, and `<examples_output_dir>/<name>.examples.md`; when `examples_output_dir` differs from `output_dir`, also scan `<output_dir>/<name>.examples.md` for any legacy co-located files)
+3. Load existing rule files to understand current rules (if `split_output: true`, load `<output_dir>/<name>.md`, `<output_dir>/<name>.local.md`, and `<examples_output_dir>/<name>.examples.md`; when `examples_output_dir` differs from `output_dir`, also scan `<output_dir>/<name>.examples.md` for any legacy co-located files). Additionally load `<staging_output_dir>/project.staging.local.md` if present — used by the Step P5 staging-match branch (PR Review runs in the main agent, so the `canonical_files` / `staging_files` separately-tagged framing from `conversation-mode.md` § Step C5's **"Read existing rule files"** step is a conceptual file-set distinction here, not a prompt-passing boundary). Skip silently if the staging file does not yet exist.
 
 4. Verify `gh` CLI is available and authenticated
    - Run `gh auth status` to confirm authentication
@@ -96,12 +96,13 @@ Use AI judgment to determine what constitutes "repeated across PRs" based on the
 
 ## Step P5: Append Principles and Patterns
 
-Same as Step C5 in Conversation Extraction Mode (see `references/conversation-mode.md`):
+Same as Step C5 in Conversation Extraction Mode (see `references/conversation-mode.md` — that file is the single source of truth for the 3-branch dedup, canonical / staging write split, examples-on-canonical-only rule, security-includes-staging rule, and counter-in-summary contract; this list defers to it):
 
 1. Categorize each extracted item by language/framework/integration/project
 2. When `split_output: true`: Project-specific patterns go to `.local.md` files
-3. Check for duplicates against existing rules
-4. Append using standard format
-5. Update `.examples.md`: Resolve the target path via `examples_output_dir` (`<examples_output_dir>/<name>.examples.md`). Create the file and any missing parent directories under `examples_output_dir` when absent. Follow the common generation procedure in `examples-format.md` to add examples for each new rule.
-6. Run Security Self-Check (same as Step 6.5)
-7. Report what was added (see `report-templates.md` for format)
+3. Check for duplicates against existing rules (per § Step C5's **"Check for duplicates and route per category"** step — 3-branch decision: canonical match / staging match / new; staging-match criterion and per-category routing defer to C5 verbatim)
+4. Append using standard format (per § Step C5's **"Append"** step — canonical-write / staging-write split + move atomicity)
+5. **Delete promoted staging entries**: per § Step C5's **"Delete promoted staging entries"** step (same `Edit` semantics, same uniqueness-failure fallback — leave the duplicate if the bullet's `old_string` is no longer unique).
+6. Update `.examples.md`: Resolve the target path via `examples_output_dir` (`<examples_output_dir>/<name>.examples.md`). Create the file and any missing parent directories under `examples_output_dir` when absent. Follow the common generation procedure in `examples-format.md` to add examples for each new rule. (Per § Step C5's **"Update `.examples.md`"** step, staging-only items do **not** receive `.examples.md` entries — only canonical writes do.)
+7. Run Security Self-Check (same as Step 6.5; include the staging file when any staging append landed in step 4)
+8. Report what was added including `canonical_skip_count`, `promoted_count`, `staged_count`. See `report-templates.md` § PR Review Extraction Mode for format.

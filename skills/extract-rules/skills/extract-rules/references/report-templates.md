@@ -60,6 +60,9 @@ Reference templates for each mode's output report.
 ### Added to frameworks/react.md:
 - (none)
 
+### Promoted from staging (2nd observation, matched by --update):
+- `formatCurrency(amount, currency)` - locale-aware money formatter  (→ .claude/rules/project.md)
+
 ### Unchanged files:
 - project.md
 
@@ -70,6 +73,8 @@ Reference templates for each mode's output report.
 
 **Tip**: Review added rules and remove any that are incorrect or redundant. Check stale rules — they may have been renamed or removed.
 ```
+
+The `### Promoted from staging (2nd observation, matched by --update):` section is omitted when `promoted_count == 0`. Update Mode never writes new staging entries (so no `### Newly staged` section here — `staged_count` is always 0; see SKILL.md Step U6 for the counter contract).
 
 ## Restructure Mode (Step R5)
 
@@ -132,9 +137,23 @@ Reference templates for each mode's output report.
 - Added Good/Bad for Immutability
 - Added usage example for `RefOrNull<T>`
 
+### Promoted from staging (2nd observation):
+- `pathFor() + url()` - Page Object navigation pair  (→ .claude/rules/project.md)
+
+### Newly staged (1st observation, awaiting re-observation):
+- `useDataFetch(key)` - typed data hook with cache key  (→ .claude/rules-staging/project.staging.local.md)
+
 ### No changes:
 - Functional style - Already documented
 ```
+
+Each extracted pattern appears in exactly one section per run:
+
+- canonical match → `### No changes:` (contributes to `canonical_skip_count`)
+- staging match → `### Promoted from staging (2nd observation):` (contributes to `promoted_count`)
+- new staging append → `### Newly staged (1st observation, awaiting re-observation):` (contributes to `staged_count`)
+
+Omit the `### Promoted from staging` and `### Newly staged` sections entirely when the corresponding count is 0.
 
 ## Compaction Mode (Step CP4)
 
@@ -196,9 +215,17 @@ Each per-file entry's `per_file_status` carries the loop outcome (`converged` / 
 #### Examples (rails.examples.md)
 - Added usage example for `fetchWithRetry()`
 
+### Promoted from staging (2nd observation):
+- `enqueueWithDelay(job, delay)` - background job dispatch wrapper  (→ .claude/rules/project.md)
+
+### Newly staged (1st observation, awaiting re-observation):
+- `withTenantScope(query)` - multi-tenancy query wrapper  (→ .claude/rules-staging/project.staging.local.md)
+
 ### No changes:
 - No project-specific rules found in general feedback
 ```
+
+The `### Promoted from staging` / `### Newly staged` sections follow the same per-section invariant as the Conversation template above (each pattern appears in exactly one section; omit when count is 0). Staging gating applies only to project-level patterns — language / framework / integration entries (like the `fetchWithRetry()` example above when scoped to `frameworks/rails.local.md`) bypass staging.
 
 **Multiple PRs:**
 

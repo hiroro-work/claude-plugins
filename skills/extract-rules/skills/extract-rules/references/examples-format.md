@@ -86,6 +86,8 @@ Concrete cases:
 
 When `examples_output_dir` is changed and `--restructure` regenerates the rule layout, this reference section is rewritten with the new relative path so the link continues to point at the live examples file location. Modes that emit or maintain this reference section (Full Extraction Step 6, Update Step U5, Restructure Step R4, Conversation Step C5, PR Review Step P5) must use the same relative-path calculation so the format stays consistent across rebuilds.
 
+**Note**: In incremental modes (Conversation Step C5, PR Review Step P5), staging-only project-level entries (1st-observation candidates written to `<staging_output_dir>/project.staging.local.md` rather than `<output_dir>/project.md`) **skip** the `.examples.md` generation step — the 1st observation's code site is intentionally not anchored to keep `.examples.md` free of 1-shot samples. Examples are generated on promote (2nd observation lands in canonical). See `conversation-mode.md` § Step C5's **"Update `.examples.md`"** step for the canonical statement.
+
 **Direction is one-way: rule file → examples file only.** `.examples.md` files themselves never carry a `## Examples` reference section — no self-reference (link to themselves), no link to a sibling `.examples.md`. When generating or updating an examples file, do not append a reference section. Templates and subagent prompts that scaffold examples files must omit this section.
 
 ## Common Generation Procedure

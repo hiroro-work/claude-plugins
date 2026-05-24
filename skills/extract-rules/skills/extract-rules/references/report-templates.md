@@ -164,7 +164,7 @@ Compaction Mode returns a fenced JSON block (the only output) — not a Markdown
 `status: "compacted"` (typical success path):
 
 ```text
-Compaction complete (threshold: 32000 chars)
+Compaction complete (threshold: 40000 chars)
 
 - .claude/rules/project.rules.local.md: 47600 → 31200 chars (under threshold, converged in 2 iters, 12 edits)
 - .claude/rules/languages/typescript.local.md: 41200 → 28500 chars (under threshold, converged in 1 iter, 8 edits)
@@ -175,10 +175,10 @@ Total: 2 files compacted, 82600 chars saved
 `status: "compacted"` with mixed per-file outcomes:
 
 ```text
-Compaction partial (threshold: 32000 chars)
+Compaction partial (threshold: 40000 chars)
 
 - .claude/rules/languages/typescript.local.md: 41200 → 28500 chars (under threshold, converged in 1 iter, 8 edits)
-- .claude/rules/project.rules.local.md: 47600 → 35000 chars (over threshold, partial in 2 iters, 14 edits)
+- .claude/rules/project.rules.local.md: 47600 → 42000 chars (over threshold, partial in 2 iters, 14 edits)
   → 1 structural_note: consider splitting patterns into per-domain files
 
 Total: 2 files processed, 1 under threshold, 1 still over threshold
@@ -187,7 +187,7 @@ Total: 2 files processed, 1 under threshold, 1 still over threshold
 `status: "no-actionable"`:
 
 ```text
-No compaction needed — no files exceed threshold (32000 chars)
+No compaction needed — no files exceed threshold (40000 chars)
 ```
 
 `status: "error"`:

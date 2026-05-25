@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-05-25
+
+### dev-workflow v1.44.0 / dev-workflow-bundle v1.44.0
+
+- chore(release): synchronize dev-workflow and dev-workflow-bundle plugin versions to v1.44.0 (dev-workflow +39 patch jump from v1.40.1, dev-workflow-bundle unchanged — resolve accumulated version skew)
+
 ## 2026-05-24
 
 ### extract-rules v1.18.0 / dev-workflow-bundle v1.44.0

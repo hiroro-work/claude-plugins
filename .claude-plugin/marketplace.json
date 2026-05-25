@@ -119,7 +119,7 @@
       "name": "dev-workflow",
       "description": "Guided development workflow: planning, review, implementation, testing, and rule maintenance",
       "source": "./skills/dev-workflow",
-      "version": "1.40.1",
+      "version": "1.44.0",
       "author": {
         "name": "hiropon"
       },

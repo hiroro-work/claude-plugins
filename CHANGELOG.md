@@ -2,6 +2,16 @@
 
 ## 2026-06-01
 
+### ask-peer v2.2.9 / dev-workflow-bundle v1.47.1
+
+- fix(ask-peer): add session-loaded primary-source verification clause to Planning Focus (auto-triage #54)
+  - Category: other; Reviewer's Planning audit list had no clause directing the reviewer to consult session-available primary sources (loaded tool schemas, the run's own successful invocations, file declarations the reviewer can read) before reporting absence as a hypothesis to challenge — false-positive findings cost an orchestrator round-trip to re-cite the same source already in scope. New clause inserted before `internal reference-doc sample-code verification` with explicit boundary disambiguation; principle abstract + skill-development examples in parentheses per distribution rule.
+
+### dev-workflow v1.47.1 / dev-workflow-bundle v1.47.1
+
+- fix(dev-workflow): add platform-capability-dependent default change audit to Step 2 Simplicity self-audit (auto-triage #53)
+  - Category: missing-branch; Step 2 Simplicity self-audit had no audit item for default-behavior changes that depend on a specific execution-environment capability not uniformly available across the target deployment / runtime environment set, so environment-specific absence surfaced only at Step 10 commit-approval and forced a full rewind. New bullet directs plan authors to enumerate target environments and confirm uniform availability before adopting an exclusive switch as Recommendation, and to surface a conditional-fallback design as a co-equal Decisions Alternative when uniform availability cannot be confirmed.
+
 ### dev-workflow v1.47.0 / dev-workflow-bundle v1.47.0
 
 - feat(dev-workflow): **Prefer the Task tools (`TaskCreate` / `TaskUpdate` / `TaskList`) for session task tracking, with `TodoWrite` as the fallback** — Claude Code v2.1.142 made the Task tools the default (disabling `TodoWrite` by default), so the workflow now registers phases via one `TaskCreate` per phase (issued in a single upfront burst to preserve the "register all phases upfront / don't drop steps" guarantee), marks status via `TaskUpdate`, and reads task status at GATE / phase-boundary self-audit checkpoints via `TaskList` (resolving by subject, since `taskId` is auto-numbered). Where the Task tools are unavailable (e.g. the VSCode extension, or Claude Code before v2.1.142), the workflow uses the equivalent `TodoWrite` operations instead — a new "Tool availability" note in Step 1 documents the equivalence and `allowed-tools` retains `TodoWrite` alongside the Task tools, so behavior is preserved across environments (no breakage). The status enum (`pending` / `in_progress` / `completed`) is unchanged. The `Parent-task TodoWrite row` (references/task-decomposition.md) is renamed `Parent-task progress row`, and its single-`in_progress` rationale is rewritten as an operational convention rather than asserting the Task tools hard-enforce a single `in_progress` (that enforcement is unverified from primary source).

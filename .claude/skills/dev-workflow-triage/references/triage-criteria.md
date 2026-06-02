@@ -8,13 +8,13 @@ Reference loaded by `dev-workflow-triage` during the "Judge each Finding" step (
 
 - [ ] The problem the Finding describes **reproduces in the current file state** — read `skills/<target>/SKILL.md` and `skills/<target>/references/*.md` and confirm the ambiguity / missing-branch / wrong-default / rules-conflict is still present.
 - [ ] The `Suggested fix direction` translates to a **local edit** — a paragraph rewrite, a new clause inside an existing section, an explicit step addition, a rules-reference insertion. It should be expressible as one `Edit` tool call (one `old_string` → `new_string`).
-- [ ] The edit target sits inside `skills/<target>/` (SKILL.md or `references/*.md`). Never a rules file, never a different skill, never outside `skills/`.
+- [ ] The edit target sits inside the target's canonical directory — `skills/<target>/` for the 4 bundle skills, `.claude/skills/dev-workflow-triage/` for the self target (SKILL.md or `references/*.md` in either case). Never a rules file, never a different skill, never outside those directories.
 - [ ] The fix doesn't trigger a cascade — i.e. doesn't require simultaneous edits to sibling files or cross-skill coordination to remain consistent.
 
 ### Reject when **any** is true
 
 1. **Already addressed**: reading the current file shows the Finding's concern is already handled (a later commit after the retrospective was generated covered it).
-2. **Out-of-scope target mentioned in description**: `Target skill` is one of the four bundle skills, but the `Description` body actually complains about a different skill's behavior (bundle or non-bundle). Not the triage target's fault to fix.
+2. **Out-of-scope target mentioned in description**: `Target skill` is within the triage scope (the 4 bundle skills + `dev-workflow-triage`), but the `Description` body actually complains about a different skill's behavior (in or out of scope). Not the triage target's fault to fix.
 3. **Too abstract**: the `Suggested fix direction` doesn't point at a concrete edit ("improve the error handling", "make it clearer", "consider X better"). Without a concrete landing point, a single-pass Edit can't be responsibly planned.
 4. **Rules file required**: the only plausible fix is editing `.claude/rules/*.md`. Rules updates are owned by `extract-rules`. A `rules-conflict` Finding can still be accepted when the fix is *referencing* existing rules from the skill — only reject when the rules themselves need new content.
 5. **Large restructure**: the fix implies splitting a SKILL.md, introducing new section structure, reshuffling cross-skill responsibilities, or editing more than one file / creating new files. Not safe for a single-pass autonomous run.
@@ -35,7 +35,7 @@ Quick reference for per-case dispositions. SKILL.md's procedural prose is author
 | `Findings: N` trailer is **present** AND disagrees with `### Finding` count | Whole issue → `parse-error`; post comment; leave open |
 | `Findings: N` trailer is **absent** | Not a parse-error — `### Finding` heading count is canonical; proceed with normal triage |
 | Any of the 4 required fields missing in any Finding | Whole issue → `parse-error`; post comment; leave open |
-| `Target skill` outside the 4-skill bundle | Whole issue → `parse-error`; post comment; leave open |
+| `Target skill` outside the triage scope (the 4 bundle skills + `dev-workflow-triage`) | Whole issue → `parse-error`; post comment; leave open |
 | `Category` outside the 5-value set (`ambiguity`/`missing-branch`/`wrong-default`/`rules-conflict`/`other`) | Whole issue → `parse-error`; post comment; leave open |
 | Description text names a skill other than the declared `Target skill` | Per-Finding `reject` (out-of-scope target in description) |
 | `marketplace.json` has no `dev-workflow` plugin entry (or file missing) at producer or consumer time | Treat the resolved version as `unknown`. Producer emits `**Producer version:** dev-workflow vunknown`; consumer's `producer_version == "unknown"` triggers Reject #7 stale-issue path on every Finding (still gated by the (i)+(ii) AND with doubt fall-through, so false rejects remain bounded) |
@@ -53,7 +53,7 @@ Quick reference for per-case dispositions. SKILL.md's procedural prose is author
 | skill-review returns `notes-left` terminal verdict | Proceed to commit; add warning `skill-review notes left after max iters (<n>)` in the comment |
 | skill-review returns an error response | Per-Finding warning `skill-review error (<reason>)`; skip polish for this Finding |
 | 2 consecutive Findings with skill-review errors | Set `skill_review_disabled=true`; skip polish for the rest of the run; warn on each affected Finding |
-| `git diff` shows a path outside `skills/` after (d) | Per-Finding `conflict`; `git checkout HEAD -- <paths>`; continue |
+| `git diff` shows a path outside the allowed scope set (`skills/` or `.claude/skills/dev-workflow-triage/`) after (d) | Per-Finding `conflict`; `git checkout HEAD -- <paths>`; continue |
 | `git commit` non-zero (usually a pre-commit hook rejection) | `git reset` + `git checkout HEAD -- <paths>`; per-Finding `conflict`; record `commit-failed` |
 | `gh issue comment` non-zero | Record `comment-failed`; other issues continue |
 | `gh issue close` non-zero | Record `close-failed`; other issues continue |
@@ -63,6 +63,9 @@ Quick reference for per-case dispositions. SKILL.md's procedural prose is author
 | Step 3.7 post-Edit `jq empty .claude-plugin/marketplace.json` returns non-zero | Revert via `git checkout HEAD -- .claude-plugin/marketplace.json`; record `release-bookkeeping=failed (json invalid)` |
 | Step 3.7 (h) CHANGELOG.md Edit fails partway (heading inserted but later subsection edit failed, etc.) | Revert via `git checkout HEAD -- .claude-plugin/marketplace.json CHANGELOG.md`; record `release-bookkeeping=failed (changelog edit error)` |
 | Step 3.7 `git diff --name-only` after Edits lists a path other than `.claude-plugin/marketplace.json` / `CHANGELOG.md`, OR the bookkeeping `git commit` returns non-zero | Revert via `git checkout HEAD -- .claude-plugin/marketplace.json CHANGELOG.md` (and `git reset` for the commit-error branch); record `release-bookkeeping=failed (<scope leak\|commit error>)` |
+| `dev-workflow-triage`-targeted Finding accepted | Edit target is `.claude/skills/dev-workflow-triage/...`; commits normally in § 3.4; excluded from § 3.7 release bookkeeping by the (b) whitelist filter (project-local — no version bump / CHANGELOG) |
+| Step 5 tally finds zero stall interventions | Skip filing; terminal line `self-retrospective: skipped (no observations)` (normal outcome) |
+| Step 5 `gh api` POST non-zero (after 1 retry) | Record `self-retrospective-failed (<reason>)`; staging file kept for manual retry; run ends normally |
 
 ## Comment body template
 

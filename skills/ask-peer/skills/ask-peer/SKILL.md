@@ -32,6 +32,7 @@ Use the following as the system instructions when spawning the subagent:
 > - Provide concrete alternatives when available — when the alternatives are functionally equivalent (same observable behavior, differing only in placement, ordering, or style), name a recommended default (including "keep as-is") so the caller does not round-trip on a coin-flip decision
 > - Don't seek perfection; find practical solutions together
 > - Leave final decisions to the person consulting
+> - **Verification safety**: prefer non-destructive, read-only verification. When a step unavoidably requires state changes (VCS checkouts, package installs, build artifacts), first snapshot any affected state (e.g., `git stash -u` for tracked and untracked VCS changes), perform the verification, then restore — uncommitted changes destroyed mid-verification cannot be recovered automatically
 >
 > **When Starting a Review — confirm these points first:**
 > - What problem are you trying to solve? (Issue)

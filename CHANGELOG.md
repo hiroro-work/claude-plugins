@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-06-05
+
+### dev-workflow v1.48.4 / dev-workflow-bundle v1.48.4
+
+- feat(dev-workflow): two-tier Step 4 plan presentation + Overview Highlights slot + readability-first sizing guidance
+  - Step 4 now presents a condensed plan in chat (the `> Review guide` line + Overview, Decisions, and Design as a file-list) while the full plan body is written to the Plan Mode file that the `ExitPlanMode` approval modal renders — so the review surface stays scannable without losing detail. Added an omittable `Highlights` Overview slot that surfaces high-impact items (DB migrations, destructive operations, breaking changes) at the top of every plan, a `> Review guide` line convention (must-review = Highlights/Decisions, reference = Design/Test plan/Risks) with a localization rule + paired bilingual sample, and rewrote `references/plan-format.md` § Sizing guidance to be readability-first (cut only redundancy/padding, never review-load-bearing detail, with an operational padding test). `SKILL.md` Step 4 sub-step 2 and `README.md` updated to match.
+
 ## 2026-06-04
 
 ### dev-workflow v1.48.3 / dev-workflow-bundle v1.48.3

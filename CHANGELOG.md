@@ -2,6 +2,11 @@
 
 ## 2026-06-05
 
+### dev-workflow v1.48.5 / dev-workflow-bundle v1.48.5
+
+- refactor(dev-workflow): extract the Step 2 Simplicity self-audit checklist into a dedicated reference to cut SKILL.md resident size
+  - Moved the full Step 2 Simplicity self-audit checklist out of `SKILL.md` into a new `references/simplicity-self-audit.md`, replacing the inline block with a one-line delegation pointer that keeps the `Simplicity self-audit` label intact — the stable phrase anchor used by Step 3 reviewer category (a), Step 5 late-stage scaffolding self-audit, `references/plan-format.md`, and `references/task-decomposition.md` still resolves. `SKILL.md` shrinks from ~176k to ~149k chars, lowering the per-turn resident-context cost on every run; the checklist now loads on demand at Step 2. Step 3 reviewer instruction updated to read the new reference. No runtime behavior change.
+
 ### dev-workflow v1.48.4 / dev-workflow-bundle v1.48.4
 
 - feat(dev-workflow): two-tier Step 4 plan presentation + Overview Highlights slot + readability-first sizing guidance

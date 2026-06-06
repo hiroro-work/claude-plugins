@@ -2,6 +2,11 @@
 
 ## 2026-06-06
 
+### dev-workflow v1.50.0 / dev-workflow-bundle v1.50.0
+
+- feat(dev-workflow): parallelize the Step 8 first-pass code review via a background `Agent` (first pass only)
+  - **Backward compatible** — when background `Agent` dispatch is unavailable, when N=0 (Trivial), or on any re-run, Step 8 dispatches the reviewer sequentially exactly as before. Building on v1.49.0's concurrent rules-review launch, Step 7 now also optionally launches the Step 8 first-pass `reviewer` skill (e.g. `Skill(ask-peer)`) as a background subagent (`run_in_background`) so its read-only analysis overlaps the `test_commands` phase. Step 8 sub-step 1 collects that result when it is still fresh and dispatches fresh otherwise. Two tracking variables govern the decision: `first_pass_review_launched` (set on a successful dispatch, gated `run_in_background` available ∧ N≥1 ∧ first pass) and `first_pass_review_stale` (set when an intervening edit changes the analyzed diff before the collect point — a `test_commands` failure fix in Step 7, or any fix Step 7.5 applies; both initialized unconditionally before the availability branch). The discard decision is owned by Step 8 sub-step 1, which reuses the background result only when `first_pass_review_launched` is true and `first_pass_review_stale` is false. Extends the line-81 invariant from "Step 7's concurrent rules-review launch" to "Step 7's two concurrent background launches" (the step count stays two: Step 11.5 + Step 7). Re-runs of Step 8 (sub-step 3) stay sequential. Validated via a Step 0 smoke test confirming the configured reviewer (default `ask-peer`, via its SKILL.md § Process 1 inline fallback) runs in a background general-purpose subagent.
+
 ### dev-workflow v1.49.0 / dev-workflow-bundle v1.49.0
 
 - feat(dev-workflow): parallelize Step 7 tests and Step 7.5 rules-review via a background `Agent` (first pass only)

@@ -6,9 +6,9 @@ Reference loaded by `dev-workflow-triage` during the "Judge each Finding" step (
 
 ### Accept when **all** are true
 
-- [ ] The problem the Finding describes **reproduces in the current file state** — read `skills/<target>/SKILL.md` and `skills/<target>/references/*.md` and confirm the ambiguity / missing-branch / wrong-default / rules-conflict is still present.
+- [ ] The problem the Finding describes **reproduces in the current file state** — read `skills/<target>/skills/<target>/SKILL.md` and `skills/<target>/skills/<target>/references/*.md` and confirm the ambiguity / missing-branch / wrong-default / rules-conflict is still present.
 - [ ] The `Suggested fix direction` translates to a **local edit** — a paragraph rewrite, a new clause inside an existing section, an explicit step addition, a rules-reference insertion. It should be expressible as one `Edit` tool call (one `old_string` → `new_string`).
-- [ ] The edit target sits inside the target's canonical directory — `skills/<target>/` for the 4 bundle skills, `.claude/skills/dev-workflow-triage/` for the self target (SKILL.md or `references/*.md` in either case). Never a rules file, never a different skill, never outside those directories.
+- [ ] The edit target sits inside the target's canonical directory — `skills/<target>/skills/<target>/` for the 4 bundle skills, `.claude/skills/dev-workflow-triage/` for the self target (SKILL.md or `references/*.md` in either case). Never a rules file, never a different skill, never outside those directories.
 - [ ] The fix doesn't trigger a cascade — i.e. doesn't require simultaneous edits to sibling files or cross-skill coordination to remain consistent.
 
 ### Reject when **any** is true
@@ -89,6 +89,6 @@ Result: <closed as completed | closed as not planned | left open for manual revi
 Template notes:
 
 - One Finding section per `### Finding <n>` in the source issue, in source order.
-- `Applied changes`: `skills/<target>/<file>:<heading>` at commit hash when committed; `—` otherwise. Use heading names, not line numbers (line numbers churn).
+- `Applied changes`: `skills/<target>/skills/<target>/<file>:<heading>` at commit hash when committed; `—` otherwise. Use heading names, not line numbers (line numbers churn).
 - `Notes`: include only when a warning fired; omit the bullet entirely on clean runs.
 - Whole-issue `parse-error` (see SKILL.md § Parse body): still emit one `### Finding <n>` section per parseable Finding and set the label to `parse-error`; the Reasoning cites the triggering parse-error condition (e.g. "Target skill outside bundle"). If the body couldn't be parsed into Findings at all (zero `### Finding` headings, trailer-mismatch with no extractable Findings, or any other parse-error condition that left no Findings to render), emit a single `### Whole issue: parse-error` section instead, with the triggering condition in Reasoning and `Applied changes: —`.

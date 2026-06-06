@@ -2,6 +2,15 @@
 
 ## 2026-06-06
 
+### dev-workflow v1.50.1 / dev-workflow-bundle v1.50.1
+
+- fix(dev-workflow): add target-file constraint/invariant audit to simplicity-self-audit (auto-triage #76)
+  - Category: missing-branch; the Step 2 Simplicity self-audit had no prompt to read the explicit constraints and invariants declared in target files before finalizing the implementation approach. Added a "Target-file constraint-and-invariant audit" checklist item with an unconditional per-file scan trigger.
+- fix(dev-workflow): add Markdown block-element structural integrity audit to Step 5 (auto-triage #76)
+  - Category: missing-branch; the Step 5 late-stage scaffolding self-audit had no check for adjacent block elements in Markdown files missing blank-line separators. Added sub-check (v) to scan all edited .md files and fix inline before proceeding.
+- fix(dev-workflow): add alias/derived-form sweep to Step 5 full-repo grep (auto-triage #75)
+  - Category: missing-branch; the Step 5 full-repo grep used a two-stage structure (exact + fuzzy) with no stage for alias and derived-form variants, so rename/migration tasks could miss same-concept usages under alternate spellings. Extended to a multi-stage structure with a new stage (iii) for alias/derived-form sweep.
+
 ### dev-workflow v1.50.0 / dev-workflow-bundle v1.50.0
 
 - feat(dev-workflow): parallelize the Step 8 first-pass code review via a background `Agent` (first pass only)

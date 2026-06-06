@@ -2,6 +2,21 @@
 
 ## 2026-06-05
 
+### dev-workflow v1.48.6 / dev-workflow-bundle v1.48.6
+
+- fix(dev-workflow): extend Step 4 prose-language audit to check concept word density (auto-triage #72)
+  - Category: ambiguity; Step 4's pre-presentation language self-audit only verified that prose body and headings used the target language, missing the case where many English concept words remained embedded in Japanese prose (when localization specifies a native-language output). Extended the audit to also flag excessive untranslated concept words, distinguishing allowed identifiers (type/function/config-key names, API/flag names) from concept words that must be translated.
+- fix(dev-workflow): add candidate-list implementation boundary to Step 4 presentation (auto-triage #72)
+  - Category: ambiguity; when Step 4 presents a multi-candidate proposal menu with a recommended first item, the execution model — only the recommended item is implemented this run, the rest are record-only candidates — was not clear from the presentation. Added a Step 4 presentation rule requiring candidate-list plans to state explicitly what is implemented this run, what is record-only, and that sequential execution of multiple items needs separate task decomposition.
+- fix(dev-workflow): add Step 7 branch for EXECUTION_ERROR + pre-declared degraded procedure (auto-triage #71)
+  - Category: missing-branch; Step 7's enumerated pause gates covered only "failure after 3 retries" and "scope violation", with no branch for an execution-environment error (external resource contention) when the plan had pre-declared a degraded procedure. Added a Step 7 branch that auto-applies a plan-agreed degraded path with a one-line note and only falls to a user gate when no degraded path was declared.
+- fix(dev-workflow): broaden Step 11 skip guard for transitive wrapper hooks (auto-triage #71)
+  - Category: missing-branch; Step 11's extract-rules skip guard keyed on a literal name match against hook entries, so a wrapper hook entry that transitively invokes extract-rules would not be recognized and the guard would silently fail to fire. Broadened the guard to detect the conversation scan via output-based evidence (output contains `staged_count` or `promoted_count`) rather than literal name matching.
+- fix(dev-workflow): add same-session re-invocation continuation branch to --resume (auto-triage #69)
+  - Category: ambiguity; the Resume sub-mode did not state how a `--resume` re-invocation should behave when the named subtask is already `in_progress` and mid-execution in the current session — a literal reading could destructively restart from the planning step. Added a "Same-session re-invocation" branch to route to the current pause point (preserving in-session progress) when in-context evidence of prior progress exists.
+- fix(dev-workflow): add peer-dependency compatibility self-audit for major version bumps (auto-triage #66)
+  - Category: missing-branch; Step 2's author-side Simplicity self-audit had a primary-source check for an updated library's API/config but no check that a major-bumped dependency's declared peer range is compatible with the already-resolved version of a co-existing core dependency — the equivalent compatibility check existed only in the Step 3 reviewer, creating a one-step detection-lag asymmetry. Added a symmetric author-side self-audit bullet.
+
 ### dev-workflow v1.48.5 / dev-workflow-bundle v1.48.5
 
 - refactor(dev-workflow): extract the Step 2 Simplicity self-audit checklist into a dedicated reference to cut SKILL.md resident size

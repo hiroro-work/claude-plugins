@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-06-06
+
+### dev-workflow v1.48.7 / dev-workflow-bundle v1.48.7
+
+- fix(dev-workflow): reformat the Step 4 plan Review guide directive into a multi-line blockquote for readability
+  - Category: ambiguity; the `> Review guide` directive at the top of the Step 4 plan crammed the must-review and reference section groups onto one line with a `|` separator, making it hard to tell at a glance which sections need the user's judgment versus which are reference detail. Reformatted it in `references/plan-format.md` (§ Template sample, § Review guide line defining sentence, and the paired bilingual en/ja samples) into a multi-line blockquote — a heading line followed by one bullet per category.
+
 ## 2026-06-05
 
 ### dev-workflow v1.48.6 / dev-workflow-bundle v1.48.6

@@ -16,7 +16,9 @@ Every plan produced in Step 2 must follow this structure. Overview, Decisions, D
 ```markdown
 ## Plan
 
-> Review guide: must-review — Highlights, Decisions | reference — Design, Test plan, Risks
+> Review guide
+> - must-review — Highlights, Decisions
+> - reference — Design, Test plan, Risks
 
 ### Overview
 - **Goal**: 1 sentence — what the user gets
@@ -45,7 +47,7 @@ Each item:
 
 ### Review guide line
 
-The `> Review guide: ...` line sits directly under `## Plan`, above Overview, so a reviewer can tell at a glance which sections demand judgment and which are reference detail:
+The `> Review guide` block sits directly under `## Plan`, above Overview, so a reviewer can tell at a glance which sections demand judgment and which are reference detail. It renders as a multi-line blockquote — a heading line followed by one bullet per category — so the must-review and reference groups read on separate lines rather than crammed onto one. Unlike the § Empty-Decisions fixed sentences and § Step 4 guidance lines (which are single sentences whose leading `>` is a spec-visual marker, optional when rendered), this block's `>`-prefixed bullets are themselves the rendered output; do not extend the other two blockquote sections to a multi-line bullet form:
 
 - **Must-review** = the sections that need the user's judgment: `Highlights` (high-impact callouts) and `Decisions`. When Highlights is omitted (no high-impact items), name `Decisions` alone.
 - **Reference** = supporting detail the user can skim: `Design`, `Test plan`, `Risks` (omit any that are absent).
@@ -53,8 +55,21 @@ The `> Review guide: ...` line sits directly under `## Plan`, above Overview, so
 
 Paired bilingual sample (runtime rendering demonstration, not meta-prose):
 
-- `language: en`: `> Review guide: must-review — Highlights, Decisions | reference — Design, Test plan, Risks`
-- `language: ja`: `> レビュー指針（Review guide）: 要確認 — Highlights, Decisions | 参考 — Design, Test plan, Risks`
+- `language: en`:
+
+  ```text
+  > Review guide
+  > - must-review — Highlights, Decisions
+  > - reference — Design, Test plan, Risks
+  ```
+
+- `language: ja`:
+
+  ```text
+  > レビュー指針（Review guide）
+  > - 要確認 — Highlights, Decisions
+  > - 参考 — Design, Test plan, Risks
+  ```
 
 ### Sizing guidance
 

@@ -2,6 +2,11 @@
 
 ## 2026-06-06
 
+### dev-workflow v1.49.0 / dev-workflow-bundle v1.49.0
+
+- feat(dev-workflow): parallelize Step 7 tests and Step 7.5 rules-review via a background `Agent` (first pass only)
+  - **Backward compatible** — when background `Agent` dispatch is unavailable in the environment, Step 7.5 invokes `Skill(rules-review)` sequentially exactly as before. After `check_commands` pass, Step 7 now optionally launches the first-pass `Skill(rules-review)` as a background subagent (`run_in_background`) so its read-only analysis overlaps the `test_commands` phase; Step 7.5 sub-step 1 collects that result (or invokes directly on re-runs, or after the background result was discarded following a test failure). Only `rules-review` is backgrounded — `run-tests` has no inline fallback for the nested-`Agent`-unavailable case (`rules-review` does, per its SKILL.md § 5). Relaxes the line-81 invariant from "only Step 11.5 directly spawns `Agent`" to the two-step set (Step 11.5 + Step 7's concurrent rules-review launch). Re-runs (Step 7.5 sub-step 3.b, Step 8 sub-step 3) stay sequential. Validated via a Step 0 smoke test of the background-`Agent` mechanism.
+
 ### dev-workflow v1.48.7 / dev-workflow-bundle v1.48.7
 
 - fix(dev-workflow): reformat the Step 4 plan Review guide directive into a multi-line blockquote for readability

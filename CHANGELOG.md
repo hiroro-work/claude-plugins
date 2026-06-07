@@ -2,6 +2,11 @@
 
 ## 2026-06-07
 
+### dev-workflow v1.51.0 / dev-workflow-bundle v1.51.0
+
+- feat(dev-workflow): add token-consumption and development-speed perspectives to the Step 11.5 self-retrospective
+  - Extends `references/self-retrospective.md` §2.2 with two new signal types — **Token-consumption inefficiency** (wasteful token spend: cross-turn re-reads, re-derivation of in-context values, unnecessary subagent dispatch, redundant prose) and **Development-speed friction** (disproportionate wall-clock time / round-trips, carrying a "never by dropping review or verification coverage" quality guardrail). §2.3 gains an imperative categorization rule that routes efficiency-class findings to the existing enum values (`wrong-default` when the inefficiency stems from a default-behavior choice, otherwise `other`). The `Category` enum is deliberately **not** extended, so the downstream `dev-workflow-triage` consumer (its 5-value `Category` validator and comment template) needs no coordinated change.
+
 ### dev-workflow v1.50.2 / dev-workflow-bundle v1.50.2
 
 - fix(dev-workflow): give Step 7 background-dispatch availability detection a positive criterion (default to parallel)

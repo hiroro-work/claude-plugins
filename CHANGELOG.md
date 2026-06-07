@@ -2,6 +2,18 @@
 
 ## 2026-06-07
 
+### extract-rules v1.20.0 / dev-workflow-bundle v1.53.0
+
+- fix(extract-rules): add ordering/sequencing self-check to Step C4 classification (auto-triage #77)
+  - Category: wrong-default; Step C4 lacked a classifier for ordering/sequencing rules derived from incidental session execution order, causing the skill to stage directional rules without checking whether the observed order was intentional. Added item 5 with a self-check, guidance to prefer underlying invariants over directional rules, and an annotation convention (`[NEEDS DIRECTION CONFIRMATION]` prefix) for unconfirmed directional patterns.
+
+### dev-workflow v1.52.0 / dev-workflow-bundle v1.52.0
+
+- fix(dev-workflow): add plan-scope cross-reference to Step 10 commit-plan proposal (auto-triage #78)
+  - Category: missing-branch; the commit-plan proposal lacked a cross-reference against declared no-change areas in the approved plan. Added a plan-scope cross-reference that surfaces any collected change overlapping a declared no-change area as "unplanned changes" above the numbered commit list, routed through the existing commit-plan approval gate.
+- fix(dev-workflow): extend Resume subtask selection to check per-subtask precondition prose (auto-triage #77)
+  - Category: missing-branch; Resume sub-mode treated `depends_on` completion as the only runnability gate, ignoring per-subtask precondition/readiness-gate prose. Extended the no-leftover branch to check each frontier candidate's description for explicit gating prose and ask the user to choose when machine-unverifiable gates exist.
+
 ### dev-workflow v1.51.0 / dev-workflow-bundle v1.51.0
 
 - feat(dev-workflow): add token-consumption and development-speed perspectives to the Step 11.5 self-retrospective

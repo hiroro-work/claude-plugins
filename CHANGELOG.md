@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-06-07
+
+### dev-workflow v1.50.2 / dev-workflow-bundle v1.50.2
+
+- fix(dev-workflow): give Step 7 background-dispatch availability detection a positive criterion (default to parallel)
+  - Category: missing-branch; the Step 7 "Availability detection" bullet stated only a negative constraint ("do not let detection collapse to the base `Agent` tool exists") without a positive, checkable criterion for confirming `run_in_background` support, so an orchestrator in a parallel-capable main-thread session could resolve the uncertainty to "unavailable" and silently serialize the Step 7.5 rules-review and Step 8 first-pass code-review background launches. Rewrote the canonical "Availability detection" bullet to add a positive criterion (background dispatch is **available** when `Agent` is exposed AND a `run_in_background` / async-dispatch capability is present → the common interactive-session case, so default to parallel) plus a two-item closed list defining "unavailable" (`Agent` absent — which also covers the non-recursing-subagent case — or `Agent` present but no background/detached dispatch capability, e.g. an older Claude Code), and converted the two "If unavailable" parentheticals to back-references so the closed list is the single definition of "unavailable". Backward-compatible — genuinely background-dispatch-incapable environments still take the sequential path.
+
 ## 2026-06-06
 
 ### dev-workflow v1.50.1 / dev-workflow-bundle v1.50.1

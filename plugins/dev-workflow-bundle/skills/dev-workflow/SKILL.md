@@ -28,7 +28,7 @@ Settings files (YAML frontmatter only, merged across layers):
 2. `.claude/dev-workflow.md` — Project shared settings (git tracked, team-shared)
 3. `.claude/dev-workflow.local.md` — Personal overrides (gitignored, highest priority)
 
-Merge strategy per key type:
+Merge strategy per key type (summary — the canonical operational definition, including the `null`/empty-clears and absent-inherits rules, is the **Step 1: Load Settings** "Overlay" procedure; keep the two in sync):
 - **Scalar** (`reviewer`, `review_iterations`, `task_decomposition`, `interactive_commits`, `compact_rules`, `custom_instructions`, `language`): higher layer wins (replaces) **when the key is present**; a key absent from a higher layer inherits from lower layers (see the inherit note below)
 - **List** (`check_commands`): append — lower-layer items first, then higher-layer items, duplicates removed (keep first occurrence)
 - **List-replace** (`test_commands`): higher layer's list replaces lower layer's list as a whole (no item-level merge or dedup). Defaults to `["Skill(run-tests)"]` when unset

@@ -17,7 +17,7 @@ Every plan produced in Step 2 must follow this structure. Overview, Decisions, D
 ## Plan
 
 > Review guide
-> - must-review — Highlights, Decisions
+> - must-review — Overview, Decisions
 > - reference — Design, Test plan, Risks
 
 ### Overview
@@ -36,10 +36,10 @@ Each item:
 - **Alternative**: the other option (omit this line entirely when there is no alternative)
 
 ### Design
-<Detailed design — the body of the plan. Structure by file or by step.>
+<Detailed design — the body of the plan. When the work is sequential, default to an ordered, numbered list of implementation steps — each step a self-contained, actionable unit (verb-first, naming the file(s) it touches, and optionally the Decision it implements). When the changes are independent and non-sequential, structure by file. See § Traceability for the optional Design→Decision link.>
 
 ### Test plan
-<Test files to add or update, test types, coverage scope — or the justification for no tests.>
+<Test files to add or update, test types, coverage scope — or the justification for no tests. Each test item should reference the Design step(s) it verifies (recommended) — see § Traceability.>
 
 ### Risks / Unknowns
 <Non-trivial risks or open questions. Omit the section entirely if none.>
@@ -49,9 +49,9 @@ Each item:
 
 The `> Review guide` block sits directly under `## Plan`, above Overview, so a reviewer can tell at a glance which sections demand judgment and which are reference detail. It renders as a multi-line blockquote — a heading line followed by one bullet per category — so the must-review and reference groups read on separate lines rather than crammed onto one. Unlike the § Empty-Decisions fixed sentences and § Step 4 guidance lines (which are single sentences whose leading `>` is a spec-visual marker, optional when rendered), this block's `>`-prefixed bullets are themselves the rendered output; do not extend the other two blockquote sections to a multi-line bullet form:
 
-- **Must-review** = the sections that need the user's judgment: `Highlights` (high-impact callouts) and `Decisions`. When Highlights is omitted (no high-impact items), name `Decisions` alone.
+- **Must-review** = the sections that need the user's judgment: `Overview` (Goal / Approach / Scope / Difficulty, plus `Highlights` when present) and `Decisions`. `Highlights` is one Overview bullet, not a standalone must-review category — Overview always carries it. Rendering `Overview` in the must-review tier matches § Step 4 presentation order (which already shows Overview in full) and gives empty-`Decisions` plans a substantive review anchor (Goal / Approach).
 - **Reference** = supporting detail the user can skim: `Design`, `Test plan`, `Risks` (omit any that are absent).
-- Localization (§ Localization granularity): the connective words (`Review guide`, `must-review`, `reference`) are translated to the resolved `language`; the section-name tokens (`Highlights` / `Decisions` / `Design` / `Test plan` / `Risks`) stay verbatim — they are file-internal identifiers, and translating them would break the Step 2 self-check / Step 3 (f) heading exact-match.
+- Localization (§ Localization granularity): the connective words (`Review guide`, `must-review`, `reference`) are translated to the resolved `language`; the section-name tokens (`Overview` / `Highlights` / `Decisions` / `Design` / `Test plan` / `Risks`) stay verbatim — they are file-internal identifiers, and translating them would break the Step 2 self-check / Step 3 (f) heading exact-match.
 
 Paired bilingual sample (runtime rendering demonstration, not meta-prose):
 
@@ -59,7 +59,7 @@ Paired bilingual sample (runtime rendering demonstration, not meta-prose):
 
   ```text
   > Review guide
-  > - must-review — Highlights, Decisions
+  > - must-review — Overview, Decisions
   > - reference — Design, Test plan, Risks
   ```
 
@@ -67,19 +67,32 @@ Paired bilingual sample (runtime rendering demonstration, not meta-prose):
 
   ```text
   > レビュー指針（Review guide）
-  > - 要確認 — Highlights, Decisions
+  > - 要確認 — Overview, Decisions
   > - 参考 — Design, Test plan, Risks
   ```
 
+**Must-review low-load rule**: keep the must-review tier (`Overview`, `Decisions`) plain, in the resolved `language`, and scannable. Technical depth and rationale detail belong in the reference tier (`Design` / `Test plan` / `Risks`), not in must-review. `Overview` stays within its § Sizing guidance soft cap (≤ 5 bullets, one line each), so including it in the must-review tier keeps the tier low-load. Reuse the must-review token set (`Overview` + `Decisions`) verbatim — do not introduce new section vocabulary.
+
 ### Sizing guidance
 
-A plan is the user's review surface, not a document — its purpose is fast, accurate review. Default to the **tersest form that still lets the reviewer judge**: cut only redundancy, duplication, and padding — **never** the information, rationale, or boundaries the reviewer needs to decide. Operational test for "is this padding?": if removing a passage does not change what the reviewer can verify or decide, it is padding (cut it); if it does, keep it. Prefer bullets over prose, but use prose where a bullet cannot carry the logic. The caps below are soft — clarity wins over character count.
+A plan is the user's review surface, not a document — its purpose is fast, accurate review. Default to the **tersest form that still lets the reviewer judge**: cut only redundancy, duplication, and padding — **never** the information, rationale, or boundaries the reviewer needs to decide. Operational test for "is this padding?": if removing a passage does not change what the reviewer can verify or decide, it is padding (cut it); if it does, keep it. Prefer bullets over prose, but use prose where a bullet cannot carry the logic. The caps below are soft — clarity wins over character count. Traceability references (§ Traceability) are exempt from this padding rule — they pass the operational test (they change what the reviewer/implementer can verify), so a Step 6 tidy/simplify pass must not strip them.
 
 - Overview: at most 5 bullets (4 when Highlights is omitted), each at most one line. Overlong Overviews defeat the "30-second scan" goal.
 - Highlights: a **single** Overview bullet (it is one of the ≤5 Overview bullets above, not a separate list), holding at most 3 high-impact items on one line — only genuinely high-impact items. See § Template for the categories and the omit-when-none rule.
 - Decisions: up to 5 items. A single genuine (a)+(b) item is fine — surface it alone rather than padding.
-- Design: structure by file or by step in bullet form; collapse a change to one line only when it is self-evident, and keep the detail the reviewer needs to judge. As a concrete instance of the padding test above, avoid narrating what well-named files/functions already convey, and do not restate Decisions or Overview content.
-- Test plan: bullet-list the test files and the case each covers, one line per case. Do not re-describe (duplicate) the implementation.
+- Design: structure by file, or — when the work is sequential — as an ordered, numbered list of actionable implementation steps (verb-first, naming the file(s) touched); in either case use bullet form, collapse a change to one line only when it is self-evident, and keep the detail the reviewer needs to judge. Ordering Design as steps is a reference-tier structural aid — it does not change the "review surface, not a document" stance above (Design stays reference, not must-review). As a concrete instance of the padding test above, avoid narrating what well-named files/functions already convey, and do not restate Decisions or Overview content.
+- Test plan: bullet-list the test files and the case each covers, one line per case; each case may reference the Design step(s) it verifies (see § Traceability). Do not re-describe (duplicate) the implementation.
+
+## Traceability
+
+Links between plan sections run **one direction only — the reference tier points up**:
+
+- **Test → Design step** (recommended): each Test plan item names the Design step(s) it verifies.
+- **Design → Decision** (optional): a Design step may name the Decisions item it implements.
+- **Empty-Decisions degradation**: when Decisions renders an empty-Decisions fixed sentence (§ Empty-Decisions fixed sentences), `Design → Decision` is naturally absent (it is optional and has no target item); `Test → Design step` still applies unchanged.
+- The must-review tier carries **no** downward back-references (no "this Decision drives steps 3–4" annotations) — that detail lives in the reference tier.
+
+This section is the single source of truth for the traceability convention; § Step 2 self-check and § Step 3 (f) content-quality rubric reference it rather than restating the rule. Traceability references are also exempt from § Sizing guidance's padding / cut-duplication rule (stated and explained there).
 
 ## Decisions criterion (AND condition)
 
@@ -141,6 +154,9 @@ After the Simplicity self-audit in Step 2, run this check on the plan. Fix any f
   - The plan introduces a new enum / fixed-value set, but Decisions does not record that each member is necessary and non-overlapping with the others.
   - A choice that passes the (a)+(b) criterion appears with no Alternative line (or no one-line rejection reason) — promote the alternative analysis into a Decisions item rather than leaving it as Design prose.
 - [ ] If executing a subtask (state file active): Decisions does not re-surface subtask-boundary questions.
+- [ ] Design is structured as ordered, actionable steps when the work is sequential (by-file is fine for independent, non-sequential changes).
+- [ ] Test plan items reference the Design step(s) they verify where applicable (§ Traceability).
+- [ ] Must-review content (`Overview`, `Decisions`) is plain and scannable; technical depth and any back-references live in the reference tier.
 
 This is the **author's first-pass judgment** on plan content; Step 3 category (f) re-checks content externally. The **Structural compliance** bullet above is the only structural property checked here; category (f) does not re-check it.
 
@@ -152,7 +168,7 @@ Reviewer checks:
 
 - **(a)+(b) criterion, external verification** — does every Decisions item genuinely pass both? Flag items that look like style-level preferences smuggled in.
 - **Buried-decisions check** — does the Design body contain a judgment call that should have been surfaced in Decisions? (Inverse of the criterion — look for hidden choices, not just wrong ones.)
-- **Cross-section consistency** — e.g. does every file listed in Overview's Scope appear in Design? Does every test file promised in Test plan correspond to Design content? Do the choices made in Decisions actually drive the Design?
+- **Cross-section consistency** — e.g. does every file listed in Overview's Scope appear in Design? Does every test file promised in Test plan correspond to Design content? Do the choices made in Decisions actually drive the Design? Where § Traceability references are present, do Test→Design step references resolve to real Design steps, and Design→Decision references to real Decisions items?
 - **Cross-file consistency (multi-file plans)** — when the plan edits more than one file (multiple modules, parallel components, multiple docs — for skill development this includes multiple `SKILL.md` or `references/*.md` files), check that (i) parallel concepts use consistent names / headings / labels across files, (ii) cross-references between the edited files use consistent phrasing, and (iii) the same note or rationale isn't duplicated or paraphrased redundantly across files. Skip this bullet for single-file plans.
 
 Reviewer does not re-check structural compliance (section presence, bullet count, etc.) — that is Step 2's responsibility.

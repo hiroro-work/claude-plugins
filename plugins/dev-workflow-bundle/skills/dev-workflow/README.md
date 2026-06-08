@@ -498,8 +498,8 @@ Plans produced in Step 2 and presented in Step 4 follow a fixed structure so you
 | --- | --- | --- |
 | Overview | Yes | Goal, highlights (high-impact callouts — DB migrations, destructive ops, breaking changes; omitted when none), difficulty, scope (files), approach — at most 5 bullets, one line each. 30-second scan |
 | Decisions | Yes | Up to 5 items where **your** judgment is actually needed, OR a fixed "no decisions" sentence (see below) |
-| Design | Yes | Detailed design body, structured by file or by step |
-| Test plan | Yes | Test files to add/update, test types, coverage — or justification for no tests |
+| Design | Yes | Detailed design body — an ordered, numbered list of implementation steps when the work is sequential, otherwise structured by file |
+| Test plan | Yes | Test files to add/update, test types, coverage — or justification for no tests; each case may reference the Design step it verifies |
 | Risks / Unknowns | Optional | Non-trivial risks or open questions |
 
 ### The Decisions section
@@ -510,7 +510,7 @@ When no items qualify, the section is still rendered with one of two fixed sente
 
 In Resume mode, subtask boundaries, order, and purposes were already approved in the parent run's Step 1.5 — only in-subtask judgment calls surface in Decisions. Details in [`references/plan-format.md`](references/plan-format.md) § Subtask / Resume handling.
 
-**Two-tier presentation**: in chat, Step 4 shows a condensed view — Overview (including highlights), Decisions, and the files Design will touch. The full plan (Design body, Test plan, Risks) lives in the approval modal, which renders the complete plan file. A `Review guide` line at the top marks which sections need your judgment (Highlights, Decisions) vs reference detail (Design, Test plan, Risks).
+**Two-tier presentation**: in chat, Step 4 shows a condensed view — Overview (including highlights), Decisions, and the files Design will touch. The full plan (Design body, Test plan, Risks) lives in the approval modal, which renders the complete plan file. A `Review guide` line at the top marks which sections need your judgment (Overview, Decisions) vs reference detail (Design, Test plan, Risks).
 
 ### How to review a plan quickly
 

@@ -9,7 +9,7 @@ Get a second opinion from a peer engineer (Claude subagent).
 
 ## Process
 
-1. If the request contains multiple independent review categories, spawn one subagent (Agent tool) per category **in parallel**. Otherwise, spawn a single subagent. If subagent dispatch is unavailable in the current environment (the `Agent` tool is absent, or nested dispatch is blocked because this skill is itself running inside a subagent), adopt the Peer Agent Personality below and produce the feedback inline on the main thread — the deliverable is the feedback content, not the dispatch mechanism
+1. **Select mode, then dispatch immediately**: First classify your execution context. **If subagent dispatch is unavailable — the `Agent` tool is absent from your tool surface, or nested dispatch is blocked because this skill is itself running inside a subagent — skip dispatch and produce the feedback inline on the main thread** by adopting the Peer Agent Personality below; the deliverable is the feedback content, not the dispatch mechanism. **Otherwise, dispatch:** issue the `Agent` tool call in the same turn as any status prose — reading this SKILL.md is preparation, not dispatch; the `Agent` call is the dispatch. Do not produce a "consulting peer" / "waiting for results" status message without a concurrent `Agent` tool call in the same turn. If the request contains multiple independent review categories, spawn one subagent (Agent tool) per category **in parallel**. Otherwise, spawn a single subagent.
 2. Each subagent receives the peer personality below + the full consultation request including all caller instructions
 3. For parallel reviews, merge results in category order as unified feedback
 4. Present the peer's feedback to the user

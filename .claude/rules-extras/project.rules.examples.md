@@ -258,3 +258,33 @@ for entry in $bundle_skills; do
   ...
 done
 ```
+
+### Retain the original section label + keep runtime-referenced definitions inline when extracting a heavyweight block out of SKILL.md into a `references/*.md`
+**Good:**
+```markdown
+<!-- SKILL.md § Step 10: 手続き本文は references へ委譲、label + runtime-referenced 定義は残置 -->
+On entry to Step 10, initialize `landed_count = 0` before running Procedure 1 — so the
+value is well-defined for the Completion section even when the empty-output skip path in
+`references/interactive-commits.md` § Collect changes fires before its § Per-commit loop
+ever starts.
+
+Read [`references/interactive-commits.md`](references/interactive-commits.md) and follow the
+procedure from top to bottom — it is the single canonical home for Step 10's procedure body.
+The **Approval token closed list** and **Localized summary tokens** below stay defined in this
+file and are referenced from both that procedure and other Steps.
+
+<!-- references/interactive-commits.md 先頭: 逐語コピー + 「do not duplicate back」note -->
+# Interactive Commits (Step 10) — Procedure
+
+Single canonical home for the Step 10 (Interactive Commits) procedure body — `SKILL.md`
+§ Step 10 keeps only the entry conditions, the `landed_count` cross-step contract, the
+**Approval token closed list**, and the **Localized summary tokens**, and points here for
+the procedure; do not duplicate this content back into `SKILL.md`.
+```
+**Bad:**
+```markdown
+<!-- SKILL.md: 節ラベルごと削除し、初期化（runtime-referenced 定義）まで references へ移動 -->
+<!-- → 他 Step / § Completion が `landed_count` を読む際 well-defined でない -->
+<!-- → 既存 cross-reference (§ Step 10 / § Approval token closed list) が repo-wide でリンク切れ -->
+See `references/interactive-commits.md` for everything about commits.
+```

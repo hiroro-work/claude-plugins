@@ -2,6 +2,11 @@
 
 ## 2026-06-10
 
+### dev-workflow v1.56.0 / dev-workflow-bundle v1.58.0
+
+- feat(dev-workflow): fire the Step 7 code-review background launch per pass — **behavior change**: each Step 8 post-fix re-run (the full Step 7 → Step 7.5 re-entry) now also launches the background code-review dispatch that overlaps the re-run's test phase, where these re-runs previously always dispatched the reviewer sequentially at Step 8
+  - Generalizes the "Concurrent first-pass code review launch (first pass only)" paragraph to "Concurrent code review launch (per pass)", sharing the rules-review paragraph's pass definition, and renames the flag pair `first_pass_review_launched` / `first_pass_review_stale` to `code_review_launched` / `code_review_stale` (sibling symmetry with `rules_review_*`) with the same documented init / set / read lifecycle. The launch payload is now composed from Step 8 sub-step 1's review-payload definition as the single parametric source: sub-step 1 gains a conditional continuation item (fixes/rejections summary including any class-level sweep record) so re-run passes hand the reviewer the same context a fresh dispatch would, and sub-step 3's trailing payload list is replaced by a cross-reference to that definition. A re-run launch fires only when a pending Step 8 iteration item remains to collect it (a re-run from the final iteration would be an orphan dispatch); the Step 7-only re-run inside Step 7.5's fix flow still does not re-fire either launch. Both collect points (Step 7.5 sub-step 1 and Step 8 sub-step 1) also gain an explicit error-completion route — an errored background result is treated as not-launched and falls back to a fresh sequential dispatch. Same analysis, payload, and collect points as before — re-run passes only reorder the analysis relative to the test phase; fix-churn runs may discard more speculative dispatches (token cost, no wall-clock regression), the same accepted trade-off as v1.55.0 (handoff measure M1b).
+
 ### dev-workflow v1.55.0 / dev-workflow-bundle v1.57.0
 
 - feat(dev-workflow): fire the Step 7 rules-review background launch per pass — **behavior change**: each Step 8 post-fix re-run (the full Step 7 → Step 7.5 re-entry) now launches a background `rules-review` dispatch that overlaps the re-run's test phase, where these re-runs previously always dispatched `Skill(rules-review)` sequentially

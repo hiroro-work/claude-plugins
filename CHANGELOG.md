@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-06-11
+
+### dev-workflow v1.57.0 / dev-workflow-bundle v1.59.0
+
+- feat(dev-workflow): accept a `review_iterations` map form `{plan, code}` to set the Plan Review (Step 3) and Code Review (Step 8) iteration caps independently (handoff measure M5)
+  - The scalar form, an absent key, and `-i` / `--iterations` remain fully backward-compatible — each sets both phases to the same value, so the default behavior is unchanged (quality-neutral by construction); adopting the map form is an explicit opt-in. Internally the single review count `N` is split into `N_plan` (Step 3) and `N_code` (Step 8); the Step 2 difficulty cap applies independently to each, and Trivial still zeroes both together. A map value stays in the Scalar merge class (whole-value replace, no per-key cross-layer merge); an absent / non-positive / wrong-type `plan` or `code` key warns and falls back to default `3` for that phase only.
+
 ## 2026-06-10
 
 ### dev-workflow v1.56.1 / dev-workflow-bundle v1.58.1

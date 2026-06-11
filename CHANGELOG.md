@@ -2,6 +2,11 @@
 
 ## 2026-06-11
 
+### dev-workflow v1.58.0 / dev-workflow-bundle v1.60.0
+
+- feat(dev-workflow): skip low-yield quality steps on low-difficulty tasks via a difficulty-skip matrix — **behavior change**: Trivial tasks now also skip Step 6 Tidy and Step 7.5 Rules Compliance Review, and Simple tasks skip Step 6 Tidy, where previously every difficulty tier ran these steps (handoff measure M6)
+  - Extends the Step 2 difficulty assessment's gate from the review-iteration counts (N_plan / N_code) to a step-set matrix, reusing the existing Trivial N=0 skip mechanism (Step 2 pre-marks the row `completed`; the step's entry-point guard recognizes the pre-completed state and passes through, as does the Phase-boundary self-audit). Keyed on the assessed tier alone — no config flag, unconditional — consistent with the v1.45.0 Trivial Step 3 / Step 8 skip; the matrix content is the tuning knob if a tier proves too aggressive. Step 9 (`hooks.on_complete`) is **never** skipped at any tier, since it is a project-configured open list whose callee set varies per project. Skipped steps are recorded in the new `difficulty_skipped_steps` ledger (initialized at Step 2 entry, so it stays well-defined on the `-i` / Adjust-N-skipped path) and surfaced in the Completion summary, so a skip is never silent. The Step 4 rewrite-approach difficulty re-derivation re-marks pre-completed Step 6 / Step 7.5 rows back to `pending` when a higher tier no longer skips them.
+
 ### dev-workflow v1.57.0 / dev-workflow-bundle v1.59.0
 
 - feat(dev-workflow): accept a `review_iterations` map form `{plan, code}` to set the Plan Review (Step 3) and Code Review (Step 8) iteration caps independently (handoff measure M5)

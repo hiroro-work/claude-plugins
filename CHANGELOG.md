@@ -2,6 +2,17 @@
 
 ## 2026-06-12
 
+### dev-workflow v1.60.0 / dev-workflow-bundle v1.62.0
+
+- fix(dev-workflow): add upper-design-document input axis to Step 1.5 task decomposition (auto-triage #92)
+  - Category: ambiguity — added new decompose signal for task inputs that are upper-level design documents explicitly enumerating independent work units; updated Precedence paragraph to include the new axis
+- fix(dev-workflow): add upfront diff size measurement to Step 10 per-commit Present step (auto-triage #91)
+  - Category: ambiguity — Present step now performs a single character-count measurement before rendering, decides verbatim (≤4000 chars) vs condensed (>4000 chars) once, and holds that decision for all files; configurable via `diff_verbatim_threshold` in `.claude/dev-workflow.local.md`
+- fix(dev-workflow): clarify simplicity self-audit procedure (auto-triage #93)
+  - Category: ambiguity — two Findings improving precision of the Simplicity self-audit reference
+
+## 2026-06-12
+
 ### dev-workflow v1.59.0 / rules-review v1.3.0 / peer v2.4.0 / dev-workflow-bundle v1.61.0
 
 - feat(dev-workflow): difficulty-tier-based subagent model selection — **behavior change, opt-out via config**: Trivial and Simple tasks now run the workflow's subagent dispatches on `sonnet` by default (previously the session model). Set `subagent_model: {trivial: inherit, simple: inherit}` in `.claude/dev-workflow.md` or `~/.claude/dev-workflow.local.md` to restore the prior all-inherit behavior on those tiers; Moderate / Complex are unchanged (inherit). The automated rule-update CI does not read this CHANGELOG, so the opt-out path is documented here as the signal complement (handoff measure M7).

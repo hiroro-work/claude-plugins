@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-06-12
+
+### dev-workflow v1.59.0 / rules-review v1.3.0 / peer v2.4.0 / dev-workflow-bundle v1.61.0
+
+- feat(dev-workflow): difficulty-tier-based subagent model selection — **behavior change, opt-out via config**: Trivial and Simple tasks now run the workflow's subagent dispatches on `sonnet` by default (previously the session model). Set `subagent_model: {trivial: inherit, simple: inherit}` in `.claude/dev-workflow.md` or `~/.claude/dev-workflow.local.md` to restore the prior all-inherit behavior on those tiers; Moderate / Complex are unchanged (inherit). The automated rule-update CI does not read this CHANGELOG, so the opt-out path is documented here as the signal complement (handoff measure M7).
+  - New `subagent_model` config key — a difficulty-tier → model map (keys `trivial` / `simple` / `moderate` / `complex`; values `sonnet` / `opus` / `haiku` / `inherit`), in the Scalar merge class like the `review_iterations` map. Resolved once in Step 2 from the assessed tier (built-in default `{trivial: sonnet, simple: sonnet}`); initialized to `inherit` before tier assessment, so the `-i` / `--iterations` path (which skips Adjust N) carries no model override — backward-compatible.
+  - The resolved value is carried as the `Agent` `model` on the workflow's three direct `Agent` dispatch sites (Step 7's two background launches + Step 11.5), and propagated via a `Model:` argument to the named callees the workflow dispatches: Step 7.5 `rules-review`, and the Step 3 / Step 8 inline reviewer when the resolved reviewer is Claude-family (`ask-peer` / `ask-claude`; external-CLI reviewers `ask-codex` / `ask-gemini` / `ask-copilot` / `ask-agy` use their own models and are excluded).
+  - `rules-review` and `ask-peer` gain an optional `Model:` argument (absent = inherit, backward-compatible); `ask-claude` is steered via its existing `claude -p --model` flag (no file change). `publicity-review` gains an optional `Model:` argument and **defaults skill-side to `sonnet`** (its detection task is mechanical secret/path/URL matching) — this applies to every caller, including `dev-workflow-triage`. Per-subagent `effort` control is out of scope (the `Agent` tool exposes only `model`).
+
 ## 2026-06-11
 
 ### dev-workflow v1.58.0 / dev-workflow-bundle v1.60.0

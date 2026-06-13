@@ -2,6 +2,12 @@
 
 ## 2026-06-13
 
+### dev-workflow v1.62.0 / dev-workflow-bundle v1.64.0
+
+- feat(dev-workflow): give the generated `run-tests` skill a skill-side default model (`sonnet`) on its verification subagent dispatch
+  - The `run-tests` SKILL.md template in `references/init-mode.md` (and this repo's own project-local `.claude/skills/run-tests/SKILL.md`) now dispatches its verification subagent with `model: sonnet` explicitly passed as the `Agent` tool's `model` parameter. Running the listed test commands / structural checks (jq / readlink / frontmatter validation) is mechanical, so `sonnet` is sufficient — a deliberate skill-side cost choice. `subagent_model` is **not** propagated from `dev-workflow` and there is no caller override: `run-tests` verification is tier-independent and always lightweight, and `test_commands` is an open list where passing unknown args would be problematic.
+  - **No behavior change for existing users**: the new default reaches only the generated template and this repo's own `run-tests`. An unconfigured user sees no change, and existing projects' already-generated `run-tests` skills are not auto-updated — re-run `/dev-workflow --init` or add `model: sonnet` to the subagent dispatch by hand to adopt it.
+
 ### tidy v1.3.0 / dev-workflow v1.61.0 / dev-workflow-bundle v1.63.0
 
 - feat(tidy): add an optional `Model:` argument and propagate `subagent_model` from dev-workflow Step 6's tidy fallback dispatch

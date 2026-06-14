@@ -237,6 +237,7 @@ Each user-judgment gate that presents structured content (a plan body, a remaini
 - Step 7.5 persistent-violations decision
 - Step 8 unresolved-findings decision
 - Step 11 compaction approval gate
+- Step 11.6 workability-candidate disposition gate
 
 The other user-gates listed in `SKILL.md` § No-Stall Principle (Step 1.5 dialogues, Step 7 scope-drift stop, Step 10 commit-plan approval / per-commit accept / fold-or-defer / ambiguous-adjust clarifier gates, Completion subtask PR URL prompt) do not emit a preamble — their structured content is either a single short prompt or already self-explanatory (Step 10's gates render the commit data verbatim via `git`-shaped output), and a 3–5 item summary above them would be padding noise.
 
@@ -271,12 +272,15 @@ The other user-gates listed in `SKILL.md` § No-Stall Principle (Step 1.5 dialog
   - Optional: `structural_notes` count (only when non-zero) / self-application warning (only when the current run is itself modifying `extract-rules` or `dev-workflow` and may have appended entries via `--from-conversation` that the immediately-following `--compact` could merge or drop — detect via `git diff <base-commit> --name-only` matching paths under `skills/extract-rules/` or `skills/dev-workflow/`, where `<base-commit>` is the value captured at Step 2's opening sub-step per `SKILL.md` § Step 2).
   - JSON field identifiers (`applied_edits_count`, `below_threshold`, `per_file_status`, `chars_before`, `chars_after`, `iterations_used`, `structural_notes`) and the `under threshold` / `over threshold` labels are preserved verbatim per § Localization granularity's "file-internal identifiers" rule; only the slot's surrounding prose is subject to first-use jargon pairing. Canonical paired example (`language: ja`): a preamble bullet renders as ``圧縮対象（`applied_edits_count > 0` を満たすファイル）: 3 件`` — the localized phrasing `圧縮対象` pairs with the verbatim JSON expression `` `applied_edits_count > 0` `` on first use, and the JSON tokens themselves stay verbatim regardless of `language` value (no `件数が 0 より多い` translation of `> 0`, no `適用編集数` translation of `applied_edits_count`). The same rule covers aggregate-level preamble prose: the unit name `chars` stays verbatim in slots like `総削減文字数: 30000 chars` / `total chars saved: 30000 chars`, while only the surrounding localized phrasing (`総削減文字数` / `total chars saved`) is the first-use-paired layer.
   - The per-file detail render rule (the per-file line format) lives in `references/update-rules.md` § Char-count compaction gate; the preamble's slots above are aggregate-only and complement the per-file detail.
+- **Step 11.6 workability-candidate disposition gate**:
+  - Required: how many candidates were detected / **category breakdown** (`skill-candidate` vs `lint-rule-candidate` counts) / what decision is asked (the 4-way disposition — act now / make a subtask / save to backlog / reject).
+  - Optional: none.
 
 Each gate's Optional slot conditions are independent — do not import Step 8's `non-uniform reasons` constraint into Step 7.5 (Step 7.5's Optional triggers on `auto-fix attempted and recorded` regardless of uniformity), or vice versa. The Step 11 compaction gate's Optional slots (`structural_notes` count, self-application warning) likewise carry their own trigger conditions independent of the other gates.
 
 **Omission condition:**
 
-When the structured content has only one item (a single remaining violation in Step 7.5, a single unresolved finding in Step 8, or a single accepted-edits file in Step 11), the preamble SHOULD be omitted — a 3–5 item preamble above a single concrete item is padding noise that duplicates what the item itself states. The Step 4 preamble always has ≥ 3 items by construction, so this omission does not apply to Step 4. Do not announce the omission in the user-facing output (e.g. an "preamble omitted because only one item" line) — the announcement itself is padding noise; present the single concrete item directly.
+When the structured content has only one item (a single remaining violation in Step 7.5, a single unresolved finding in Step 8, a single accepted-edits file in Step 11, or a single workability candidate in Step 11.6), the preamble SHOULD be omitted — a 3–5 item preamble above a single concrete item is padding noise that duplicates what the item itself states. The Step 4 preamble always has ≥ 3 items by construction, so this omission does not apply to Step 4. Do not announce the omission in the user-facing output (e.g. an "preamble omitted because only one item" line) — the announcement itself is padding noise; present the single concrete item directly.
 
 ## Step 4 presentation order
 

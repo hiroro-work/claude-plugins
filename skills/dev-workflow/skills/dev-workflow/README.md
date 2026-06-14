@@ -162,6 +162,8 @@ hooks:
 | `test_commands` | list&lt;string&gt; | `["Skill(run-tests)"]` | Test execution (fixed) |
 | `hooks.on_complete` | list&lt;string&gt; | (none) | Hooks to run as Step 9 (immediately after Step 8 Code Review, before Step 10 Interactive Commits when `interactive_commits: true`, otherwise before Completion) |
 | `self_retrospective.feedback` | string | (none) | Destination for Step 11.5 self-retrospective output (GitHub `owner/repo` or a local directory path). Unset = Step 11.5 is fully skipped |
+| `workability_retrospective.enabled` | bool | `false` | Whether Step 11.6 (Workability Retrospective) detects skill / lint-rule candidates and opens the per-candidate disposition gate (experimental, opt-in) |
+| `workability_retrospective.backlog_dir` | string | `.claude/improvements` | Directory for the "save to backlog" disposition's markdown files |
 
 ### Details
 
@@ -326,7 +328,26 @@ self_retrospective:
 
 **Sanitization**: absolute paths, project / repo / product / user names, project-specific code identifiers, dates / session IDs / ticket IDs / internal URLs, and credential-like literals (API keys, tokens, email addresses, IPs, `.env` values) are stripped before the body is shown. The preview is the final human catch-all; inspect carefully if you handle sensitive codebases.
 
-**Phase 2 (planned, not in this release)**: a separate follow-up will add observation C — proposing reusable local-skill candidates based on repeated patterns in the session, and, with user approval per candidate, creating new skills under `.claude/skills/`.
+**Related**: the reusable-local-skill-candidate detection once planned as a self-retrospective "observation C" is now provided by the separate **Step 11.6: Workability Retrospective** (see `workability_retrospective` below) — it proposes skill-ization and lint-rule candidates from session patterns with a per-candidate user-approval gate.
+
+#### `workability_retrospective`
+
+Opt-in feedback channel that turns on **Step 11.6: Workability Retrospective**. After a normal run, a subagent scans the session for two classes of project-tooling improvement — **skill-candidate** (a reusable multi-step manual procedure that could become a `.claude/skills/<name>/` skill) and **lint-rule-candidate** (a mechanically-enforceable convention that could be added to an existing linter config or to `check_commands`) — and presents each candidate with a 4-way disposition gate. The raw conversation (jsonl) never leaves the session. This is a third retrospective axis, distinct from Step 11's prose-rule axis (`extract-rules`, which owns `.claude/rules/`) and Step 11.5's bundle-skill axis (`self_retrospective`).
+
+Disabled by default (the detection + disposition feature is **experimental**). When `enabled` is not `true`, Step 11.6 is never registered and the workflow behaves exactly as before.
+
+- **`enabled`** (bool, default `false`): turns Step 11.6 on. Non-boolean values warn and fall back to `false`.
+- **`backlog_dir`** (string, default `.claude/improvements`): where the "save to backlog" disposition writes its markdown files. Non-string / empty values warn and fall back to the default. A project that enables this feature should add its `backlog_dir` to `.gitignore` — the backlog is kept and only commit inclusion is blocked.
+
+```yaml
+workability_retrospective:
+  enabled: true
+  backlog_dir: ".claude/improvements"
+```
+
+Per-candidate dispositions: **act now** (start a fresh `/dev-workflow <candidate>` run, kept out of the current task's commits) / **make a subtask** (add to a decomposition state file — created fresh on a normal run — for later `--resume`) / **save to backlog** (append to a markdown file under `backlog_dir`) / **reject** (record an optional reason and drop).
+
+**Runs regardless of task difficulty**: like Step 11.5, Step 11.6 runs whenever `enabled` is `true`, independent of the Step 2 difficulty assessment. See `references/workability-retrospective.md` for the full procedure.
 
 ### Complete configuration examples
 
@@ -362,6 +383,9 @@ hooks:
     - "Skill(work-complete)"
 self_retrospective:
   feedback: "owner/repo"   # or a local path like "~/retrospectives/dev-workflow"
+workability_retrospective:
+  enabled: false           # opt-in (experimental); Step 11.6 project-tooling retrospective
+  backlog_dir: ".claude/improvements"
 ---
 ```
 
@@ -494,6 +518,7 @@ The workflow begins at Step 2 (Step 1 is settings load, Step 1.5 is task decompo
 | 10 | Interactive Commits | (Only when `interactive_commits: true`) Group working-tree changes into commits and iterate per-commit with the user. The workflow never pushes — that stays the user's responsibility |
 | 11 | Update Rules | Update rules via `extract-rules`. Sub-step 3 (Char-count compaction gate) runs only when `compact_rules: true` (experimental, opt-in) |
 | 11.5 | Self-Retrospective | (Only if `self_retrospective.feedback` is set; runs regardless of task difficulty) Spawn a subagent to extract sanitized bundle-skill improvement signal, present it with a destination header, and submit on user approval. See `references/self-retrospective.md` |
+| 11.6 | Workability Retrospective | (Only if `workability_retrospective.enabled: true`; runs regardless of task difficulty) Spawn a subagent to detect skill-ization / lint-rule candidates from the session, then offer a per-candidate disposition gate (act now / subtask / backlog / reject). See `references/workability-retrospective.md` |
 
 ## Plan format
 
@@ -560,6 +585,10 @@ To get the full benefit of dev-workflow, the following skills are recommended:
 | `self_retrospective.feedback` is `owner/repo` but `gh auth status` fails | Early warning at Step 1; Step 11.5 aborts with an actionable message at runtime |
 | Step 11.5 subagent returns malformed / unsanitized content | Abort Step 11.5 with `skipped` terminal summary; no retry in the same session |
 | Step 11.5 submission (`gh api` POST / path `Write`) fails after approval | Report error + draft body in-chat so user can retry manually; terminal summary `failed`; workflow continues to Completion |
+| `workability_retrospective.enabled` is not a boolean | Warns and falls back to `false` |
+| `workability_retrospective.backlog_dir` not a non-empty string | Warns and falls back to `.claude/improvements` |
+| Step 11.6 detection subagent returns malformed content | Skip the disposition gate; terminal summary `skipped`; no retry in the same session |
+| Step 11.6 backlog write / state-file create fails | Recorded as a warning in the terminal summary; remaining candidates continue |
 
 ## Notes
 

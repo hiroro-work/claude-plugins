@@ -36,7 +36,7 @@ Each item:
 - **Alternative**: the other option (omit this line entirely when there is no alternative)
 
 ### Design
-<Detailed design — the body of the plan. When the work is sequential, default to an ordered, numbered list of implementation steps — each step a self-contained, actionable unit (verb-first, naming the file(s) it touches, and optionally the Decision it implements). When the changes are independent and non-sequential, structure by file. See § Traceability for the optional Design→Decision link.>
+<Detailed design — the body of the plan. When the work is sequential, default to an ordered, numbered list of implementation steps — each step a self-contained, actionable unit (verb-first, naming the file(s) it touches, optionally the Decision it implements, and optionally the task-relevant skill(s) to invoke at that step — see `SKILL.md` Step 2's **Task-relevant skill annotation** bullet for what qualifies as task-relevant). When the changes are independent and non-sequential, structure by file. See § Traceability for the optional Design→Decision link.>
 
 ### Test plan
 <Test files to add or update, test types, coverage scope — or the justification for no tests. Each test item should reference the Design step(s) it verifies (recommended) — see § Traceability.>

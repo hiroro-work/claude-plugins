@@ -2,6 +2,12 @@
 
 ## 2026-06-14
 
+### dev-workflow v1.66.0 / dev-workflow-bundle v1.68.0
+
+- feat(dev-workflow): make skills more likely to actually be invoked when next needed — two improvements that close the create→use loop, anchored on the fact that Claude Code skill triggering is `description`-driven (CLAUDE.md / `.claude/rules/` are context injection, not a trigger index)
+  - **Step 2 plan creation** now enumerates task-relevant available skills and annotates the Design step(s) where each applies. A new **Task-relevant skill annotation** sub-bullet (Step 2 sub-step 3, unconditional — runs on every plan) tells the planner to scan the session's available-skills context for skills that help the task's own work and record them on the Design steps that use them, so skill use is explicit in the plan the workflow executes rather than relying on the model to recall a skill mid-implementation. Scoped to **task-domain skills only** (the workflow's own fixed-step callees — reviewer / cleanup / rules-review / tests / extract-rules — are excluded), recommendation-not-contract (Step 5 may drop a suggestion that does not fit), and annotate-only-where-it-applies to avoid plan bloat. `references/plan-format.md` § Template gains the invoked skill as an optional Design-step grammar element.
+  - **Step 11.6 Workability Retrospective** now requires a `skill-candidate`'s `proposed_action` to include a draft `description` that leads with the skill's action and carries explicit `Use when ...` trigger conditions — the creation-side complement, so a proposed skill is born with the trigger signal it needs to fire. Synced verbatim across the §2.1 return-schema template and the §2.3 candidate schema, scoped to the `skill-candidate` branch so it does not collide with the `lint-rule-candidate` / `prose-rule` framing, and additive (the §6 failure-disposition check parses enums + structural tokens only, never `Proposed action` prose).
+
 ### dev-workflow v1.65.0 / dev-workflow-bundle v1.67.0
 
 - feat(dev-workflow): add **Step 11.6 Workability Retrospective**, a third retrospective axis that detects this session's project-tooling improvements and offers a per-candidate disposition gate

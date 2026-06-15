@@ -23,13 +23,13 @@ An optional `Model:` value (`sonnet` / `opus` / `haiku`) may also be passed as a
 
 1. Parse `--base-commit <sha>` from `$ARGUMENTS`. If not provided, use `git rev-parse HEAD~1`. Also parse the optional `Model:` value (`sonnet` / `opus` / `haiku`) from `$ARGUMENTS` (see § Usage); hold it for §5's reviewer `Agent` dispatch. Absent or invalid → no model override (inherit)
 2. Get changed files: `git diff --name-only <base-commit>`
-3. If no changed files, output `No changed files` as the final result and exit the skill (no further steps)
+3. If no changed files, output `No changed files` as the final prose result, then emit the verdict per `## Return contract` and end the processing flow (no further processing steps)
 
 ### 2. Collect Rules
 
 1. Find rule files: `Glob(".claude/rules/**/*.md")`
 2. Exclude `*.examples.md` from the check targets (they are reference material, not enforceable rules)
-3. If no rule files found, output `No rule files found in .claude/rules/` as the final result and exit the skill
+3. If no rule files found, output `No rule files found in .claude/rules/` as the final prose result, then emit the verdict per `## Return contract` and end the processing flow
 
 ### 3. Match Rules to Changed Files
 
@@ -55,7 +55,7 @@ Grouping policy (deterministic):
 - Never merge across categories, even if each category has only 1 rule file.
 - Discard empty groups.
 
-If no rules matched any changed files, output `No applicable rules for changed files` as the final result and exit the skill.
+If no rules matched any changed files, output `No applicable rules for changed files` as the final prose result, then emit the verdict per `## Return contract` and end the processing flow.
 
 ### 5. Review
 
@@ -132,7 +132,7 @@ For each reviewer:
 
 1. Collect results from all reviewers (parallel Agents or inline iterations).
 2. If all groups returned exactly `No rule violations found`:
-   - Output: `No rule violations found` as the final result and exit the skill.
+   - Output: `No rule violations found` as the final prose result, then emit the verdict per `## Return contract` and end the processing flow.
 3. If violations were found:
    - Output the consolidated violation list, organized by rule file.
    - Format each violation clearly with all fields (rule file, violated rule, location, description, fix suggestion, confidence).
@@ -149,7 +149,7 @@ For each reviewer:
 No rule violations found
 ```
 
-> **Scope note**: This check covers only rules documented under `.claude/rules/`. Project-specific vocabulary, naming, or style conventions that have not yet been written into a rules file are out of scope — if such an unwritten convention may apply to the changed code, verify manually or run `Skill(extract-rules)` to capture the pattern as a rule. The literal output stays exactly `No rule violations found` (no extra lines) so callers that match on that string (see `§ 6. Aggregate Results`) keep working.
+> **Scope note**: This check covers only rules documented under `.claude/rules/`. Project-specific vocabulary, naming, or style conventions that have not yet been written into a rules file are out of scope — if such an unwritten convention may apply to the changed code, verify manually or run `Skill(extract-rules)` to capture the pattern as a rule. The prose line stays exactly `No rule violations found` so callers that substring-match on that string (see `§ 6. Aggregate Results`) keep working; a single fenced JSON verdict block (see `## Return contract`) follows it as the additive structured return value.
 
 ### When violations found
 
@@ -172,3 +172,33 @@ No rule violations found
 - **Suggested fix**: <suggestion>
 - **Confidence**: low-confidence
 ```
+
+## Return contract
+
+Emit a single fenced JSON block at the end of the response, matching the schema below. The block is **additive**: the `## Output Format` prose above is unchanged, and the verdict block is appended **after** it. Emit the verdict on **every** exit path — including the early exits in § 1. Prepare / § 2. Collect Rules / § 4. Group Rules by Category (those end the *processing flow*, not the response; the verdict block still follows). Only one fenced JSON block — the verdict block — appears in the response, so callers can locate it unambiguously.
+
+```json
+{
+  "status": "no-issues|violations|error",
+  "violations_count": 0,
+  "reason": null
+}
+```
+
+Status mapping (evaluate in order, first match wins):
+
+- `no-issues` — no changed files (§ 1. Prepare), no rule files (§ 2. Collect Rules), no applicable rules (§ 4. Group Rules by Category), or all groups returned exactly `No rule violations found` (the all-clean branch of § 6. Aggregate Results). `violations_count: 0`, `reason: null`.
+- `error` — the review could not be produced: diff collection failed (§ 1. Prepare), matched rule files could not be read (§ 3. Match Rules to Changed Files), or **every** reviewer group failed to return parseable output (the consolidated violation list in § 6. Aggregate Results is entirely `(review failed)` synthetic entries). `violations_count: 0`, `reason` = the matching closed-enum string below. The § 6. Aggregate Results prose still renders the `(review failed)` entries; only the verdict status reflects that the whole review failed.
+- `violations` — the consolidated violation list (§ 6. Aggregate Results) holds at least one real finding (`high` / `low-confidence` / `rule-doc-drift`), possibly mixed with `(review failed)` synthetic entries. `violations_count` = total entries in that list. `reason: null`.
+
+Field rules:
+
+- `violations_count`: non-negative integer. Total entries in the consolidated violation list (§ 6. Aggregate Results) for `violations`; `0` for `no-issues` and `error`.
+- `reason`: a closed-enum string only when `status == "error"`, otherwise JSON `null` — keep it to the enum tokens (no free-form text, newlines, or control characters) so the verdict stays mechanically parseable. Closed enum:
+  - `"diff collection failed"` — § 1. Prepare produced no usable changed-file list.
+  - `"rule loading failed"` — matched rule files could not be read in § 3. Match Rules to Changed Files.
+  - `"verdict parse failure"` — every reviewer group returned unparseable output even after the retry (see the `error` status-mapping bullet above). A single group failing while at least one other parses stays counted under `violations`, not a top-level `error`.
+
+## Sub-skill caller directive
+
+When invoked as a sub-skill (i.e. via `Skill(rules-review)` from an orchestrator), the fenced JSON verdict block this skill emits is the **structured return value** of the skill's procedure — it is **not** a deliverable to the user, and emitting it does **not** terminate the orchestrator's turn. The same agent that ran this skill must immediately issue the next tool call dictated by the orchestrator's flow (see the orchestrator's `§ No-Stall Principle`; orchestrators that surface a per-callee guidance bullet name the specific next action there). Do not insert a prose summary, an acknowledgment, or a "shall I proceed?" sentence between the JSON verdict and the next tool call. The JSON verdict block and the next tool call MUST be emitted in the same assistant turn. Closing the turn after emitting the JSON block — even with no prose between them — is the same violation as inserting prose. Only one fenced JSON block — the verdict block — appears in the response, so callers can locate it unambiguously. The skill's own procedure is over; the orchestrator's procedure continues without pause.

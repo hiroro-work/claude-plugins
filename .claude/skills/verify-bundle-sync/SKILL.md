@@ -39,7 +39,7 @@ Run the following directly in the main thread (no subagent dispatch is needed �
      - `Only in <bundle-copy-dir>: <file>` → `type: "only_in_copy"`
 
 3. **Aggregate the result**:
-   - All entries drift-free → `SUCCESS` (e.g. `4 bundle skills verified, 0 drift`)
+   - All entries drift-free → `SUCCESS` (e.g. `5 bundle skills verified, 0 drift`)
    - Any entry has drift → `TEST_FAILED`. Include the per-entry drift list and a remediation hint of the form `cp -R skills/<name>/skills/<name>/. plugins/dev-workflow-bundle/skills/<name>/` for each affected member
    - `jq` failed / `diff` missing / `marketplace.json` unreadable / per-entry path missing → `EXECUTION_ERROR`
 
@@ -80,6 +80,6 @@ Mapping between the prose status token and the JSON `status` field:
 | `TEST_FAILED` | `drift` |
 | `EXECUTION_ERROR` | `error` |
 
-- `checked_count`: number of bundle member entries actually inspected (4 at the time of writing — `ask-peer`, `dev-workflow`, `extract-rules`, `rules-review`). If the list could not be loaded (`EXECUTION_ERROR` from Step 1), set this to `0`.
+- `checked_count`: number of bundle member entries actually inspected (5 at the time of writing — `ask-peer`, `dev-workflow`, `extract-rules`, `rules-review`, `tidy`). If the list could not be loaded (`EXECUTION_ERROR` from Step 1), set this to `0`.
 - `drift_files[]`: drift / one-sided-presence entries, populated only for `status: "drift"`. Empty array for `ok` and `error`. The `path` value preserves the raw line as it appeared in `diff -rq` output so that downstream rendering does not need to re-derive it.
 - `reason`: required on `status: "error"`. Short, ≤ 80 characters. Examples: `marketplace.json missing`, `dev-workflow-bundle plugin entry absent`, `jq not in PATH`, `canonical missing: skills/ask-peer/skills/ask-peer`.

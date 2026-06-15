@@ -1,12 +1,12 @@
 ---
 name: triage-review
-description: Daily review of the latest origin triage-* branch. Operator-prepared invariant — the operator fetches origin and switches the local repository to the triage branch before invocation. The skill verifies that the current branch matches `triage-*`, then dispatches `Skill(prompt-tuning)` per prompt-eligible changed file, `Skill(skill-review)` with `Base ref: main`, and `Skill(publicity-review)` with `Base ref: main` in sequence, finally emits a summary. Project-local routine — not for marketplace distribution.
-allowed-tools: TaskCreate, TaskUpdate, TodoWrite, Skill(prompt-tuning), Skill(skill-review), Skill(publicity-review), Bash(git rev-parse *), Bash(git symbolic-ref *), Bash(git status --porcelain*), Bash(git diff *), Bash(git stash *)
+description: Daily review of the latest origin triage-* branch. Operator-prepared invariant — the operator fetches origin and switches the local repository to the triage branch before invocation. The skill verifies that the current branch matches `triage-*`, then dispatches `Skill(prompt-tuning)` per prompt-eligible changed file, `Skill(skill-review)` with `Base ref: main`, `Skill(publicity-review)` with `Base ref: main`, and `Skill(rules-review)` with `--base-commit main` (rules-compliance detection layer) in sequence, finally emits a summary. Project-local routine — not for marketplace distribution.
+allowed-tools: TaskCreate, TaskUpdate, TodoWrite, Skill(prompt-tuning), Skill(skill-review), Skill(publicity-review), Skill(rules-review), Bash(git rev-parse *), Bash(git symbolic-ref *), Bash(git status --porcelain*), Bash(git diff *), Bash(git show *), Bash(git stash *), Bash(jq *)
 ---
 
 # Triage Review
 
-Daily local review of the latest `dev-workflow-triage` output branch. After `dev-workflow-triage` (running on Claude Code on the Web) pushes a `triage-YYYYMMDD-HHMMSS` branch to origin, the operator manually fetches origin and switches the local repository to that branch (e.g. `git fetch origin --prune && git switch triage-YYYYMMDD-HHMMSS`) before invoking this skill. The skill then dispatches three review skills against `main..HEAD` — `Skill(prompt-tuning)` per prompt-eligible changed file, `Skill(skill-review)`, and `Skill(publicity-review)`. Non-destructive aside from a transient auto-stash that is restored before the skill exits — or, if the pop conflicts, preserved in `git stash list` and reported (no `git reset`, no network operation, no branch switching) — keeps HEAD at the triage tip and passes review framing to each callee. When the working tree has uncommitted tracked changes, the skill stashes them for the duration of the review and restores them just before emitting the summary (see § Auto-stash restore), so the callees' diff scope stays at `main..HEAD`.
+Daily local review of the latest `dev-workflow-triage` output branch. After `dev-workflow-triage` (running on Claude Code on the Web) pushes a `triage-YYYYMMDD-HHMMSS` branch to origin, the operator manually fetches origin and switches the local repository to that branch (e.g. `git fetch origin --prune && git switch triage-YYYYMMDD-HHMMSS`) before invoking this skill. The skill then dispatches four review skills against `main..HEAD` — `Skill(prompt-tuning)` per prompt-eligible changed file, `Skill(skill-review)`, `Skill(publicity-review)`, and `Skill(rules-review)` (rules-compliance detection layer). Non-destructive aside from a transient auto-stash that is restored before the skill exits — or, if the pop conflicts, preserved in `git stash list` and reported (no `git reset`, no network operation, no branch switching) — keeps HEAD at the triage tip and passes review framing to each callee. When the working tree has uncommitted tracked changes, the skill stashes them for the duration of the review and restores them just before emitting the summary (see § Auto-stash restore), so the callees' diff scope stays at `main..HEAD`.
 
 ## No-Stall Principle
 
@@ -25,6 +25,7 @@ The generic regimen (sub-skill return discipline, Step-boundary non-stalling, ph
 - Step 3 (b) per-file `Skill(prompt-tuning)` boundary
 - Step 4 `Skill(skill-review)` boundary
 - Step 5 `Skill(publicity-review)` boundary
+- § Run `Skill(rules-review)` (rules-compliance detection layer) boundary
 
 **Skill(prompt-tuning) return shape.** `Skill(skill-review)` and `Skill(publicity-review)` terminate with a single fenced JSON verdict — branch on it directly. `Skill(prompt-tuning)` returns a verbose markdown response (Mode declaration / iter-0 verdict / iteration block / Alt 3 static-review findings / scenario design) followed by a structured return value at the end — either a fenced Skip return contract `{"status": "skipped", ...}` (Alt 3 / Alt 2 paths and when the host blocks recursive `Agent` dispatch) or, in empirical mode, an `Iteration N` table with a `Convergence check` line. The structured return value (fenced JSON or iteration table) is what § Step 3 (c) parses for the per-file classification token. **The preceding markdown prose is the subagent's internal reasoning and is not a deliverable** — do not re-render, summarize, or surface it to the user mid-loop. The orchestrator's response between two per-file dispatches should contain only (i) the per-file classification log line and (ii) the next tool call (the next file's `Skill(prompt-tuning)` dispatch, or `Skill(skill-review)` if the last file).
 
@@ -33,6 +34,7 @@ The generic regimen (sub-skill return discipline, Step-boundary non-stalling, ph
 - Per-file `prompt-tuning`: `unparsed`, `error`, `skipped (agent unavailable)` — proceed to next file
 - `skill-review` / `publicity-review`: verdict parse failure, schema violation, dispatch error — record warning under summary form 3, proceed to next step
 - `skill-review` `framing-failed (suspected)` at Step 4 (iter=0 on non-empty main..HEAD) — record warning under form 3, proceed
+- `rules-review`: verdict parse failure, schema violation, `skipped (unavailable)` (skill unresolvable in this environment) — record warning under summary form 3, proceed to § Step 6 summary
 
 ## Web execution caveat
 
@@ -53,8 +55,8 @@ Japanese (`ja`) only. The 3-rule localization regimen (Translate generic concept
 
 **This skill's verbatim-preserve token set** (additions beyond the canonical list):
 
-- Enum values: `converged`, `max-iter`, `skipped`, `unparsed`, `error`, `no-actionable-findings`, `applied-edits`, `notes-left`, `framing-failed`, `ok`, `restored`, `not needed (clean tree)`, `restore failed`
-- Field labels: `status:`, `iterations_used:`, `applied:`, `notes_remaining:`, `findings:`, `remaining:`, `framing:`, `auto-stash:`
+- Enum values: `converged`, `max-iter`, `skipped`, `unparsed`, `error`, `no-actionable-findings`, `applied-edits`, `notes-left`, `framing-failed`, `ok`, `restored`, `not needed (clean tree)`, `restore failed`, `VIOLATION`, `no-issues`, `violations`, `unavailable`, and the rules-review `<reason>` tokens `diff collection failed` / `rule loading failed` / `verdict parse failure` (rules-review's own closed enum) plus the orchestrator-synthesized `verdict schema violation`
+- Field labels: `status:`, `iterations_used:`, `applied:`, `notes_remaining:`, `findings:`, `remaining:`, `framing:`, `auto-stash:`, `release-integrity:`, `rules-review:`
 
 ## Step 1 — Pre-flight
 
@@ -113,6 +115,25 @@ Hold the output as `changed_files` in main-thread context.
 
 Deleted files (those listed in `changed_files` but absent from working tree) require no special handling at this layer — the downstream callees see them through their own `git diff` invocations with appropriate base.
 
+On the non-empty path, proceed next to § Release-integrity check (deterministic bump-presence), then § Step 3.
+
+## Release-integrity check (deterministic bump-presence)
+
+Runs after § Step 2 — Capture changed files (non-empty `changed_files` path only) and before § Step 3. Read-only git/jq check — no subagent dispatch, so no `§ No-Stall Principle` return-point reminder; proceed to § Step 3 when done. Computes `release_integrity_result`, rendered by § Step 6 (see § Form 3 content).
+
+**Scope — backstop, not a full validator.** It checks **bump-presence** (the marketplace version-number delta across the diff endpoints) **and whether `CHANGELOG.md` was touched**. It does **not** validate CHANGELOG subsection format (e.g. the paired `### <skill> v… / dev-workflow-bundle v…` invariant) — a diff that bumps versions but omits the CHANGELOG subsection is out of scope.
+
+A version read uses the canonical `// "unknown"` + post-pipeline `-z` guard (same two-stage pattern as Step 1's `current_version`): `v=$(git show <ref>:.claude-plugin/marketplace.json | jq -r '(.plugins[] | select(.name == "<plugin>") | .version) // "unknown"' 2>/dev/null); [ -z "$v" ] && v=unknown`. A read of `unknown` means the version could not be determined — a git/jq error, or an absent `marketplace.json` entry. A value is **bumped** only when **both** its `main:` and `HEAD:` reads are concrete (≠ `unknown`) **and** they differ; if either read is `unknown` the value is **not bumped** (it routes to the conservative `could not verify` violation in step 5 rather than silently passing). **Net-of-stack**: `main..HEAD` may be a cumulative stack of `triage-*` branches (§ Fixed configuration), so this compares the two endpoints' net state ("was it bumped at all"), not per-commit.
+
+**Procedure**:
+
+1. **Load the authoritative bundle membership** from `marketplace.json`'s `dev-workflow-bundle.skills` array — `jq -r '(.plugins[] | select(.name == "dev-workflow-bundle") | .skills[]) // empty' .claude-plugin/marketplace.json` (same source as `verify-bundle-sync`) — giving the `./skills/<name>` member list. Reading the list rather than hard-coding member names keeps this check in lock-step with bundle membership and avoids a blind spot when a member is added. **Detect changed bundle skills** from `changed_files` (Step 2's `git diff --name-only main HEAD` output) using **path-segment equality** (not substring match — same discipline as § Step 2's filter rules): a path marks member `<name>` changed when a path segment exactly equals `<name>` with a preceding `skills` segment, or under `plugins/dev-workflow-bundle/skills/<name>/` (the canonical double-nest `skills/<name>/skills/<name>/…` matches by its leading `skills/<name>` pair). Map each changed member to its plugin name via `.claude/skills/dev-workflow-triage/SKILL.md` § Step 3.7 (c) Plugin mapping — only `ask-peer` → `peer` differs from the skill name; every other member (including any absent from that table) maps to its own name.
+   - If no bundle skill changed, set `release_integrity_result = ok` and proceed to § Step 3.
+2. **Run-level facts — compute once, not per skill**: **bundle bumped** = the `dev-workflow-bundle` version is bumped; **CHANGELOG touched** = `CHANGELOG.md` ∈ `changed_files`.
+3. **Per changed bundle skill**: **member bumped** = that skill's `<plugin>` version is bumped. The skill is a **violation** when any of {member bumped, bundle bumped, CHANGELOG touched} is false.
+4. **Record** `release_integrity_result`: `ok` when no changed bundle skill is a violation; otherwise the list of violating skills with their per-skill {member bumped / bundle bumped / CHANGELOG touched} flags.
+5. **Non-fatal**: a violation is recorded and the run continues — never a fatal abort. When a violation's cause is an **unverifiable** read (a `main:`/`HEAD:` version that resolved to `unknown` — git/jq error or an absent `marketplace.json` entry) rather than a confirmed missing bump, record reason `could not verify` and emit the could-not-verify warning variant — so an unverifiable read surfaces rather than silently passing as `ok`. The section adds no new exit path, so the § Auto-stash restore invariant is unaffected. `release_integrity_result` is computed and rendered **only on the form-3 path** — the § Step 2 form-2 exit (empty `changed_files`) returns before this section, so it is never referenced there.
+
 ## Step 3 — Run `Skill(prompt-tuning)` per file
 
 If `prompt_targets` is empty, emit summary line `prompt-tuning: skipped (no prompt-eligible files in diff)` and proceed to § Step 4.
@@ -160,7 +181,7 @@ Do **not** append: triage branch name, the `changed_files` list, an explicit `gi
 
 ## Step 5 — Run `Skill(publicity-review)`
 
-(a) **Pre-invocation reminder**: the next tool call is `Skill(publicity-review)` dispatch. Its return is a single fenced JSON verdict — parse it as a structured return value per § Step 5 (c), and **proceed to § Step 6 summary emission in the same response**. Specifically forbidden between the verdict-parse and the § Step 6 summary: user-facing pause phrases per § No-Stall Principle, prose summaries of the publicity-review verdict that end without proceeding to Step 6, re-rendering the JSON block as a standalone deliverable. See `§ No-Stall Principle`.
+(a) **Pre-invocation reminder**: the next tool call is `Skill(publicity-review)` dispatch. Its return is a single fenced JSON verdict — parse it as a structured return value per § Step 5 (c), and **proceed to the § Run `Skill(rules-review)` (rules-compliance detection layer) dispatch in the same response**. Specifically forbidden between the verdict-parse and that dispatch: user-facing pause phrases per § No-Stall Principle, prose summaries of the publicity-review verdict that end without proceeding, re-rendering the JSON block as a standalone deliverable. See `§ No-Stall Principle`.
 
 (b) Invoke `Skill(publicity-review)` with the short form:
 
@@ -172,7 +193,34 @@ Base ref: main
 
 (c) **Parse the verdict** with the same first-match-wins discipline as § Step 4 (c). Extract `status`, `iterations_used`, `applied_edits_count`, `findings_count`, `remaining_findings`, `reverted_paths`, `reason`. Record as `publicity_review_result`.
 
-(d) **Return-point no-stall reminder**: after parsing the verdict, the **same response must continue** with § Step 6 summary emission (this is the routine's terminal user-facing output and the only place a user-facing summary belongs). Specifically forbidden between this point and the Step 6 summary render: user-facing pause phrases per § No-Stall Principle, "shall I emit the summary?" framing, prose turns that end without proceeding to Step 6. See `§ No-Stall Principle`.
+(d) **Return-point no-stall reminder**: after parsing the verdict, the **same response must continue** with the § Run `Skill(rules-review)` (rules-compliance detection layer) dispatch. Specifically forbidden between this point and that dispatch: user-facing pause phrases per § No-Stall Principle, "shall I run rules-review?" framing, prose turns that end without proceeding. See `§ No-Stall Principle`.
+
+## Run `Skill(rules-review)` (rules-compliance detection layer)
+
+Runs after § Step 5 (`Skill(publicity-review)`) and before § Step 6 summary emission — the final review-skill dispatch of the run. `rules-review` checks the `main..HEAD` diff against `.claude/rules/` and reports rule violations (e.g. a triage branch that changed a bundle skill without the paired version bump). It is **detect-only** (its `allowed-tools` has no `Edit`), so it never writes to the working tree and never collides with the auto-stash or the other callees' `git checkout HEAD` scope rails.
+
+**Ordering invariant — runs before § Auto-stash restore.** This section executes after Step 5 but **before § Auto-stash restore** (which runs at the top of § Step 6). Because the restore has not yet fired, the working tree still equals HEAD here, so `rules-review`'s `git diff main` (base-vs-working-tree) equals `main..HEAD` — the same scope the other callees see. If the restore ran first, the operator's stashed changes would leak into `rules-review`'s diff scope. This section introduces **no new exit path** (every outcome is non-fatal — recorded and proceeded past), so the § Auto-stash restore "exactly two exit paths" invariant is unchanged.
+
+(a) **Pre-invocation reminder**: the next tool call is `Skill(rules-review)` dispatch. Its return is a single fenced JSON verdict (`rules-review` § Return contract) — parse it as a structured return value per (c) below, and **proceed to § Step 6 summary emission in the same response**. Specifically forbidden between the verdict-parse and the § Step 6 summary: user-facing pause phrases per § No-Stall Principle, prose summaries of the rules-review verdict that end without proceeding to Step 6, re-rendering the JSON block as a standalone deliverable. See `§ No-Stall Principle`.
+
+(b) Invoke `Skill(rules-review)` with the short form below. **`rules-review` takes its base ref via the `--base-commit <sha>` flag (its own `## Usage`), a different form from the `Base ref: main` field that `skill-review` / `publicity-review` accept — pass the flag form, not the field form:**
+
+```
+--base-commit main
+```
+
+Do **not** append the triage branch name, the `changed_files` list, or any other expansion (same minimal-form discipline as § Step 4 / § Step 5).
+
+(c) **Parse the verdict** with the first-match-wins evaluate-in-order discipline from `.claude/skills/verify-diff/SKILL.md` § (b) Parse & apply (restricted to single-pass dispatch — Converged / Divergence are N/A here):
+
+1. `Skill(rules-review)` could not be resolved / dispatched in this environment (skill-not-found, or the call returned no usable response at all) → record `rules_review_result = {status: "skipped", reason: "unavailable"}` (distinguishes "skill absent from this environment" from "contract broken", mirroring `prompt-tuning`'s `skipped (agent unavailable)`)
+2. The skill ran but the response carries no parseable fenced JSON verdict block → record `rules_review_result = {status: "error", reason: "verdict parse failure"}`
+3. Schema violation (`status` outside `no-issues` / `violations` / `error`, or `violations_count` not a non-negative integer) → record `rules_review_result = {status: "error", reason: "verdict schema violation"}`
+4. Otherwise — extract `status`, `violations_count`, `reason` from the JSON. A JSON `status: "error"` carries `rules-review`'s own closed-enum `reason` (`diff collection failed` / `rule loading failed` / `verdict parse failure`); render it as `error (<reason>)`
+
+Record as `rules_review_result`. All outcomes are non-fatal — proceed to § Step 6.
+
+(d) **Return-point no-stall reminder**: after parsing the verdict, the **same response must continue** with § Step 6 summary emission (the routine's terminal user-facing output). Specifically forbidden between this point and the Step 6 summary render: user-facing pause phrases per § No-Stall Principle, "shall I emit the summary?" framing, prose turns that end without proceeding to Step 6. See `§ No-Stall Principle`.
 
 ## Step 6 — Emit summary
 
@@ -201,6 +249,8 @@ When form 3 fires, render in Japanese:
 - prompt-tuning ファイル別判定（per file）: 各ファイルの分類（`converged` / `max-iter` / `skipped` / `skipped (agent unavailable)` / `error` / `unparsed`）
 - skill-review: `<status> (iterations: <K>, applied: <A>, notes_remaining: <R>, framing: <framing_status>)`。`framing_status` ∈ {`ok`, `framing-failed (suspected — iter=0 on non-empty main..HEAD)`}
 - publicity-review: `<status> (iterations: <K>, applied: <A>, findings: <F>, remaining: <R>)`
+- rules-review: § Run `Skill(rules-review)` (rules-compliance detection layer) で算出した `rules_review_result` を描画。`no-issues`（違反なし）/ `violations (<N>)`（`<N>` 件検出）/ `error (<reason>)` / `skipped (unavailable)`。`error` / `skipped` の詳細は下の warning 行
+- release-integrity: `<ok | VIOLATION (<N> skills)>` — § Release-integrity check (deterministic bump-presence) で算出した `release_integrity_result` を描画。bundle skill 変更が無いか全て bump/CHANGELOG 揃いなら `ok`、欠落があれば `VIOLATION (<N> skills)`（`<N>` = 違反 skill 数、詳細は下の warning 行）
 - auto-stash: `restored` / `not needed (clean tree)` / `restore failed` — `auto_stashed` が true で pop 成功なら `restored`、`auto_stashed` が false なら `not needed (clean tree)`、pop 失敗なら `restore failed`（詳細は下の warning 行）
 
 Warning lines (one per non-fatal incident) follow the main fields:
@@ -210,6 +260,9 @@ Warning lines (one per non-fatal incident) follow the main fields:
 - `skill-review: framing-failed (suspected — iter=0 on non-empty main..HEAD)` — single line
 - `skill-review: error (<reason>)` — single line
 - `publicity-review: error (<reason>)` — single line
+- `rules-review: error (<reason>)` — single line (`<reason>` ∈ `verdict parse failure` / `verdict schema violation` / `diff collection failed` / `rule loading failed`)
+- `rules-review: skipped (unavailable)` — single line (the `rules-review` skill could not be resolved / dispatched in this environment)
+- `release-integrity: <skill> changed without paired bump / CHANGELOG (member bump: <yes/no>, bundle bump: <yes/no>, changelog: <yes/no>)` — per violating skill (set by § Release-integrity check (deterministic bump-presence)); a skill whose `main:`/`HEAD:` version read resolved to `unknown` renders the variant `release-integrity: <skill> could not be verified (version read returned unknown — git/jq error or absent marketplace entry)`
 - `auto-stash restore failed: <reason> — changes preserved in \`git stash list\`; resolve the conflict before the handoff \`git switch main\` step` — single line, **form 3 only** (a pop conflict can occur here because callees may have edited files in `main..HEAD`). On the form 2 path the working tree is still == HEAD so the pop cannot conflict; if it nonetheless fails for some other reason, emit the generic variant `auto-stash restore failed: <reason> — changes preserved in \`git stash list\`` (form 2 has no `git switch main` handoff note, so the conflict-resolution clause is omitted)
 - `auto-stash: orphaned entry from a prior run detected in \`git stash list\` — recover it manually` — single line, emitted under **form 1, form 2, or form 3** whenever `orphan_stash_detected` is true (set by § Step 1 check 3's orphan scan). Independent of which form fires and of this run's own stash outcome
 

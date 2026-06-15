@@ -2,6 +2,14 @@
 
 ## 2026-06-15
 
+### rules-review v1.4.0 / dev-workflow-bundle v1.70.0
+
+- feat(rules-review): add a trailing single fenced JSON return contract so orchestrators can mechanically parse the rules-compliance verdict — additive and backward-compatible
+  - A new `## Return contract` section emits one fenced JSON block at the end of **every** exit path: `{ "status": "no-issues|violations|error", "violations_count": <int>, "reason": <enum|null> }`. The status enum mirrors the same-domain `rules-review-codex` sibling (`no-issues|violations|error`); the prose `## Output Format` stays the single source of truth for violation detail (the JSON carries status + count only, not the full violation list).
+  - `error`'s `reason` is a closed enum (`"diff collection failed"` / `"rule loading failed"` / `"verdict parse failure"`). A single reviewer group failing while others parse stays a `§ 6` `(review failed)` synthetic entry counted under `violations`; only an all-groups-failed review raises top-level `error` — no change to the existing `§ 6` per-group behavior.
+  - A new `## Sub-skill caller directive` section (adapted from the `skill-review` sibling) tells sub-skill callers the verdict is a structured return value, not a turn boundary. Its orchestrator reference is kept generic rather than naming a project-local skill, so the distributed bundle skill carries no dangling cross-skill reference.
+  - Backward-compatible: the compliant path still emits the prose line `No rule violations found` (substring-matching callers keep working); the `## Output Format` "When compliant" note is updated to reflect the appended verdict block. dev-workflow Step 7.5 judges the result semantically and is unaffected.
+
 ### dev-workflow v1.69.0 / dev-workflow-bundle v1.69.0
 
 - feat(dev-workflow): track post-implementation working-tree changes per review hook, so any change no review hook claims responsibility for surfaces before commit grouping (auto-triage #99)

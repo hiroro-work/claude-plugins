@@ -130,7 +130,7 @@
       "description": "Development workflow bundle (includes peer + extract-rules + dev-workflow + rules-review + tidy)",
       "source": "./plugins/dev-workflow-bundle",
       "skills": ["./skills/ask-peer", "./skills/dev-workflow", "./skills/extract-rules", "./skills/rules-review", "./skills/tidy"],
-      "version": "1.69.0",
+      "version": "1.70.0",
       "author": {
         "name": "hiropon"
       },
@@ -150,7 +150,7 @@
       "name": "rules-review",
       "description": "Check code changes for .claude/rules/ compliance using parallel sub-agent review",
       "source": "./skills/rules-review",
-      "version": "1.3.0",
+      "version": "1.4.0",
       "author": {
         "name": "hiropon"
       },

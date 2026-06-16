@@ -29,6 +29,15 @@ This file is read whenever `self_retrospective.feedback` is set at Step 1, regar
 
    Emit the terminal summary (0 findings, skipped) and proceed to Completion.
 
+   After a successful auth check, run `gh api repos/<owner>/<repo>` (where `<owner>/<repo>` is the resolved `self_retrospective.feedback` value) and verify the response JSON has `"has_issues": true`. On non-zero exit or `has_issues` being `false`, abort Step 11.5 with:
+
+   ```text
+   Destination repo `<owner>/<repo>` not found, not accessible, or has issues disabled
+   — update `self_retrospective.feedback` to a valid repo or switch to a local path.
+   ```
+
+   Emit the terminal summary (0 findings, skipped) and proceed to Completion.
+
 3. Path mode: expand any leading `~` in `<path>` to `$HOME` before any filesystem operation (the `Write` tool does not expand `~` on its own). Then, if the directory does not exist, ask the user for approval to create it via `mkdir -p <path>`. `mkdir` on arbitrary user-configured paths is intentionally **not** pre-allowed in `allowed-tools` — the user will see a one-time Bash approval prompt, which acts as a deliberate safety gate against typos or hostile config. On refusal, abort Step 11.5 with a warning and emit the terminal summary (0 findings, skipped). On mkdir failure, warn and abort the same way.
 
 4. **Session file identification** (required by §2):

@@ -1,5 +1,22 @@
 # Changelog
 
+## 2026-06-17
+
+### dev-workflow v1.69.3 / dev-workflow-bundle v1.70.5
+
+- fix(dev-workflow): clarify Simplicity self-audit consistency-with-siblings remedy precedence (recovered from an orphaned stash left by the prior triage run)
+  - **`references/simplicity-self-audit.md`** traceability bullet now notes that, for the intra-project "align with sibling implementations" rationale specifically, the **Consistency-with-siblings as primary rationale** item's remedy (surface lighter alternatives in Decisions) supersedes a plain drop. Category: `ambiguity`
+
+### peer v2.4.3 / dev-workflow-bundle v1.70.5
+
+- fix(ask-peer): clarify that the Peer Agent Personality block doubles as dispatch-path system instructions and fallback-path self-adopted persona (recovered from an orphaned stash left by the prior triage run)
+  - Peer Agent Personality intro now reads "the reviewer's operating instructions — supplied as system instructions to a spawned reviewer on the Claude Code / Codex dispatch paths, or self-adopted on the main thread under the fallback path", reconciling the second-person voice across both execution paths. Category: `ambiguity`
+
+### extract-rules v1.20.3 / dev-workflow-bundle v1.70.5
+
+- fix(extract-rules): define the `<name>` slot in the `.examples.md` output path (recovered from an orphaned stash left by the prior triage run)
+  - **`references/conversation-mode.md`** Step C5 item 6 now resolves `<name>` in `<examples_output_dir>/<name>.examples.md` to the routing category's file stem from Step C5 item 2 (`project` for project-level items, the `<lang>` / `<framework>` / `<framework>-<integration>` name otherwise). Category: `ambiguity`
+
 ## 2026-06-16
 
 ### dev-workflow v1.69.2 / dev-workflow-bundle v1.70.4

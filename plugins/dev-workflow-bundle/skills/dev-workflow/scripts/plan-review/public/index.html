@@ -221,7 +221,7 @@
 
     mermaid.initialize({ startOnLoad: false, theme: "default", securityLevel: "strict" });
 
-    // blockId -> { text, excerpt } ; blockId -> excerpt (switch)
+    // comments: id -> { text, excerpt } ; switches: id -> excerpt
     const state = { decision: null, comments: new Map(), switches: new Map() };
     let SWITCH_MSG = "Switch this decision to its Alternative";
 
@@ -229,19 +229,28 @@
     const mdInline = (t) => window.marked.parseInline(t || "");
     const stripMd = (t) => (t || "").replace(/[*`]/g, "").trim();
     const excerptOf = (t) => (t || "").replace(/\s+/g, " ").trim().slice(0, 40);
-    const escapeHtml = (t) => (t || "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+    const HTML_ESCAPES = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" };
+    const escapeHtml = (t) => (t || "").replace(/[&<>"]/g, (c) => HTML_ESCAPES[c]);
 
     const FENCE_RE = /^\s*(`{3,}|~{3,})/;
 
+    // What the viewer knows about each plan section, in match-priority order:
+    // `match` lists title prefixes (lowercased) that map to the type; `open` opens
+    // the section by default. The Decisions/Risks render paths key off `type` below.
+    const SECTION_TYPES = [
+      { type: "overview", match: ["overview"], open: true },
+      { type: "decisions", match: ["decision"], open: true },
+      { type: "design", match: ["design"] },
+      { type: "test", match: ["test plan", "test"] },
+      { type: "risks", match: ["risk", "unknown"] },
+      { type: "context", match: ["context"], open: true },
+    ];
+    const OPEN_TYPES = new Set(SECTION_TYPES.filter((s) => s.open).map((s) => s.type));
+
     function classify(title) {
       const t = title.toLowerCase().replace(/\s+/g, " ").trim();
-      if (t.startsWith("overview")) return "overview";
-      if (t.startsWith("decision")) return "decisions";
-      if (t.startsWith("design")) return "design";
-      if (t.startsWith("test plan") || t.startsWith("test")) return "test";
-      if (t.startsWith("risk") || t.startsWith("unknown")) return "risks";
-      if (t.startsWith("context")) return "context";
-      return "other";
+      const hit = SECTION_TYPES.find((s) => s.match.some((m) => t.startsWith(m)));
+      return hit ? hit.type : "other";
     }
 
     function slugify(title) {
@@ -516,7 +525,6 @@
           for (const li of Array.from(c.children)) if (li.tagName === "LI") targets.push(li);
         } else if (tag === "TABLE") {
           const w = document.createElement("div");
-          w.className = "cwrap";
           c.replaceWith(w);
           w.appendChild(c);
           targets.push(w);
@@ -531,7 +539,7 @@
       const det = document.createElement("details");
       det.className = "section";
       det.id = `sec-${section.id}`;
-      if (["overview", "decisions", "context"].includes(section.type)) det.open = true;
+      if (OPEN_TYPES.has(section.type)) det.open = true;
 
       const sum = document.createElement("summary");
       sum.innerHTML = `<span class="sec-title">${escapeHtml(section.title)}</span>`;

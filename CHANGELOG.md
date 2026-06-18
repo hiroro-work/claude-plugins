@@ -2,6 +2,15 @@
 
 ## 2026-06-18
 
+### dev-workflow v1.72.0 / dev-workflow-bundle v1.73.0
+
+- fix(dev-workflow): make the **visual plan-review gate** (`visual_plan_review`) actually fire by taking Step 2 out of Plan Mode when the gate is enabled
+  - **Problem**: Step 2 unconditionally called `EnterPlanMode`, and the workflow stayed in Plan Mode through Step 4's `ExitPlanMode`. Plan Mode forbids non-read-only operations, but the gate must write a served file and launch `node serve.mjs` (server + browser + `comments.json`) — all non-read-only. So the gate could never fire inside Plan Mode and always fell back to text; it had no real-workflow launch record since it was introduced.
+  - **Fix (approach D)**: when `visual_plan_review: true`, Step 2 sets `plan_mode_active = false` and **does not enter Plan Mode**, so Step 4's gate runs outside Plan Mode and its non-read-only operations are permitted. The default (`visual_plan_review: false`) keeps the unchanged `EnterPlanMode → ExitPlanMode` flow — every Step 4 `ExitPlanMode` site is gated on `plan_mode_active == true`, so default behavior is byte-identical.
+  - **Behavior change (opt-in only)**: enabling `visual_plan_review: true` now **skips Plan Mode during planning** — approval comes from the browser submit (or, when the browser is unreachable / on fallback, a chat reply pointing to `.claude/plans/<slug>.md`) rather than the `ExitPlanMode` modal. On this path the canonical plan document is `.claude/plans/<slug>.md` (the no-Plan-Mode path establishes the slug — reusing the decomposition state-file slug when one is active, else deriving it from the effective task), and the planning-phase "no code changes" rule is enforced by agent discipline rather than Plan Mode's read-only lock.
+  - **`SKILL.md`**: Step 2 sub-step 2 conditionalizes `EnterPlanMode` on `plan_mode_active`; Step 4 sub-step 2 branches into path (a) Plan-Mode (unchanged) / path (b) no-Plan-Mode (visual gate or chat approval, no `ExitPlanMode`); sub-steps 1 / 1.5 / 3, the Step 1.5 + § Configuration + § No-Stall gate bullet, and the § Completion slug reference are generalized accordingly. **`references/visual-plan-review.md`** / **`references/plan-format.md`** / **`references/task-decomposition.md`** / **`README.md`**: `Plan Mode plan file` / `ExitPlanMode` references scoped to path (a); no-Plan-Mode behavior documented.
+  - **Verification (pre-push, manual)**: the no-Plan-Mode Step 4 behavior activates only in a session that loads this updated `SKILL.md`, so the end-to-end browser launch is verified by restarting Claude Code and running `/dev-workflow` with `visual_plan_review: true` before pushing (this run's own planning was done outside Plan Mode as a partial live proof).
+
 ### dev-workflow v1.71.0 / dev-workflow-bundle v1.72.0
 
 - feat(dev-workflow): overhaul the **visual plan-review gate** (`visual_plan_review`) into a structured, review-optimized browser surface

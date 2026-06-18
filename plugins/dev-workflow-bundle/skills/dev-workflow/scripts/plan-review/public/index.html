@@ -286,16 +286,15 @@
         toc.hidden = true;
         return;
       }
-      let i = 0;
-      for (const h of headings) {
-        const anchor = `sec-${i++}`;
+      headings.forEach((h, i) => {
+        const anchor = `sec-${i}`;
         h.id = anchor;
         const a = document.createElement("a");
         a.href = `#${anchor}`;
         a.textContent = h.textContent;
         a.className = `toc-${h.tagName.toLowerCase()}`;
         toc.appendChild(a);
-      }
+      });
     }
 
     document.querySelectorAll("input[name=decision]").forEach((radio) => {

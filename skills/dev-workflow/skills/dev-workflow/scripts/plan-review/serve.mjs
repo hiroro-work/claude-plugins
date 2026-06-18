@@ -264,11 +264,12 @@ function handle(req, res) {
 }
 
 function openBrowser(urlStr) {
-  const opener = process.platform === "darwin" ? "open" : process.platform === "win32" ? "start" : "xdg-open";
-  const args = process.platform === "win32" ? ["", urlStr] : [urlStr];
+  const isWin = process.platform === "win32";
+  const opener = process.platform === "darwin" ? "open" : isWin ? "start" : "xdg-open";
+  const args = isWin ? ["", urlStr] : [urlStr];
   try {
     // browser-open failure is non-fatal: stay up, exit code unaffected, nothing to stdout
-    const child = spawn(opener, args, { stdio: "ignore", detached: true, shell: process.platform === "win32" });
+    const child = spawn(opener, args, { stdio: "ignore", detached: true, shell: isWin });
     child.on("error", () => log(`could not launch a browser; open ${urlStr} manually`));
     child.unref();
   } catch {
@@ -297,11 +298,9 @@ if (opts.wait) {
   }, timeoutMs);
 }
 
-process.on("SIGINT", () => {
-  log("interrupted");
+const onSignal = (msg) => () => {
+  log(msg);
   shutdown(130);
-});
-process.on("SIGTERM", () => {
-  log("terminated");
-  shutdown(130);
-});
+};
+process.on("SIGINT", onSignal("interrupted"));
+process.on("SIGTERM", onSignal("terminated"));

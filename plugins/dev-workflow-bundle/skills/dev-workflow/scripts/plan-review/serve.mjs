@@ -2,16 +2,25 @@
 /**
  * Local plan-review viewer for dev-workflow's visual plan-review gate.
  *
- * Serves a Markdown plan to a self-contained browser UI on 127.0.0.1, collects
- * block-level review comments plus an approve/revise decision, writes them to
- * <plan-basename>.comments.json, and (in --wait mode) prints that same JSON to
- * stdout and exits so the caller can parse it as the gate's return value.
+ * Transport only: serves the raw Markdown plan to a self-contained browser UI
+ * on 127.0.0.1, then collects the browser's submit (block-level review comments
+ * plus an approve/revise decision), writes it to <plan-basename>.comments.json,
+ * and (in --wait mode) prints that same JSON to stdout and exits so the caller
+ * can parse it as the gate's return value.
+ *
+ * Plan structure is parsed and rendered entirely browser-side (public/index.html
+ * builds the summary header, collapsible sections, Decision cards, per-element
+ * comment affordances, and mermaid diagrams). This server does not segment the
+ * plan; it ships the raw markdown and is agnostic to the plan schema.
  *
  * Node built-ins only (no node_modules). The browser-side renderers
  * (marked / highlight.js / mermaid) load from CDN inside public/index.html.
  *
  * Usage:
- *   node serve.mjs --plan <path> [--wait] [--port <n>] [--no-open] [--timeout <sec>]
+ *   node serve.mjs --plan <path> [--lang <ja|en>] [--wait] [--port <n>] [--no-open] [--timeout <sec>]
+ *
+ * --lang controls only the language of the browser-generated "switch to
+ * alternative" comment body (UI chrome stays English); default en.
  *
  * stdout contract: in --wait mode the ONLY bytes written to stdout are the final
  * submit JSON (one line). Every progress / error message goes to stderr, so the
@@ -38,6 +47,7 @@ try {
   ({ values: opts } = parseArgs({
     options: {
       plan: { type: "string" },
+      lang: { type: "string" },
       wait: { type: "boolean", default: false },
       port: { type: "string" },
       "no-open": { type: "boolean", default: false },
@@ -69,101 +79,20 @@ const intOrDefault = (raw, def, min) => {
 };
 const timeoutMs = intOrDefault(opts.timeout, DEFAULT_TIMEOUT_SEC, 1) * 1000;
 const port = intOrDefault(opts.port, 0, 0); // 0 = random free port
+const lang = opts.lang === "ja" ? "ja" : "en"; // only "ja" / "en"; default en
 
 // id token = plan basename with the .md extension stripped; the /api/plan `id`
-// and the comments.json `plan` field both use this exact token (subtask-2 contract).
+// and the comments.json `plan` field both use this exact token.
 const planId = basename(planPath).replace(/\.md$/i, "");
 const commentsPath = join(dirname(planPath), `${planId}.comments.json`);
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const publicDir = join(__dirname, "public");
 
-// --- block segmentation ---
-// Explicit <!-- block:bN --> markers are authoritative when present (the wired
-// gate relies on them for revise stability). Otherwise fall back to deterministic
-// per-render numbering, splitting on ATX headings outside fenced code.
-const MARKER_RE = /^<!--\s*block:([A-Za-z0-9_-]+)\s*-->\s*$/;
-const ATX_RE = /^#{1,6}\s/;
-// Naive toggle on any fence line: it does not track delimiter type/length, so a
-// block mixing ``` and ~~~ fences can mis-toggle. Harmless for the fallback path
-// (block ids are advisory there); the marker path bypasses segmentation entirely.
-const FENCE_RE = /^\s*(`{3,}|~{3,})/;
-
-// Walk lines once, tracking fenced-code state so the segmenters below share a
-// single fence rule. `visit` receives (line, inFence-after-this-line's-toggle, isFence) —
-// so a closing fence line reports inFence=false; consumers must gate on isFence first
-// if they care about the fence line itself.
-function walkLines(lines, visit) {
-  let inFence = false;
-  for (const line of lines) {
-    const isFence = FENCE_RE.test(line);
-    if (isFence) inFence = !inFence;
-    visit(line, inFence, isFence);
-  }
-}
-
-function hasMarkers(lines) {
-  let found = false;
-  walkLines(lines, (line, inFence, isFence) => {
-    if (!isFence && !inFence && MARKER_RE.test(line)) found = true;
-  });
-  return found;
-}
-
-function segmentByMarkers(lines) {
-  const blocks = [];
-  let current = null;
-  walkLines(lines, (line, inFence, isFence) => {
-    if (!isFence && !inFence) {
-      const m = line.match(MARKER_RE);
-      if (m) {
-        if (current) blocks.push(current);
-        current = { id: m[1], lines: [] };
-        return;
-      }
-    }
-    if (!current) {
-      if (line.trim() === "") return; // skip blank content before the first marker
-      current = { id: "b0", lines: [] }; // content before the first marker
-    }
-    current.lines.push(line);
-  });
-  if (current) blocks.push(current);
-  return finalizeBlocks(blocks);
-}
-
-function segmentByHeadings(lines) {
-  const blocks = [];
-  let current = null;
-  let counter = 0;
-  const startBlock = () => {
-    counter += 1;
-    current = { id: `b${counter}`, lines: [] };
-    blocks.push(current);
-  };
-  walkLines(lines, (line, inFence) => {
-    const isHeading = !inFence && ATX_RE.test(line);
-    if (current === null) startBlock();
-    else if (isHeading && current.lines.some((l) => l.trim() !== "")) startBlock();
-    current.lines.push(line);
-  });
-  return finalizeBlocks(blocks);
-}
-
-function finalizeBlocks(blocks) {
-  return blocks
-    .map((b) => ({ id: b.id, markdown: b.lines.join("\n").replace(/^\n+|\n+$/g, "") }))
-    .filter((b) => b.markdown.trim() !== "");
-}
-
-function segmentBlocks(source) {
-  const lines = source.split(/\r?\n/);
-  return hasMarkers(lines) ? segmentByMarkers(lines) : segmentByHeadings(lines);
-}
-
-const blocks = segmentBlocks(planSource);
-const planPayload = { id: planId, blocks };
-const validBlockIds = new Set(blocks.map((b) => b.id));
+// The browser parses the plan into review blocks and assigns each comment a
+// semantic block id (e.g. `decision-1`, `overview::2`); the server does not
+// enumerate those ids, so /api/plan ships the raw markdown verbatim.
+const planPayload = { id: planId, markdown: planSource, lang };
 
 // --- HTTP server ---
 const MIME = {
@@ -233,10 +162,19 @@ function handleSubmit(req, res) {
       return sendJson(res, 400, { error: "decision must be 'approve' or 'revise'" });
     }
 
-    // keep only comments whose block matches a real block id (no client-invented ids)
+    // Keep comments with a non-empty block id and body. Block ids are
+    // browser-assigned semantic ids (the server does not enumerate them), so
+    // any non-empty string is accepted; the caller resolves the id + excerpt.
     const comments = Array.isArray(body.comments)
       ? body.comments
-          .filter((c) => c && validBlockIds.has(c.block) && typeof c.body === "string" && c.body.trim() !== "")
+          .filter(
+            (c) =>
+              c &&
+              typeof c.block === "string" &&
+              c.block.trim() !== "" &&
+              typeof c.body === "string" &&
+              c.body.trim() !== "",
+          )
           .map((c) => ({ block: c.block, excerpt: typeof c.excerpt === "string" ? c.excerpt : "", body: c.body }))
       : [];
 
@@ -284,7 +222,7 @@ server.on("error", (err) => {
 });
 server.listen(port, "127.0.0.1", () => {
   const urlStr = `http://127.0.0.1:${server.address().port}/`;
-  log(`plan-review viewer listening on ${urlStr} (plan: ${planId}, ${blocks.length} blocks)`);
+  log(`plan-review viewer listening on ${urlStr} (plan: ${planId})`);
   log(opts.wait ? "waiting for submit… (Ctrl-C to cancel)" : "running without --wait; will not auto-exit on submit");
   if (opts["no-open"]) log(`open ${urlStr} in your browser`);
   else openBrowser(urlStr);

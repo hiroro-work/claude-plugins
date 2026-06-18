@@ -157,7 +157,7 @@ hooks:
 | `task_decomposition` | bool | `true` | Whether Step 1.5 runs auto-decomposition in Normal sub-mode |
 | `interactive_commits` | bool | `true` | Whether Step 10 (Interactive Commits) groups working-tree changes into commits and iterates per-commit with the user |
 | `compact_rules` | bool | `false` | Whether Step 11 sub-step 3 dispatches `Skill(extract-rules) --compact` and opens the compaction approval gate (experimental, opt-in) |
-| `visual_plan_review` | bool | `false` | Whether Step 4 launches the browser-based block-level review gate in place of the text approval (local CLI / Remote Control only — falls back to text on Claude Code on the Web; experimental, opt-in) |
+| `visual_plan_review` | bool | `false` | Whether Step 4 launches the browser-based structured review gate (summary header, collapsible sections, Decision cards with a recommend/alternative toggle, per-element comments, mermaid diagrams) in place of the text approval (local CLI / Remote Control only — falls back to text on Claude Code on the Web; experimental, opt-in) |
 | `custom_instructions` | string | (none) | Free-form instructions applied across all phases |
 | `check_commands` | list&lt;string&gt; | (none) | Static checks (lint / format / typecheck, etc.) |
 | `test_commands` | list&lt;string&gt; | `["Skill(run-tests)"]` | Test execution (fixed) |
@@ -256,10 +256,20 @@ Note: this is distinct from `extract-rules`'s own `compaction_threshold` setting
 
 #### `visual_plan_review`
 
-Controls whether Step 4 (Finalize Plan) presents the plan through a **browser-based, block-level review gate** instead of the text approval. This feature is currently **experimental**, so it defaults to opt-in.
+Controls whether Step 4 (Finalize Plan) presents the plan through a **browser-based, structured review gate** instead of the text approval. This feature is currently **experimental**, so it defaults to opt-in.
+
+Unlike the `ExitPlanMode` approval modal (which renders the same plan markdown), the gate turns the plan into a review-optimized surface the modal cannot offer:
+
+- a **summary header** (Goal as title; Difficulty / Scope / Risks-count chips) for a 5-second scan
+- **collapsible sections** — must-review (Overview / Decisions / Context) open, reference sections (Design / Test plan / Risks) collapsed, Risks carrying a count badge
+- **Decision cards** rendering each Decision's Question / Recommendation / Alternative, with a one-click **Keep recommendation / Switch to alternative** toggle (a switch is applied as a Recommendation↔Alternative swap when you submit)
+- **per-element comments** — comment on an individual Decision, Design step, risk, or paragraph, not just a whole section
+- **mermaid diagrams** rendered as SVG (flowcharts / sequence diagrams), where the modal shows only the raw fenced text
+
+Behavior:
 
 - `false` (default): Step 4 always uses the text path — the chat-rendered condensed plan followed by `ExitPlanMode` — exactly as before
-- `true`: Step 4 launches the gate **only when the local browser is reachable** (the agent and the user share a machine — local CLI / Remote Control). The gate serves the plan on a local `127.0.0.1` server (the bundled `scripts/plan-review/serve.mjs` viewer), opens your browser, and lets you comment per block and choose **approve** or **revise**. `approve` proceeds to implementation; `revise` applies your block comments to the plan and re-runs the gate
+- `true`: Step 4 launches the gate **only when the local browser is reachable** (the agent and the user share a machine — local CLI / Remote Control). The gate serves the plan on a local `127.0.0.1` server (the bundled `scripts/plan-review/serve.mjs` viewer), opens your browser, and lets you review and comment per element, then choose **approve** or **revise**. `approve` proceeds to implementation; `revise` applies your comments (and any recommendation/alternative switches) to the plan and re-runs the gate
 
 Reachability is detected via `CLAUDE_CODE_REMOTE`: when it is `"true"` (the cloud-execution marker set by Claude Code on the Web), the agent runs in a remote headless sandbox whose `127.0.0.1` and `open` cannot reach your browser, so Step 4 transparently falls back to the text path. The gate also falls back on any launch failure (non-zero `serve.mjs` exit, blocked Bash call).
 
@@ -526,7 +536,7 @@ The workflow begins at Step 2 (Step 1 is settings load, Step 1.5 is task decompo
 | 1.5 | Task Decomposition | (Normal sub-mode, only when `task_decomposition: true`) Decide whether to split the task into subtasks and, if approved, create a state file. (Resume sub-mode) Load the state file and pick the next subtask — the step is executed but not registered as a task entry. Skipped entirely when `task_decomposition: false` |
 | 2 | Create Plan | Create plan in Plan Mode, assess difficulty |
 | 3 | Plan Review | Internal review by reviewer (up to N_plan iterations; skipped entirely for Trivial tasks, N_plan=0) |
-| 4 | Finalize Plan | **User approval gate** (text approval by default; a browser-based block-level review gate when `visual_plan_review: true` and the local browser is reachable, falling back to text otherwise) |
+| 4 | Finalize Plan | **User approval gate** (text approval by default; a browser-based structured review gate — summary header, collapsible sections, Decision cards with a recommend/alternative toggle, per-element comments — when `visual_plan_review: true` and the local browser is reachable, falling back to text otherwise) |
 | 5 | Implement | Follow the plan |
 | 6 | Tidy | Reduce complexity via the built-in `simplify` skill (falls back to the in-house `tidy` skill when `simplify` is unavailable); skipped for Trivial / Simple tasks per the difficulty-skip matrix |
 | 7 | Check / Test | Run check_commands + run-tests |

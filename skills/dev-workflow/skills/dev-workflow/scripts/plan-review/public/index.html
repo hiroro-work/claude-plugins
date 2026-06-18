@@ -32,6 +32,8 @@
       --bg-soft: #f6f8fa;
       --approve: #1a7f37;
       --revise: #bc4c00;
+      --rec: var(--approve);
+      --risk: var(--revise);
       --bar-h: 64px;
     }
     * { box-sizing: border-box; }
@@ -44,142 +46,159 @@
     }
     #app {
       display: grid;
-      grid-template-columns: 260px minmax(0, 1fr);
-      gap: 32px;
-      max-width: 1100px;
+      grid-template-columns: 240px minmax(0, 1fr);
+      gap: 28px;
+      max-width: 1120px;
       margin: 0 auto;
-      padding: 24px 24px calc(var(--bar-h) + 32px);
+      padding: 20px 24px calc(var(--bar-h) + 32px);
     }
+    /* summary header */
+    header.plan-head {
+      grid-column: 1 / -1;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 14px;
+      margin-bottom: 4px;
+    }
+    header.plan-head .eyebrow { color: var(--muted); font-size: 12px; letter-spacing: .04em; text-transform: uppercase; }
+    header.plan-head h1 { font-size: 20px; margin: 2px 0 10px; line-height: 1.4; }
+    header.plan-head h1 code { font-size: 0.9em; }
+    #plan-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+    .chip {
+      display: inline-flex; align-items: baseline; gap: 6px;
+      font-size: 12px; color: var(--fg);
+      background: var(--bg-soft); border: 1px solid var(--border);
+      border-radius: 999px; padding: 3px 12px;
+    }
+    .chip b { color: var(--muted); font-weight: 600; }
+    .chip.risk { background: #fff4ec; border-color: #f0c0a0; color: var(--risk); }
+    .chip.risk b { color: var(--risk); }
     /* section nav */
     #toc {
-      position: sticky;
-      top: 24px;
-      align-self: start;
-      max-height: calc(100vh - 48px);
-      overflow: auto;
-      font-size: 13px;
-      border-right: 1px solid var(--border);
-      padding-right: 16px;
+      position: sticky; top: 16px; align-self: start;
+      max-height: calc(100vh - 32px); overflow: auto;
+      font-size: 13px; border-right: 1px solid var(--border); padding-right: 14px;
     }
     #toc .toc-title { font-weight: 600; color: var(--muted); margin-bottom: 8px; }
-    #toc a { display: block; color: var(--muted); text-decoration: none; padding: 2px 0; }
+    #toc a { display: block; color: var(--muted); text-decoration: none; padding: 3px 0; }
     #toc a:hover { color: var(--accent); }
-    #toc a.toc-h2 { padding-left: 12px; }
-    #toc a.toc-h3 { padding-left: 24px; font-size: 12px; }
     /* main */
-    header.plan-head { grid-column: 1 / -1; border-bottom: 1px solid var(--border); padding-bottom: 12px; margin-bottom: 8px; }
-    header.plan-head h1 { font-size: 18px; margin: 0; }
-    header.plan-head .meta { color: var(--muted); font-size: 13px; }
     main#plan { min-width: 0; }
-    section.block {
-      position: relative;
-      border: 1px solid transparent;
-      border-radius: 8px;
-      padding: 4px 12px;
-      margin: 4px 0;
+    .preamble { color: var(--muted); font-size: 13px; margin: 0 0 12px; }
+    .preamble blockquote { border-left: 3px solid var(--border); margin: 0; padding: 2px 12px; }
+    details.section {
+      border: 1px solid var(--border); border-radius: 10px;
+      margin: 12px 0; padding: 0 16px; background: var(--bg);
     }
-    section.block:hover { border-color: var(--border); background: var(--bg-soft); }
-    .block-body > :first-child { margin-top: 8px; }
-    .block-body h1 { font-size: 22px; }
-    .block-body h2 { font-size: 18px; border-bottom: 1px solid var(--border); padding-bottom: 4px; }
-    .block-body h3 { font-size: 15px; }
-    .block-body pre {
-      background: var(--bg-soft);
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: 12px;
-      overflow: auto;
+    details.section[open] { padding-bottom: 8px; }
+    details.section > summary {
+      cursor: pointer; list-style: none; padding: 12px 0;
+      display: flex; align-items: center; gap: 10px; font-weight: 600;
     }
-    .block-body code:not(pre code) {
-      background: var(--bg-soft);
-      border-radius: 4px;
-      padding: 1px 5px;
-      font-size: 0.9em;
+    details.section > summary::-webkit-details-marker { display: none; }
+    details.section > summary::before {
+      content: "▸"; color: var(--muted); font-size: 12px; transition: transform .12s;
     }
-    .block-body table { border-collapse: collapse; }
-    .block-body th, .block-body td { border: 1px solid var(--border); padding: 4px 10px; }
-    .block-body .mermaid { background: var(--bg); text-align: center; margin: 8px 0; }
-    .block-body blockquote { border-left: 3px solid var(--border); margin: 8px 0; padding: 0 12px; color: var(--muted); }
-    /* comments */
-    .block-tools { margin: 4px 0; }
+    details.section[open] > summary::before { transform: rotate(90deg); }
+    .sec-title { font-size: 15px; }
+    .badge {
+      font-size: 11px; font-weight: 700; border-radius: 999px;
+      padding: 1px 8px; background: var(--bg-soft); color: var(--muted);
+    }
+    .badge-risk { background: #fff4ec; color: var(--risk); }
+    .sec-body { padding-top: 2px; }
+    .sec-body > :first-child { margin-top: 4px; }
+    .sec-body h1 { font-size: 20px; }
+    .sec-body h2 { font-size: 17px; }
+    .sec-body h3, .sec-body h4 { font-size: 14px; }
+    .sec-body pre {
+      background: var(--bg-soft); border: 1px solid var(--border);
+      border-radius: 6px; padding: 12px; overflow: auto;
+    }
+    .sec-body code:not(pre code) {
+      background: var(--bg-soft); border-radius: 4px; padding: 1px 5px; font-size: 0.9em;
+    }
+    .sec-body table { border-collapse: collapse; }
+    .sec-body th, .sec-body td { border: 1px solid var(--border); padding: 4px 10px; }
+    .sec-body .mermaid { background: var(--bg); text-align: center; margin: 10px 0; }
+    .sec-body blockquote { border-left: 3px solid var(--border); margin: 8px 0; padding: 0 12px; color: var(--muted); }
+    /* decision cards */
+    .decision-card {
+      border: 1px solid var(--border); border-left: 3px solid var(--accent);
+      border-radius: 8px; padding: 10px 14px; margin: 10px 0; background: var(--bg);
+    }
+    .decision-card.switched { border-left-color: var(--revise); background: #fffaf6; }
+    .dc-q { font-weight: 600; margin-bottom: 8px; }
+    .dc-q .dc-tag {
+      display: inline-block; font-size: 11px; font-weight: 700; color: #fff;
+      background: var(--accent); border-radius: 4px; padding: 1px 7px; margin-right: 6px; vertical-align: 1px;
+    }
+    .decision-card.switched .dc-q .dc-tag { background: var(--revise); }
+    .dc-rec, .dc-alt { font-size: 14px; border-radius: 6px; padding: 6px 10px; margin: 6px 0; }
+    .dc-rec { background: #eaf6ee; border: 1px solid #b4ddc0; }
+    .dc-alt { background: var(--bg-soft); border: 1px solid var(--border); color: var(--muted); }
+    .decision-card.switched .dc-rec { background: var(--bg-soft); border-color: var(--border); color: var(--muted); }
+    .decision-card.switched .dc-alt { background: #fff0e6; border-color: #f0c0a0; color: var(--fg); }
+    .dc-rec > :first-child, .dc-alt > :first-child { margin-top: 2px; }
+    .dc-rec > :last-child, .dc-alt > :last-child { margin-bottom: 2px; }
+    .dc-label {
+      display: inline-block; font-size: 10px; font-weight: 700; letter-spacing: .04em;
+      text-transform: uppercase; color: var(--muted); margin-bottom: 2px;
+    }
+    .dc-rec .dc-label { color: var(--rec); }
+    .dc-toggle { display: flex; gap: 14px; margin: 8px 0 2px; font-size: 13px; }
+    .dc-toggle label { display: inline-flex; align-items: center; gap: 5px; cursor: pointer; color: var(--muted); }
+    .dc-toggle label:has(input:checked) { color: var(--fg); font-weight: 600; }
+    /* comment affordances */
+    .commentable { position: relative; }
+    .cbtn {
+      position: absolute; top: 0; right: -2px; opacity: 0;
+      font-size: 12px; line-height: 1; border: 1px solid var(--border);
+      background: var(--bg); border-radius: 6px; padding: 2px 6px; cursor: pointer;
+      transition: opacity .1s;
+    }
+    .commentable:hover > .cbtn, .cbtn.has-comment { opacity: 1; }
+    .cbtn.has-comment { border-color: var(--revise); }
     .comment-btn {
-      font-size: 12px;
-      color: var(--muted);
-      background: none;
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: 2px 10px;
-      cursor: pointer;
+      font-size: 12px; color: var(--muted); background: none;
+      border: 1px solid var(--border); border-radius: 6px; padding: 2px 10px; cursor: pointer; margin-top: 6px;
     }
     .comment-btn:hover { color: var(--accent); border-color: var(--accent); }
     .comment-btn.has-comment { color: var(--revise); border-color: var(--revise); font-weight: 600; }
     .comment-input {
-      display: block;
-      width: 100%;
-      min-height: 64px;
-      margin: 6px 0 10px;
-      padding: 8px;
-      font: inherit;
-      font-size: 13px;
-      border: 1px solid var(--accent);
-      border-radius: 6px;
-      resize: vertical;
+      display: block; width: 100%; min-height: 56px; margin: 6px 0 8px; padding: 8px;
+      font: inherit; font-size: 13px; border: 1px solid var(--accent); border-radius: 6px; resize: vertical;
     }
     /* sticky decision bar */
     #bar {
-      position: fixed;
-      left: 0; right: 0; bottom: 0;
-      height: var(--bar-h);
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      padding: 0 24px;
-      background: var(--bg);
-      border-top: 1px solid var(--border);
-      box-shadow: 0 -2px 8px rgba(0,0,0,0.04);
+      position: fixed; left: 0; right: 0; bottom: 0; height: var(--bar-h);
+      display: flex; align-items: center; gap: 16px; padding: 0 24px;
+      background: var(--bg); border-top: 1px solid var(--border); box-shadow: 0 -2px 8px rgba(0,0,0,0.04);
     }
     #bar .decision { display: flex; gap: 8px; }
     #bar label.choice {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 6px 14px;
-      cursor: pointer;
-      font-size: 14px;
+      display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--border);
+      border-radius: 8px; padding: 6px 14px; cursor: pointer; font-size: 14px;
     }
     #bar label.choice:has(input:checked).approve { border-color: var(--approve); color: var(--approve); font-weight: 600; }
     #bar label.choice:has(input:checked).revise { border-color: var(--revise); color: var(--revise); font-weight: 600; }
     #bar .spacer { flex: 1; }
     #bar .count { color: var(--muted); font-size: 13px; }
     #send-btn {
-      font-size: 14px;
-      font-weight: 600;
-      color: #fff;
-      background: var(--accent);
-      border: none;
-      border-radius: 8px;
-      padding: 8px 20px;
-      cursor: pointer;
+      font-size: 14px; font-weight: 600; color: #fff; background: var(--accent);
+      border: none; border-radius: 8px; padding: 8px 20px; cursor: pointer;
     }
     #send-btn:disabled { background: var(--border); color: var(--muted); cursor: not-allowed; }
     #status { color: var(--revise); font-size: 13px; }
-    #done {
-      grid-column: 1 / -1;
-      text-align: center;
-      padding: 40px;
-      font-size: 16px;
-      color: var(--approve);
-    }
+    #done { grid-column: 1 / -1; text-align: center; padding: 40px; font-size: 16px; color: var(--approve); }
     #app.submitted main#plan, #app.submitted #toc { opacity: 0.5; pointer-events: none; }
   </style>
 </head>
 <body>
   <div id="app">
     <header class="plan-head">
-      <h1>Plan Review</h1>
-      <div class="meta">Plan: <span id="plan-id">…</span> — comment on any block, then choose "Approve" or "Request changes" below and submit.</div>
+      <div class="eyebrow">Plan Review — <span id="plan-id">…</span></div>
+      <h1 id="plan-title">…</h1>
+      <div id="plan-chips"></div>
     </header>
     <nav id="toc"><div class="toc-title">Sections</div></nav>
     <main id="plan"></main>
@@ -200,58 +219,348 @@
   <script type="module">
     import mermaid from "https://esm.sh/mermaid@11.15.0";
 
-    const state = { decision: null, comments: new Map() }; // blockId -> comment text
-
     mermaid.initialize({ startOnLoad: false, theme: "default", securityLevel: "strict" });
 
-    async function init() {
-      const res = await fetch("/api/plan");
-      if (!res.ok) throw new Error(`/api/plan HTTP ${res.status}`);
-      const { id, blocks } = await res.json();
-      document.getElementById("plan-id").textContent = id;
-      const planEl = document.getElementById("plan");
-      for (const block of blocks) planEl.appendChild(renderBlock(block));
-      highlightCode(planEl);
-      await renderMermaid(planEl);
-      buildToc(planEl);
+    // blockId -> { text, excerpt } ; blockId -> excerpt (switch)
+    const state = { decision: null, comments: new Map(), switches: new Map() };
+    let SWITCH_MSG = "Switch this decision to its Alternative";
+
+    const md = (t) => window.marked.parse(t || "");
+    const mdInline = (t) => window.marked.parseInline(t || "");
+    const stripMd = (t) => (t || "").replace(/[*`]/g, "").trim();
+    const excerptOf = (t) => (t || "").replace(/\s+/g, " ").trim().slice(0, 40);
+    const escapeHtml = (t) => (t || "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+    const FENCE_RE = /^\s*(`{3,}|~{3,})/;
+
+    function classify(title) {
+      const t = title.toLowerCase().replace(/\s+/g, " ").trim();
+      if (t.startsWith("overview")) return "overview";
+      if (t.startsWith("decision")) return "decisions";
+      if (t.startsWith("design")) return "design";
+      if (t.startsWith("test plan") || t.startsWith("test")) return "test";
+      if (t.startsWith("risk") || t.startsWith("unknown")) return "risks";
+      if (t.startsWith("context")) return "context";
+      return "other";
     }
 
-    function renderBlock(block) {
-      const section = document.createElement("section");
-      section.className = "block";
-      section.dataset.blockId = block.id;
-      section.dataset.excerpt = block.markdown.replace(/\s+/g, " ").trim().slice(0, 40);
+    function slugify(title) {
+      return (title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "")) || "section";
+    }
 
-      const body = document.createElement("div");
-      body.className = "block-body";
-      body.innerHTML = window.marked.parse(block.markdown);
-      section.appendChild(body);
+    // Split the plan into level-3 (###) sections, tracking fenced code so a ### inside a
+    // code block is not mistaken for a heading. Content before the first ### is the preamble.
+    function parseSections(markdown) {
+      const lines = markdown.split(/\r?\n/);
+      const sections = [];
+      const preamble = [];
+      let cur = null;
+      let inFence = false;
+      const seen = {};
+      for (const line of lines) {
+        if (FENCE_RE.test(line)) inFence = !inFence;
+        const h = !inFence && /^###\s+(.+?)\s*$/.exec(line);
+        if (h) {
+          const title = h[1];
+          const base = slugify(title);
+          let id = base, n = 1;
+          while (seen[id]) id = `${base}-${++n}`; // probe until unused so "Design 2" can't collide with a 2nd "Design"
+          seen[id] = 1;
+          cur = { title, type: classify(title), id, lines: [] };
+          sections.push(cur);
+          continue;
+        }
+        if (cur) cur.lines.push(line);
+        else preamble.push(line);
+      }
+      for (const s of sections) s.body = s.lines.join("\n").trim();
+      return { preamble: preamble.join("\n").trim(), sections };
+    }
 
-      const tools = document.createElement("div");
-      tools.className = "block-tools";
+    function fieldValue(body, label) {
+      const re = new RegExp("\\*\\*" + label + "\\*\\*\\s*[:：]\\s*(.*)");
+      for (const line of body.split("\n")) {
+        const m = re.exec(line);
+        if (m) return m[1].trim();
+      }
+      return "";
+    }
+
+    function parseOverview(body) {
+      return {
+        goal: fieldValue(body, "Goal"),
+        difficulty: fieldValue(body, "Difficulty"),
+        scope: fieldValue(body, "Scope"),
+      };
+    }
+
+    function countListItems(body) {
+      let inFence = false, n = 0;
+      for (const line of (body || "").split("\n")) {
+        if (FENCE_RE.test(line)) inFence = !inFence;
+        if (!inFence && /^\s{0,1}(?:[-*]|\d+\.)\s+\S/.test(line)) n++;
+      }
+      return n;
+    }
+
+    // Split the Decisions body into items by the **Question** marker; capture each item's
+    // question / recommendation / alternative raw text for card rendering.
+    function parseDecisions(body) {
+      const FIELD_RE = /^\s*(?:[-*]\s+)?\*\*(Question|Recommendation|Alternative)\*\*\s*[:：]?\s*(.*)$/;
+      const items = [];
+      const preamble = [];
+      let cur = null, field = null;
+      for (const line of body.split("\n")) {
+        const m = FIELD_RE.exec(line);
+        if (m) {
+          const f = m[1].toLowerCase();
+          if (f === "question") {
+            cur = { question: m[2] || "", recommendation: "", alternative: "" };
+            items.push(cur);
+            field = "question";
+          } else if (cur) {
+            field = f;
+            cur[f] = m[2] || "";
+          } else {
+            preamble.push(line); // stray Recommendation/Alternative before any Question — keep, don't drop
+          }
+          continue;
+        }
+        if (cur && field) cur[field] += "\n" + line;
+        else if (!cur) preamble.push(line);
+      }
+      for (const it of items) {
+        it.question = it.question.trim();
+        it.recommendation = it.recommendation.trim();
+        it.alternative = it.alternative.trim();
+      }
+      return { items, preamble: preamble.join("\n").trim() };
+    }
+
+    // --- comment state ---
+    function effectiveComments() {
+      const ids = new Set([...state.comments.keys(), ...state.switches.keys()]);
+      const out = [];
+      for (const id of ids) {
+        const switched = state.switches.has(id);
+        const c = state.comments.get(id);
+        const txt = c ? c.text.trim() : "";
+        const excerpt = (c && c.excerpt) || state.switches.get(id) || "";
+        let body = switched ? SWITCH_MSG + (txt ? "\n\n" + txt : "") : txt;
+        if (body.trim()) out.push({ block: id, excerpt, body });
+      }
+      return out;
+    }
+
+    function onCommentsChanged() {
+      const n = effectiveComments().length;
+      document.getElementById("comment-count").textContent = String(n);
+      if (n > 0 && !state.decision) selectDecision("revise"); // commenting implies a revise
+    }
+
+    function setComment(id, text, btn, excerpt) {
+      const v = text.trim();
+      if (v) state.comments.set(id, { text, excerpt }); else state.comments.delete(id);
+      if (btn) btn.classList.toggle("has-comment", Boolean(v));
+      onCommentsChanged();
+    }
+
+    function setSwitch(id, on, excerpt) {
+      if (on) state.switches.set(id, excerpt || ""); else state.switches.delete(id);
+      onCommentsChanged();
+    }
+
+    function selectDecision(v) {
+      state.decision = v;
+      const radio = document.querySelector(`input[name=decision][value=${v}]`);
+      if (radio) radio.checked = true;
+      document.getElementById("send-btn").disabled = false;
+    }
+
+    // --- rendering ---
+    function chip(label, value, cls) {
+      return `<span class="chip ${cls || ""}"><b>${escapeHtml(label)}</b> ${escapeHtml(value)}</span>`;
+    }
+
+    function renderHeader(ov, planId, riskCount) {
+      document.getElementById("plan-id").textContent = planId;
+      document.getElementById("plan-title").innerHTML = ov.goal ? mdInline(ov.goal) : escapeHtml(planId);
+      const chips = [];
+      if (ov.difficulty) chips.push(chip("Difficulty", stripMd(ov.difficulty)));
+      if (ov.scope) chips.push(chip("Scope", stripMd(ov.scope)));
+      if (riskCount) chips.push(chip("Risks", String(riskCount), "risk"));
+      document.getElementById("plan-chips").innerHTML = chips.join("");
+    }
+
+    function renderNav(sections) {
+      const toc = document.getElementById("toc");
+      if (!sections.length) { toc.hidden = true; return; }
+      for (const s of sections) {
+        const a = document.createElement("a");
+        a.href = `#sec-${s.id}`;
+        a.textContent = s.title;
+        a.addEventListener("click", () => {
+          const det = document.getElementById(`sec-${s.id}`);
+          if (det) det.open = true;
+        });
+        toc.appendChild(a);
+      }
+    }
+
+    function renderPreamble(preamble, planEl) {
+      const kept = preamble.split("\n").filter((l) => !/^##\s/.test(l)).join("\n").trim();
+      if (!kept) return;
+      const div = document.createElement("div");
+      div.className = "preamble";
+      div.innerHTML = md(kept);
+      planEl.appendChild(div);
+    }
+
+    function makeCommentArea(placeholder) {
+      const area = document.createElement("textarea");
+      area.className = "comment-input";
+      area.placeholder = placeholder;
+      area.hidden = true;
+      return area;
+    }
+
+    // Wire a comment button + textarea pair: typing updates the comment state, clicking
+    // toggles the textarea. Shared by the decision-card and per-element comment affordances.
+    function wireCommentToggle(btn, area, id, excerpt) {
+      area.addEventListener("input", () => setComment(id, area.value, btn, excerpt));
+      btn.addEventListener("click", (e) => { e.preventDefault(); area.hidden = !area.hidden; if (!area.hidden) area.focus(); });
+    }
+
+    function makeFreeComment(id, excerpt, placeholder) {
       const btn = document.createElement("button");
       btn.type = "button";
       btn.className = "comment-btn";
-      btn.textContent = "Comment on this block";
-      const area = document.createElement("textarea");
-      area.className = "comment-input";
-      area.placeholder = "Comment on this block…";
-      area.hidden = true;
-      area.addEventListener("input", () => {
-        const v = area.value.trim();
-        if (v) state.comments.set(block.id, area.value);
-        else state.comments.delete(block.id);
-        btn.classList.toggle("has-comment", Boolean(v));
-        document.getElementById("comment-count").textContent = String(state.comments.size);
-      });
-      btn.addEventListener("click", () => {
-        area.hidden = !area.hidden;
-        if (!area.hidden) area.focus();
-      });
-      tools.appendChild(btn);
-      section.appendChild(tools);
-      section.appendChild(area);
-      return section;
+      btn.textContent = placeholder;
+      const area = makeCommentArea(placeholder + "…");
+      wireCommentToggle(btn, area, id, excerpt);
+      return { btn, area };
+    }
+
+    function renderDecisionCard(it, n) {
+      const id = `decision-${n}`;
+      const excerpt = excerptOf(it.question);
+      const card = document.createElement("div");
+      card.className = "decision-card";
+      card.dataset.blockId = id;
+
+      const q = document.createElement("div");
+      q.className = "dc-q";
+      q.innerHTML = `<span class="dc-tag">Decision ${n}</span>${mdInline(it.question)}`;
+      card.appendChild(q);
+
+      const rec = document.createElement("div");
+      rec.className = "dc-rec";
+      rec.innerHTML = `<span class="dc-label">Recommendation</span>${md(it.recommendation)}`;
+      card.appendChild(rec);
+
+      if (it.alternative) {
+        const alt = document.createElement("div");
+        alt.className = "dc-alt";
+        alt.innerHTML = `<span class="dc-label">Alternative</span>${md(it.alternative)}`;
+        card.appendChild(alt);
+
+        const toggle = document.createElement("div");
+        toggle.className = "dc-toggle";
+        toggle.innerHTML =
+          `<label><input type="radio" name="sw-${n}" value="keep" checked> Keep recommendation</label>` +
+          `<label><input type="radio" name="sw-${n}" value="switch"> Switch to alternative</label>`;
+        toggle.querySelectorAll("input").forEach((r) =>
+          r.addEventListener("change", () => {
+            const on = toggle.querySelector("input[value=switch]").checked;
+            card.classList.toggle("switched", on);
+            setSwitch(id, on, excerpt);
+          }),
+        );
+        card.appendChild(toggle);
+      }
+
+      const { btn, area } = makeFreeComment(id, excerpt, "Comment on this decision");
+      card.appendChild(btn);
+      card.appendChild(area);
+      return card;
+    }
+
+    // Attach a hover comment affordance to each commentable block element in a rendered body.
+    // List items are commentable individually (Design steps / Risks / Test items); paragraphs,
+    // code blocks, blockquotes, sub-headings, and tables are commentable as whole blocks.
+    // AREA_INSIDE = tags whose textarea is appended *inside* the element (valid flow content);
+    // others receive it as a sibling (afterend). DIV is the synthetic table wrapper from below.
+    const AREA_INSIDE = new Set(["LI", "BLOCKQUOTE", "DIV"]);
+    function attachComment(el, id) {
+      el.classList.add("commentable");
+      el.dataset.blockId = id;
+      const excerpt = excerptOf(el.textContent);
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "cbtn";
+      btn.title = "Comment on this";
+      btn.textContent = "💬";
+      const area = makeCommentArea("Comment on this…");
+      wireCommentToggle(btn, area, id, excerpt);
+      el.appendChild(btn);
+      if (AREA_INSIDE.has(el.tagName)) el.appendChild(area);
+      else el.insertAdjacentElement("afterend", area);
+    }
+
+    function attachElementComments(bodyEl, sectionId) {
+      let n = 0;
+      const targets = [];
+      for (const c of Array.from(bodyEl.children)) {
+        const tag = c.tagName;
+        if (tag === "UL" || tag === "OL") {
+          for (const li of Array.from(c.children)) if (li.tagName === "LI") targets.push(li);
+        } else if (tag === "TABLE") {
+          const w = document.createElement("div");
+          w.className = "cwrap";
+          c.replaceWith(w);
+          w.appendChild(c);
+          targets.push(w);
+        } else if (["P", "BLOCKQUOTE", "PRE", "H4", "H5", "H6"].includes(tag)) {
+          targets.push(c);
+        }
+      }
+      for (const t of targets) attachComment(t, `${sectionId}::${++n}`);
+    }
+
+    function renderSection(section) {
+      const det = document.createElement("details");
+      det.className = "section";
+      det.id = `sec-${section.id}`;
+      if (["overview", "decisions", "context"].includes(section.type)) det.open = true;
+
+      const sum = document.createElement("summary");
+      sum.innerHTML = `<span class="sec-title">${escapeHtml(section.title)}</span>`;
+      if (section.type === "risks" && section.itemCount) {
+        sum.innerHTML += ` <span class="badge badge-risk">${section.itemCount}</span>`;
+      }
+      det.appendChild(sum);
+
+      const body = document.createElement("div");
+      body.className = "sec-body";
+      let isCards = false;
+
+      if (section.type === "decisions") {
+        const { items, preamble } = parseDecisions(section.body);
+        if (items.length) {
+          isCards = true;
+          if (preamble) {
+            const pre = document.createElement("div");
+            pre.innerHTML = md(preamble);
+            body.appendChild(pre);
+          }
+          items.forEach((it, i) => body.appendChild(renderDecisionCard(it, i + 1)));
+        }
+      }
+      if (!isCards) {
+        body.innerHTML = md(section.body); // shape-detection fallback: render as markdown
+      }
+      det.appendChild(body);
+      return { det, bodyEl: body, isCards };
     }
 
     function highlightCode(root) {
@@ -272,49 +581,59 @@
       });
       if (nodes.length) {
         try {
-          await mermaid.run({ nodes });
+          // suppressErrors keeps a single bad fence from aborting the batch — valid sibling
+          // fences still render; the failing one stays as its (un-rendered) source text.
+          await mermaid.run({ nodes, suppressErrors: true });
         } catch (err) {
           console.error("mermaid render error", err);
         }
       }
     }
 
-    function buildToc(root) {
-      const toc = document.getElementById("toc");
-      const headings = root.querySelectorAll("h1, h2, h3");
-      if (!headings.length) {
-        toc.hidden = true;
-        return;
+    async function init() {
+      const res = await fetch("/api/plan");
+      if (!res.ok) throw new Error(`/api/plan HTTP ${res.status}`);
+      const { id, markdown, lang } = await res.json();
+      if (lang === "ja") SWITCH_MSG = "この Decision を Alternative に切り替える";
+
+      let { preamble, sections } = parseSections(markdown);
+      if (!sections.length) sections = [{ title: "Plan", type: "other", id: "plan", body: markdown }];
+
+      const ovSection = sections.find((s) => s.type === "overview");
+      const ov = parseOverview(ovSection ? ovSection.body : "");
+      const risksSection = sections.find((s) => s.type === "risks");
+      const riskCount = risksSection ? countListItems(risksSection.body) : 0;
+      if (risksSection) risksSection.itemCount = riskCount; // reused by the section badge below
+      renderHeader(ov, id, riskCount);
+      renderNav(sections);
+
+      const planEl = document.getElementById("plan");
+      renderPreamble(preamble, planEl);
+
+      const bodyRefs = [];
+      for (const s of sections) {
+        const { det, bodyEl, isCards } = renderSection(s);
+        planEl.appendChild(det);
+        bodyRefs.push({ bodyEl, section: s, isCards });
       }
-      headings.forEach((h, i) => {
-        const anchor = `sec-${i}`;
-        h.id = anchor;
-        const a = document.createElement("a");
-        a.href = `#${anchor}`;
-        a.textContent = h.textContent;
-        a.className = `toc-${h.tagName.toLowerCase()}`;
-        toc.appendChild(a);
-      });
+
+      // Run highlight + mermaid over the whole container first (mermaid replaces the
+      // <pre> fence with a .mermaid div), then attach per-element comments so the comment
+      // affordances land on stable rendered blocks (decision cards carry their own).
+      highlightCode(planEl);
+      await renderMermaid(planEl);
+      for (const r of bodyRefs) if (!r.isCards) attachElementComments(r.bodyEl, r.section.id);
     }
 
     document.querySelectorAll("input[name=decision]").forEach((radio) => {
-      radio.addEventListener("change", () => {
-        state.decision = radio.value;
-        document.getElementById("send-btn").disabled = false;
-      });
+      radio.addEventListener("change", () => selectDecision(radio.value));
     });
 
     document.getElementById("send-btn").addEventListener("click", submit);
 
     async function submit() {
       if (!state.decision) return;
-      const comments = [];
-      document.querySelectorAll("section.block").forEach((sec) => {
-        const id = sec.dataset.blockId;
-        if (state.comments.has(id)) {
-          comments.push({ block: id, excerpt: sec.dataset.excerpt, body: state.comments.get(id) });
-        }
-      });
+      const comments = effectiveComments();
       const sendBtn = document.getElementById("send-btn");
       const status = document.getElementById("status");
       sendBtn.disabled = true;

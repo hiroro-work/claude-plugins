@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-06-18
+
+### dev-workflow v1.71.0 / dev-workflow-bundle v1.72.0
+
+- feat(dev-workflow): overhaul the **visual plan-review gate** (`visual_plan_review`) into a structured, review-optimized browser surface
+  - **Problem**: the prior gate rendered the plan markdown as-is, so it offered no differentiation from the `ExitPlanMode` approval modal (which renders the same markdown), and its only distinguishing affordance — block comments — was at coarse top-level-section granularity. It was reported as providing no benefit over the text path.
+  - **`scripts/plan-review/serve.mjs`** is simplified to a **transport**: `/api/plan` returns `{ id, markdown, lang }` (raw plan markdown), the block-segmentation code is removed, and `/api/submit` accepts any non-empty browser-assigned semantic block id. A new `--lang <ja|en>` arg controls only the generated "switch to alternative" comment body (default `en`).
+  - **`scripts/plan-review/public/index.html`** is rebuilt into a structured review surface: a **summary header** (Goal title + Difficulty / Scope / Risks-count chips), **collapsible sections** (`<details>`; must-review Overview / Decisions / Context open, reference sections collapsed, Risks badged), **Decision cards** (Question / Recommendation / Alternative with a one-click Keep/Switch-to-alternative toggle that submits as a Recommendation↔Alternative swap), **per-element comments** (comment an individual Decision / Design step / list item / paragraph), and **mermaid diagrams** rendered as SVG with per-fence failure isolation (`mermaid.run({ suppressErrors: true })`). Plan structure is parsed client-side with per-section **shape detection** (non-conforming sections — empty-Decisions, by-file Design — degrade to plain markdown rendering, keeping element-level comments).
+  - **`references/visual-plan-review.md`**: `/api/plan` contract updated to `{ id, markdown, lang }`; the served-file block-marker insertion step removed (block ids are now per-render ephemeral semantic ids — comments are consumed on each `revise` submit, so cross-render id stability is unnecessary); `--lang` documented; the "switch to alternative" comment is applied as a bounded R/A swap (the browser toggle is the confirmation, so the text-path read-back is intentionally omitted).
+  - **`references/plan-format.md`**: Design guidance now permits an **optional mermaid diagram** (flowchart / sequence) when a complex flow / state transition / branching is hard to follow in prose — the diagram must replace that prose (a diagram restating the numbered steps is padding, cut per § Sizing guidance). The visual gate renders it; the text path / modal shows the raw fenced block (acceptable degradation).
+  - **`SKILL.md`** Step 4: dropped the stale "with block markers" phrasing. **`README.md`**: the `visual_plan_review` docs now advertise the new capabilities and the differentiation from the modal.
+  - **Manual verification (next session)**: the workflow-integrated Step 4 gate activates only in a session that loads this updated `SKILL.md`, so the end-to-end browser flow is verified manually in a fresh local session with `visual_plan_review: true` (this run's own Step 4 used the text path under plan-mode restrictions). The viewer's rendering itself was verified this run via `webapp-testing` (Playwright).
+
 ## 2026-06-17
 
 ### dev-workflow v1.70.0 / dev-workflow-bundle v1.71.0

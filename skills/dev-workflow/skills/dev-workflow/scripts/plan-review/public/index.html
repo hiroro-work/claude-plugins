@@ -168,6 +168,7 @@
       display: block; width: 100%; min-height: 56px; margin: 6px 0 8px; padding: 8px;
       font: inherit; font-size: 13px; border: 1px solid var(--accent); border-radius: 6px; resize: vertical;
     }
+    .comment-input[hidden] { display: none; } /* the `display: block` above otherwise defeats the `hidden` attribute */
     /* sticky decision bar */
     #bar {
       position: fixed; left: 0; right: 0; bottom: 0; height: var(--bar-h);

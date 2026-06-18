@@ -157,6 +157,7 @@ hooks:
 | `task_decomposition` | bool | `true` | Whether Step 1.5 runs auto-decomposition in Normal sub-mode |
 | `interactive_commits` | bool | `true` | Whether Step 10 (Interactive Commits) groups working-tree changes into commits and iterates per-commit with the user |
 | `compact_rules` | bool | `false` | Whether Step 11 sub-step 3 dispatches `Skill(extract-rules) --compact` and opens the compaction approval gate (experimental, opt-in) |
+| `visual_plan_review` | bool | `false` | Whether Step 4 launches the browser-based block-level review gate in place of the text approval (local CLI / Remote Control only — falls back to text on Claude Code on the Web; experimental, opt-in) |
 | `custom_instructions` | string | (none) | Free-form instructions applied across all phases |
 | `check_commands` | list&lt;string&gt; | (none) | Static checks (lint / format / typecheck, etc.) |
 | `test_commands` | list&lt;string&gt; | `["Skill(run-tests)"]` | Test execution (fixed) |
@@ -252,6 +253,23 @@ Non-boolean values are ignored with a warning and fall back to `false`. To opt i
 **Behavior change from v1.38.0**: v1.38.0 ran sub-step 3 unconditionally. From v1.39.0 onward sub-step 3 is gated behind `compact_rules: true`. Users who adopted v1.38.0 compaction and want to retain that behavior must explicitly set `compact_rules: true`.
 
 Note: this is distinct from `extract-rules`'s own `compaction_threshold` setting — `compaction_threshold` only takes effect when `compact_rules` is `true` (i.e. sub-step 3 actually runs). Setting `compaction_threshold` to a very large number in `extract-rules.local.md` keeps the dispatch running but produces `status: "no-actionable"`, while `compact_rules: false` skips the `Skill()` dispatch entirely.
+
+#### `visual_plan_review`
+
+Controls whether Step 4 (Finalize Plan) presents the plan through a **browser-based, block-level review gate** instead of the text approval. This feature is currently **experimental**, so it defaults to opt-in.
+
+- `false` (default): Step 4 always uses the text path — the chat-rendered condensed plan followed by `ExitPlanMode` — exactly as before
+- `true`: Step 4 launches the gate **only when the local browser is reachable** (the agent and the user share a machine — local CLI / Remote Control). The gate serves the plan on a local `127.0.0.1` server (the bundled `scripts/plan-review/serve.mjs` viewer), opens your browser, and lets you comment per block and choose **approve** or **revise**. `approve` proceeds to implementation; `revise` applies your block comments to the plan and re-runs the gate
+
+Reachability is detected via `CLAUDE_CODE_REMOTE`: when it is `"true"` (the cloud-execution marker set by Claude Code on the Web), the agent runs in a remote headless sandbox whose `127.0.0.1` and `open` cannot reach your browser, so Step 4 transparently falls back to the text path. The gate also falls back on any launch failure (non-zero `serve.mjs` exit, blocked Bash call).
+
+```yaml
+visual_plan_review: true
+```
+
+Non-boolean values are ignored with a warning and fall back to `false`. To opt in for one project, set `visual_plan_review: true` in `.claude/dev-workflow.md`; to opt in personally, set it in `~/.claude/dev-workflow.local.md` or `.claude/dev-workflow.local.md`.
+
+Note: this is a **local-only** feature. On Claude Code on the Web it always falls back to text — the web UI offers no rich review surface beyond chat — so enabling it there is harmless but has no effect.
 
 #### `custom_instructions`
 
@@ -508,7 +526,7 @@ The workflow begins at Step 2 (Step 1 is settings load, Step 1.5 is task decompo
 | 1.5 | Task Decomposition | (Normal sub-mode, only when `task_decomposition: true`) Decide whether to split the task into subtasks and, if approved, create a state file. (Resume sub-mode) Load the state file and pick the next subtask — the step is executed but not registered as a task entry. Skipped entirely when `task_decomposition: false` |
 | 2 | Create Plan | Create plan in Plan Mode, assess difficulty |
 | 3 | Plan Review | Internal review by reviewer (up to N_plan iterations; skipped entirely for Trivial tasks, N_plan=0) |
-| 4 | Finalize Plan | **User approval gate** |
+| 4 | Finalize Plan | **User approval gate** (text approval by default; a browser-based block-level review gate when `visual_plan_review: true` and the local browser is reachable, falling back to text otherwise) |
 | 5 | Implement | Follow the plan |
 | 6 | Tidy | Reduce complexity via the built-in `simplify` skill (falls back to the in-house `tidy` skill when `simplify` is unavailable); skipped for Trivial / Simple tasks per the difficulty-skip matrix |
 | 7 | Check / Test | Run check_commands + run-tests |

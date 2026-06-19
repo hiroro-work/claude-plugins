@@ -155,7 +155,7 @@ hooks:
 | `reviewer` | string | `ask-peer` | Reviewer skill name |
 | `review_iterations` | int \| map | `3` | Max iterations for Plan / Code Review. Scalar applies to both phases; map `{plan, code}` sets them independently |
 | `task_decomposition` | bool | `true` | Whether Step 1.5 runs auto-decomposition in Normal sub-mode |
-| `interactive_commits` | bool | `true` | Whether Step 10 (Interactive Commits) groups working-tree changes into commits and iterates per-commit with the user |
+| `interactive_commits` | bool | `true` | Whether Step 10 (Interactive Commits) groups working-tree changes into commits and iterates per-commit with the user; also gates Step 11's rule-update commit proposal |
 | `compact_rules` | bool | `false` | Whether Step 11 sub-step 3 dispatches `Skill(extract-rules) --compact` and opens the compaction approval gate (experimental, opt-in) |
 | `visual_plan_review` | bool | `false` | Whether Step 4 launches the browser-based structured review gate (summary header, collapsible sections, Decision cards with a recommend/alternative toggle, per-element comments, mermaid diagrams) in place of the text approval (local CLI / Remote Control only — on Claude Code on the Web the browser gate never launches, so Step 4 uses a no-Plan-Mode chat approval; enabling it also takes Step 2 out of Plan Mode; experimental, opt-in) |
 | `custom_instructions` | string | (none) | Free-form instructions applied across all phases |
@@ -226,8 +226,8 @@ Non-boolean values are ignored with a warning and fall back to `true`.
 
 Controls whether Step 10 (Interactive Commits) runs after `hooks.on_complete` (Step 9).
 
-- `true` (default): after Step 9, the workflow inspects the working tree, proposes a commit grouping (subjects + file lists), waits for user approval, then iterates per-commit — presenting subject / body / diff for each commit, staging via explicit pathspecs, and committing with a HEREDOC. The workflow itself never pushes — that stays the user's responsibility
-- `false`: Step 10 is omitted from the task list and never executes. The workflow ends with an uncommitted tree as before — commit and push manually after the run
+- `true` (default): after Step 9, the workflow inspects the working tree, proposes a commit grouping (subjects + file lists), waits for user approval, then iterates per-commit — presenting subject / body / diff for each commit, staging via explicit pathspecs, and committing with a HEREDOC. It **also** proposes committing the rule-file updates that Step 11 (Update Rules) writes to `.claude/rules/` (after `extract-rules` runs), as a single additional commit you can accept, adjust, or decline. The workflow itself never pushes — that stays the user's responsibility
+- `false`: Step 10 is omitted from the task list and never executes, and the Step 11 rule-update commit is likewise never proposed. The workflow ends with an uncommitted tree as before — commit and push manually after the run
 
 ```yaml
 interactive_commits: false
@@ -236,6 +236,8 @@ interactive_commits: false
 Non-boolean values are ignored with a warning and fall back to `true`. To opt out for one project, set `interactive_commits: false` in `.claude/dev-workflow.md`; to opt out personally, set it in `~/.claude/dev-workflow.local.md` or `.claude/dev-workflow.local.md`.
 
 When `true`, the per-commit loop also handles pre-commit hook auto-modifications via a `fold` / `defer` gate — the user chooses whether to amend the just-landed commit (`fold`) or leave the hook-edited files for a later commit-plan iteration (`defer`). The full procedure (commit-style deduction, mid-loop adjust, cancel semantics) lives in `skills/dev-workflow/references/interactive-commits.md` (the single canonical home for Step 10's procedure); the partial-completion summary tokens stay defined in `skills/dev-workflow/SKILL.md` § Step 10.
+
+**Behavior change** (rule-update commit): under `interactive_commits: true`, the workflow now proposes committing the `.claude/rules/` changes that Step 11 writes — previously those were always left for you to commit manually (a Completion reminder). The proposal is a single commit you can accept, adjust (narrow the file set / edit the subject), or decline; declining keeps the old manual-commit behavior, and the Completion reminder then fires only for whatever `.claude/rules/` changes remain uncommitted. Setting `interactive_commits: false` opts out of both the Step 10 production-code commits and the Step 11 rule-update commit.
 
 #### `compact_rules`
 
@@ -546,7 +548,7 @@ The workflow begins at Step 2 (Step 1 is settings load, Step 1.5 is task decompo
 | 8 | Code Review | Code review by reviewer (up to N_code iterations; skipped entirely for Trivial tasks, N_code=0) |
 | 9 | Completion Hooks | Run `hooks.on_complete` (only if configured) |
 | 10 | Interactive Commits | (Only when `interactive_commits: true`) Group working-tree changes into commits and iterate per-commit with the user. The workflow never pushes — that stays the user's responsibility |
-| 11 | Update Rules | Update rules via `extract-rules`. Sub-step 3 (Char-count compaction gate) runs only when `compact_rules: true` (experimental, opt-in) |
+| 11 | Update Rules | Update rules via `extract-rules`, then (when `interactive_commits: true`) propose committing the resulting `.claude/rules/` changes as a single commit. Sub-step 3 (Char-count compaction gate) runs only when `compact_rules: true` (experimental, opt-in) |
 | 11.5 | Self-Retrospective | (Only if `self_retrospective.feedback` is set; runs regardless of task difficulty) Spawn a subagent to extract sanitized bundle-skill improvement signal, present it with a destination header, and submit on user approval. See `references/self-retrospective.md` |
 | 11.6 | Workability Retrospective | (Only if `workability_retrospective.enabled: true`; runs regardless of task difficulty) Spawn a subagent to detect skill-ization / lint-rule candidates from the session, then offer a per-candidate disposition gate (act now / subtask / backlog / reject). See `references/workability-retrospective.md` |
 

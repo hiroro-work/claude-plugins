@@ -2,6 +2,28 @@
 
 ## 2026-06-18
 
+### dev-workflow v1.72.1 / dev-workflow-bundle v1.73.1
+
+- fix(dev-workflow): add pre-existing-artifact existence verification to Step 2 self-audit (auto-triage #114)
+  - Category: `missing-branch`
+- fix(dev-workflow): add stable-anchor form sub-check to Step 5 scaffolding self-audit (auto-triage #114)
+  - Category: `missing-branch`
+- fix(dev-workflow): add closed-list sibling-set stale-value sweep sub-check to Step 5 scaffolding self-audit (auto-triage #114)
+  - Category: `missing-branch`
+- fix(dev-workflow): add downstream-artifact invalidation self-check to Step 7 (auto-triage #110)
+  - Category: `missing-branch`
+- fix(dev-workflow): surface untracked new files in Step 8 code review dispatch (auto-triage #109)
+  - Category: `missing-branch`
+- fix(dev-workflow): add Red-before/Green-after verification to Step 7 test loop (auto-triage #108)
+  - Category: `missing-branch`
+- fix(dev-workflow): add environment sanity check to Step 7 test loop (auto-triage #108)
+  - Category: `missing-branch`
+
+### rules-review v1.4.1 / dev-workflow-bundle v1.73.1
+
+- fix(rules-review): add constructive resolution guidance for low-confidence intent-rule findings (auto-triage #108)
+  - Category: `missing-branch`
+
 ### dev-workflow v1.72.0 / dev-workflow-bundle v1.73.0
 
 - fix(dev-workflow): make the **visual plan-review gate** (`visual_plan_review`) actually fire by taking Step 2 out of Plan Mode when the gate is enabled

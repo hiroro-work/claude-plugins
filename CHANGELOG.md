@@ -2,6 +2,13 @@
 
 ## 2026-06-19
 
+### dev-workflow v1.73.1 / dev-workflow-bundle v1.74.1
+
+- fix(dev-workflow): § Completion's "Derived staging artifact cleanup" no longer aborts under zsh's `nomatch`, so the staging files are reliably deleted
+  - **Bug**: the cleanup ran one combined `rm -f .claude/plans/<slug>-agent-*.md` plus the three fixed-name plan-review files. Under zsh (the macOS default shell), when the leading `<slug>-agent-*.md` glob matched nothing the shell aborted the whole command at expansion time (`no matches found`) — `-f` suppresses only `rm`'s own missing-file error, not the shell's expansion failure — so the fixed-name files were left behind as untracked noise. bash was unaffected (it passes an unmatched glob through literally).
+  - **Fix**: § Completion now uses **two separate `rm -f` commands** — the three fixed-name files first, then `rm -f .claude/plans/<slug>-agent-*.md || true`. zsh's `nomatch` aborts only the single command it sits in, so isolating the glob in a trailing command protects the fixed-name deletions, and `|| true` keeps the exit clean when nothing matches. Both commands stay covered by the existing `Bash(rm -f .claude/plans/*)` grant — no new tool permission and no `allowed-tools` change.
+  - canonical `SKILL.md` and the `dev-workflow-bundle` copy synced byte-identical.
+
 ### dev-workflow v1.73.0 / dev-workflow-bundle v1.74.0
 
 - feat(dev-workflow): the **visual plan-review gate** now shows a **diff on revise re-launch** so the user can focus on what changed instead of re-reading the whole plan

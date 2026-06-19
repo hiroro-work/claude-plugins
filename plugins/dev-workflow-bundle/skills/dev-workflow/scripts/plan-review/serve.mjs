@@ -17,10 +17,14 @@
  * (marked / highlight.js / mermaid) load from CDN inside public/index.html.
  *
  * Usage:
- *   node serve.mjs --plan <path> [--lang <ja|en>] [--wait] [--port <n>] [--no-open] [--timeout <sec>]
+ *   node serve.mjs --plan <path> [--prev <path>] [--lang <ja|en>] [--wait] [--port <n>] [--no-open] [--timeout <sec>]
  *
- * --lang controls only the language of the browser-generated "switch to
- * alternative" comment body (UI chrome stays English); default en.
+ * --prev is the plan version the user reviewed on the previous launch; when
+ * supplied and readable, /api/plan ships it as prevMarkdown so the browser can
+ * highlight what changed since then (omitted / unreadable → no diff). --lang
+ * controls only the language of browser-generated text (the "switch to
+ * alternative" comment body and the diff banner); UI chrome stays English;
+ * default en.
  *
  * stdout contract: in --wait mode the ONLY bytes written to stdout are the final
  * submit JSON (one line). Every progress / error message goes to stderr, so the
@@ -47,6 +51,7 @@ try {
   ({ values: opts } = parseArgs({
     options: {
       plan: { type: "string" },
+      prev: { type: "string" },
       lang: { type: "string" },
       wait: { type: "boolean", default: false },
       port: { type: "string" },
@@ -73,6 +78,18 @@ try {
   process.exit(1);
 }
 
+// --prev (optional): the plan version the user reviewed on the previous launch.
+// Shipped as prevMarkdown so the browser can diff current-vs-prev. An unreadable
+// --prev is non-fatal — the viewer simply renders without a diff (prevMarkdown null).
+let prevSource = null;
+if (opts.prev) {
+  try {
+    prevSource = readFileSync(resolve(opts.prev), "utf8");
+  } catch (err) {
+    log(`warning: cannot read --prev file ${opts.prev}: ${err.message} (diff disabled)`);
+  }
+}
+
 const intOrDefault = (raw, def, min) => {
   const n = Number.parseInt(raw, 10);
   return Number.isFinite(n) && n >= min ? n : def;
@@ -92,7 +109,8 @@ const publicDir = join(__dirname, "public");
 // The browser parses the plan into review blocks and assigns each comment a
 // semantic block id (e.g. `decision-1`, `overview::2`); the server does not
 // enumerate those ids, so /api/plan ships the raw markdown verbatim.
-const planPayload = { id: planId, markdown: planSource, lang };
+// prevMarkdown is the previous-launch plan (or null) for the browser-side diff.
+const planPayload = { id: planId, markdown: planSource, lang, prevMarkdown: prevSource };
 
 // --- HTTP server ---
 const MIME = {

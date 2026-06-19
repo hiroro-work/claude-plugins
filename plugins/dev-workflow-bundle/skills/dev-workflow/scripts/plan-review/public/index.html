@@ -34,6 +34,10 @@
       --revise: #bc4c00;
       --rec: var(--approve);
       --risk: var(--revise);
+      /* diff "changed" accent — amber, deliberately distinct from --accent (blue,
+         the base decision-card border), --approve (green), and --revise (orange) */
+      --changed: #9a6700;
+      --changed-bg: #fff8c5;
       --bar-h: 64px;
     }
     * { box-sizing: border-box; }
@@ -186,6 +190,28 @@
       font: inherit; font-size: 13px; border: 1px solid var(--accent); border-radius: 6px; resize: vertical;
     }
     .comment-input[hidden] { display: none; } /* the `display: block` above otherwise defeats the `hidden` attribute */
+    /* diff mode: surfaced only on a revise re-launch (prevMarkdown present).
+       Badges + highlights mark what changed since the user's previous review,
+       so unchanged sections can stay collapsed and the eye goes to the edits. */
+    #diff-banner {
+      grid-column: 1 / -1; margin: 6px 0 0; padding: 8px 12px;
+      background: var(--changed-bg); border: 1px solid #eac54f; border-radius: 8px;
+      font-size: 13px; color: #6f4e00;
+    }
+    .badge-diff { background: var(--changed-bg); color: var(--changed); }
+    /* changed block: inset left bar + faint tint; box-shadow survives the
+       .commentable:hover background swap so the marker stays visible on hover.
+       Amber (--changed), not blue, so it never reads as the base card border. */
+    .commentable.block-changed { background: var(--changed-bg); box-shadow: inset 3px 0 0 0 var(--changed); }
+    /* changed decision card: a thick amber left bar + faint amber wash, replacing
+       the base blue (--accent) left border, so "this Decision changed" reads at a
+       glance (far more legible than a thin outline). Scoped :not(.switched) so a
+       card toggled to its alternative still shows the orange .switched styling —
+       the active user action wins over the historical diff mark. */
+    .decision-card.card-changed:not(.switched) {
+      border-left: 5px solid var(--changed);
+      background: var(--changed-bg);
+    }
     /* sticky decision bar */
     #bar {
       position: fixed; left: 0; right: 0; bottom: 0; height: var(--bar-h);
@@ -218,6 +244,7 @@
       <h1 id="plan-title">…</h1>
       <div id="plan-chips"></div>
       <div id="plan-scope" class="meta-scope" hidden></div>
+      <div id="diff-banner" hidden></div>
     </header>
     <nav id="toc"><div class="toc-title">Sections</div></nav>
     <main id="plan"></main>
@@ -244,14 +271,31 @@
     const state = { decision: null, comments: new Map(), switches: new Map() };
     let SWITCH_MSG = "Switch this decision to its Alternative";
 
+    // diff mode (revise re-launch): populated by buildDiff() when prevMarkdown is present.
+    //   sectionStatus:    id -> "new" | "changed" | "unchanged"
+    //   prevBlockTexts:   id -> Set<normalized block text>        (changed sections only)
+    //   prevDecisionSigs: id -> Set<normalized decision signature> (changed Decisions sections only)
+    const diff = { active: false, sectionStatus: new Map(), prevBlockTexts: new Map(), prevDecisionSigs: new Map(), changedCount: 0, removedCount: 0 };
+    // localized diff-banner text (set from `lang` in init, like SWITCH_MSG); the
+    // "Changed" / "New" badges stay English UI chrome and are not localized.
+    let DIFF_BANNER = (n, removed) => `🔍 ${n} section${n === 1 ? "" : "s"} changed or added since your last review${removed ? `, ${removed} removed` : ""} — changes highlighted below`;
+    let DIFF_BANNER_NONE = "🔍 No section changes since your last review";
+
     const md = (t) => window.marked.parse(t || "");
     const mdInline = (t) => window.marked.parseInline(t || "");
     const stripMd = (t) => (t || "").replace(/[*`]/g, "").trim();
-    const excerptOf = (t) => (t || "").replace(/\s+/g, " ").trim().slice(0, 40);
+    const normText = (t) => (t || "").replace(/\s+/g, " ").trim();
+    const excerptOf = (t) => normText(t).slice(0, 40);
     const HTML_ESCAPES = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" };
     const escapeHtml = (t) => (t || "").replace(/[&<>"]/g, (c) => HTML_ESCAPES[c]);
 
     const FENCE_RE = /^\s*(`{3,}|~{3,})/;
+
+    // Block-level tags that are commentable as whole blocks (UL/OL → per-LI and
+    // TABLE → wrapped are handled separately). Shared by attachElementComments
+    // (renders comment affordances) and collectBlockTexts (read-only diff text),
+    // so the two stay in sync.
+    const COMMENT_BLOCK_TAGS = ["P", "BLOCKQUOTE", "PRE", "H4", "H5", "H6"];
 
     // What the viewer knows about each plan section, in match-priority order:
     // `match` lists title prefixes (lowercased) that map to the type; `open` opens
@@ -365,6 +409,55 @@
       return { items, preamble: preamble.join("\n").trim() };
     }
 
+    // --- diff (revise re-launch) ---
+    // Read-only mirror of attachElementComments' target selection: collect the
+    // normalized text of each commentable block in a section body, WITHOUT the
+    // DOM mutation attachElementComments performs (table replaceWith, comment
+    // buttons, mermaid/highlight). Used only for prev-vs-current block diffing.
+    // Safe to read prev pre-highlight while current blocks are read post-highlight.js:
+    // normText collapses all whitespace and highlight.js only wraps tokens in spans
+    // (textContent unchanged), so identical source normalizes to the same string.
+    function collectBlockTexts(bodyMarkdown) {
+      const tmp = document.createElement("div");
+      tmp.innerHTML = md(bodyMarkdown);
+      const out = new Set();
+      for (const c of Array.from(tmp.children)) {
+        const tag = c.tagName;
+        if (tag === "UL" || tag === "OL") {
+          for (const li of Array.from(c.children)) if (li.tagName === "LI") out.add(normText(li.textContent));
+        } else if (tag === "TABLE" || COMMENT_BLOCK_TAGS.includes(tag)) {
+          out.add(normText(c.textContent));
+        }
+      }
+      return out;
+    }
+
+    const decisionSig = (it) => normText(`${it.question} ${it.recommendation} ${it.alternative}`);
+    const collectDecisionSigs = (body) => new Set(parseDecisions(body).items.map(decisionSig));
+
+    // Compare current sections against the previous-launch plan; classify each
+    // current section new/changed/unchanged and precompute per-section prev block
+    // sets for the changed ones. Section identity is the slug id from parseSections.
+    function buildDiff(prevMarkdown, sections) {
+      const prev = parseSections(prevMarkdown);
+      const prevById = new Map(prev.sections.map((s) => [s.id, s]));
+      let matched = 0; // current sections that map to a prev section (ids are unique)
+      for (const s of sections) {
+        const p = prevById.get(s.id);
+        if (!p) { diff.sectionStatus.set(s.id, "new"); diff.changedCount++; continue; }
+        matched++;
+        const changed = normText(s.body) !== normText(p.body);
+        diff.sectionStatus.set(s.id, changed ? "changed" : "unchanged");
+        if (changed) {
+          diff.changedCount++;
+          if (s.type === "decisions") diff.prevDecisionSigs.set(s.id, collectDecisionSigs(p.body));
+          else diff.prevBlockTexts.set(s.id, collectBlockTexts(p.body));
+        }
+      }
+      diff.removedCount = prev.sections.length - matched; // prev sections with no current counterpart
+      diff.active = true;
+    }
+
     // --- comment state ---
     function effectiveComments() {
       const ids = new Set([...state.comments.keys(), ...state.switches.keys()]);
@@ -424,6 +517,13 @@
         scopeEl.innerHTML = `<span class="meta-label">Scope</span><span class="meta-val">${escapeHtml(stripMd(ov.scope))}</span>`;
         scopeEl.hidden = false;
       }
+    }
+
+    function renderDiffBanner() {
+      if (!diff.active) return;
+      const el = document.getElementById("diff-banner");
+      el.textContent = diff.changedCount ? DIFF_BANNER(diff.changedCount, diff.removedCount) : DIFF_BANNER_NONE;
+      el.hidden = false;
     }
 
     function renderNav(sections) {
@@ -553,21 +653,37 @@
           c.replaceWith(w);
           w.appendChild(c);
           targets.push(w);
-        } else if (["P", "BLOCKQUOTE", "PRE", "H4", "H5", "H6"].includes(tag)) {
+        } else if (COMMENT_BLOCK_TAGS.includes(tag)) {
           targets.push(c);
         }
       }
-      for (const t of targets) attachComment(t, `${sectionId}::${++n}`);
+      // prevBlockTexts holds an entry only for a "changed" non-decisions section
+      // (see buildDiff), so this lookup alone selects which sections mark blocks: a
+      // "new" section relies on its section badge (every block is new), an
+      // "unchanged" one has no entry. Read textContent before attachComment appends
+      // the 💬 button (which would otherwise pollute it).
+      const prevSet = diff.prevBlockTexts.get(sectionId) || null;
+      for (const t of targets) {
+        if (prevSet && !prevSet.has(normText(t.textContent))) t.classList.add("block-changed");
+        attachComment(t, `${sectionId}::${++n}`);
+      }
     }
 
     function renderSection(section) {
       const det = document.createElement("details");
       det.className = "section" + (section.type === "context" ? " is-context" : "");
       det.id = `sec-${section.id}`;
-      if (OPEN_TYPES.has(section.type)) det.open = true;
+      // status is null outside diff mode, else "new" | "changed" | "unchanged"
+      const status = diff.active ? (diff.sectionStatus.get(section.id) || "unchanged") : null;
+      // diff mode overrides the default-open set: open changed/new, collapse unchanged
+      if (status) det.open = (status === "new" || status === "changed");
+      else if (OPEN_TYPES.has(section.type)) det.open = true;
 
       const sum = document.createElement("summary");
       sum.innerHTML = `<span class="sec-title">${escapeHtml(section.title)}</span>`;
+      if (status === "new" || status === "changed") {
+        sum.innerHTML += ` <span class="badge badge-diff">${status === "new" ? "New" : "Changed"}</span>`;
+      }
       if (section.type === "risks" && section.itemCount) {
         sum.innerHTML += ` <span class="badge badge-risk">${section.itemCount}</span>`;
       }
@@ -586,7 +702,13 @@
             pre.innerHTML = md(preamble);
             body.appendChild(pre);
           }
-          items.forEach((it, i) => body.appendChild(renderDecisionCard(it, i + 1)));
+          // changed Decisions section: highlight cards whose signature is absent from prev
+          const prevSigs = status === "changed" ? diff.prevDecisionSigs.get(section.id) : null;
+          items.forEach((it, i) => {
+            const card = renderDecisionCard(it, i + 1);
+            if (prevSigs && !prevSigs.has(decisionSig(it))) card.classList.add("card-changed");
+            body.appendChild(card);
+          });
         }
       }
       if (!isCards) {
@@ -626,11 +748,18 @@
     async function init() {
       const res = await fetch("/api/plan");
       if (!res.ok) throw new Error(`/api/plan HTTP ${res.status}`);
-      const { id, markdown, lang } = await res.json();
-      if (lang === "ja") SWITCH_MSG = "この Decision を Alternative に切り替える";
+      const { id, markdown, lang, prevMarkdown } = await res.json();
+      if (lang === "ja") {
+        SWITCH_MSG = "この Decision を Alternative に切り替える";
+        DIFF_BANNER = (n, removed) => `🔍 前回レビューから ${n} 個のセクションが変更・追加されました${removed ? `（削除 ${removed} 件）` : ""} — 変更箇所を以下にハイライト`;
+        DIFF_BANNER_NONE = "🔍 前回レビューからセクションの変更はありません";
+      }
 
       let { preamble, sections } = parseSections(markdown);
       if (!sections.length) sections = [{ title: "Plan", type: "other", id: "plan", body: markdown }];
+
+      // diff mode: only on a revise re-launch where serve.mjs shipped a prev plan
+      if (typeof prevMarkdown === "string" && prevMarkdown.trim()) buildDiff(prevMarkdown, sections);
 
       const ovSection = sections.find((s) => s.type === "overview");
       const ov = parseOverview(ovSection ? ovSection.body : "");
@@ -638,6 +767,7 @@
       const riskCount = risksSection ? countListItems(risksSection.body) : 0;
       if (risksSection) risksSection.itemCount = riskCount; // reused by the section badge below
       renderHeader(ov, id, riskCount);
+      renderDiffBanner();
       renderNav(sections);
 
       const planEl = document.getElementById("plan");

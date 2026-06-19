@@ -227,6 +227,14 @@
     #bar label.choice:has(input:checked).revise { border-color: var(--revise); color: var(--revise); font-weight: 600; }
     #bar .spacer { flex: 1; }
     #bar .count { color: var(--muted); font-size: 13px; }
+    /* keyboard-shortcut hint: the decision bar's native controls drop out of Tab
+       order when macOS Full Keyboard Access is off (Chrome mirrors that setting),
+       so the a/r/↵ shortcuts are the reliable keyboard path — surface them here. */
+    #bar .kbd-hint { color: var(--muted); font-size: 12px; }
+    #bar .kbd-hint kbd {
+      font: inherit; background: var(--bg-soft); border: 1px solid var(--border);
+      border-radius: 4px; padding: 0 5px;
+    }
     #send-btn {
       font-size: 14px; font-weight: 600; color: #fff; background: var(--accent);
       border: none; border-radius: 8px; padding: 8px 20px; cursor: pointer;
@@ -252,11 +260,12 @@
   </div>
 
   <div id="bar">
-    <div class="decision">
-      <label class="choice approve"><input type="radio" name="decision" value="approve"> Approve</label>
-      <label class="choice revise"><input type="radio" name="decision" value="revise"> Request changes</label>
+    <div class="decision" role="radiogroup" aria-label="Plan decision">
+      <label class="choice approve"><input type="radio" class="decision-radio" name="decision-approve" value="approve"> Approve</label>
+      <label class="choice revise"><input type="radio" class="decision-radio" name="decision-revise" value="revise"> Request changes</label>
     </div>
     <span class="count">Comments: <span id="comment-count">0</span></span>
+    <span class="kbd-hint" id="kbd-hint"></span>
     <span class="spacer"></span>
     <span id="status"></span>
     <button id="send-btn" type="button" disabled>Send to Claude</button>
@@ -270,6 +279,9 @@
     // comments: id -> { text, excerpt } ; switches: id -> excerpt
     const state = { decision: null, comments: new Map(), switches: new Map() };
     let SWITCH_MSG = "Switch this decision to its Alternative";
+    // localized keyboard-shortcut hint — static developer-controlled markup (assigned
+    // via innerHTML in init, like SWITCH_MSG); never holds user data, so not an XSS vector
+    let KBD_HINT = "<kbd>a</kbd> approve · <kbd>r</kbd> request changes · <kbd>⌘/Ctrl+↵</kbd> send";
 
     // diff mode (revise re-launch): populated by buildDiff() when prevMarkdown is present.
     //   sectionStatus:    id -> "new" | "changed" | "unchanged"
@@ -493,8 +505,10 @@
 
     function selectDecision(v) {
       state.decision = v;
-      const radio = document.querySelector(`input[name=decision][value=${v}]`);
-      if (radio) radio.checked = true;
+      // Each decision radio carries a distinct name (so it is its own single-member
+      // group — always a Tab stop, never collapsed out when the sibling is checked),
+      // so enforce mutual exclusivity here rather than relying on native grouping.
+      document.querySelectorAll(".decision-radio").forEach((r) => { r.checked = (r.value === v); });
       document.getElementById("send-btn").disabled = false;
     }
 
@@ -753,7 +767,9 @@
         SWITCH_MSG = "この Decision を Alternative に切り替える";
         DIFF_BANNER = (n, removed) => `🔍 前回レビューから ${n} 個のセクションが変更・追加されました${removed ? `（削除 ${removed} 件）` : ""} — 変更箇所を以下にハイライト`;
         DIFF_BANNER_NONE = "🔍 前回レビューからセクションの変更はありません";
+        KBD_HINT = "<kbd>a</kbd> 承認 · <kbd>r</kbd> 変更を依頼 · <kbd>⌘/Ctrl+↵</kbd> 送信";
       }
+      document.getElementById("kbd-hint").innerHTML = KBD_HINT;
 
       let { preamble, sections } = parseSections(markdown);
       if (!sections.length) sections = [{ title: "Plan", type: "other", id: "plan", body: markdown }];
@@ -788,14 +804,37 @@
       for (const r of bodyRefs) if (!r.isCards) attachElementComments(r.bodyEl, r.section.id);
     }
 
-    document.querySelectorAll("input[name=decision]").forEach((radio) => {
+    document.querySelectorAll(".decision-radio").forEach((radio) => {
       radio.addEventListener("change", () => selectDecision(radio.value));
     });
 
     document.getElementById("send-btn").addEventListener("click", submit);
 
+    // Focus-independent keyboard shortcuts. macOS Full Keyboard Access (off by
+    // default) makes Chrome exclude the decision radios and Send button from Tab
+    // order, so a/r/⌘|Ctrl+Enter are the reliable keyboard path regardless.
+    document.addEventListener("keydown", (e) => {
+      if (e.isComposing) return;                                            // mid-IME (e.g. Japanese) — don't hijack
+      if (document.getElementById("app").classList.contains("submitted")) return; // gate already sent
+      // Submit chord: Cmd/Ctrl+Enter, works anywhere including a comment field.
+      // Bare Enter is intentionally NOT bound — it must keep toggling <details>
+      // summaries and activating focused buttons/links natively.
+      if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+        if (state.decision) { e.preventDefault(); submit(); }
+        return;
+      }
+      // Decision shortcuts: bare a/r, only outside text-entry fields and unmodified.
+      const tag = document.activeElement ? document.activeElement.tagName : "";
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+      if (e.metaKey || e.ctrlKey || e.altKey || e.shiftKey) return;
+      if (e.key === "a") { e.preventDefault(); selectDecision("approve"); }
+      else if (e.key === "r") { e.preventDefault(); selectDecision("revise"); }
+    });
+
+    let submitting = false; // re-entry guard: the button is disabled on click, but the keydown path is not
     async function submit() {
-      if (!state.decision) return;
+      if (submitting || !state.decision) return;
+      submitting = true;
       const comments = effectiveComments();
       const sendBtn = document.getElementById("send-btn");
       const status = document.getElementById("status");
@@ -808,11 +847,14 @@
           body: JSON.stringify({ decision: state.decision, comments }),
         });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        // `submitting` stays true on success (not reset) — the "submitted" class added
+        // here is the keydown guard's first early-return, so re-entry can't slip through.
         document.getElementById("app").classList.add("submitted");
         document.getElementById("done").hidden = false;
         document.getElementById("bar").style.display = "none";
         document.getElementById("done").scrollIntoView({ behavior: "smooth" });
       } catch (err) {
+        submitting = false; // allow a retry after a failed POST
         sendBtn.disabled = false;
         status.textContent = `Failed to send: ${err.message}`;
       }

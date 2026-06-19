@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-06-20
+
+### dev-workflow v1.74.3 / dev-workflow-bundle v1.75.3
+
+- fix(dev-workflow): the visual plan-review gate is now keyboard-operable when macOS Full Keyboard Access is off
+  - **Bug**: the gate's decision controls (Approve / Request changes radios, Send button) live in a fixed bottom bar. On macOS with Full Keyboard Access off (the default), Chrome excludes native form controls and links from Tab order, so a keyboard user could not Tab to the Approve radio — or any control — at all. Renaming the radios alone would not help, since under that setting no native control is Tab-reachable.
+  - **Fix**: added focus-independent document-level keyboard shortcuts to `scripts/plan-review/public/index.html` — `a` selects Approve, `r` selects Request changes, and `⌘/Ctrl+Enter` sends (works anywhere, including inside a comment field) — with a localized hint in the bar. Bare `Enter` is intentionally left unbound so it still toggles `<details>` sections and activates focused buttons/links natively. Guards skip IME composition (`isComposing`), text-field focus, and the post-submit state. Independently, the two decision radios were given distinct `name`s (plus a `role="radiogroup"` wrapper and JS-enforced mutual exclusivity) so both stay Tab-reachable for users who do have Full Keyboard Access on (previously, once a comment auto-selected "revise", the "approve" radio dropped out of Tab order).
+  - canonical `scripts/` asset and the `dev-workflow-bundle` copy synced byte-identical.
+
 ## 2026-06-19
 
 ### dev-workflow v1.74.2 / extract-rules v1.20.4 / dev-workflow-bundle v1.75.2

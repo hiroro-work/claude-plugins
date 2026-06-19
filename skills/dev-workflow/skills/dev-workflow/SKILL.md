@@ -568,6 +568,13 @@ The reminder is omitted when `difficulty_skipped_steps` is empty (Moderate / Com
 
 The reminder is omitted when `uncommitted_rule_changes` is empty — including the case where Step 11's "Commit rule updates" gate already committed the rule changes (`interactive_commits: true`, gate accepted). When `interactive_commits: false` the gate never ran, so the rule changes stay uncommitted and the reminder fires as before (backward-compatible).
 
+**Step 11 staging-dir reminder**: immediately after the rule-update reminder, compute `uncommitted_staging_changes` — the set of paths under the `extract-rules` staging directory still uncommitted at Completion. The staging directory is the `staging_output_dir` setting from `.claude/extract-rules.local.md` (read that file's frontmatter `staging_output_dir` field if the field is set; otherwise use the default `.claude/rules-staging/`). Run `git status --porcelain=v1 --untracked-files=all -z` and filter to paths under the resolved staging directory. When `uncommitted_staging_changes` is non-empty, surface a reminder in the resolved `language` (`<N>` = number of uncommitted staging files, `<staging_dir>` = the resolved directory):
+
+- `language: ja`: `\`<staging_dir>\` に未レビューの extract-rules 候補が <N> 件あります — 手動で確認し、採用するものを \`.claude/rules/\` へ promote してください`
+- `language: en`: `<N> extract-rules candidate(s) under \`<staging_dir>\` await review — inspect and promote accepted files to \`.claude/rules/\` manually`
+
+The reminder is omitted when `uncommitted_staging_changes` is empty.
+
 **Step 11 compaction reminder** (per [`references/plan-format.md`](references/plan-format.md) § Localization granularity): this block has two independent clauses.
 
 **(i) Commit clause** — when `compaction_applied_count > 0` (the Step 11 sub-step 3 char-count compaction gate landed user-accepted edits) **and** `uncommitted_rule_changes` (computed in the rule-update reminder above) is non-empty — i.e. the compaction edits were **not** committed by Step 11's "Commit rule updates" gate (compaction edits live under `.claude/rules/`, so an accepted rule-update commit stages them along with the other rule changes) — surface a separate manual-commit reminder in the resolved `language` (rendered in file-unit count, distinct from the rule-update reminder above which counts uncommitted rule files):

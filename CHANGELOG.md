@@ -2,6 +2,15 @@
 
 ## 2026-06-19
 
+### dev-workflow v1.74.0 / dev-workflow-bundle v1.75.0
+
+- feat(dev-workflow): Step 11 (Update Rules) now **proposes committing** the `.claude/rules/` changes that `extract-rules` writes, instead of only emitting a manual-commit reminder
+  - **New gate**: a "Commit rule updates" sub-step (USER APPROVAL GATE) runs after `extract-rules`, when `interactive_commits: true` and `.claude/rules/` has uncommitted changes. It proposes a single commit of those changes (diff base `HEAD`, since Step 10 already committed the production code), reusing `references/interactive-commits.md`'s Present / Stage / Commit / retry / post-commit-auto-modify mechanics; `adjust` narrows the file set by pathspec omission, `cancel` leaves them uncommitted. Order is now: production-code commit (Step 10) → rule extraction (Step 11) → rule commit (new). The gate renders `git`-shaped output and emits no § User-gate summary preamble (like the Step 10 commit gates).
+  - **Default: enabled under `interactive_commits: true`** — set `interactive_commits: false` in `.claude/dev-workflow.md` or `~/.claude/dev-workflow.local.md` to opt out of both the Step 10 production commits and the Step 11 rule commit. **Behavior change**: existing `interactive_commits: true` users now get the rule-commit proposal where they previously got a manual-commit reminder; declining the gate keeps the manual-commit behavior, and the Completion reminder then fires only for whatever `.claude/rules/` changes remain uncommitted.
+  - **Completion reminders conditioned**: the rule-update reminder and the compaction reminder's commit clause now recompute `uncommitted_rule_changes` (uncommitted `.claude/rules/` paths at Completion) and fire only when changes remain; the compaction below-threshold follow-up stays unconditional. The decomposition-resume manual-commit note is conditioned the same way. The rule-update reminder's `<N>` now counts uncommitted rule files at Completion (previously: the `extract-rules` write count).
+  - **Docs**: `references/update-rules.md` § Step 10 / Step 11 ordering note, `references/plan-format.md` § User-gate summary preamble enumeration, and `README.md` (`interactive_commits` detail + Step 11 table row) updated.
+  - canonical `SKILL.md` / `references/` and the `dev-workflow-bundle` copy synced byte-identical.
+
 ### dev-workflow v1.73.1 / dev-workflow-bundle v1.74.1
 
 - fix(dev-workflow): § Completion's "Derived staging artifact cleanup" no longer aborts under zsh's `nomatch`, so the staging files are reliably deleted

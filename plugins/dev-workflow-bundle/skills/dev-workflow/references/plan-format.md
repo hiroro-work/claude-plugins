@@ -157,6 +157,7 @@ After the Simplicity self-audit in Step 2, run this check on the plan. Fix any f
 - [ ] Design is structured as ordered, actionable steps when the work is sequential (by-file is fine for independent, non-sequential changes).
 - [ ] Test plan items reference the Design step(s) they verify where applicable (§ Traceability).
 - [ ] Must-review content (`Overview`, `Decisions`) is plain and scannable; technical depth and any back-references live in the reference tier.
+- [ ] **Upstream-document impact scope**: if the plan was seeded from an external or upstream document (spec, design doc, hand-off note) that enumerates the files, call sites, or affected components, independently cross-search the codebase for the same pattern (e.g. grep for the affected API, hook, or parameter), compare the search results against the document's enumeration, and record any discrepancy in Risks / Unknowns or expand Scope accordingly.
 
 This is the **author's first-pass judgment** on plan content; Step 3 category (f) re-checks content externally. The **Structural compliance** bullet above is the only structural property checked here; category (f) does not re-check it.
 

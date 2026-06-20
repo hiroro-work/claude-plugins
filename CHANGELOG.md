@@ -2,6 +2,11 @@
 
 ## 2026-06-20
 
+### dev-workflow v1.74.7 / dev-workflow-bundle v1.75.7
+
+- fix(dev-workflow): add line-count pre-filter to verbatim diff display mode in Step 10 interactive commits (auto-triage #125)
+  - Category: wrong-default; `references/interactive-commits.md` § Per-commit loop `a. Present` now evaluates `diff_verbatim_line_threshold` (default 100 lines) before the character-count test, so prose diffs with a small line count are shown verbatim even when their total character count exceeds `diff_verbatim_threshold`. Set to `99999999` in `.claude/dev-workflow.local.md` to always pass the line-count gate.
+
 ### dev-workflow v1.74.6 / dev-workflow-bundle v1.75.6
 
 - refactor(dev-workflow): consolidate the Step 11.5 (self-retrospective) and Step 11.6 (workability) session-jsonl scans into a single shared session-scan subagent dispatch (issue #123 Finding 1)

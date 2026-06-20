@@ -2,6 +2,13 @@
 
 ## 2026-06-20
 
+### dev-workflow v1.74.5 / dev-workflow-bundle v1.75.5
+
+- fix(dev-workflow): the Step 11 rule-update commit gate now covers all of extract-rules' output directories (rules / examples / staging), not just `output_dir` (issue #123 Finding 3)
+  - Category: missing-branch; the gate previously proposed only `output_dir` (default `.claude/rules/`) changes, so `examples_output_dir` / `staging_output_dir` writes from the same run were left to reminder-only. It now resolves all three dirs from `.claude/extract-rules.local.md` (defaults when unset) and proposes their uncommitted changes in a single commit.
+  - **Behavior change**: the gate stays a USER APPROVAL GATE (accept / adjust(exclude) / cancel), so nothing auto-commits; `staging_output_dir` files are labeled as unreviewed 1st-observation candidates so the user can exclude them. Added a Completion examples-dir reminder (mirrors the staging-dir reminder) and widened the decomposition-resume leak warning to all three output dirs. The `output_dir`-scoped compaction reminder is unchanged.
+  - Completion partition now resolves a path that matches more than one output dir (when `examples_output_dir` / `staging_output_dir` are set equal to or nested under `output_dir`) by extract-rules' output-class filename suffix (`.examples.md` / `.staging.local.md` / other `.md`) rather than directory-precedence order, which had misrouted a rule file under a collapsed `examples_output_dir == output_dir` into the examples set and suppressed the rule-update (and `output_dir`-scoped compaction) reminder; the default disjoint config is unaffected.
+
 ### dev-workflow v1.74.4 / dev-workflow-bundle v1.75.4
 
 - fix(dev-workflow): require empirical verification to confirm its tool reproduces the real-environment factors the verified behavior depends on before trusting an automated PASS (auto-triage #122)

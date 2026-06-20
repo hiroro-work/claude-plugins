@@ -52,7 +52,7 @@ Every abort in this section emits the terminal summary as `skipped` — pre-flig
 
 ## 2. Observation A extraction (via subagent)
 
-Delegate jsonl parsing, signal extraction, and §3 sanitization to a spawned subagent. Main must not read the session jsonl directly in this step. Keeping the raw conversation out of main context protects both the context budget and the sanitization guarantee — if sanitization happens in main, a bug could leave unsanitized text in downstream prompts.
+Delegate jsonl parsing, signal extraction, and §3 sanitization to the shared session scan's subagent (`references/session-scan.md`). Main must not read the session jsonl directly in this step. Keeping the raw conversation out of main context protects both the context budget and the sanitization guarantee — if sanitization happens in main, a bug could leave unsanitized text in downstream prompts.
 
 Scope: the bundle covers `dev-workflow`, `ask-peer`, `extract-rules`, `rules-review`. Signals about other skills are out of scope.
 
@@ -66,17 +66,12 @@ Concrete operational rules for main when handling the subagent's return:
 
 ### 2.1 Spawn the subagent
 
-Use the `Agent` tool (`subagent_type: general-purpose`, plus `model: <subagent_model>` when the SKILL.md Step 2-resolved `subagent_model` is a model id — omit `model` when it is `inherit`, the backward-compatible default). Embed the following in the prompt:
-
-- **Session file**: the absolute path resolved in §1.4
-- **Reference file**: the absolute path of this file, so the subagent can read §2 and §3 as its authoritative working spec
-- **Repo root**: absolute `pwd`, to help recognize project-local identifiers during sanitization
-- **Language**: the language code resolved at SKILL.md Step 1 Load Settings (e.g. `ja`, `en`). Unknown codes are passed through — the subagent produces best-effort output.
+The actual `Agent` dispatch is performed **once per run by the shared session scan** (`references/session-scan.md`), which parses the session jsonl a single time and serves both this axis and the workability axis (Step 11.6). This section is the **self-retrospective-axis spec** the shared scan's subagent reads and applies; `references/session-scan.md` § Inputs lists the prompt inputs (the session file resolved in §1.4, this file's path, repo root, language, and the `subagent_model`-derived model). Do not spawn a separate subagent here.
 
 Instruct the subagent to:
 
 1. Read §2 (signal types, candidate schema) and §3 (sanitization rules) of the reference file.
-2. Parse the session jsonl (line-delimited JSON — each line one message). Extract:
+2. Parse the session jsonl (line-delimited JSON — each line one message) — the shared scan performs this parse **once** for all active axes (see `references/session-scan.md` § Subagent instructions); this step names only the per-axis extraction that single parse feeds. Extract:
    - `user` and `assistant` **text** content (skip `tool_use`, `thinking`, and similar internal blocks)
    - Each entry's `timestamp` field (ISO 8601 string at the top level of the JSON line)
    - Each `assistant` entry's `message.usage` object (`input_tokens`, `output_tokens`, `cache_creation_input_tokens`, `cache_read_input_tokens`)

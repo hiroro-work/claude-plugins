@@ -2,6 +2,14 @@
 
 ## 2026-06-20
 
+### dev-workflow v1.74.6 / dev-workflow-bundle v1.75.6
+
+- refactor(dev-workflow): consolidate the Step 11.5 (self-retrospective) and Step 11.6 (workability) session-jsonl scans into a single shared session-scan subagent dispatch (issue #123 Finding 1)
+  - The two retrospective steps previously each spawned their own `general-purpose` subagent to parse the same session jsonl. A new `references/session-scan.md` houses one shared dispatch that parses the jsonl once and returns each enabled axis's block (`### Finding …` / `### Candidate …`) in a single delimited return; each axis's `§2.1` is reframed into the axis spec the shared scan reads (instruction-list numbering and stable anchors preserved). The first enabled retrospective step past its pre-flight dispatches once — cross-step state `session_scan_dispatched` / `session_scan_result` is hoisted to Step 2 init — and the other consumes its block from the held return. This drops the workflow's direct `Agent` dispatch count from four sites to three.
+  - **No behavior change**: each axis's output block shape is preserved byte-for-byte (so `dev-workflow-triage`'s consumer is unaffected), the per-axis sanitization regimes stay separate, and raw conversation still never reaches the main thread. A whole-scan fatal parse error now skips both active axes together (they share one jsonl parse); a per-axis malformed block skips only that axis.
+  - Out of scope: `extract-rules --from-conversation` (a separate distributed skill with write side-effects and standalone use) is not folded in — this reduces the run's jsonl parses from three to two.
+  - canonical `SKILL.md` / `references/` and the `dev-workflow-bundle` copy synced byte-identical.
+
 ### dev-workflow v1.74.5 / dev-workflow-bundle v1.75.5
 
 - fix(dev-workflow): the Step 11 rule-update commit gate now covers all of extract-rules' output directories (rules / examples / staging), not just `output_dir` (issue #123 Finding 3)

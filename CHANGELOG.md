@@ -2,6 +2,16 @@
 
 ## 2026-06-20
 
+### dev-workflow v1.74.4 / dev-workflow-bundle v1.75.4
+
+- fix(dev-workflow): require empirical verification to confirm its tool reproduces the real-environment factors the verified behavior depends on before trusting an automated PASS (auto-triage #122)
+  - Category: wrong-default; synthetic-event automation can bypass OS filter / platform-specific layers, so the check now self-questions whether the verification means reproduces those factors and treats real-environment / user observation as ground truth over an apparent automated PASS
+
+### extract-rules v1.20.5 / dev-workflow-bundle v1.75.4
+
+- fix(extract-rules): normalize conversation-extracted candidates to an abstract-principle main clause with incident-specific details demoted to parenthetical examples (auto-triage #123)
+  - Category: wrong-default; added abstraction-normalization guidance to `references/conversation-mode.md` § Step C4 so candidates re-match on second observation instead of stalling in staging as long incident-specific records
+
 ### dev-workflow v1.74.3 / dev-workflow-bundle v1.75.3
 
 - fix(dev-workflow): the visual plan-review gate is now keyboard-operable when macOS Full Keyboard Access is off

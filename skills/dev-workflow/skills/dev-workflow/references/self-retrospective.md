@@ -66,7 +66,7 @@ Concrete operational rules for main when handling the subagent's return:
 
 ### 2.1 Spawn the subagent
 
-The actual `Agent` dispatch is performed **once per run by the shared session scan** (`references/session-scan.md`), which parses the session jsonl a single time and serves both this axis and the workability axis (Step 11.6). This section is the **self-retrospective-axis spec** the shared scan's subagent reads and applies; `references/session-scan.md` § Inputs lists the prompt inputs (the session file resolved in §1.4, this file's path, repo root, language, and the `subagent_model`-derived model). Do not spawn a separate subagent here.
+The actual `Agent` dispatch is performed **once per run by the shared session scan** (`references/session-scan.md`), which parses the session jsonl a single time and serves this axis alongside the other active axes (rule-extraction at Step 11 and / or workability at Step 11.6). This section is the **self-retrospective-axis spec** the shared scan's subagent reads and applies; `references/session-scan.md` § Inputs lists the prompt inputs (the session file resolved in §1.4, this file's path, repo root, language, and the `subagent_model`-derived model). Do not spawn a separate subagent here.
 
 Instruct the subagent to:
 

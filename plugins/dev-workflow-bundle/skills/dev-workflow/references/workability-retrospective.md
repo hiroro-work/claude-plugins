@@ -6,7 +6,7 @@ Purpose: scan the current session for two classes of **project-tooling workabili
 
 This is the third retrospective axis, orthogonal to the other two:
 
-- **Step 11 `extract-rules --from-conversation`** owns the **prose coding-rule** axis (`.claude/rules/`). This step does **not** write `.claude/rules/`; a candidate that is best expressed as a prose rule is delegated to `extract-rules` (recorded as `enforceability: prose-rule`), never applied here.
+- **Step 11 rule-extraction** (via `extract-rules`) owns the **prose coding-rule** axis (`.claude/rules/`). This step does **not** write `.claude/rules/`; a candidate that is best expressed as a prose rule is delegated to `extract-rules` (recorded as `enforceability: prose-rule`), never applied here.
 - **Step 11.5 self-retrospective** targets the **bundle skills themselves** (`dev-workflow` / `ask-peer` / `extract-rules` / `rules-review`). This step targets **this project's own tooling** (project skills + project linters) and is a different axis.
 - **Step 11.6 (this step)** detects **skill-ization candidates + lint-rule candidates** = project-specific workability improvements.
 
@@ -34,7 +34,7 @@ Delegate jsonl parsing, signal extraction, and §3 sanitization to the shared se
 
 ### 2.1 Spawn the subagent
 
-The actual `Agent` dispatch is performed **once per run by the shared session scan** (`references/session-scan.md`), which parses the session jsonl a single time and serves both this axis and the self-retrospective axis (Step 11.5). This section is the **workability-axis spec** the shared scan's subagent reads and applies; `references/session-scan.md` § Inputs lists the prompt inputs (the session file resolved in §1.3, this file's path, repo root, language, and the `subagent_model`-derived model). Do not spawn a separate subagent here.
+The actual `Agent` dispatch is performed **once per run by the shared session scan** (`references/session-scan.md`), which parses the session jsonl a single time and serves this axis alongside the other active axes (rule-extraction at Step 11 and / or self-retrospective at Step 11.5). This section is the **workability-axis spec** the shared scan's subagent reads and applies; `references/session-scan.md` § Inputs lists the prompt inputs (the session file resolved in §1.3, this file's path, repo root, language, and the `subagent_model`-derived model). Do not spawn a separate subagent here.
 
 Instruct the subagent to:
 

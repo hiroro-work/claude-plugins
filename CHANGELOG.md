@@ -2,6 +2,10 @@
 
 ## 2026-06-23
 
+### prose-polish v1.2.0 / dev-workflow-bundle v1.81.0
+
+- refactor(prose-polish): remove all before/after samples from `prose-style-guide.md`; rely on the rules alone so the subagent exercises its own judgment rather than pattern-matching to the examples
+
 ### prose-polish v1.1.0 / dev-workflow-bundle v1.80.0
 
 - feat(prose-polish): expand Japanese rules in `prose-style-guide.md` to cover patterns that large verbose models commonly produce

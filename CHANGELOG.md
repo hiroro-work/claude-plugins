@@ -2,6 +2,14 @@
 
 ## 2026-06-23
 
+### prose-polish v1.0.0 / dev-workflow-bundle v1.79.0
+
+- feat(prose-polish): new bundled skill that refactors verbose / unnatural natural-language prose into concise, native-sounding text in a configured target language (default `ja`) using a sonnet subagent by default
+  - **Two modes** (mutually exclusive; Pattern A — `Skill` wrapper + internal `Agent` dispatch + main-thread apply, single-pass with no iteration loop): **file mode** (`File:` / `Files:`) rewrites a file's target-language prose in place via `edits`, preserving code / identifiers / English technical terms / logic-bearing string literals; **text mode** (`Text:`) returns the refactored text. Both inputs present → `error` (`ambiguous args`); both absent → `error` (`incomplete args`) — the fixed mode gate mirrors `verify-diff`'s `## Invocation contract`
+  - `Language:` (optional, default `ja`) selects the target language whose prose is rewritten; `Model:` (optional, default `sonnet`, closed set `{sonnet, opus, haiku}`) overrides the `Agent` dispatch model. Returns a single fenced JSON verdict (`status` / `mode` / `language` / `applied_edits_count` / `files_modified` / `refactored_text` / `reason`)
+  - Registered both as a standalone plugin (`source: "./skills/prose-polish"`) and as a `dev-workflow-bundle` member; `dev-workflow-bundle` bumped `1.78.0` → `1.79.0`. Not yet wired into `dev-workflow` — the caller wiring lands in a follow-up subtask
+  - canonical `skills/prose-polish/skills/prose-polish/` and the `dev-workflow-bundle` copy synced byte-identical
+
 ### dev-workflow v1.76.0 / dev-workflow-bundle v1.78.0
 
 - fix(dev-workflow): remove the default visual plan-review gate timeout — wait up to 24h (effectively no timeout) instead of 300 s

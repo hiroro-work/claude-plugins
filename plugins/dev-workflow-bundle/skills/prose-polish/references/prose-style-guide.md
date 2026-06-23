@@ -1,0 +1,64 @@
+# Prose Style Guide
+
+The refactor subagent rewrites natural-language prose to be **concise and natural for a native reader of the target language**. This guide is the rule set injected into the dispatch payload; apply it to the prose in the TARGET LANGUAGE only.
+
+## Preserve (hard constraint, applies before every rule)
+
+Rewrite **only** natural-language prose. Never alter, add, or drop any of the following — keep them verbatim:
+
+- Code, syntax, and program structure.
+- Identifiers — function / variable / type / class / module names.
+- English technical terms and product / API / library names (these stay in their original form even when the surrounding prose is in another language).
+- String literals that carry program logic: keys, enum values, format specifiers, file paths, URLs, commands, config tokens.
+- Delimiters around a preserved token — do not add, remove, or change backticks, quotes, or other code-span decoration surrounding an identifier or code fragment. If a token appears bare in the source, keep it bare; refactor the wording around it, not its presentation.
+- Factual content — do not add claims, drop information, or reorder steps. Improve **only** concision and naturalness.
+
+When a candidate rewrite could change program behavior or touch a non-prose token, do not make it.
+
+## General rules (all target languages)
+
+1. **Cut filler.** Remove words that add length without meaning — restating the obvious, hedging ("basically", "essentially"), and ceremony ("it should be noted that").
+2. **Say what the code does not.** A comment that paraphrases the code it sits above is noise; keep comments that explain a non-obvious *why* (a constraint, an invariant, a workaround) and delete pure *what*-narration.
+3. **One idea per sentence.** Split runaway sentences that chain three or more clauses; merge two sentences that state the same thing.
+4. **Prefer the direct form.** Active over passive where it reads naturally, concrete nouns over abstractions, the plain verb over a nominalized phrase ("decides" over "makes a decision").
+5. **Match the surrounding register.** Keep terminology and tone consistent with the neighboring prose; do not introduce a synonym for a term already used nearby.
+
+## Japanese (`ja`) — primary use case
+
+Models prone to verbosity tend to produce Japanese that reads as translated-from-English. Fix these patterns:
+
+1. **Machine-translation / literal-translation tone (機械翻訳調・直訳調)** — Drop English-syntax calques: leading "〜することによって", over-use of "〜において" / "〜に関して", and literal renderings of English connectives. Rephrase into the structure a native writer would choose.
+2. **Redundant politeness and modifiers (冗長な敬体・修飾)** — Trim redundant politeness scaffolding ("〜していただく必要があります" → "〜してください" where appropriate) and stacked modifiers that add no information.
+3. **Restatement removal (重複の除去)** — Remove restatement: a sentence that repeats the previous sentence's content with different words, or a parenthetical that duplicates the main clause.
+4. **Technical-term handling (テクニカルタームの扱い)** — Keep technical terms / identifiers in their original form; do not force a Japanese translation of an established English term. On a term's first use in a passage, the original technical term may be paired with a short Japanese gloss in parentheses where it aids comprehension, but do not translate the term away.
+5. **Particle and word-order naturalness (助詞・語順)** — Fix unnatural particle choices and English-driven word order so the sentence flows as native Japanese.
+
+## English (`en`) and other languages
+
+Apply the general rules above. For English specifically: prefer short Anglo-Saxon verbs over Latinate nominalizations, cut throat-clearing introductions, and break long subordinate-clause chains into separate sentences. For any other target language, apply the general rules and the same "read as native, not translated" standard.
+
+## Paired bilingual before / after samples
+
+These demonstrate the runtime rewrite for each target language (the skill rewrites prose in whichever language `Language:` resolves to). Code and identifiers stay verbatim across the rewrite.
+
+**`language: ja`** — a verbose Japanese code comment:
+
+- Before: `// この関数は、引数として渡されたユーザーIDを使用することによって、データベースからユーザー情報を取得するという処理を行います。`
+- After: `// 渡された userId でユーザー情報を DB から取得する。`
+
+**`language: ja`** — a redundant test description:
+
+- Before: `it("ユーザーが存在しない場合において、nullが返却されるということを確認するテスト", ...)`
+- After: `it("ユーザーが存在しなければ null を返す", ...)`
+
+**`language: en`** — a verbose English comment:
+
+- Before: `// This function is responsible for performing the retrieval of the user information from the database by making use of the provided user ID.`
+- After: `// Fetch the user record from the DB by userId.`
+
+**`language: en`** — a nominalized sentence:
+
+- Before: `Make a determination as to whether the configuration value is present before the execution of the validation step.`
+- After: `Check whether the config value is present before validating.`
+
+Note how `userId` / `null` / `it(...)` / `DB` stay verbatim in every rewrite — only the natural-language wording around them changes.

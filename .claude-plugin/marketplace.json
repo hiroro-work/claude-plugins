@@ -127,10 +127,10 @@
     },
     {
       "name": "dev-workflow-bundle",
-      "description": "Development workflow bundle (includes peer + extract-rules + dev-workflow + rules-review + tidy)",
+      "description": "Development workflow bundle (includes peer + extract-rules + dev-workflow + rules-review + tidy + prose-polish)",
       "source": "./plugins/dev-workflow-bundle",
-      "skills": ["./skills/ask-peer", "./skills/dev-workflow", "./skills/extract-rules", "./skills/rules-review", "./skills/tidy"],
-      "version": "1.78.0",
+      "skills": ["./skills/ask-peer", "./skills/dev-workflow", "./skills/extract-rules", "./skills/rules-review", "./skills/tidy", "./skills/prose-polish"],
+      "version": "1.81.0",
       "author": {
         "name": "hiropon"
       },
@@ -161,6 +161,16 @@
       "description": "Review changed code for reuse, quality, and efficiency, then apply cleanup edits.",
       "source": "./skills/tidy",
       "version": "1.3.0",
+      "author": {
+        "name": "hiropon"
+      },
+      "category": "workflow"
+    },
+    {
+      "name": "prose-polish",
+      "description": "Refactor verbose or unnatural prose into concise, native-sounding text in a configured target language using a sonnet subagent (file mode rewrites in place, text mode returns the result)",
+      "source": "./skills/prose-polish",
+      "version": "1.2.0",
       "author": {
         "name": "hiropon"
       },

@@ -30,7 +30,7 @@
  * submit JSON (one line). Every progress / error message goes to stderr, so the
  * caller can `JSON.parse` the whole stdout.
  *
- * Exit codes: 0 submit, 124 timeout, 130 SIGINT/SIGTERM, 1 startup error.
+ * Exit codes: 0 submit, 124 timeout (default 24h; --timeout 0 disables), 130 SIGINT/SIGTERM, 1 startup error.
  */
 
 import { createServer } from "node:http";
@@ -42,7 +42,9 @@ import { spawn } from "node:child_process";
 
 const log = (...args) => console.error(...args); // all progress → stderr
 
-const DEFAULT_TIMEOUT_SEC = 1800;
+// 24h default: long enough never to fire during a real review, but still an eventual
+// fallback. Keep under setTimeout's ~24.8-day (2^31-1 ms) ceiling or it fires immediately.
+const DEFAULT_TIMEOUT_SEC = 86400;
 const MAX_BODY_BYTES = 5_000_000;
 
 // --- parse args ---
@@ -94,7 +96,7 @@ const intOrDefault = (raw, def, min) => {
   const n = Number.parseInt(raw, 10);
   return Number.isFinite(n) && n >= min ? n : def;
 };
-const timeoutMs = intOrDefault(opts.timeout, DEFAULT_TIMEOUT_SEC, 1) * 1000;
+const timeoutMs = intOrDefault(opts.timeout, DEFAULT_TIMEOUT_SEC, 0) * 1000; // 0 = no timeout (wait indefinitely)
 const port = intOrDefault(opts.port, 0, 0); // 0 = random free port
 const lang = opts.lang === "ja" ? "ja" : "en"; // only "ja" / "en"; default en
 
@@ -246,8 +248,9 @@ server.listen(port, "127.0.0.1", () => {
   else openBrowser(urlStr);
 });
 
-// timeout arms only in --wait mode; without --wait the process stays up until a signal
-if (opts.wait) {
+// timer arms only in --wait mode and when timeoutMs > 0 (0 = wait forever, no timer);
+// without --wait the process stays up until a signal.
+if (opts.wait && timeoutMs > 0) {
   timer = setTimeout(() => {
     log(`error: timed out after ${timeoutMs / 1000}s with no submit`);
     shutdown(124);

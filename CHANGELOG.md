@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-06-23
+
+### dev-workflow v1.76.0 / dev-workflow-bundle v1.78.0
+
+- fix(dev-workflow): remove the default visual plan-review gate timeout — wait up to 24h (effectively no timeout) instead of 300 s
+  - **Behavior change** — the visual plan-review gate (`visual_plan_review`) no longer falls back to chat after 300 s; it waits for the browser submit up to a 24h cap. Waiting costs no tokens (the caller blocks on a harness-tracked background process), so the long wait has no runtime cost
+  - Category: wrong-default; reverses auto-triage #131 (which had cut the timeout 1800 s → 300 s). `references/visual-plan-review.md` no longer passes `--timeout 300`; `serve.mjs`'s `DEFAULT_TIMEOUT_SEC` is now `86400` (24h, kept under `setTimeout`'s ~24.8-day ceiling) and the timer arms only when `timeoutMs > 0`, so `--timeout 0` now means "no timeout (wait indefinitely)" via a `0` sentinel (sibling of the existing `--port 0` sentinel). The 24h finite default keeps an automatic chat-fallback escape hatch for an abandoned gate, since manual cancellation of the background wait is surface-dependent
+  - **Opt-out**: pass `--timeout 0` for truly no timeout, or `--timeout <sec>` for a custom cap (not exposed via YAML config; set on the `serve.mjs` launch in `references/visual-plan-review.md`)
+  - canonical `serve.mjs` / `references/visual-plan-review.md` and the `dev-workflow-bundle` copy synced byte-identical
+
 ## 2026-06-22
 
 ### dev-workflow v1.75.1 / dev-workflow-bundle v1.77.1

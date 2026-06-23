@@ -33,6 +33,12 @@ Models prone to verbosity tend to produce Japanese that reads as translated-from
 3. **Restatement removal (重複の除去)** — Remove restatement: a sentence that repeats the previous sentence's content with different words, or a parenthetical that duplicates the main clause.
 4. **Technical-term handling (テクニカルターム)** — Keep genuine proper-noun terms and identifiers (product / API / library / tool names, code symbols) in their original form, but translate ordinary technical vocabulary that has a natural Japanese equivalent rather than code-mixing (per general rule 6 — e.g. 「dispatch」→「呼び出す」, not 「dispatch する」). On a proper-noun term's first use, a short Japanese gloss in parentheses may aid comprehension.
 5. **Particle and word-order naturalness (助詞・語順)** — Fix unnatural particle choices and English-driven word order so the sentence flows as native Japanese.
+6. **Verbose politeness forms (丁寧語の過剰形)** — Where doing so does not change the meaning or nuance, shorten these over-long politeness constructions that large language models commonly produce:
+   - 「〜となります」 / 「〜となっております」 expressing a **static state** (not a transition) → 「〜です」 / 「〜できます」 (as appropriate) (e.g. 「デフォルト値となります」→「デフォルト値です」, 「可能となっております」→「できます」). Do **not** shorten these when they express a genuine state change (e.g. 「有効となります」= "becomes active").
+   - 「〜させていただきます」 in contexts where the extra courtesy level is unnecessary → 「〜します」 / 「〜しました」. Do **not** simplify it in deliberate courtesy contexts such as apology or notification messages where a higher politeness level is appropriate.
+   - 「〜のほう」 used as a meaningless filler (e.g. 「設定のほうを確認してください」) → delete 「のほう」 (「設定を確認してください」). Retain 「のほう」 when it carries comparative meaning (e.g. 「左のほうが速い」).
+   - 「〜ということ」 chained redundantly → omit where the surrounding sentence remains clear without it.
+7. **Register consistency (敬体/常体の統一)** — Identify the register (敬体: です・ます調, or 常体: だ・である調) established by the surrounding prose and maintain it consistently throughout your rewrites. Do not mix the two within the same document or section. If the surrounding register cannot be determined, follow the register of the first complete sentence in the provided text.
 
 ## English (`en`) and other languages
 
@@ -51,6 +57,16 @@ These demonstrate the runtime rewrite for each target language (the skill rewrit
 
 - Before: `it("ユーザーが存在しない場合において、nullが返却されるということを確認するテスト", ...)`
 - After: `it("ユーザーが存在しなければ null を返す", ...)`
+
+**`language: ja`** — a verbose AI-generated explanation (説明文):
+
+- Before: 「この機能を使用することによって、ファイルの内容を自動的に変換させていただくことが可能となっております。」
+- After: 「この機能を使うと、ファイルの内容を自動で変換できます。」
+
+**`language: ja`** — an over-polite instruction (指示文):
+
+- Before: 「設定のほうを変更していただく必要がございます。まず最初に設定ファイルを開いていただきまして、該当の値をご変更ください。」
+- After: 「設定を変更してください。設定ファイルを開き、該当の値を書き換えます。」
 
 **`language: en`** — a verbose English comment:
 

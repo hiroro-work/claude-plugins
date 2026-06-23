@@ -1,6 +1,6 @@
 # Visual Plan-Review Gate (Step 4)
 
-Deep reference for Step 4's **visual gate path**. Read and follow this top to bottom only when Step 4 sub-step 2 has selected the visual gate — i.e. `visual_plan_review` is enabled (§ Configuration) and the local browser is reachable. This file is the single canonical home for the gate procedure; Step 4 delegates here rather than restating it.
+Deep reference for Step 4's **visual gate path**. Read and follow this top to bottom **whenever `visual_plan_review` is enabled** (§ Configuration) and Step 4 has reached sub-step 2 path (b) — do **not** pre-gate reading it on browser reachability. **This reference owns the reachability determination**: step 2 below runs `printenv CLAUDE_CODE_REMOTE` and returns `fallback` when the local browser is unreachable. This file is the single canonical home for the gate procedure; Step 4 delegates here rather than restating it.
 
 Because `visual_plan_review` is enabled, **Step 2 did not enter Plan Mode** (`plan_mode_active = false`; see `SKILL.md` Step 2 sub-step 2's `plan_mode_active` resolution / § Configuration), so this gate runs **outside Plan Mode**: it freely performs the non-read-only operations below (writing the served file, launching `serve.mjs`), there is **no `ExitPlanMode` / approval modal**, and the canonical plan document is `.claude/plans/<slug>.md`, written by Step 4 sub-step 2 path (b) before this procedure runs (step 3 below names the `<slug>` source).
 

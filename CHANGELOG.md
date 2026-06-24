@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-06-24
+
+### dev-workflow v1.77.0 / dev-workflow-bundle v1.82.0
+
+- feat(dev-workflow): wire the bundled `prose-polish` skill into the workflow at two points so resolved-language prose is refined by a `sonnet` subagent (Subtask 2 of the prose-polish integration; Subtask 1 added the skill in v1.79.0)
+  - **New Step 6.5: Polish Prose** — after Step 6 Tidy and before Step 7, dispatches `Skill(prose-polish)` in file mode over the changed-file set (tracked + untracked new, minus § Workflow artifacts) to rewrite resolved-language comments / descriptions in place. Runs **unconditionally** (no config flag), coupled to the difficulty-skip matrix exactly like Step 6 Tidy: skipped on Trivial / Simple, runs on Moderate / Complex. **Behavior change** — Moderate / Complex runs now invoke `prose-polish` on changed files by default
+  - **Step 4 plan-body polish** — before the plan is presented at the Step 4 gate, the plan document is run through `Skill(prose-polish)` in file mode (resolved-language prose only, headings / identifiers / code blocks preserved), so the user reviews polished prose. Runs on every tier
+  - Both call sites use `prose-polish`'s own `sonnet` default and do **not** receive a propagated `subagent_model` (sonnet is the deliberate skill-side default; propagating the workflow's Moderate / Complex `inherit` = opus would defeat the purpose) — recorded in the `subagent_model` and `Agent`-tool-usage Configuration bullets
+  - difficulty-skip-matrix member set extended to `{Step 6 Tidy, Step 6.5 Polish Prose, Step 7.5 Rules Compliance}` across every naming site (Step 2 Adjust N, the Step 9-note scope line, the rewrite-approach re-derivation, § Completion's difficulty-skip reminder, the README matrix table + prose + self-retrospective section); § No-Stall Principle and § Progress Visibility callee lists add `Skill(prose-polish)`
+  - canonical `skills/dev-workflow/skills/dev-workflow/` and the `dev-workflow-bundle` copy synced byte-identical
+
 ## 2026-06-23
 
 ### dev-workflow v1.76.1 / dev-workflow-bundle v1.81.1

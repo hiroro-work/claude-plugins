@@ -158,6 +158,7 @@ hooks:
 | `interactive_commits` | bool | `true` | Whether Step 10 (Interactive Commits) groups working-tree changes into commits and iterates per-commit with the user; also gates Step 11's rule-update commit proposal |
 | `compact_rules` | bool | `false` | Whether Step 11 sub-step 3 dispatches `Skill(extract-rules) --compact` and opens the compaction approval gate (experimental, opt-in) |
 | `visual_plan_review` | bool | `false` | Whether Step 4 launches the browser-based structured review gate (summary header, collapsible sections, Decision cards with a recommend/alternative toggle, per-element comments, mermaid diagrams) in place of the text approval (local CLI / Remote Control only — on Claude Code on the Web the browser gate never launches, so Step 4 uses a no-Plan-Mode chat approval; enabling it also takes Step 2 out of Plan Mode; experimental, opt-in) |
+| `polish_prose` | bool | `false` | Whether the workflow's two `prose-polish` passes (Step 6.5 file-mode polish of changed files + Step 4 plan-body polish) run; Step 6.5 is still subject to the difficulty-skip matrix (experimental, opt-in) |
 | `custom_instructions` | string | (none) | Free-form instructions applied across all phases |
 | `check_commands` | list&lt;string&gt; | (none) | Static checks (lint / format / typecheck, etc.) |
 | `test_commands` | list&lt;string&gt; | `["Skill(run-tests)"]` | Test execution (fixed) |
@@ -284,6 +285,23 @@ visual_plan_review: true
 Non-boolean values are ignored with a warning and fall back to `false`. To opt in for one project, set `visual_plan_review: true` in `.claude/dev-workflow.md`; to opt in personally, set it in `~/.claude/dev-workflow.local.md` or `.claude/dev-workflow.local.md`.
 
 Note: the **rich visual gate** is a local-only feature. On Claude Code on the Web the browser gate never launches — the web UI offers no rich review surface beyond chat — so it always uses the chat-approval fallback. Enabling it there is not a no-op, though: it still takes Step 4 out of Plan Mode, so the approval surface becomes the chat reply rather than the `ExitPlanMode` modal.
+
+#### `polish_prose`
+
+Controls whether the workflow's two `prose-polish` passes — **Step 6.5 (Polish Prose)** and the **Step 4 plan-body polish** — run. The `prose-polish` wiring introduced in v1.77.0 is currently **experimental**, so this setting defaults to opt-in.
+
+- `false` (default): both passes are skipped. Step 6.5 marks itself `completed` and proceeds to Step 7 (emitting a one-line note on Moderate / Complex; on Trivial / Simple the difficulty-skip matrix already owns the skip, so no `polish_prose` note fires); the Step 4 plan-body polish is skipped silently and the un-polished plan is presented
+- `true`: both passes run. Step 6.5 is still subject to the difficulty-skip matrix, so it runs only on Moderate / Complex tasks (Trivial / Simple skip it regardless); the Step 4 plan-body polish runs on every tier
+
+```yaml
+polish_prose: true
+```
+
+Non-boolean values are ignored with a warning and fall back to `false`. To opt in for one project, set `polish_prose: true` in `.claude/dev-workflow.md`; to opt in personally, set it in `~/.claude/dev-workflow.local.md` or `.claude/dev-workflow.local.md`.
+
+**Behavior change from v1.77.0**: v1.77.0 ran both passes unconditionally (no config flag). From v1.78.0 onward they are gated behind `polish_prose: true`. Projects that adopted the v1.77.0 prose-polish behavior and want to retain it must explicitly set `polish_prose: true`.
+
+Note: the `polish_prose: false` skip is independent of whether the `prose-polish` skill is installed — a missing skill skips both passes for a separate reason (see the prose-polish entry under § Prerequisites).
 
 #### `custom_instructions`
 
@@ -540,10 +558,10 @@ The workflow begins at Step 2 (Step 1 is settings load, Step 1.5 is task decompo
 | 1.5 | Task Decomposition | (Normal sub-mode, only when `task_decomposition: true`) Decide whether to split the task into subtasks and, if approved, create a state file. (Resume sub-mode) Load the state file and pick the next subtask — the step is executed but not registered as a task entry. Skipped entirely when `task_decomposition: false` |
 | 2 | Create Plan | Create plan (in Plan Mode unless `visual_plan_review: true`, which skips Plan Mode so the Step 4 gate can fire), assess difficulty |
 | 3 | Plan Review | Internal review by reviewer (up to N_plan iterations; skipped entirely for Trivial tasks, N_plan=0) |
-| 4 | Finalize Plan | **User approval gate** (text approval with `ExitPlanMode` by default; when `visual_plan_review: true`, Step 2 skips Plan Mode and Step 4 uses a browser-based structured review gate — summary header, collapsible sections, Decision cards with a recommend/alternative toggle, per-element comments — when the local browser is reachable, falling back to a no-Plan-Mode chat approval otherwise); the plan body is polished via the `prose-polish` skill before presentation |
+| 4 | Finalize Plan | **User approval gate** (text approval with `ExitPlanMode` by default; when `visual_plan_review: true`, Step 2 skips Plan Mode and Step 4 uses a browser-based structured review gate — summary header, collapsible sections, Decision cards with a recommend/alternative toggle, per-element comments — when the local browser is reachable, falling back to a no-Plan-Mode chat approval otherwise); when `polish_prose: true`, the plan body is polished via the `prose-polish` skill before presentation |
 | 5 | Implement | Follow the plan |
 | 6 | Tidy | Reduce complexity via the built-in `simplify` skill (falls back to the in-house `tidy` skill when `simplify` is unavailable); skipped for Trivial / Simple tasks per the difficulty-skip matrix |
-| 6.5 | Polish Prose | Refine resolved-language comments / descriptions in changed files via the `prose-polish` skill (file mode, `sonnet`); skipped for Trivial / Simple tasks per the difficulty-skip matrix |
+| 6.5 | Polish Prose | (Only when `polish_prose: true`) Refine resolved-language comments / descriptions in changed files via the `prose-polish` skill (file mode, `sonnet`); skipped for Trivial / Simple tasks per the difficulty-skip matrix |
 | 7 | Check / Test | Run check_commands + run-tests |
 | 7.5 | Rules Compliance Review | Verify `.claude/rules/` compliance via `rules-review` skill; skipped for Trivial tasks per the difficulty-skip matrix |
 | 8 | Code Review | Code review by reviewer (up to N_code iterations; skipped entirely for Trivial tasks, N_code=0) |
@@ -591,7 +609,7 @@ To get the full benefit of dev-workflow, the following skills are recommended:
 - **Reviewer skill** (specified via `reviewer` setting): Used for Plan / Code Review. If not installed, falls back to asking the user directly
 - **rules-review skill**: Required for Step 7.5 (rules compliance review). Step 7.5 is skipped if not installed
 - **extract-rules skill**: Required for Step 11 (rule update). Step 11 is skipped if not installed
-- **prose-polish skill**: Used for the Step 4 plan-body polish and Step 6.5 (Polish Prose). If not installed, those passes are skipped — the plan and changed-file prose are presented un-polished
+- **prose-polish skill**: Used for the Step 4 plan-body polish and Step 6.5 (Polish Prose), both gated by the `polish_prose` setting (default `false`, opt-in). When `polish_prose` is not `true` — or the skill is not installed — those passes are skipped and the plan and changed-file prose are presented un-polished
 - **`gh` CLI, authenticated** (only if `self_retrospective.feedback` is set to an `owner/repo` value): required for Step 11.5 to submit via `gh api` POST to `/repos/<feedback>/issues`. The backing token only needs `Issues: write` on the target repo (no full `repo` scope). If `gh` is missing or unauthenticated, Step 11.5 aborts with an actionable message; switch `feedback` to a local path to disable the `gh` requirement
 
 ## Error / edge case behavior
@@ -605,6 +623,7 @@ To get the full benefit of dev-workflow, the following skills are recommended:
 | `review_iterations` map has an absent / non-positive / wrong-type `plan` or `code` key | Warns, uses default `3` for that phase only (the valid key is kept) |
 | `task_decomposition` is not a boolean | Warns and falls back to `true` |
 | `compact_rules` is not a boolean | Warns and falls back to `false` |
+| `polish_prose` is not a boolean | Warns and falls back to `false` |
 | `custom_instructions` is not a string | Warns and ignores |
 | `hooks.on_complete` has invalid format | Warns and ignores |
 | `check_commands` failure | Fix and retry (up to 3 times); if still failing, reports to user and stops |

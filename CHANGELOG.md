@@ -2,6 +2,14 @@
 
 ## 2026-06-24
 
+### dev-workflow v1.78.0 / dev-workflow-bundle v1.83.0
+
+- feat(dev-workflow): add a `polish_prose` config key (default `false`) gating the two `prose-polish` passes wired in v1.77.0 — Step 6.5 (Polish Prose) and the Step 4 plan-body polish. **Default: disabled** — set `polish_prose: true` in `.claude/dev-workflow.md` (or `.claude/dev-workflow.local.md`) to opt in per project. **Behavior change from v1.77.0**: v1.77.0 ran both passes unconditionally (no config flag); from v1.78.0 they are gated behind `polish_prose: true`. Consuming projects pick up the new default at the next session (the skill loads at session boot, which does not surface this CHANGELOG), so a project that adopted the v1.77.0 prose-polish behavior must explicitly set `polish_prose: true` to retain it
+  - Modeled on the experimental opt-in flags `compact_rules` / `visual_plan_review` (both default `false`): parsed in Step 1 (boolean, warn + fall back to `false`), added to the Step 1 context-compaction-recovery skip-condition list, the § Configuration scalar-keys list + YAML example, and the README Settings-reference table + a dedicated `#### polish_prose` subsection + the Error / edge-case table
+  - **Step 6.5 gate** is an entry-guard internal skip (not a task-registration omission), leaving the difficulty-skip matrix untouched: on Moderate / Complex with `polish_prose: false`, Step 6.5 marks itself `completed` and emits a localized one-line note; the guard is a no-op when the row is already pre-completed by the difficulty-skip matrix (Trivial / Simple), so the note never double-fires
+  - **Step 4 plan-body polish** skips silently when `polish_prose` is not `true` — the user gate immediately follows, so a skip note would only clutter the presentation (unlike Step 6.5, whose note is its only run-signal)
+  - canonical `skills/dev-workflow/skills/dev-workflow/` and the `dev-workflow-bundle` copy synced byte-identical
+
 ### dev-workflow v1.77.0 / dev-workflow-bundle v1.82.0
 
 - feat(dev-workflow): wire the bundled `prose-polish` skill into the workflow at two points so resolved-language prose is refined by a `sonnet` subagent (Subtask 2 of the prose-polish integration; Subtask 1 added the skill in v1.79.0)

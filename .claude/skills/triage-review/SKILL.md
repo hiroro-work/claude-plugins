@@ -55,7 +55,7 @@ Japanese (`ja`) only. The 3-rule localization regimen (Translate generic concept
 
 **This skill's verbatim-preserve token set** (additions beyond the canonical list):
 
-- Enum values: `converged`, `max-iter`, `skipped`, `unparsed`, `error`, `no-actionable-findings`, `applied-edits`, `notes-left`, `framing-failed`, `ok`, `restored`, `not needed (clean tree)`, `restore failed`, `VIOLATION`, `no-issues`, `violations`, `unavailable`, and the rules-review `<reason>` tokens `diff collection failed` / `rule loading failed` / `verdict parse failure` (rules-review's own closed enum) plus the orchestrator-synthesized `verdict schema violation`
+- Enum values: `converged`, `max-iter`, `skipped`, `unparsed`, `error`, `no-actionable-findings`, `applied-edits`, `notes-left`, `framing-failed`, `ok`, `restored`, `not needed (clean tree)`, `restore failed`, `VIOLATION`, `no-issues`, `violations`, `unavailable`, and the rules-review `<reason>` tokens `diff collection failed` / `rule loading failed` / `verdict parse failure` / `coverage gap only` (rules-review's own closed enum) plus the orchestrator-synthesized `verdict schema violation`
 - Field labels: `status:`, `iterations_used:`, `applied:`, `notes_remaining:`, `findings:`, `remaining:`, `framing:`, `auto-stash:`, `release-integrity:`, `rules-review:`
 
 ## Step 1 — Pre-flight
@@ -216,7 +216,7 @@ Do **not** append the triage branch name, the `changed_files` list, or any other
 1. `Skill(rules-review)` could not be resolved / dispatched in this environment (skill-not-found, or the call returned no usable response at all) → record `rules_review_result = {status: "skipped", reason: "unavailable"}` (distinguishes "skill absent from this environment" from "contract broken", mirroring `prompt-tuning`'s `skipped (agent unavailable)`)
 2. The skill ran but the response carries no parseable fenced JSON verdict block → record `rules_review_result = {status: "error", reason: "verdict parse failure"}`
 3. Schema violation (`status` outside `no-issues` / `violations` / `error`, or `violations_count` not a non-negative integer) → record `rules_review_result = {status: "error", reason: "verdict schema violation"}`
-4. Otherwise — extract `status`, `violations_count`, `reason` from the JSON. A JSON `status: "error"` carries `rules-review`'s own closed-enum `reason` (`diff collection failed` / `rule loading failed` / `verdict parse failure`); render it as `error (<reason>)`
+4. Otherwise — extract `status`, `violations_count`, `reason` from the JSON. A JSON `status: "error"` carries `rules-review`'s own closed-enum `reason` (`diff collection failed` / `rule loading failed` / `verdict parse failure` / `coverage gap only`); render it as `error (<reason>)`
 
 Record as `rules_review_result`. All outcomes are non-fatal — proceed to § Step 6.
 
@@ -260,7 +260,7 @@ Warning lines (one per non-fatal incident) follow the main fields:
 - `skill-review: framing-failed (suspected — iter=0 on non-empty main..HEAD)` — single line
 - `skill-review: error (<reason>)` — single line
 - `publicity-review: error (<reason>)` — single line
-- `rules-review: error (<reason>)` — single line (`<reason>` ∈ `verdict parse failure` / `verdict schema violation` / `diff collection failed` / `rule loading failed`)
+- `rules-review: error (<reason>)` — single line (`<reason>` ∈ `verdict parse failure` / `verdict schema violation` / `diff collection failed` / `rule loading failed` / `coverage gap only`)
 - `rules-review: skipped (unavailable)` — single line (the `rules-review` skill could not be resolved / dispatched in this environment)
 - `release-integrity: <skill> changed without paired bump / CHANGELOG (member bump: <yes/no>, bundle bump: <yes/no>, changelog: <yes/no>)` — per violating skill (set by § Release-integrity check (deterministic bump-presence)); a skill whose `main:`/`HEAD:` version read resolved to `unknown` renders the variant `release-integrity: <skill> could not be verified (version read returned unknown — git/jq error or absent marketplace entry)`
 - `auto-stash restore failed: <reason> — changes preserved in \`git stash list\`; resolve the conflict before the handoff \`git switch main\` step` — single line, **form 3 only** (a pop conflict can occur here because callees may have edited files in `main..HEAD`). On the form 2 path the working tree is still == HEAD so the pop cannot conflict; if it nonetheless fails for some other reason, emit the generic variant `auto-stash restore failed: <reason> — changes preserved in \`git stash list\`` (form 2 has no `git switch main` handoff note, so the conflict-resolution clause is omitted)

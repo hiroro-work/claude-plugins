@@ -2,6 +2,13 @@
 
 ## 2026-06-25
 
+### tidy v1.4.0 / dev-workflow-bundle v1.84.0
+
+- feat(tidy): open behavior-preserving structural improvements to `mechanical_edit` so tidy's apply rate approaches the built-in `simplify`
+  - Category: missing-branch; tidy's reviewer recalled structural improvements (existing-helper reuse, pure imperative-to-declarative loop rewrites, behavior-preserving special-case generalizations) but over-downgraded them to `structural_note`, where `simplify` applies them — an empirical bench comparison showed near-parity recall but an apply-rate gap. A new `§ Behavior-preserving structural improvements` positive gate in `cleanup-checklist.md` enumerates the eligible improvements as a closed list, reached only **after** the negative gate (`§ Preserve functionality` + `§ Balance rails`); a loop rewrite stays a `mechanical_edit` only when the body has no early-exit / `throw` / external side effect (the over-simplification guard). The `default to structural_note` wording was tightened to "behavior-preservation-clear → mechanical, genuine-risk → note" across all four sites (`cleanup-checklist.md` ×2 + `SKILL.md` reviewer prompt ×2); a new item 10 (Altitude) flags shallow special-casing layered on shared infrastructure, with overlap-handling rows separating it from item 1 (helper reuse) and item 3 (which removes an unused abstraction — the opposite direction)
+  - the positive gate guards multi-site fixes: a single generalization spanning non-adjacent sites is emitted as multiple `mechanical_edits` sharing one rationale (still one finding), but because the apply loop is non-atomic (it skips edits whose `old_string` no longer matches), such a fix is mechanical only when every proper subset of its edits preserves behavior on its own — otherwise it downgrades to a single `structural_note`, preventing a partially-applied generalization from silently violating `§ Preserve functionality`
+  - canonical `skills/tidy/skills/tidy/` and the `dev-workflow-bundle` copy synced byte-identical
+
 ### rules-review v1.4.3 / dev-workflow-bundle v1.83.2
 
 - fix(rules-review): close the coverage-gap status/reason mapping gap when a clean reviewer group coexists with dropped pointer rules (triage-review follow-up to auto-triage #134)

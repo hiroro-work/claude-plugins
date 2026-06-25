@@ -1,7 +1,7 @@
 ---
 name: dev-workflow-triage
 description: Triage open issues in the dev-workflow-bundle retrospective repo. Read each open issue, judge each Finding (accept / reject), apply accepted fixes to the triage-scope skills (the bundle skills dev-workflow, ask-peer, extract-rules, rules-review, tidy, plus dev-workflow-triage itself for self-targeted findings from its own self-retrospective), post a triage comment, and close the issue; after the per-issue loop, run a once-per-run rules-compliance detection pass (Step 3.8) over the run's diff via Skill(rules-review). Designed for non-interactive routine execution (no plan mode, no user prompts) on Claude Code on the Web.
-allowed-tools: Read, Edit, Write, TaskCreate, TaskUpdate, TodoWrite, Skill(verify-diff), Skill(skill-review), Skill(publicity-review), Skill(rules-review), Skill(verify-bundle-sync), Bash(gh auth status), Bash(gh --version), Bash(gh issue list *), Bash(gh issue comment *), Bash(gh issue close *), Bash(gh api --method POST /repos/*/issues *), Bash(git diff *), Bash(git add *), Bash(git commit *), Bash(git reset), Bash(git checkout HEAD -- *), Bash(git fetch *), Bash(git push *), Bash(git rev-parse *), Bash(git config --get *), Bash(git for-each-ref *), Bash(git symbolic-ref *), Bash(git switch *), Bash(git branch *), Bash(date *), Bash(jq *), Bash(mkdir -p *), Bash(cp -R *)
+allowed-tools: Read, Edit, Write, TaskCreate, TaskUpdate, TodoWrite, Skill(verify-diff), Skill(skill-review), Skill(publicity-review), Skill(rules-review), Skill(verify-bundle-sync), Bash(gh api *), Bash(git diff *), Bash(git add *), Bash(git commit *), Bash(git reset), Bash(git checkout HEAD -- *), Bash(git fetch *), Bash(git push *), Bash(git rev-parse *), Bash(git config --get *), Bash(git for-each-ref *), Bash(git symbolic-ref *), Bash(git switch *), Bash(git branch *), Bash(date *), Bash(jq *), Bash(mkdir -p *), Bash(cp -R *)
 ---
 
 # Dev Workflow Triage
@@ -15,7 +15,7 @@ This skill has **no user-confirmation gates**. The run executes to completion or
 **Permissible fatal-abort exits (both emit the Step 4 summary and stop without entering the per-issue loop; `§ Step 5 — Self-retrospective` is skipped on these exits):**
 
 - Step 1 pre-flight failures (defined in Step 1)
-- Step 2 `gh issue list` non-zero exit (defined in Step 2)
+- Step 2 issue-list REST call non-zero exit (defined in Step 2)
 
 Whole-issue `parse-error` is **not** an abort; the issue is left open with a triage comment and the run continues.
 
@@ -109,8 +109,7 @@ fix(<target-skill>): <Finding 1-line summary> (auto-triage #<issue-N>)
 
 ### Step 1 — Pre-flight (abort with 0 findings on any failure)
 
-- Run `gh --version`. Extract major / minor from the leading line. If < 2.28, set internal flag `no_reason_flag=true` (`gh issue close --reason` was introduced in 2.28)
-- Run `gh auth status`. Non-zero ⇒ abort with "gh not authenticated". **All `SonicGarden/dev-workflow-issues` operations (issue comment, issue close, issue list) use `gh` CLI — never GitHub MCP tools.** Claude Code on the Web scopes GitHub MCP to the active working repository; MCP calls targeting `SonicGarden/dev-workflow-issues` will be denied in scoped sessions.
+- Verify GitHub auth with a **REST** call: run `gh api user --jq .login >/dev/null 2>&1` (token-scoped — proves the token authenticates). Non-zero ⇒ abort with "gh not authenticated". **Do not use `gh auth status`**: it issues a GraphQL `viewer{login}` query, and environments that block the GitHub GraphQL endpoint while allowing REST (notably Claude Code on the Web, whose egress proxy returns `403 GraphQL proxying is not enabled.`) would make `gh auth status` report a valid token as invalid. For the same reason, **every `SonicGarden/dev-workflow-issues` operation in this skill uses the REST API via `gh api` — never the GraphQL-backed `gh issue list` / `gh issue close` porcelain (`gh issue comment` is REST but is standardized to `gh api` here too for one consistent path), and never GitHub MCP tools.** (Independently, Claude Code on the Web scopes GitHub MCP to the active working repository, so MCP calls targeting `SonicGarden/dev-workflow-issues` are denied in scoped sessions — the GraphQL block is a second, orthogonal reason to stay on REST.)
 - Run `git diff --quiet` and `git diff --cached --quiet`. Either non-zero ⇒ abort with "working tree is dirty — uncommitted WIP detected" (prevents folding user WIP into a triage commit)
 - Run `git config --get user.email` and `git config --get user.name`. Either empty ⇒ abort with "git identity not configured" (fresh CI / routine containers often lack this)
 - Detect Web-environment Stop hook (observability only, never abort): run `jq -r '[.hooks.Stop[]?.hooks[]?.command] | join(" ")' ~/.claude/settings.json 2>/dev/null || true`. If the output contains `stop-hook-git-check.sh`, set internal flag `stop_hook_present=true` for the Step 4 summary. File missing / parse failure / `hooks.Stop` absent ⇒ silent skip (flag stays unset). The trailing `|| true` ensures the pipeline status is benign under `set -e`. See `§ Stop hook structural conflict` for what the flag signals to the operator
@@ -139,19 +138,19 @@ After all pre-flight checks pass, register the **Workflow Phase Rows** — one `
 | `Step 4: Emit summary` | `Emitting summary` | `pending` |
 | `Step 5: Self-retrospective` | `Running self-retrospective` | `pending` |
 
-`Step 1: Pre-flight` is registered already-`completed` so the Step 4 audit trail can show "pre-flight passed" (the item-name column above is the Task tools' `subject` field; under the `TodoWrite` fallback it is `content`). After this registration burst, proceed directly to Step 2 in the same tool-call burst — the next tool call must be the `gh issue list` invocation, not a summary turn. See `§ No-Stall Principle` § Phase / per-issue status transitions.
+`Step 1: Pre-flight` is registered already-`completed` so the Step 4 audit trail can show "pre-flight passed" (the item-name column above is the Task tools' `subject` field; under the `TodoWrite` fallback it is `content`). After this registration burst, proceed directly to Step 2 in the same tool-call burst — the next tool call must be the `gh api ... /issues` REST invocation, not a summary turn. See `§ No-Stall Principle` § Phase / per-issue status transitions.
 
 ### Step 2 — List open issues
 
-- Run `gh issue list --repo SonicGarden/dev-workflow-issues --state open --limit 50 --json number,title,body`. Use `jq` to extract fields when convenient (e.g. `... | jq -c '.[]'` to stream one issue per line, or `... | jq -r '.[].number'` to pull just numbers). The 50-issue cap is intentional — running the full per-Finding sub-flow (verify-diff + skill-review + publicity-review dispatches × outer loop) on hundreds of issues per routine invocation is impractical; subsequent routine runs progressively drain the rest of the queue
-- Non-zero exit ⇒ fatal abort with summary "gh issue list failed" (covers auth revoked / network failure mid-run — pre-flight only proves auth at start of run, not for the duration)
+- Run `gh api --method GET repos/SonicGarden/dev-workflow-issues/issues -f state=open -f per_page=50 --jq '[.[] | select(.pull_request == null) | {number, title, body}]'`. This is the **REST** issues endpoint (`gh issue list` is GraphQL-backed and is avoided — see `§ Step 1 — Pre-flight`). The REST `issues` endpoint returns pull requests as well as issues, so the `select(.pull_request == null)` filter drops PRs (only true issues are triaged). The result is a JSON array of `{number, title, body}` objects; stream with a further `| jq -c '.[]'` or pull numbers with `| jq -r '.[].number'` when convenient. The 50-issue cap (`per_page=50`) is intentional — running the full per-Finding sub-flow (verify-diff + skill-review + publicity-review dispatches × outer loop) on hundreds of issues per routine invocation is impractical; subsequent routine runs progressively drain the rest of the queue
+- Non-zero exit ⇒ fatal abort with summary "issue list failed" (covers auth revoked / network failure mid-run — pre-flight only proves auth at start of run, not for the duration)
 - Empty (`0` issues) ⇒ in **a single tool-call burst** (one `TaskUpdate` per flip; or a single `TodoWrite` call under the fallback), flip `Step 2: List open issues` → `completed`, `Step 3: Process each issue serially` → `completed` (no work to do), `Step 3.7: Release bookkeeping` → `completed` (the "skipped (no commits)" branch is reached by definition with zero issues), `Step 3.8: Rules-compliance detection` → `completed` (no run diff to review — reached by definition with zero commits), and `Step 4: Emit summary` → `in_progress`; then proceed directly to summary emission in the next tool-call burst. The hazard `§ No-Stall Principle` guards is a turn boundary or user-facing prose inserted between the flips and the next action — not the number of tool calls; multiple `TaskUpdate` calls within the same burst (same response) do not open a pause-window. Summary text begins with "no open issues"
 - `1 ≤ N ≤ 49` ⇒ append `N` per-issue rows (one `TaskCreate` each), **inserted directly after the `Step 3: Process each issue serially` row** (so the per-issue rows render between Step 3 and Step 3.7), then flip `Step 2: List open issues` → `completed` and `Step 3: Process each issue serially` → `in_progress` in the same tool-call burst. Each per-issue row uses `subject: "Issue #<N>: <title-snippet>"` and `activeForm: "Processing issue #<N>"` (under the `TodoWrite` fallback the item-name field is `content`; truncate `<title-snippet>` to a reasonable length if the title is long; informational only). All per-issue rows start with `status: pending`. Proceed directly to the per-issue loop (Step 3) in the next tool-call burst
-- Exactly `50` ⇒ same per-issue append + status flip as above, plus set `overflow=true` (surface in summary as "50-issue cap reached" — `gh issue list` truncates and doesn't return a total, so `== limit` is the overflow signal)
+- Exactly `50` ⇒ same per-issue append + status flip as above, plus set `overflow=true` (surface in summary as "50-issue cap reached" — the REST issues endpoint returns at most `per_page` items and doesn't report a total, so a full page of `== 50` is the overflow signal)
 
 ### Step 3 — Process each issue serially
 
-Do **not** parallelize. Same-skill edits race; `gh issue comment` is non-idempotent.
+Do **not** parallelize. Same-skill edits race; the issue-comment POST is non-idempotent.
 
 If Step 2 reported `0` open issues, this whole prelude (and the per-issue sub-steps that follow) is skipped — the 0-issues bullet in `§ List open issues` already flipped Step 3 / Step 3.7 / Step 3.8 / Step 4 phase rows in one tool-call burst and proceeds directly to summary emission.
 
@@ -362,13 +361,13 @@ For each accepted Finding (the per-Finding memory record described above is upda
 
 #### 3.5 Post triage comment
 
-**Tool path**: use `gh` CLI exclusively for all `SonicGarden/dev-workflow-issues` operations — never GitHub MCP tools (see `§ Step 1 — Pre-flight`'s "All `SonicGarden/dev-workflow-issues` operations" note for the rationale).
+**Tool path**: use the REST API via `gh api` exclusively for all `SonicGarden/dev-workflow-issues` operations — never the GraphQL-backed `gh issue` porcelain, never GitHub MCP tools (see `§ Step 1 — Pre-flight`'s "every `SonicGarden/dev-workflow-issues` operation … uses the REST API via `gh api`" note for the rationale).
 
 After every Finding in the issue is classified (or immediately, if the whole issue was classified as `parse-error` by Parse body):
 
 - Build the body using the template in `references/triage-criteria.md`
 - `mkdir -p .triage`, then `Write` to `.triage/triage-<YYYY-MM-DD>-issue<N>.md`. On collision (re-run), append `-2`, `-3`, .... The file is gitignored and kept as a local in-session reference (the GitHub comment is canonical); do not delete it. The directory is intentionally placed outside `.claude/` so Claude Code's sensitive-path treatment for `.claude/*` paths does not trigger a Write permission prompt during routine execution
-- Run `gh issue comment <N> --repo SonicGarden/dev-workflow-issues --body-file <path>`
+- Post the comment via REST: `gh api --method POST /repos/SonicGarden/dev-workflow-issues/issues/<N>/comments -F body=@<path>` (`-F body=@<path>` reads the body verbatim from the staging file)
 - Non-zero exit: record `comment-failed`, continue with other issues
 
 #### 3.6 Close decision
@@ -380,7 +379,7 @@ Close the issue only when **both** legs hold:
 
 Otherwise leave open for human review.
 
-- When closing: `gh issue close <N> --repo ...` with `--reason completed` (any accepts) or `--reason "not planned"` (all rejects). Drop `--reason` if `no_reason_flag=true` (gh < 2.28)
+- When closing, use the REST PATCH endpoint: `gh api --method PATCH /repos/SonicGarden/dev-workflow-issues/issues/<N> -f state=closed -f state_reason=completed` (any accepts) or `-f state_reason=not_planned` (all rejects). `state_reason` (note the underscore form `not_planned`) is always available on the REST endpoint, so no gh-version gating is needed — this replaces the GraphQL-backed `gh issue close --reason` porcelain (whose `--reason` flag, and the old `no_reason_flag` gh<2.28 guard, are no longer used)
 - Non-zero exit: record `close-failed`, continue
 
 After the per-issue row reaches its terminal sub-step (`§ Close decision` for both the normal and parse-error paths), apply **exactly one** of the two return-point reminders below — reminder #1 if more unprocessed issues remain in the per-issue queue, reminder #2 if this was the last issue.

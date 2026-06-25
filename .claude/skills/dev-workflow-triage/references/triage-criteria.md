@@ -55,9 +55,9 @@ Quick reference for per-case dispositions. SKILL.md's procedural prose is author
 | 2 consecutive Findings with skill-review errors | Set `skill_review_disabled=true`; skip polish for the rest of the run; warn on each affected Finding |
 | `git diff` shows a path outside the allowed scope set (`skills/` or `.claude/skills/dev-workflow-triage/`) after (d) | Per-Finding `conflict`; `git checkout HEAD -- <paths>`; continue |
 | `git commit` non-zero (usually a pre-commit hook rejection) | `git reset` + `git checkout HEAD -- <paths>`; per-Finding `conflict`; record `commit-failed` |
-| `gh issue comment` non-zero | Record `comment-failed`; other issues continue |
-| `gh issue close` non-zero | Record `close-failed`; other issues continue |
-| `gh issue list` returns exactly 50 items | Set `overflow=true`; surface in summary ("50-issue cap reached") |
+| issue-comment REST POST (`gh api --method POST .../comments`) non-zero | Record `comment-failed`; other issues continue |
+| issue-close REST PATCH (`gh api --method PATCH .../issues/<N>`) non-zero | Record `close-failed`; other issues continue |
+| issue-list REST call (`gh api .../issues`) returns a full page (50 items) | Set `overflow=true`; surface in summary ("50-issue cap reached") |
 | Step 3.7 reaches release bookkeeping with zero accepted-and-committed Findings across the run | Skip release bookkeeping; record `release-bookkeeping=skipped (no commits)`; per-Finding commits (none in this case) and Step 4 summary proceed |
 | Step 3.7 version-skew guard: pre-bump versions of `dev-workflow` plugin and `dev-workflow-bundle` plugin disagree | Abort release bookkeeping with no marketplace / CHANGELOG edits; record `release-bookkeeping=failed (version skew: dev-workflow=<v1>, dev-workflow-bundle=<v2>)` |
 | Step 3.7 post-Edit `jq empty .claude-plugin/marketplace.json` returns non-zero | Revert via `git checkout HEAD -- .claude-plugin/marketplace.json`; record `release-bookkeeping=failed (json invalid)` |

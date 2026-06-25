@@ -1,5 +1,25 @@
 # Changelog
 
+## 2026-06-25
+
+### rules-review v1.4.3 / dev-workflow-bundle v1.83.2
+
+- fix(rules-review): close the coverage-gap status/reason mapping gap when a clean reviewer group coexists with dropped pointer rules (triage-review follow-up to auto-triage #134)
+  - Category: missing-branch; the `coverage gap only` machinery added in #134 left the verdict undefined when some reviewer groups ran clean (contributing no list entry) while the only consolidated entries were `(rule not evaluated — ...)` coverage gaps — the `error` bullet required "every group failed" and `coverage gap only` required "no group ran", so the § 6 all-clean branch could silently swallow the gap as `no-issues`. The status mapping is now keyed on "consolidated list non-empty with no real finding" → `error`; a synthetic entry blocks the all-clean branch (§ 6 prose is the rendering authority the Return contract mirrors against the same list); and a reason-selection order routes ≥ 1 `(review failed)` → `verdict parse failure`, else → `coverage gap only`. The semantics of both `verdict parse failure` (now "≥ 1 `(review failed)` + no real finding", was "every group failed") and `coverage gap only` (now "all synthetic entries are coverage gaps, clean sibling groups allowed", was "no group ran") are widened accordingly; the closed-enum token strings are unchanged, so downstream verbatim-preserve consumers (dev-workflow-triage / triage-review) are unaffected
+  - canonical `skills/rules-review/skills/rules-review/` and the `dev-workflow-bundle` copy synced byte-identical
+
+### dev-workflow v1.78.1 / dev-workflow-bundle v1.83.1
+
+- fix(dev-workflow): surface review-class hook write divergence at the Step 9 boundary (auto-triage #133)
+  - Category: missing-branch; Step 9 now reconciles each review-class entry's reported `applied_edits_count` against the actual working-tree change it produced and records a non-fatal `review-class write divergence` warning at the hook boundary, so a findings-only reviewer that silently self-applies an edit is surfaced before the Step 10 commit gate (Step 10's Post-hook attribution check still owns resolution)
+  - canonical `skills/dev-workflow/skills/dev-workflow/` and the `dev-workflow-bundle` copy synced byte-identical
+
+### rules-review v1.4.2 / dev-workflow-bundle v1.83.1
+
+- fix(rules-review): resolve out-of-tree pointer rules before review; surface unresolvable pointers as coverage gaps (auto-triage #134)
+  - Category: missing-branch; a rule file that defers its body to an out-of-tree `@`-reference was embedded as an empty stub, so the reviewer judged against empty rules and returned clean. Data prep now resolves the reference and embeds the actual rule text, or — when the reference is unresolvable — drops the rule and records an explicit `(rule not evaluated — unresolved pointer to <ref>)` coverage-gap synthetic entry instead of a silent pass (a `coverage gap only` reason token was added to the Return contract enum)
+  - canonical `skills/rules-review/skills/rules-review/` and the `dev-workflow-bundle` copy synced byte-identical
+
 ## 2026-06-24
 
 ### dev-workflow v1.78.0 / dev-workflow-bundle v1.83.0

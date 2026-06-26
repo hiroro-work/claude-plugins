@@ -2,6 +2,14 @@
 
 ## 2026-06-26
 
+### prose-polish v1.4.0 / dev-workflow-bundle v1.87.0
+
+- feat(prose-polish): detect cross-file duplicate comments in file mode and surface them as advisory `recommendations` instead of polishing each copy
+  - When file mode receives multiple files, the refactor subagent now flags non-obvious knowledge (a *why* / rationale / workaround / constraint note) that recurs as a comment across two or more of the target files: rather than polishing each copy in place, it emits a single `recommendations` entry (`{summary, files, suggestion}`) advising consolidation into one canonical location and removal of the inline copies. Deletion is **not** automated — the finding is advisory only, since the *why* would be lost if the consolidation destination is not guaranteed
+  - New return-contract field `recommendations` is additive and backward-compatible: the `status` enum is unchanged and stays orthogonal to `recommendations` (a `no-change` verdict may carry a non-empty `recommendations`, so callers read it independently of `status`), an absent field parses leniently as `[]`, and it is `[]` in text mode, on single-file or no-duplicate file-mode input, and on any error. Existing `edits`-based callers that do not read the field are unaffected
+  - The detection criteria (non-obvious-knowledge only, ≥ 2 distinct files, normalized near-match, exclusion list, conservative judgment) live in a single new `## Cross-file duplicate comments` section of `references/prose-style-guide.md`; the SKILL.md file-mode dispatch references that section by name and owns only the output action plus the `recommendations` schema and parse-time shape validation (`files` must be ≥ 2 distinct non-empty strings; advisory, never scope-checked against `target_files`). A `## Invocation contract` note records that detection requires related files passed together in one invocation. The optional consolidation-target deletion extension is deferred as an additive follow-up
+  - canonical `skills/prose-polish/skills/prose-polish/` and the `dev-workflow-bundle` copy synced byte-identical
+
 ### prose-polish v1.3.0 / dev-workflow-bundle v1.86.0
 
 - feat(prose-polish): make the refactor subagent translate ordinary technical vocabulary instead of leaving it as code-mixing

@@ -2,6 +2,14 @@
 
 ## 2026-06-26
 
+### prose-polish v1.3.0 / dev-workflow-bundle v1.86.0
+
+- feat(prose-polish): make the refactor subagent translate ordinary technical vocabulary instead of leaving it as code-mixing
+  - Category: ambiguity; the style guide had said "translate ordinary technical vocabulary" since 2026-06-23, but `SKILL.md` told the refactor subagent to preserve "English technical terms" wholesale at four sites (frontmatter `description`, the File-mode bullet, and both the file-mode and text-mode refactor prompts). The injected prompt is the dominant instruction, so the subagent resolved the contradiction toward preservation and left code-mixed Japanese (e.g. 「dispatch する」「stale だった」) intact — the dogfooding signal observed during a prior run. Narrowed all four sites to "preserve only proper-noun product / API / library / tool names and code symbols" and added an explicit clause that an ordinary source-language word inside target-language prose is translatable prose, not a preserved token
+  - Added a canonical `### Preserve-vs-translate litmus test` to the style guide's Preserve section (preserve-test → translate-test → translate-default, first match wins; recognized proper nouns like `git` / `Promise` / `API` outrank the translate-default regardless of backticking), folding in the prior Preserve-bullet prose; General rule 6 and Japanese rule 4 now cross-reference the litmus test rather than each restating the boundary (token-defined-once)
+  - Sharpened the litmus test's translate side after a prompt-tuning round surfaced two under-specified edges: (i) example glosses (`dispatch`→「呼び出す」, …) now state they are illustrative of the translate-vs-code-mix contrast, not a fixed dictionary — a polysemous source word picks the contextually natural target (`dispatch`→「振り分ける」 when distributing work); (ii) the test now scopes itself to source-script tokens and exempts established target-script loanwords (`ja` katakana such as `キャッシュ` / `レスポンス`) as already-native prose
+  - canonical `skills/prose-polish/skills/prose-polish/` and the `dev-workflow-bundle` copy synced byte-identical
+
 ### dev-workflow v1.79.0 / dev-workflow-bundle v1.85.0
 
 - feat(dev-workflow): add Step 5 guidance for delegating a settled, task-effective work unit to a subagent (issue #138)

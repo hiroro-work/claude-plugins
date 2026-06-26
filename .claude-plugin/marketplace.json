@@ -130,7 +130,7 @@
       "description": "Development workflow bundle (includes peer + extract-rules + dev-workflow + rules-review + tidy + prose-polish)",
       "source": "./plugins/dev-workflow-bundle",
       "skills": ["./skills/ask-peer", "./skills/dev-workflow", "./skills/extract-rules", "./skills/rules-review", "./skills/tidy", "./skills/prose-polish"],
-      "version": "1.85.0",
+      "version": "1.86.0",
       "author": {
         "name": "hiropon"
       },
@@ -170,7 +170,7 @@
       "name": "prose-polish",
       "description": "Refactor verbose or unnatural prose into concise, native-sounding text in a configured target language using a sonnet subagent (file mode rewrites in place, text mode returns the result)",
       "source": "./skills/prose-polish",
-      "version": "1.2.0",
+      "version": "1.3.0",
       "author": {
         "name": "hiropon"
       },

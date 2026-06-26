@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-06-26
+
+### dev-workflow v1.79.0 / dev-workflow-bundle v1.85.0
+
+- feat(dev-workflow): add Step 5 guidance for delegating a settled, task-effective work unit to a subagent (issue #138)
+  - Category: ambiguity; Step 5 was silent on when/how to delegate a unit of implementation work to a subagent, and the §Configuration `Agent` tool usage invariant ("exactly three dispatch sites ... must not invoke `Agent` directly") implicitly prohibited it. Added a guard-forward delegation paragraph to Step 5 sub-step 2 — default is main-thread implementation; delegation is the opt-in exception, allowed only when the unit is spec-complete (a context-less executor can be handed a complete spec), an effective subagent exists for it, and the unit is not judgment-heavy or small. The subagent type is selected by capability first (exclude read-only `Explore` / `Plan`-class agents) then task-fit, falling back to `general-purpose`; the delegation propagates `subagent_model` like the fixed sites. The clearest case is a settled bulk-mechanical subtask (e.g. one pattern across dozens of files, a bulk test-suite migration)
+  - Reconciled the load-bearing `Agent`-dispatch invariant across all 5 sites in one sweep: `SKILL.md` §Configuration `subagent_model` bullet, the `Agent` tool usage bullet ("exactly three dispatch sites" → "three fixed infrastructure dispatch sites ... plus a conditional Step 5 delegation", with the two negative count-references and the "must not invoke `Agent` directly" carve-out adjusted), the Step 2 sub-step 1 Read-sites list, `references/simplicity-self-audit.md`'s Target-file constraint example, and `references/visual-plan-review.md`'s live cross-reference
+  - canonical `skills/dev-workflow/skills/dev-workflow/` and the `dev-workflow-bundle` copy synced byte-identical
+
 ## 2026-06-25
 
 ### dev-workflow v1.78.2 / dev-workflow-bundle v1.84.1

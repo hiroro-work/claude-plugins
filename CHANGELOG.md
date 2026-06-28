@@ -2,6 +2,15 @@
 
 ## 2026-06-26
 
+### dev-workflow v1.80.0 / dev-workflow-bundle v1.88.0
+
+- fix(dev-workflow): add scope-awareness filter to Step 6.5 sub-step 1 (auto-triage #143)
+  - Category: missing-branch; Step 6.5 sub-step 1 lacked a scope filter and could queue large, mostly-unchanged files for prose-polish when only a few lines were touched. Added a **Scope-awareness filter** that excludes any file where changed lines ÷ total lines < 10% AND total lines > 100 — operationalized with `git diff <base-commit> --stat` for changed-line count and `wc -l` for total lines
+  - canonical `skills/dev-workflow/` and the `dev-workflow-bundle` copy synced byte-identical
+- fix(dev-workflow): add default-branch guard to interactive-commits Procedure 3 (auto-triage #142)
+  - Category: missing-branch; Procedure 3 committed directly to whatever branch was active — including the repository's default branch — with no guard. Added a **Default-branch guard** that detects the default branch via `git remote show origin | grep 'HEAD branch' | awk '{print $NF}'`, compares it against the current branch, and creates a new feature branch (`git switch -c <slug>`) before the commit-plan presentation when they match; detached HEAD and missing origin are treated as skip-guard and proceed. Rationale: in PR-based workflows, committing directly on the default branch requires post-commit branch surgery to recover a clean base
+  - canonical `skills/dev-workflow/references/interactive-commits.md` and the `dev-workflow-bundle` copy synced byte-identical
+
 ### dev-workflow v1.79.1 / ask-peer v2.4.4 / extract-rules v1.21.2 / rules-review v1.4.4 / tidy v1.4.1 / prose-polish v1.4.1 / dev-workflow-bundle v1.87.1
 
 - chore(plugins): revert the #57570 nested-layout workaround and restore the flat direct-skill layout

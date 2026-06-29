@@ -2,6 +2,7 @@
 name: extract-rules
 description: Extract project-specific coding rules and domain knowledge from existing codebase, generating markdown documentation for AI agents. Use when onboarding a new project, after code review discussions about coding style, or when coding conventions need documenting. Also consider running after sessions where coding preferences were discussed or corrected (--from-conversation), or after PRs with significant review feedback (--from-pr).
 model: opus
+effort: high
 allowed-tools: Read, Glob, Grep, Write, Edit, Agent, TaskCreate, TaskUpdate, TodoWrite, Bash(ls *), Bash(mkdir *), Bash(git ls-files *), Bash(git checkout HEAD -- *), Bash(wc *), Bash(head *), Bash(tail *), Bash(sort *), Bash(uniq *), Bash(tree *), Bash(gh pr view *), Bash(gh pr diff *), Bash(gh api *), Bash(gh auth status *), Bash(gh repo view *), Bash(node *)
 ---
 

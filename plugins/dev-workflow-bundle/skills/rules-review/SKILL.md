@@ -1,6 +1,7 @@
 ---
 name: rules-review
 description: "Check code changes for .claude/rules/ compliance. Use this skill when you need to verify that code changes follow project coding rules, whether as part of dev-workflow or standalone. Triggers on: rule compliance check, rules review, verify conventions, check coding standards. Best suited for hard rules (naming, imports, placement, explicit prohibitions); intent-style rules are checked on a best-effort basis."
+effort: medium
 allowed-tools: Read, Glob, Agent, Bash(git diff *), Bash(git rev-parse *)
 ---
 

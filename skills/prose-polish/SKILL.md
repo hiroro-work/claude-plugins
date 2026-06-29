@@ -1,6 +1,7 @@
 ---
 name: prose-polish
 description: Refactor verbose or unnatural natural-language prose — code comments, test descriptions, docstrings, user-facing text — into concise, native-sounding prose in a configured target language, using a sonnet subagent by default. Two modes: file mode rewrites a file's target-language prose in place; text mode returns the refactored text. Preserves code, identifiers, and proper-noun terms while translating ordinary technical vocabulary into the target language. Non-interactive — no user prompts. Use after generating prose with a model prone to verbosity, or to polish text before presenting it.
+effort: low
 allowed-tools: Read, Edit, Agent
 ---
 

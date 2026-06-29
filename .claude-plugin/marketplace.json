@@ -76,7 +76,7 @@
       "description": "Extract project-specific coding rules from codebase for AI agents",
       "source": "./skills/extract-rules",
       "skills": ["./"],
-      "version": "1.21.2",
+      "version": "1.22.0",
       "author": {
         "name": "hiropon"
       },
@@ -140,7 +140,7 @@
       "description": "Development workflow bundle (includes peer + extract-rules + dev-workflow + rules-review + tidy + prose-polish)",
       "source": "./plugins/dev-workflow-bundle",
       "skills": ["./skills/ask-peer", "./skills/dev-workflow", "./skills/extract-rules", "./skills/rules-review", "./skills/tidy", "./skills/prose-polish"],
-      "version": "1.89.0",
+      "version": "1.90.0",
       "author": {
         "name": "hiropon"
       },
@@ -162,7 +162,7 @@
       "description": "Check code changes for .claude/rules/ compliance using parallel sub-agent review",
       "source": "./skills/rules-review",
       "skills": ["./"],
-      "version": "1.4.4",
+      "version": "1.5.0",
       "author": {
         "name": "hiropon"
       },
@@ -184,7 +184,7 @@
       "description": "Refactor verbose or unnatural prose into concise, native-sounding text in a configured target language using a sonnet subagent (file mode rewrites in place, text mode returns the result)",
       "source": "./skills/prose-polish",
       "skills": ["./"],
-      "version": "1.4.1",
+      "version": "1.5.0",
       "author": {
         "name": "hiropon"
       },

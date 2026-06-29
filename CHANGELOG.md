@@ -2,6 +2,17 @@
 
 ## 2026-06-29
 
+### prose-polish v1.5.0 / extract-rules v1.22.0 / rules-review v1.5.0 / dev-workflow-bundle v1.90.0
+
+- feat(bundle): set a static default `effort` frontmatter on the difficulty-independent bundle skills
+  - Claude Code SKILL.md frontmatter supports an `effort` field (`low`/`medium`/`high`/`xhigh`/`max`) that overrides the session effort level while the skill is active (per the official skills / sub-agents docs). Added a static default to the bundle skills whose appropriate effort does not vary with the parent task's difficulty: **prose-polish → `low`**, **extract-rules → `high`**, **rules-review → `medium`**. Each level is chosen by where the skill's real work runs
+  - **prose-polish → `low`**: dev-workflow deliberately runs prose-polish on `sonnet` and refuses to propagate `subagent_model` to it (smaller-is-better for concise prose), so `low` matches that design thesis; its main thread is mechanical (parse + apply) and the prose work is in the sonnet subagent, so `low` fits whether or not frontmatter effort propagates to that subagent
+  - **extract-rules → `high`**: its primary dev-workflow modes — `--apply-conversation-candidates` (runs Step C5 in the main agent, no subagent) and `--update` (main-thread category analysis) — do the real extraction on the main thread, so frontmatter effort reliably governs extraction quality (the one propagation-immune case); it already pins `model: opus` and the extracted rules persist across sessions, so quality is prioritized over the per-completion cost
+  - **rules-review → `medium`**: a bounded compliance check against a fixed rule set, treated as difficulty-independent by dev-workflow (it runs even on Simple tasks). `xhigh` is intentionally not used because rules-review runs on the unpinned session model, where `xhigh` availability is model-dependent
+  - **Excluded**: `tidy` (cleanup depth scales with code complexity — borderline difficulty-dependent; left to inherit the session effort), `ask-peer` (review depth is actively difficulty-coupled — dev-workflow already varies its model and iteration count by difficulty), and `dev-workflow` itself (the orchestrator; a frontmatter effort there would override the whole session effort)
+  - Only `low`/`medium`/`high` are used (`xhigh`/`max` avoided for portability — available levels are model-dependent). **Subagent-effort propagation is undocumented and path-dependent**: frontmatter effort reliably governs the real work only on the main-thread modes above and on the inline-fallback path (nested `Agent` unavailable, e.g. dev-workflow's Step 7 background launch); on the foreground nested-dispatch path it is observational. `dev-workflow`'s "per-subagent effort is out of scope" note (dynamic per-dispatch effort via the `Agent` tool) is unaffected — this is a separate static-frontmatter mechanism
+  - canonical `skills/<name>/` and the `dev-workflow-bundle` copies synced byte-identical (prose-polish / extract-rules / rules-review)
+
 ### dev-workflow v1.81.0 / dev-workflow-bundle v1.89.0
 
 - feat(dev-workflow): add a Step 2 codebase-research delegation on the `visual_plan_review: true` path

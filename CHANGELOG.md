@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-06-29
+
+### dev-workflow v1.81.0 / dev-workflow-bundle v1.89.0
+
+- feat(dev-workflow): add a Step 2 codebase-research delegation on the `visual_plan_review: true` path
+  - On the no-Plan-Mode visual path, Step 2 MAY now delegate read-only codebase research to a subagent (default `Explore`), reproducing the research-context isolation that Plan Mode's built-in read-only `Plan` subagent provides on the `visual_plan_review: false` path — so research no longer accumulates in the main context. Plan authoring stays in the main thread (plan-format template, Simplicity self-audit, Decisions criterion, task-relevant skill annotation). It is permissive guidance (a `MAY`, gated on `plan_mode_active == false` plus a non-trivial-research judgment); when `Agent` is unavailable it falls back to inline main-thread research
+  - Extended the "three fixed `Agent` dispatch sites plus a conditional Step 5 delegation" invariant to "conditional Step 2 and Step 5 delegations" across every site (§Configuration's Agent-usage bullet and `subagent_model` bullet, Step 2 sub-step 1, and `references/simplicity-self-audit.md`). The Step 2 research delegation is **excluded** from `subagent_model` governance: it dispatches before Step 2's Adjust N resolves the tier, so it always runs on the session model. `references/visual-plan-review.md` now notes the visual path actively restores research isolation via this delegation
+  - Softened the `visual_plan_review` "experimental" marker in §Configuration (the feature is stable; default stays `false`)
+  - canonical `skills/dev-workflow/` and the `dev-workflow-bundle` copy synced byte-identical
+
 ## 2026-06-26
 
 ### dev-workflow v1.80.0 / dev-workflow-bundle v1.88.0

@@ -157,7 +157,7 @@ hooks:
 | `task_decomposition` | bool | `true` | Whether Step 1.5 runs auto-decomposition in Normal sub-mode |
 | `interactive_commits` | bool | `true` | Whether Step 10 (Interactive Commits) groups working-tree changes into commits and iterates per-commit with the user; also gates Step 11's rule-update commit proposal |
 | `compact_rules` | bool | `false` | Whether Step 11 sub-step 3 dispatches `Skill(extract-rules) --compact` and opens the compaction approval gate (experimental, opt-in) |
-| `visual_plan_review` | bool | `false` | Whether Step 4 launches the browser-based structured review gate (summary header, collapsible sections, Decision cards with a recommend/alternative toggle, per-element comments, mermaid diagrams) in place of the text approval (local CLI / Remote Control only — on Claude Code on the Web the browser gate never launches, so Step 4 uses a no-Plan-Mode chat approval; enabling it also takes Step 2 out of Plan Mode; experimental, opt-in) |
+| `visual_plan_review` | bool | `false` | Whether Step 4 launches the browser-based structured review gate (summary header, collapsible sections, Decision cards with a recommend/alternative toggle, per-element comments, mermaid diagrams) in place of the text approval (local CLI / Remote Control only — on Claude Code on the Web the browser gate never launches, so Step 4 uses a no-Plan-Mode chat approval; enabling it also takes Step 2 out of Plan Mode; opt-in) |
 | `polish_prose` | bool | `false` | Whether the workflow's two `prose-polish` passes (Step 6.5 file-mode polish of changed files + Step 4 plan-body polish) run; Step 6.5 is still subject to the difficulty-skip matrix (experimental, opt-in) |
 | `custom_instructions` | string | (none) | Free-form instructions applied across all phases |
 | `check_commands` | list&lt;string&gt; | (none) | Static checks (lint / format / typecheck, etc.) |
@@ -259,7 +259,7 @@ Note: this is distinct from `extract-rules`'s own `compaction_threshold` setting
 
 #### `visual_plan_review`
 
-Controls whether Step 4 (Finalize Plan) presents the plan through a **browser-based, structured review gate** instead of the text approval. This feature is currently **experimental**, so it defaults to opt-in.
+Controls whether Step 4 (Finalize Plan) presents the plan through a **browser-based, structured review gate** instead of the text approval. It defaults to opt-in (`false`).
 
 Unlike the `ExitPlanMode` approval modal (which renders the same plan markdown), the gate turns the plan into a review-optimized surface the modal cannot offer:
 

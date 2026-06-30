@@ -2,6 +2,14 @@
 
 ## 2026-06-29
 
+### dev-workflow v1.81.1 / dev-workflow-bundle v1.90.1
+
+- fix(dev-workflow): add coordinated prose-invariant multi-surface sweep to Step 5 item 5 (auto-triage #144)
+  - Category: ambiguity; Step 5 item 5's coordinated-multi-site sweep guidance applied to literal token replacements but lacked a complementary rule for design-rule / behavioral-invariant changes that propagate across multiple documentation surfaces as prose rather than as a single swappable literal. Added sub-clause (iv) "Coordinated prose-invariant multi-surface sweep": enumerate all known surfaces where the invariant appears (SKILL.md sub-step paragraphs, `references/*.md` table rows, `references/*.md` prose body, README examples) as a closed list before starting edits; after all edits land, grep for the old description's key phrases and synonyms across the enumerated surfaces; for each hit, apply the same two-option disposition as the full-repo grep pass
+  - canonical `skills/dev-workflow/` and the `dev-workflow-bundle` copy synced byte-identical
+- fix(visual-plan-review): add "zero applied changes" first-match branch to revise handler (auto-triage #145)
+  - Category: missing-branch; the `decision: "revise"` handler in `visual-plan-review.md` branched on "Approach-level material change" vs "Localized edits" but had no branch for the case where `comments` was empty (revise submit with no comments). In that case zero edits would land, neither "Approach-level" nor "Localized" is meaningful, yet the handler would fall through to one of those branches anyway. Added a "Zero applied changes (revise with no comments)" branch as first-match: cp served file to `.plan-review.prev.md` then re-launch the gate (loop back to step 4)
+
 ### prose-polish v1.5.0 / extract-rules v1.22.0 / rules-review v1.5.0 / dev-workflow-bundle v1.90.0
 
 - feat(bundle): set a static default `effort` frontmatter on the difficulty-independent bundle skills

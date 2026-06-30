@@ -241,7 +241,7 @@ The destination header protects against a settings-layer hijack: since `self_ret
 
 Then ask for one of three responses:
 
-- **`approve`** — submit as-is to the configured destination (see below). In **repo mode**, also require an explicit second confirmation that `<owner/repo>` is the intended target before running the `gh api` POST. This confirmation is a cheap gate against a destination-header lookalike that the user waves through on autopilot
+- **`approve`** — submit as-is to the configured destination (see below). A single `approve` covers **both** the assembled body and the resolved destination — once the user approves, the destination is confirmed and no separate confirmation turn follows. To keep the approval an informed acknowledgment rather than an autopilot wave-through, phrase the approval prompt so it names the resolved destination (the `<owner/repo>` in repo mode, the expanded absolute path in path mode), echoing what the destination header above already shows
 - **`edit`** — the user provides revised text in chat (full replacement or surgical diff; accept either). Incorporate the edits and re-show the body (with the same destination header) for approval. Loop until the user approves or skips
 - **`skip`** — record the user's reason (if provided) and do not submit
 

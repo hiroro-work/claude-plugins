@@ -28,7 +28,7 @@ The preserve-test outranks the translate-default, so a recognized proper noun (`
 ## General rules (all target languages)
 
 1. **Cut filler.** Remove words that add length without meaning — restating the obvious, hedging ("basically", "essentially"), and ceremony ("it should be noted that").
-2. **Say what the code does not.** A comment that paraphrases the code it sits above is noise; keep comments that explain a non-obvious *why* (a constraint, an invariant, a workaround) and delete pure *what*-narration.
+2. **Say what the code does not.** A comment that paraphrases the code it sits above is noise: delete pure *what*-narration — including a comment that merely restates the definition of the construct it annotates, even when it names a specific subject (e.g. a `.prettierignore` / `.gitignore` entry commented "excludes `<file>`", or a type annotation whose comment repeats the declared type). Keep a comment only for a non-obvious *why* — a constraint, an invariant, a workaround — and state that *why* in one sentence, trimming mechanism or causal-chain detail a reader can infer while keeping detail needed to act correctly.
 3. **One idea per sentence.** Split runaway sentences that chain three or more clauses; merge two sentences that state the same thing.
 4. **Prefer the direct form.** Active over passive where it reads naturally, concrete nouns over abstractions, the plain verb over a nominalized phrase ("decides" over "makes a decision").
 5. **Match the surrounding register.** Keep terminology and tone consistent with the neighboring prose; do not introduce a synonym for a term already used nearby.
@@ -56,7 +56,7 @@ Models prone to verbosity tend to produce Japanese that reads as translated-from
 
 1. **Machine-translation / literal-translation tone (機械翻訳調・直訳調)** — Drop English-syntax calques: leading "〜することによって", over-use of "〜において" / "〜に関して", and literal renderings of English connectives. Rephrase into the structure a native writer would choose.
 2. **Redundant politeness and modifiers (冗長な敬体・修飾)** — Trim redundant politeness scaffolding ("〜していただく必要があります" → "〜してください" where appropriate) and stacked modifiers that add no information.
-3. **Restatement removal (重複の除去)** — Remove restatement: a sentence that repeats the previous sentence's content with different words, or a parenthetical that duplicates the main clause.
+3. **Restatement removal (重複の除去)** — Remove restatement: a sentence that repeats the previous sentence's content with different words, or a parenthetical that duplicates the main clause. General rule 2's "state that *why* in one sentence" guidance applies to multi-line *why* comments here too (e.g. 「<ビルドツールの進捗表示>が全画面スクリーンショットに写り込みビジュアル回帰が非決定的に差分化するため、test 環境では開発インジケータを無効化する」→「スクショに影響するので test 環境では開発インジケータを無効化する」).
 4. **Technical-term handling (テクニカルターム)** — Apply the `Preserve-vs-translate litmus test`: keep genuine proper-noun terms and identifiers in their original form, and translate ordinary technical vocabulary that has a natural Japanese equivalent rather than code-mixing. On a proper-noun term's first use, a short Japanese gloss in parentheses may aid comprehension.
 5. **Particle and word-order naturalness (助詞・語順)** — Fix unnatural particle choices and English-driven word order so the sentence flows as native Japanese.
 6. **Verbose politeness forms (丁寧語の過剰形)** — Where doing so does not change the meaning or nuance, shorten these over-long politeness constructions that large language models commonly produce:

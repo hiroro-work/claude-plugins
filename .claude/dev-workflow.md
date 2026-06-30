@@ -19,4 +19,5 @@ visual_plan_review: true
 workability_retrospective:
   enabled: true
 polish_prose: true
+confirm_remaining_steps: true
 ---

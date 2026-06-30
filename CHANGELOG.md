@@ -2,6 +2,13 @@
 
 ## 2026-06-30
 
+### dev-workflow v1.83.1 / dev-workflow-bundle v1.93.1
+
+- fix(dev-workflow): add Phrase-duplication sweep self-check to Step 8 (auto-triage #147)
+  - Category: missing-branch; Step 8 reviewer fixes (Code Review)
+- fix(dev-workflow): forbid standalone waiting turns at async dispatch boundaries (auto-triage #149)
+  - Category: wrong-default; No-Stall Principle
+
 ### prose-polish v1.6.0 / dev-workflow-bundle v1.93.0
 
 - feat(prose-polish): detect definition-restatement comments and shorten kept *why* comments more aggressively

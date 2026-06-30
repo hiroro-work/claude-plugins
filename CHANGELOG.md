@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-06-30
+
+### dev-workflow v1.82.0 / dev-workflow-bundle v1.91.0
+
+- feat(dev-workflow): add a `confirm_remaining_steps` gate to skip the post-commit rule / retrospective steps
+  - **Default: disabled** — set `confirm_remaining_steps: true` in `.claude/dev-workflow.md` or `.claude/dev-workflow.local.md` to opt in per project. New experimental opt-in config flag (boolean, default `false`); non-boolean values warn and fall back to `false`. When `false` (the default) the workflow is unchanged — Step 11 / 11.5 / 11.6 run unconditionally as before
+  - When `true`, a USER APPROVAL GATE fires at the **entry to Step 11 (Update Rules)** — i.e. after the commit phase (after Step 10, or after Step 9 when `interactive_commits: false`) — asking whether to run the remaining rule-maintenance and retrospective steps (Step 11 Update Rules / Step 11.5 Self-Retrospective / Step 11.6 Workability Retrospective, whichever are registered) or skip them and go straight to Completion. Lets a user skip the post-deliverable steps that are unrelated to a given task. The gate is folded into Step 11's entry (not a standalone step), so the `interactive_commits: false` routing and the "Step 9 → Step 11" transition prose are unchanged
+  - On **skip** the gate marks Step 11 / 11.5 / 11.6 (whichever are registered) `completed` without running them — an intended skip the Phase-boundary self-audit treats like the difficulty-skip matrix's pre-completed rows — establishes Step 11's cross-step variables (`compaction_applied_count` / `below_threshold_failed_files`) at their init values so § Completion's reads stay well-defined, leaves `landed_count` to Step 10's lifecycle, never dispatches the shared session scan, and emits a one-line skip note at the gate so the skip is never silent. It emits no § User-gate summary preamble (a binary proceed / skip prompt with no structured content)
+  - Coordinated multi-site sweep: example YAML block, Scalar-key list, Configuration bullet, Step 1 settings-parse + context-compaction-recovery list, § No-Stall Principle gate enumeration, the Step 11 entry gate definition, and `references/plan-format.md` § User-gate summary preamble's "do not emit" list
+  - canonical `skills/dev-workflow/` and the `dev-workflow-bundle` copy synced byte-identical (`SKILL.md`, `references/plan-format.md`)
+
 ## 2026-06-29
 
 ### dev-workflow v1.81.1 / dev-workflow-bundle v1.90.1

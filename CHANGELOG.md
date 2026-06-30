@@ -10,8 +10,6 @@
 - fix(visual-plan-review): add "zero applied changes" first-match branch to revise handler (auto-triage #145)
   - Category: missing-branch; the `decision: "revise"` handler in `visual-plan-review.md` branched on "Approach-level material change" vs "Localized edits" but had no branch for the case where `comments` was empty (revise submit with no comments). In that case zero edits would land, neither "Approach-level" nor "Localized" is meaningful, yet the handler would fall through to one of those branches anyway. Added a "Zero applied changes (revise with no comments)" branch as first-match: cp served file to `.plan-review.prev.md` then re-launch the gate (loop back to step 4)
 
-## 2026-06-29
-
 ### prose-polish v1.5.0 / extract-rules v1.22.0 / rules-review v1.5.0 / dev-workflow-bundle v1.90.0
 
 - feat(bundle): set a static default `effort` frontmatter on the difficulty-independent bundle skills

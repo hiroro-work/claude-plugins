@@ -2,6 +2,14 @@
 
 ## 2026-06-30
 
+### dev-workflow v1.83.0 / dev-workflow-bundle v1.92.0
+
+- feat(dev-workflow): consolidate the Step 11.5 self-retrospective issue-submission approval into a single gate
+  - Previously, repo-mode submission used a two-stage approval: the `approve` response to the body preview, then a separate explicit confirmation that `<owner/repo>` was the intended target before the `gh api` POST ran. The second confirmation is removed — a single `approve` now covers **both** the body and the resolved destination
+  - The destination-disclosure security property is preserved: the destination header (mode / resolved value / settings-layer source) still defends against a settings-layer hijack, and the single approval prompt names the resolved destination (`<owner/repo>` in repo mode, the absolute path in path mode) so the response stays an explicit destination acknowledgment rather than an autopilot wave-through
+  - Edits: `references/self-retrospective.md` §4 "User preview and approval loop" `approve` bullet, and the `README.md` self-retrospective approval description
+  - canonical `skills/dev-workflow/` and the `dev-workflow-bundle` copy synced byte-identical (`references/self-retrospective.md`, `README.md`)
+
 ### dev-workflow v1.82.0 / dev-workflow-bundle v1.91.0
 
 - feat(dev-workflow): add a `confirm_remaining_steps` gate to skip the post-commit rule / retrospective steps

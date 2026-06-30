@@ -2,6 +2,13 @@
 
 ## 2026-06-30
 
+### prose-polish v1.6.0 / dev-workflow-bundle v1.93.0
+
+- feat(prose-polish): detect definition-restatement comments and shorten kept *why* comments more aggressively
+  - **Behavior change**: prose-polish now auto-deletes a comment that merely restates the definition of the construct it annotates — even when it names a specific subject (e.g. a `.gitignore` entry commented "excludes `<file>`", a type annotation repeating the declared type) — and compresses a kept *why* comment to its essential reason in one sentence, trimming mechanism / causal-chain detail a competent reader can infer. Comments that previously survived may now be deleted or shortened. Deletions stay on the existing auto-applied `edits` path, so the return contract / verdict schema is unchanged
+  - Implemented entirely in `references/prose-style-guide.md`: General rule 2 gains the definition-restatement sub-case plus a "state the *why* concisely" clause, and the Japanese section's Restatement removal item gains a multi-line-*why* compression example. `SKILL.md` is unchanged — its refactor prompt already deletes fully-redundant comments via `edits` and delegates "what counts as redundant" to the style guide's "say what the code does not" rule, so widening that rule is picked up with no prompt edit
+  - canonical `skills/prose-polish/` and the `dev-workflow-bundle` copy synced byte-identical (`references/prose-style-guide.md`)
+
 ### dev-workflow v1.83.0 / dev-workflow-bundle v1.92.0
 
 - feat(dev-workflow): consolidate the Step 11.5 self-retrospective issue-submission approval into a single gate

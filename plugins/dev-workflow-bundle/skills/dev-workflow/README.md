@@ -158,7 +158,7 @@ hooks:
 | `interactive_commits` | bool | `true` | Whether Step 10 (Interactive Commits) groups working-tree changes into commits and iterates per-commit with the user; also gates Step 11's rule-update commit proposal |
 | `compact_rules` | bool | `false` | Whether Step 11 sub-step 3 dispatches `Skill(extract-rules) --compact` and opens the compaction approval gate (experimental, opt-in) |
 | `visual_plan_review` | bool | `false` | Whether Step 4 launches the browser-based structured review gate (summary header, collapsible sections, Decision cards with a recommend/alternative toggle, per-element comments, mermaid diagrams) in place of the text approval (local CLI / Remote Control only — on Claude Code on the Web the browser gate never launches, so Step 4 uses a no-Plan-Mode chat approval; enabling it also takes Step 2 out of Plan Mode; opt-in) |
-| `polish_prose` | bool | `false` | Whether the workflow's two `prose-polish` passes (Step 6.5 file-mode polish of changed files + Step 4 plan-body polish) run; Step 6.5 is still subject to the difficulty-skip matrix (experimental, opt-in) |
+| `polish_prose` | bool | `true` | Whether the workflow's two `prose-polish` passes (Step 6.5 file-mode polish of changed files + Step 4 plan-body polish) run; Step 6.5 is still subject to the difficulty-skip matrix (default-on, opt-out) |
 | `custom_instructions` | string | (none) | Free-form instructions applied across all phases |
 | `check_commands` | list&lt;string&gt; | (none) | Static checks (lint / format / typecheck, etc.) |
 | `test_commands` | list&lt;string&gt; | `["Skill(run-tests)"]` | Test execution (fixed) |
@@ -288,18 +288,18 @@ Note: the **rich visual gate** is a local-only feature. On Claude Code on the We
 
 #### `polish_prose`
 
-Controls whether the workflow's two `prose-polish` passes — **Step 6.5 (Polish Prose)** and the **Step 4 plan-body polish** — run. The `prose-polish` wiring introduced in v1.77.0 is currently **experimental**, so this setting defaults to opt-in.
+Controls whether the workflow's two `prose-polish` passes — **Step 6.5 (Polish Prose)** and the **Step 4 plan-body polish** — run. Both passes run by default; set `polish_prose: false` to opt out.
 
-- `false` (default): both passes are skipped. Step 6.5 marks itself `completed` and proceeds to Step 7 (emitting a one-line note on Moderate / Complex; on Trivial / Simple the difficulty-skip matrix already owns the skip, so no `polish_prose` note fires); the Step 4 plan-body polish is skipped silently and the un-polished plan is presented
-- `true`: both passes run. Step 6.5 is still subject to the difficulty-skip matrix, so it runs only on Moderate / Complex tasks (Trivial / Simple skip it regardless); the Step 4 plan-body polish runs on every tier
+- `false`: both passes are skipped. Step 6.5 marks itself `completed` and proceeds to Step 7 (emitting a one-line note on Moderate / Complex; on Trivial / Simple the difficulty-skip matrix already owns the skip, so no `polish_prose` note fires); the Step 4 plan-body polish is skipped silently and the un-polished plan is presented
+- `true` (default): both passes run. Step 6.5 is still subject to the difficulty-skip matrix, so it runs only on Moderate / Complex tasks (Trivial / Simple skip it regardless); the Step 4 plan-body polish runs on every tier
 
 ```yaml
-polish_prose: true
+polish_prose: false
 ```
 
-Non-boolean values are ignored with a warning and fall back to `false`. To opt in for one project, set `polish_prose: true` in `.claude/dev-workflow.md`; to opt in personally, set it in `~/.claude/dev-workflow.local.md` or `.claude/dev-workflow.local.md`.
+Non-boolean values are ignored with a warning and fall back to `true`. To opt out for one project, set `polish_prose: false` in `.claude/dev-workflow.md`; to opt out personally, set it in `~/.claude/dev-workflow.local.md` or `.claude/dev-workflow.local.md`.
 
-**Behavior change from v1.77.0**: v1.77.0 ran both passes unconditionally (no config flag). From v1.78.0 onward they are gated behind `polish_prose: true`. Projects that adopted the v1.77.0 prose-polish behavior and want to retain it must explicitly set `polish_prose: true`.
+**Behavior change from v1.78.0**: the default flipped from `false` (opt-in) to `true` — projects that leave `polish_prose` unset now run both passes by default; set `polish_prose: false` to opt out. (History: v1.77.0 ran both passes unconditionally with no config flag; v1.78.0 gated them behind `polish_prose: true` defaulting to opt-in.)
 
 Note: the `polish_prose: false` skip is independent of whether the `prose-polish` skill is installed — a missing skill skips both passes for a separate reason (see the prose-polish entry under § Prerequisites).
 
@@ -609,7 +609,7 @@ To get the full benefit of dev-workflow, the following skills are recommended:
 - **Reviewer skill** (specified via `reviewer` setting): Used for Plan / Code Review. If not installed, falls back to asking the user directly
 - **rules-review skill**: Required for Step 7.5 (rules compliance review). Step 7.5 is skipped if not installed
 - **extract-rules skill**: Required for Step 11 (rule update). Step 11 is skipped if not installed
-- **prose-polish skill**: Used for the Step 4 plan-body polish and Step 6.5 (Polish Prose), both gated by the `polish_prose` setting (default `false`, opt-in). When `polish_prose` is not `true` — or the skill is not installed — those passes are skipped and the plan and changed-file prose are presented un-polished
+- **prose-polish skill**: Used for the Step 4 plan-body polish and Step 6.5 (Polish Prose), both gated by the `polish_prose` setting (default `true`, opt-out). When `polish_prose` is not `true` — or the skill is not installed — those passes are skipped and the plan and changed-file prose are presented un-polished
 - **`gh` CLI, authenticated** (only if `self_retrospective.feedback` is set to an `owner/repo` value): required for Step 11.5 to submit via `gh api` POST to `/repos/<feedback>/issues`. The backing token only needs `Issues: write` on the target repo (no full `repo` scope). If `gh` is missing or unauthenticated, Step 11.5 aborts with an actionable message; switch `feedback` to a local path to disable the `gh` requirement
 
 ## Error / edge case behavior
@@ -623,7 +623,7 @@ To get the full benefit of dev-workflow, the following skills are recommended:
 | `review_iterations` map has an absent / non-positive / wrong-type `plan` or `code` key | Warns, uses default `3` for that phase only (the valid key is kept) |
 | `task_decomposition` is not a boolean | Warns and falls back to `true` |
 | `compact_rules` is not a boolean | Warns and falls back to `false` |
-| `polish_prose` is not a boolean | Warns and falls back to `false` |
+| `polish_prose` is not a boolean | Warns and falls back to `true` |
 | `custom_instructions` is not a string | Warns and ignores |
 | `hooks.on_complete` has invalid format | Warns and ignores |
 | `check_commands` failure | Fix and retry (up to 3 times); if still failing, reports to user and stops |

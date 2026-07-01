@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-07-01
+
+### dev-workflow v1.84.0 / dev-workflow-bundle v1.94.0
+
+- feat(dev-workflow): flip the `polish_prose` default from `false` (opt-in) to `true`, graduating the prose-polish wiring to default-on
+  - **Default: enabled** — set `polish_prose: false` in `.claude/dev-workflow.md` or `.claude/dev-workflow.local.md` to opt out. The two `prose-polish` passes (Step 4 plan-body polish + Step 6.5 Polish Prose) now run by default; Step 6.5 is still gated by the difficulty-skip matrix (Moderate / Complex only)
+  - **Behavior change**: projects that leave `polish_prose` unset now run both prose-polish passes by default — previously (v1.78.0–v1.83.x) both were skipped unless `polish_prose: true` was set explicitly. The wiring (added v1.77.0, gated behind the flag in v1.78.0) is no longer marked experimental. Non-boolean values now fall back to `true` (was `false`)
+  - **Downstream automation note**: non-interactive / routine dev-workflow runs (e.g. Claude Code on the Web) that do not set `polish_prose` will now invoke `prose-polish` (a `sonnet` subagent dispatch) on Moderate / Complex tasks by default. Automated runners do not read this CHANGELOG, so set `polish_prose: false` in project config wherever that cost is unwanted
+  - Coordinated multi-site sweep: SKILL.md (Prerequisites prose-polish bullet, Configuration YAML example, the `polish_prose` Configuration bullet, Step 1 settings-parse, the shared Step 4 / Step 6.5 skip-condition parenthetical, the Step 6.5 skip-note ja/en strings) and README.md (config table row, the `#### polish_prose` subsection, the Prerequisites bullet, the non-boolean error-table row). The sibling experimental flags (`compact_rules` / `visual_plan_review` / `confirm_remaining_steps` / `workability_retrospective`) keep their opt-in defaults
+  - canonical `skills/dev-workflow/` and the `dev-workflow-bundle` copy synced byte-identical (`SKILL.md`, `README.md`)
+
 ## 2026-06-30
 
 ### dev-workflow v1.83.1 / dev-workflow-bundle v1.93.1

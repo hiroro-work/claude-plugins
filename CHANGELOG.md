@@ -2,6 +2,15 @@
 
 ## 2026-07-02
 
+### dev-workflow v1.86.0 / dev-workflow-bundle v1.96.0
+
+- feat(dev-workflow)!: remove the `task_decomposition` config key — Step 1.5 (task decomposition check) now always runs unconditionally in Normal sub-mode
+  - **Breaking change, deliberate deviation from the standard flag-removal lifecycle**: `.claude/plans/dev-workflow-improvement-ideas.md` item B6 / G4 normally prescribes a staged removal (stage 2.5 deprecation notice → wait period → stage 3 removal) for exactly this kind of behavior-changing key deletion. This run instead removes the key immediately, per an explicit user decision made before planning began (recorded as Decision 1 in the run's plan) — B6's per-key table already recorded `task_decomposition` as headed for eventual deletion via the G4 pipeline, so only the staging (not the end state) was skipped
+  - **Behavior change**: projects that set `task_decomposition: false` to treat every `/dev-workflow <task>` request as a single task (skipping the Step 1.5 decomposition proposal) will now see Step 1.5 run unconditionally in Normal sub-mode, with no deprecation-notice period. `--resume <state-file>` is unaffected — it never depended on this key
+  - **Downstream automation note**: non-interactive / routine dev-workflow runs that previously relied on `task_decomposition: false` to avoid the decomposition proposal dialogue will now be presented with it (a `yes / adjust / no` chat dialogue) whenever the lightweight decomposition assessment recommends splitting the task; Automated runners do not read this CHANGELOG, so review any routine config that sets this key
+  - Coordinated multi-site sweep: SKILL.md (Configuration Scalar-key list, YAML example, the `task_decomposition` Configuration bullet, Step 1 sub-step 5 parse, Step 1 sub-step 7 task-registration condition, Step 1.5 dispatch section), `references/task-decomposition.md` (the flag-conditional intro and § B prerequisite paragraph), `references/init-mode.md` (the preserved-unmanaged-keys example list), and README.md (config table row, `#### task_decomposition` subsection, YAML examples, the "Disabling the auto check" callout, the Step 1.5 workflow-table row, the non-boolean error-table row)
+  - canonical `skills/dev-workflow/` and the `dev-workflow-bundle` copy synced byte-identical (`SKILL.md`, `README.md`, `references/task-decomposition.md`, `references/init-mode.md`)
+
 ### dev-workflow v1.85.0 / dev-workflow-bundle v1.95.0
 
 - feat(dev-workflow): flip the `visual_plan_review` default from `false` (opt-in) to `true`, graduating the browser-based plan-review gate to default-on

@@ -31,6 +31,7 @@ Quick reference for per-case dispositions. SKILL.md's procedural prose is author
 |---|---|
 | `gh` not authenticated | Abort run with summary "gh not authenticated" |
 | Open-issue list empty | Emit summary "no open issues" and exit |
+| Issue carries the `budget-deferred` label (Step 2 collection-stage pre-filter) | Exclude from the per-issue loop entirely (no per-issue row, no re-judgment); count into `budget_deferred_skipped_count` |
 | Zero `### Finding` headings found in the body | Whole issue → `parse-error`; post comment; leave open (prevents silent auto-close of non-retrospective issues) |
 | `Findings: N` trailer is **present** AND disagrees with `### Finding` count | Whole issue → `parse-error`; post comment; leave open |
 | `Findings: N` trailer is **absent** | Not a parse-error — `### Finding` heading count is canonical; proceed with normal triage |
@@ -40,6 +41,7 @@ Quick reference for per-case dispositions. SKILL.md's procedural prose is author
 | Description text names a skill other than the declared `Target skill` | Per-Finding `reject` (out-of-scope target in description) |
 | `marketplace.json` has no `dev-workflow` plugin entry (or file missing) at producer or consumer time | Treat the resolved version as `unknown`. Producer emits `**Producer version:** dev-workflow vunknown`; consumer's `producer_version == "unknown"` triggers Reject #7 stale-issue path on every Finding (still gated by the (i)+(ii) AND with doubt fall-through, so false rejects remain bounded) |
 | `producer_version < current_version` (or either side `unknown`) AND CHANGELOG entry for `<target-skill>` exists between the two AND current SKILL.md no longer reproduces the concern | Per-Finding `reject` (Reject #7 stale-issue); reason includes `producer_version`, `current_version`, CHANGELOG entry, and SKILL.md cite |
+| (a.5) Char-budget check: projected chars still exceed `cap[target]` after the one consolidation-form redraft attempt (or no redraft is admissible) | Per-Finding `conflict`; skip (b)–(g); record warning `skill-md-growth budget exceeded (<projected> > cap <cap>) — deferred`; mark for `budget-deferred` label at § 3.5 |
 | Edit `old_string` not found (prior Finding's commit overwrote the region) | Per-Finding `conflict`; commit nothing; continue |
 | Edit leaves frontmatter broken | Per-Finding `conflict`; `git checkout HEAD -- <file>`; continue from clean tree |
 | verify-diff returns `converged` | Proceed to (d2) skill-review polish |
@@ -56,6 +58,7 @@ Quick reference for per-case dispositions. SKILL.md's procedural prose is author
 | `git diff` shows a path outside the allowed scope set (`skills/` or `.claude/skills/dev-workflow-triage/`) after (d) | Per-Finding `conflict`; `git checkout HEAD -- <paths>`; continue |
 | `git commit` non-zero (usually a pre-commit hook rejection) | `git reset` + `git checkout HEAD -- <paths>`; per-Finding `conflict`; record `commit-failed` |
 | issue-comment REST POST (`gh api --method POST .../comments`) non-zero | Record `comment-failed`; other issues continue |
+| `budget-deferred` label REST POST (`gh api --method POST .../labels`) non-zero | Record `label-failed`; other issues continue (the label is a future-run pre-filter, not required for this run's disposition) |
 | issue-close REST PATCH (`gh api --method PATCH .../issues/<N>`) non-zero | Record `close-failed`; other issues continue |
 | issue-list REST call (`gh api .../issues`) returns a full page (50 items) | Set `overflow=true`; surface in summary ("50-issue cap reached") |
 | Step 3.7 reaches release bookkeeping with zero accepted-and-committed Findings across the run | Skip release bookkeeping; record `release-bookkeeping=skipped (no commits)`; per-Finding commits (none in this case) and Step 4 summary proceed |

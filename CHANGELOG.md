@@ -2,6 +2,13 @@
 
 ## 2026-07-02
 
+### dev-workflow v1.86.1 / dev-workflow-bundle v1.96.1
+
+- fix(dev-workflow): consolidate the duplicated `subagent_model` read-site enumeration into one canonical bullet
+  - Structural-only change, no behavior change. Step 2 sub-step 1's near-verbatim restatement of the `subagent_model` read-site list (Step 7's background launches, the shared session scan, the conditional Step 5 delegation, Step 7.5 `rules-review`, Step 6's `tidy` fallback, the Step 3 / Step 8 inline reviewer) is replaced with a cross-reference to the Configuration `subagent_model` bullet, which remains the single canonical list
+  - The `self_retrospective` "`Agent` tool usage" bullet is unrelated content — it documents which sites spawn the `Agent` tool directly, not `subagent_model`'s read sites — and is left untouched; it is cross-referenced from 4 other locations, including `references/simplicity-self-audit.md`'s invariant-audit example
+  - canonical `skills/dev-workflow/` and the `dev-workflow-bundle` copy synced byte-identical (`SKILL.md`)
+
 ### dev-workflow v1.86.0 / dev-workflow-bundle v1.96.0
 
 - feat(dev-workflow)!: remove the `task_decomposition` config key — Step 1.5 (task decomposition check) now always runs unconditionally in Normal sub-mode

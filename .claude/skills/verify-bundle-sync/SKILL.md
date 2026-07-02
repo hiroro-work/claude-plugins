@@ -6,7 +6,7 @@ allowed-tools: Bash(jq *), Bash(diff *), Bash(test *)
 
 # Verify Bundle Sync
 
-This skill exists solely to work around an upstream Claude Code symlink bug ([anthropics/claude-code#53948](https://github.com/anthropics/claude-code/issues/53948)) that requires `plugins/dev-workflow-bundle/skills/<name>/` to be a real directory copy of `skills/<name>/` rather than a symlink. It is a **project-local** skill (lives under `.claude/skills/verify-bundle-sync/`, not registered in `.claude-plugin/marketplace.json`). When the bug is fixed and the bundle layout returns to symlinks, **delete this skill directory, the `.claude/dev-workflow.md` `test_commands` entry, the `dev-workflow-triage` (d4) sub-step, and the `.claude/rules/project.rules.md` bullet** that document this workaround.
+This skill exists solely to work around an upstream Claude Code symlink bug ([anthropics/claude-code#53948](https://github.com/anthropics/claude-code/issues/53948)) that requires `plugins/dev-workflow-bundle/skills/<name>/` to be a real directory copy of `skills/<name>/` rather than a symlink. It is a **project-local** skill (lives under `.claude/skills/verify-bundle-sync/`, not registered in `.claude-plugin/marketplace.json`). When the bug is fixed and the bundle layout returns to symlinks, **delete this skill directory, the `.claude/dev-workflow.md` `test_commands` entry, the `dev-workflow-triage` (d4) sub-step, the `.claude/rules/project.rules.md` bullet, and `verify-skill-refs` SKILL.md's Process step 2 (bundle-copy identity check, with its `bundle_copy` verdict field)** that document this workaround.
 
 The skill compares each bundle member's canonical directory against its bundle copy and reports drift. It is detect-only — it never modifies any files.
 

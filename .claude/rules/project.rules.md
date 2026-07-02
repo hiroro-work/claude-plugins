@@ -24,6 +24,7 @@
 
 - peerに相談する（作業計画レビュー、完了時チェック）
 - codex等の外部ツールにレビューを依頼
+- Background dispatch の中断復旧（session 中断を挟んだ resume 後は中断前の background `Agent` dispatch を失われた前提で扱う — 完了通知を待ち続けず liveness を確認し、失われた executor を即座に再 dispatch する）
 
 ## ドキュメント言語
 

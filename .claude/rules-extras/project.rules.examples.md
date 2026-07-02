@@ -288,3 +288,17 @@ the procedure; do not duplicate this content back into `SKILL.md`.
 <!-- → 既存 cross-reference (§ Step 10 / § Approval token closed list) が repo-wide でリンク切れ -->
 See `references/interactive-commits.md` for everything about commits.
 ```
+
+### Background dispatch の中断復旧
+**Good:**
+```text
+<!-- session 中断 → resume 後: 中断前の background Agent dispatch は失われた前提で扱う -->
+TaskOutput(task_id: a90b1cd...)  →  "No task found with ID"   # liveness 確認
+TaskOutput(task_id: a5db0d9...)  →  "No task found with ID"   # 両 executor とも失われている
+→ 両グループの executor を即座に再 dispatch（完了通知を待ち続けない）
+```
+**Bad:**
+```text
+<!-- resume 後も中断前 dispatch の完了通知を待ち続ける -->
+「起動済みの 2 executor の完了通知を待ちます」→（通知は永遠に来ない — dispatch は中断で消滅済み）
+```

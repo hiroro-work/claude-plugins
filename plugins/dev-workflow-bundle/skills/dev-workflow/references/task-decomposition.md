@@ -2,10 +2,8 @@
 
 Deep reference for Step 1.5. Read this when either:
 
-- Normal sub-mode is running and `task_decomposition` is `true` (default), or
+- Normal sub-mode is running, or
 - Resume sub-mode is running (`--resume <state-file>`)
-
-If neither applies, you can skip this file — Step 1.5 has no work to do.
 
 `EnterPlanMode` is reserved for Step 2 (and only when `visual_plan_review: false`; on the `visual_plan_review: true` path Step 2 skips Plan Mode — see `SKILL.md` § Configuration). Any proposal in this step is a plain yes/no dialogue, not a plan.
 
@@ -48,8 +46,6 @@ When a state file is in play, surface parent progress with a single top-level pr
 9. Proceed to Step 2
 
 ## B. Normal sub-mode (`<task>` provided, no `--resume`)
-
-Prerequisite: this section only applies when `task_decomposition` is `true` (the default). If `false`, Step 1.5 is skipped entirely and you don't need to read this section — the Normal sub-mode request becomes the "effective task" unchanged.
 
 1. Assess whether the task should be decomposed. Keep judgment lightweight and log a one-line rationale **as a chat message to the user** (not a task note or state-file field) that names **which primary signal** drove the decision (e.g. `decompose: 2 distinct verification paths — admin CRUD + chat insertion`, `no decompose: single verification path — bug fix affects one handler`). The chat line is the audit trail for the "do NOT decompose" path, which otherwise leaves no visible record — the yes/adjust/no dialogue below only fires on the "decompose" path.
 

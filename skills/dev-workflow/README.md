@@ -154,7 +154,6 @@ hooks:
 | --- | --- | --- | --- |
 | `reviewer` | string | `ask-peer` | Reviewer skill name |
 | `review_iterations` | int \| map | `3` | Max iterations for Plan / Code Review. Scalar applies to both phases; map `{plan, code}` sets them independently |
-| `task_decomposition` | bool | `true` | Whether Step 1.5 runs auto-decomposition in Normal sub-mode |
 | `interactive_commits` | bool | `true` | Whether Step 10 (Interactive Commits) groups working-tree changes into commits and iterates per-commit with the user; also gates Step 11's rule-update commit proposal |
 | `compact_rules` | bool | `false` | Whether Step 11 sub-step 3 dispatches `Skill(extract-rules) --compact` and opens the compaction approval gate (experimental, opt-in) |
 | `visual_plan_review` | bool | `true` | Whether Step 4 launches the browser-based structured review gate (summary header, collapsible sections, Decision cards with a recommend/alternative toggle, per-element comments, mermaid diagrams) in place of the text approval (local CLI / Remote Control only — on Claude Code on the Web the browser gate never launches, so Step 4 uses a no-Plan-Mode chat approval; the default also takes Step 2 out of Plan Mode; default-on, opt-out) |
@@ -207,21 +206,6 @@ The **Trivial** tier is classified conservatively: only a genuinely self-evident
 **Exception to Simple**: a change that touches an external library's configuration file or type-level API is classified at least Moderate (not Simple) when the library has had a recent major-version bump. The primary detection is a `git diff` against the base commit on the project's package manifest; when that misses (e.g. the bump landed in a previous task), rely on `git log` on the manifest or conversational context for the same signal. This protects against stale configuration examples being adopted under the Simple heuristic's weakened review iterations.
 
 If `-i N` is explicitly specified, auto-adjustment is skipped. The configured value is a **ceiling**, not a target.
-
-#### `task_decomposition`
-
-Controls whether Step 1.5 runs the auto-decomposition check in Normal sub-mode.
-
-- `true` (default): the current behavior — large, multi-concern tasks get a decomposition proposal presented to the user
-- `false`: Step 1.5 is omitted from the task list and the decomposition judgment is skipped entirely. Normal sub-mode requests (`/dev-workflow <task>`) go straight to Step 2 as a single task
-
-```yaml
-task_decomposition: false
-```
-
-`--resume <state-file>` is **not affected** by this setting. An existing state file can still be resumed explicitly at any time — the flag only controls the automatic judgment in Normal sub-mode. Typical use cases for `false`: projects where tasks are consistently small-scoped, or users who prefer to decompose tasks manually and find the proposal dialogue distracting.
-
-Non-boolean values are ignored with a warning and fall back to `true`.
 
 #### `interactive_commits`
 
@@ -422,7 +406,6 @@ test_commands:
 ---
 reviewer: "ask-codex"
 review_iterations: 3
-task_decomposition: true
 custom_instructions: "Always use TDD. Write tests before implementation. Prefer functional style."
 check_commands:
   - "pnpm run lint:fix"
@@ -445,11 +428,9 @@ workability_retrospective:
 
 Large requests that span multiple independent concerns can be split into subtasks (each delivered as its own PR), and resumed across sessions.
 
-> **Disabling the auto check**: Set `task_decomposition: false` in your settings file to skip the Step 1.5 judgment entirely. Tasks are always treated as single-task runs, and Step 1.5 is omitted from the task list. `--resume <state-file>` still works on existing state files.
-
 ### How it works
 
-1. `/dev-workflow <task>` runs a lightweight decomposition check in Step 1.5 (only when `task_decomposition` is `true`, the default)
+1. `/dev-workflow <task>` runs a lightweight decomposition check in Step 1.5
    - Simple, single-concern tasks continue as a single task (no state file created)
    - Tasks with multiple independent concerns get a decomposition proposal presented to the user
 2. The user approves, adjusts, or rejects the proposal
@@ -557,7 +538,7 @@ The workflow begins at Step 2 (Step 1 is settings load, Step 1.5 is task decompo
 | Step | Name | Content |
 | --- | --- | --- |
 | 1 | Load Settings | Load config, resolve iteration count, register workflow tasks |
-| 1.5 | Task Decomposition | (Normal sub-mode, only when `task_decomposition: true`) Decide whether to split the task into subtasks and, if approved, create a state file. (Resume sub-mode) Load the state file and pick the next subtask — the step is executed but not registered as a task entry. Skipped entirely when `task_decomposition: false` |
+| 1.5 | Task Decomposition | (Normal sub-mode) Decide whether to split the task into subtasks and, if approved, create a state file. (Resume sub-mode) Load the state file and pick the next subtask — the step is executed but not registered as a task entry. |
 | 2 | Create Plan | Create plan (skips Plan Mode by default so the Step 4 gate can fire; set `visual_plan_review: false` to use Plan Mode instead), assess difficulty |
 | 3 | Plan Review | Internal review by reviewer (up to N_plan iterations; skipped entirely for Trivial tasks, N_plan=0) |
 | 4 | Finalize Plan | **User approval gate** (a browser-based structured review gate by default — summary header, collapsible sections, Decision cards with a recommend/alternative toggle, per-element comments — when the local browser is reachable, falling back to a no-Plan-Mode chat approval otherwise; set `visual_plan_review: false` for the text approval with `ExitPlanMode` instead); when `polish_prose: true`, the plan body is polished via the `prose-polish` skill before presentation |
@@ -623,7 +604,6 @@ To get the full benefit of dev-workflow, the following skills are recommended:
 | `reviewer` unset or unsupported value | Falls back to `ask-peer` |
 | `review_iterations` scalar is not a positive integer (or is neither scalar nor map) | Warns, uses default `3` for both phases |
 | `review_iterations` map has an absent / non-positive / wrong-type `plan` or `code` key | Warns, uses default `3` for that phase only (the valid key is kept) |
-| `task_decomposition` is not a boolean | Warns and falls back to `true` |
 | `compact_rules` is not a boolean | Warns and falls back to `false` |
 | `visual_plan_review` is not a boolean | Warns and falls back to `true` |
 | `polish_prose` is not a boolean | Warns and falls back to `true` |

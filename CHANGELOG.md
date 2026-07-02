@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-07-02
+
+### dev-workflow v1.85.0 / dev-workflow-bundle v1.95.0
+
+- feat(dev-workflow): flip the `visual_plan_review` default from `false` (opt-in) to `true`, graduating the browser-based plan-review gate to default-on
+  - **Default: enabled** — set `visual_plan_review: false` in `.claude/dev-workflow.md` or `.claude/dev-workflow.local.md` to opt out
+  - **Behavior change**: projects that leave `visual_plan_review` unset now skip Plan Mode at Step 2 and present the plan through the browser-based structured review gate at Step 4 by default (falling back to a no-Plan-Mode chat approval when the local browser is unreachable, e.g. Claude Code on the Web). As under v1.72.0's original opt-in introduction, the planning-phase "no code changes" rule is now enforced by agent discipline rather than Plan Mode's read-only lock for every project that leaves the flag unset. This applies uniformly regardless of environment; Claude Code on the Web still falls back to the chat-approval surface, since no browser is reachable there. The wiring (introduced v1.70.0 as experimental opt-in, made Step 2 skip Plan Mode in v1.72.0, marked stable in v1.81.0) is no longer opt-in. Non-boolean values now fall back to `true` (was `false`)
+  - **Downstream automation note**: non-interactive / routine dev-workflow runs (e.g. Claude Code on the Web) that do not set `visual_plan_review` will now skip Plan Mode by default; the review surface itself always falls back to chat there since no browser is reachable, so the practical difference is limited to that Plan Mode lock. Automated runners do not read this CHANGELOG, so set `visual_plan_review: false` in project config wherever the Plan Mode lock is wanted
+  - Coordinated multi-site sweep: SKILL.md (Configuration YAML example, the `visual_plan_review` Configuration bullet, Step 1 settings-parse, Step 2 sub-step 2's `plan_mode_active` resolution, Step 4 sub-step 2 paths (a) and (b), the Completion "Derived staging artifact cleanup" paragraph), `references/visual-plan-review.md` (the default-path residue in the Decision mapping step), and README.md (config table row, the `#### visual_plan_review` subsection, the Step 2 / Step 4 workflow-table rows, the non-boolean error-table row). The sibling experimental flags (`compact_rules` / `confirm_remaining_steps` / `workability_retrospective`) keep their opt-in defaults
+  - canonical `skills/dev-workflow/` and the `dev-workflow-bundle` copy synced byte-identical (`SKILL.md`, `README.md`, `references/visual-plan-review.md`)
+
 ## 2026-07-01
 
 ### dev-workflow v1.84.0 / dev-workflow-bundle v1.94.0

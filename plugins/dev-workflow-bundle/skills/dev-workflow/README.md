@@ -157,7 +157,7 @@ hooks:
 | `task_decomposition` | bool | `true` | Whether Step 1.5 runs auto-decomposition in Normal sub-mode |
 | `interactive_commits` | bool | `true` | Whether Step 10 (Interactive Commits) groups working-tree changes into commits and iterates per-commit with the user; also gates Step 11's rule-update commit proposal |
 | `compact_rules` | bool | `false` | Whether Step 11 sub-step 3 dispatches `Skill(extract-rules) --compact` and opens the compaction approval gate (experimental, opt-in) |
-| `visual_plan_review` | bool | `false` | Whether Step 4 launches the browser-based structured review gate (summary header, collapsible sections, Decision cards with a recommend/alternative toggle, per-element comments, mermaid diagrams) in place of the text approval (local CLI / Remote Control only — on Claude Code on the Web the browser gate never launches, so Step 4 uses a no-Plan-Mode chat approval; enabling it also takes Step 2 out of Plan Mode; opt-in) |
+| `visual_plan_review` | bool | `true` | Whether Step 4 launches the browser-based structured review gate (summary header, collapsible sections, Decision cards with a recommend/alternative toggle, per-element comments, mermaid diagrams) in place of the text approval (local CLI / Remote Control only — on Claude Code on the Web the browser gate never launches, so Step 4 uses a no-Plan-Mode chat approval; the default also takes Step 2 out of Plan Mode; default-on, opt-out) |
 | `polish_prose` | bool | `true` | Whether the workflow's two `prose-polish` passes (Step 6.5 file-mode polish of changed files + Step 4 plan-body polish) run; Step 6.5 is still subject to the difficulty-skip matrix (default-on, opt-out) |
 | `custom_instructions` | string | (none) | Free-form instructions applied across all phases |
 | `check_commands` | list&lt;string&gt; | (none) | Static checks (lint / format / typecheck, etc.) |
@@ -259,7 +259,7 @@ Note: this is distinct from `extract-rules`'s own `compaction_threshold` setting
 
 #### `visual_plan_review`
 
-Controls whether Step 4 (Finalize Plan) presents the plan through a **browser-based, structured review gate** instead of the text approval. It defaults to opt-in (`false`).
+Controls whether Step 4 (Finalize Plan) presents the plan through a **browser-based, structured review gate** instead of the text approval. It defaults to default-on (`true`).
 
 Unlike the `ExitPlanMode` approval modal (which renders the same plan markdown), the gate turns the plan into a review-optimized surface the modal cannot offer:
 
@@ -271,20 +271,22 @@ Unlike the `ExitPlanMode` approval modal (which renders the same plan markdown),
 
 Behavior:
 
-- `false` (default): Step 4 always uses the text path — the chat-rendered condensed plan followed by `ExitPlanMode` — exactly as before
-- `true`: Step 4 launches the gate **only when the local browser is reachable** (the agent and the user share a machine — local CLI / Remote Control). The gate serves the plan on a local `127.0.0.1` server (the bundled `scripts/plan-review/serve.mjs` viewer), opens your browser, and lets you review and comment per element, then choose **approve** or **revise**. `approve` proceeds to implementation; `revise` applies your comments (and any recommendation/alternative switches) to the plan and re-runs the gate. On the re-run, the gate **highlights what changed since your previous review** — changed and new sections are badged and auto-opened, unchanged ones stay collapsed, and edited blocks are highlighted — so you can focus on the revisions instead of re-reading the whole plan
+- `true` (default): Step 4 launches the gate **only when the local browser is reachable** (the agent and the user share a machine — local CLI / Remote Control). The gate serves the plan on a local `127.0.0.1` server (the bundled `scripts/plan-review/serve.mjs` viewer), opens your browser, and lets you review and comment per element, then choose **approve** or **revise**. `approve` proceeds to implementation; `revise` applies your comments (and any recommendation/alternative switches) to the plan and re-runs the gate. On the re-run, the gate **highlights what changed since your previous review** — changed and new sections are badged and auto-opened, unchanged ones stay collapsed, and edited blocks are highlighted — so you can focus on the revisions instead of re-reading the whole plan
+- `false`: Step 4 uses the text path — the chat-rendered condensed plan followed by `ExitPlanMode`
 
 Reachability is detected via `CLAUDE_CODE_REMOTE`: when it is `"true"` (the cloud-execution marker set by Claude Code on the Web), the agent runs in a remote headless sandbox whose `127.0.0.1` and `open` cannot reach your browser, so Step 4 transparently falls back to a chat approval. The gate also falls back on any launch failure (non-zero `serve.mjs` exit, blocked Bash call).
 
-**Plan Mode interaction**: the gate's browser launch and served-file write are non-read-only operations that Plan Mode forbids, so enabling `visual_plan_review: true` makes **Step 2 skip Plan Mode entirely** (the gate can only fire outside it). On this path the canonical plan document is `.claude/plans/<slug>.md` and approval comes from the browser submit — or, when the browser is unreachable, a chat reply — rather than the `ExitPlanMode` modal. The default (`false`) keeps the unchanged `EnterPlanMode → ExitPlanMode` Plan Mode flow.
+**Plan Mode interaction**: the gate's browser launch and served-file write are non-read-only operations that Plan Mode forbids, so the default (`visual_plan_review: true`) makes **Step 2 skip Plan Mode entirely** (the gate can only fire outside it). On this path the canonical plan document is `.claude/plans/<slug>.md` and approval comes from the browser submit — or, when the browser is unreachable, a chat reply — rather than the `ExitPlanMode` modal. Setting `visual_plan_review: false` restores the unchanged `EnterPlanMode → ExitPlanMode` Plan Mode flow.
 
 ```yaml
-visual_plan_review: true
+visual_plan_review: false
 ```
 
-Non-boolean values are ignored with a warning and fall back to `false`. To opt in for one project, set `visual_plan_review: true` in `.claude/dev-workflow.md`; to opt in personally, set it in `~/.claude/dev-workflow.local.md` or `.claude/dev-workflow.local.md`.
+Non-boolean values are ignored with a warning and fall back to `true`. To opt out for one project, set `visual_plan_review: false` in `.claude/dev-workflow.md`; to opt out personally, set it in `~/.claude/dev-workflow.local.md` or `.claude/dev-workflow.local.md`.
 
-Note: the **rich visual gate** is a local-only feature. On Claude Code on the Web the browser gate never launches — the web UI offers no rich review surface beyond chat — so it always uses the chat-approval fallback. Enabling it there is not a no-op, though: it still takes Step 4 out of Plan Mode, so the approval surface becomes the chat reply rather than the `ExitPlanMode` modal.
+Note: the **rich visual gate** is a local-only feature. On Claude Code on the Web the browser gate never launches — the web UI offers no rich review surface beyond chat — so it always uses the chat-approval fallback. The default is not a no-op there, though: it still takes Step 4 out of Plan Mode, so the approval surface becomes the chat reply rather than the `ExitPlanMode` modal.
+
+**Behavior change from v1.70.0**: the default flipped from `false` (opt-in) to `true` — projects that leave `visual_plan_review` unset now skip Plan Mode and use the browser-based gate by default; set `visual_plan_review: false` to opt out. (History: v1.70.0 introduced the gate as an experimental opt-in; v1.72.0 made `true` skip Plan Mode entirely; v1.81.0 removed the experimental marker.)
 
 #### `polish_prose`
 
@@ -556,9 +558,9 @@ The workflow begins at Step 2 (Step 1 is settings load, Step 1.5 is task decompo
 | --- | --- | --- |
 | 1 | Load Settings | Load config, resolve iteration count, register workflow tasks |
 | 1.5 | Task Decomposition | (Normal sub-mode, only when `task_decomposition: true`) Decide whether to split the task into subtasks and, if approved, create a state file. (Resume sub-mode) Load the state file and pick the next subtask — the step is executed but not registered as a task entry. Skipped entirely when `task_decomposition: false` |
-| 2 | Create Plan | Create plan (in Plan Mode unless `visual_plan_review: true`, which skips Plan Mode so the Step 4 gate can fire), assess difficulty |
+| 2 | Create Plan | Create plan (skips Plan Mode by default so the Step 4 gate can fire; set `visual_plan_review: false` to use Plan Mode instead), assess difficulty |
 | 3 | Plan Review | Internal review by reviewer (up to N_plan iterations; skipped entirely for Trivial tasks, N_plan=0) |
-| 4 | Finalize Plan | **User approval gate** (text approval with `ExitPlanMode` by default; when `visual_plan_review: true`, Step 2 skips Plan Mode and Step 4 uses a browser-based structured review gate — summary header, collapsible sections, Decision cards with a recommend/alternative toggle, per-element comments — when the local browser is reachable, falling back to a no-Plan-Mode chat approval otherwise); when `polish_prose: true`, the plan body is polished via the `prose-polish` skill before presentation |
+| 4 | Finalize Plan | **User approval gate** (a browser-based structured review gate by default — summary header, collapsible sections, Decision cards with a recommend/alternative toggle, per-element comments — when the local browser is reachable, falling back to a no-Plan-Mode chat approval otherwise; set `visual_plan_review: false` for the text approval with `ExitPlanMode` instead); when `polish_prose: true`, the plan body is polished via the `prose-polish` skill before presentation |
 | 5 | Implement | Follow the plan |
 | 6 | Tidy | Reduce complexity via the built-in `simplify` skill (falls back to the in-house `tidy` skill when `simplify` is unavailable); skipped for Trivial / Simple tasks per the difficulty-skip matrix |
 | 6.5 | Polish Prose | (Only when `polish_prose: true`) Refine resolved-language comments / descriptions in changed files via the `prose-polish` skill (file mode, `sonnet`); skipped for Trivial / Simple tasks per the difficulty-skip matrix |
@@ -623,6 +625,7 @@ To get the full benefit of dev-workflow, the following skills are recommended:
 | `review_iterations` map has an absent / non-positive / wrong-type `plan` or `code` key | Warns, uses default `3` for that phase only (the valid key is kept) |
 | `task_decomposition` is not a boolean | Warns and falls back to `true` |
 | `compact_rules` is not a boolean | Warns and falls back to `false` |
+| `visual_plan_review` is not a boolean | Warns and falls back to `true` |
 | `polish_prose` is not a boolean | Warns and falls back to `true` |
 | `custom_instructions` is not a string | Warns and ignores |
 | `hooks.on_complete` has invalid format | Warns and ignores |

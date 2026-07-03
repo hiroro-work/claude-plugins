@@ -2,6 +2,13 @@
 
 ## 2026-07-03
 
+### dev-workflow v1.86.4 / dev-workflow-bundle v1.96.4
+
+- fix(dev-workflow): add a Step 2 self-audit check for scope expansion against a task-input-declared project priority
+  - Category: missing-branch; the plan author had no checklist item prompting a check of whether scope added beyond the literal task request conflicts with an active resource-constraint initiative (a size / growth budget, a deprecation timeline) that the task's own input material (a roadmap catalog, a rules file, a handoff doc) already documents — a real instance shipped an unrequested SKILL.md addition during an active char-budget-reduction effort documented in the same catalog the task was drawn from, and neither the author's self-audit nor the Step 3 reviewer (which reads this same checklist under category (a) Scope & feasibility) flagged the tension before landing
+  - `references/simplicity-self-audit.md` gains a new "Task-input-declared priority conflict check" item; no `SKILL.md` change needed since Step 3's category (a) already delegates to this checklist
+  - canonical `skills/dev-workflow/` and the `dev-workflow-bundle` copy synced byte-identical (`references/simplicity-self-audit.md`)
+
 ### dev-workflow v1.86.3 / dev-workflow-bundle v1.96.3
 
 - fix(dev-workflow): grant `Bash(git ls-files *)` and `Bash(grep -q *)` for a new project-level `check_commands` stray-output guard

@@ -197,6 +197,8 @@ Invoke the `Agent` tool to dispatch a fresh executor. Assemble the dispatch prom
 > Judge whether the diff resolves the problem the scenarios encode AND follows the scenarios' intent. Check for regressions — changes that break behavior the original file relied on. Return `objective_met: "yes"` only if there are **no remaining gaps AND no regressions**. Otherwise return `"partial"` (direction is right but gaps remain) or `"no"` (diff does not address the objective).
 >
 > **Gate reachability rule (required)**: when your final verdict is `objective_met: "yes"` AND `regressions: []`, you **must** return `suggested_edits: []`. Do not emit speculative or nice-to-have edits on a pass — record any such observations in `remaining_gaps` instead. `suggested_edits` is the convergence signal and must be empty when you are declaring the work done.
+>
+> If a scenario requires running a script or command, `cd` into a scratch/temp directory outside the skill tree under test **before** invoking it (or otherwise redirect its output there) — prefer the session scratchpad or the system temp directory. Never let output artifacts (e.g. captured stdout/stderr) land inside the directory being verified.
 
 **Response format (include verbatim in the executor prompt):**
 

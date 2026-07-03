@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-07-03
+
+### dev-workflow v1.86.3 / dev-workflow-bundle v1.96.3
+
+- fix(dev-workflow): grant `Bash(git ls-files *)` and `Bash(grep -q *)` for a new project-level `check_commands` stray-output guard
+  - Category: missing-branch; a new project `check_commands` entry shells out to `git ls-files` piped into `grep -q` (e.g. to detect stray `*.stdout` / `*.stderr` files left in the distributed skill tree) — without matching `allowed-tools` grants for both commands, the entry would stall every `/dev-workflow` run on a permission dialog. `allowed-tools` now includes `Bash(git ls-files *)` and `Bash(grep -q *)` alongside the other already-granted `git` subcommands
+
 ## 2026-07-02
 
 ### dev-workflow v1.86.2 / dev-workflow-bundle v1.96.2

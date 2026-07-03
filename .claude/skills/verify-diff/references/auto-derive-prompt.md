@@ -23,6 +23,8 @@ Read the diff and write a 1–2 sentence summary of "what the author was trying 
 
 Construct 1–2 evaluation scenarios from your inferred intent, write a 3–7 item requirements checklist (with at least one `[critical]` item), and judge whether the diff achieves the inferred intent without regressions. Same gate-reachability rule as explicit-args mode: when `objective_met == "yes"` AND `regressions == []`, `suggested_edits` must be `[]`.
 
+If a scenario requires running a script or command, `cd` into a scratch/temp directory outside the skill tree under test **before** invoking it (or otherwise redirect its output there) — prefer the session scratchpad or the system temp directory. Never let output artifacts (e.g. captured stdout/stderr) land inside the directory being verified.
+
 ---
 
 ## Response format

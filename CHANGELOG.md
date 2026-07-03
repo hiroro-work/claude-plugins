@@ -2,6 +2,15 @@
 
 ## 2026-07-03
 
+### dev-workflow v1.86.4 / dev-workflow-bundle v1.96.4
+
+- feat(dev-workflow): add a config-key tombstone mechanism and warn for the removed `task_decomposition` key
+  - Step 1 now checks the merged config against a closed list of removed keys; `task_decomposition` (removed in v1.86.0) is the first entry — projects that still set it now receive an explicit warning instead of the key being silently ignored
+  - This run also formalizes a repo-only project rule (`.claude/rules/project.rules.local.md`, not a versioned skill artifact) defining the full config-flag lifecycle this tombstone mechanism is the first application of: experimental → graduate → deprecation notice → tombstoned removal, calendar-time anchored
+  - `task_decomposition`'s removal predates this rule and used its user-explicit-immediate-removal exception path (see the v1.86.0 entry below), not the standard deprecation-notice flow — this run's tombstone retrofit is the loud-flagging the rule requires for that already-taken exception
+  - Coordinated multi-site sweep: SKILL.md (Configuration's new "Removed config keys" bullet, Step 1 sub-step 5 tombstone check) and README.md (new "### Removed config keys" section)
+  - canonical `skills/dev-workflow/` and the `dev-workflow-bundle` copy synced byte-identical (`SKILL.md`, `README.md`)
+
 ### dev-workflow v1.86.3 / dev-workflow-bundle v1.96.3
 
 - fix(dev-workflow): grant `Bash(git ls-files *)` and `Bash(grep -q *)` for a new project-level `check_commands` stray-output guard

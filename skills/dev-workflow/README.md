@@ -166,6 +166,14 @@ hooks:
 | `workability_retrospective.enabled` | bool | `false` | Whether Step 11.6 (Workability Retrospective) detects skill / lint-rule candidates and opens the per-candidate disposition gate (experimental, opt-in) |
 | `workability_retrospective.backlog_dir` | string | `.claude/improvements` | Directory for the "save to backlog" disposition's markdown files |
 
+### Removed config keys
+
+Keys removed in a prior version are recognized on load only to emit a warning — they carry no behavior. If your config still sets one, remove it; the warning names the removal version and the current behavior.
+
+| Key | Removed in | Current behavior |
+| --- | --- | --- |
+| `task_decomposition` | v1.86.0 | Step 1.5's task-decomposition check now runs unconditionally in Normal sub-mode |
+
 ### Details
 
 #### `reviewer`

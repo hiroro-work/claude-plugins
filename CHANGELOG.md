@@ -2,6 +2,20 @@
 
 ## 2026-07-02
 
+### dev-workflow v1.86.2 / dev-workflow-bundle v1.96.2
+
+- fix(dev-workflow): add explicit no-prose handling for no-new-signal harness restarts (auto-triage #151)
+  - Category: other; `§ No-Stall Principle`'s "No standalone waiting turns at async dispatch boundaries" paragraph did not address scheduled keep-alive restarts that fire before a background dispatch's completion notification arrives — the paragraph now requires reissuing the same wait/monitor tool call while omitting any acknowledgment or status prose when no new information has arrived
+- fix(dev-workflow): add retry-then-fallback handling for stalled `test_commands` nested dispatch (auto-triage #151, #150)
+  - Category: other; `test_commands` invocations whose own internal subagent dispatch stalls without returning any structured summary had no explicit retry/fallback procedure — Step 7 sub-step 2 now retries once and falls back to direct main-thread execution
+- fix(dev-workflow): require live existence check for newly introduced cross-file references (auto-triage #154)
+  - Category: missing-branch; Step 5 sub-step 4's "Late-stage scaffolding self-audit" item (iv) now requires a live `Grep`/`Read` confirmation that a newly introduced or changed cross-file reference's target label actually exists before landing, instead of relying on a secondary description that may be stale
+
+### rules-review v1.5.1 / dev-workflow-bundle v1.96.2
+
+- fix(rules-review): pin citation matching strictness for reference/label compliance checks (auto-triage #154)
+  - Category: ambiguity; the embedded reviewer prompt now judges a reference/citation's compliance against whichever form the citing rule's own text or an established sibling convention documents as canonical, instead of drifting between a permissive prefix/pair-form reading and a stricter verbatim-only reading across review cycles for the same diff text
+
 ### dev-workflow v1.86.1 / dev-workflow-bundle v1.96.1
 
 - fix(dev-workflow): consolidate the duplicated `subagent_model` read-site enumeration into one canonical bullet

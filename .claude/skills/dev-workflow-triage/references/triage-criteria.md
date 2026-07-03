@@ -29,7 +29,7 @@ Quick reference for per-case dispositions. SKILL.md's procedural prose is author
 
 | Case | Disposition |
 |---|---|
-| `gh` not authenticated | Abort run with summary "gh not authenticated" |
+| Step 2 `mcp__github__list_issues` call fails | Abort run with summary "issue list failed" |
 | Open-issue list empty | Emit summary "no open issues" and exit |
 | Issue carries the `budget-deferred` label (Step 2 collection-stage pre-filter) | Exclude from the per-issue loop entirely (no per-issue row, no re-judgment); count into `budget_deferred_skipped_count` |
 | Zero `### Finding` headings found in the body | Whole issue → `parse-error`; post comment; leave open (prevents silent auto-close of non-retrospective issues) |
@@ -57,10 +57,11 @@ Quick reference for per-case dispositions. SKILL.md's procedural prose is author
 | 2 consecutive Findings with skill-review errors | Set `skill_review_disabled=true`; skip polish for the rest of the run; warn on each affected Finding |
 | `git diff` shows a path outside the allowed scope set (`skills/` or `.claude/skills/dev-workflow-triage/`) after (d) | Per-Finding `conflict`; `git checkout HEAD -- <paths>`; continue |
 | `git commit` non-zero (usually a pre-commit hook rejection) | `git reset` + `git checkout HEAD -- <paths>`; per-Finding `conflict`; record `commit-failed` |
-| issue-comment REST POST (`gh api --method POST .../comments`) non-zero | Record `comment-failed`; other issues continue |
-| `budget-deferred` label REST POST (`gh api --method POST .../labels`) non-zero | Record `label-failed`; other issues continue (the label is a future-run pre-filter, not required for this run's disposition) |
-| issue-close REST PATCH (`gh api --method PATCH .../issues/<N>`) non-zero | Record `close-failed`; other issues continue |
-| issue-list REST call (`gh api .../issues`) returns a full page (50 items) | Set `overflow=true`; surface in summary ("50-issue cap reached") |
+| `mcp__github__add_issue_comment` call fails | Record `comment-failed`; other issues continue |
+| `budget-deferred` label read-then-write (`mcp__github__issue_read` then `mcp__github__issue_write`) fails | Record `label-failed`; other issues continue (the label is a future-run pre-filter, not required for this run's disposition) |
+| `mcp__github__issue_write` (close) call fails | Record `close-failed`; other issues continue |
+| `mcp__github__list_issues` returns a full page (50 items) and no pagination/total-count metadata says otherwise | Set `overflow=true`; surface in summary ("50-issue cap reached") |
+| Body backfill (`mcp__github__issue_read`) fails for an issue whose `body` was absent from `mcp__github__list_issues` | No special handling — the issue proceeds to § 3.2 Parse body with an empty body, which the existing "zero `### Finding` headings" rule above already routes to `parse-error` |
 | Step 3.7 reaches release bookkeeping with zero accepted-and-committed Findings across the run | Skip release bookkeeping; record `release-bookkeeping=skipped (no commits)`; per-Finding commits (none in this case) and Step 4 summary proceed |
 | Step 3.7 version-skew guard: pre-bump versions of `dev-workflow` plugin and `dev-workflow-bundle` plugin disagree | Abort release bookkeeping with no marketplace / CHANGELOG edits; record `release-bookkeeping=failed (version skew: dev-workflow=<v1>, dev-workflow-bundle=<v2>)` |
 | Step 3.7 post-Edit `jq empty .claude-plugin/marketplace.json` returns non-zero | Revert via `git checkout HEAD -- .claude-plugin/marketplace.json`; record `release-bookkeeping=failed (json invalid)` |
@@ -68,7 +69,7 @@ Quick reference for per-case dispositions. SKILL.md's procedural prose is author
 | Step 3.7 `git diff --name-only` after Edits lists a path other than `.claude-plugin/marketplace.json` / `CHANGELOG.md`, OR the bookkeeping `git commit` returns non-zero | Revert via `git checkout HEAD -- .claude-plugin/marketplace.json CHANGELOG.md` (and `git reset` for the commit-error branch); record `release-bookkeeping=failed (<scope leak\|commit error>)` |
 | `dev-workflow-triage`-targeted Finding accepted | Edit target is `.claude/skills/dev-workflow-triage/...`; commits normally in § 3.4; excluded from § 3.7 release bookkeeping by the (b) whitelist filter (project-local — no version bump / CHANGELOG) |
 | Step 5 tally finds zero stall interventions | Skip filing; terminal line `self-retrospective: skipped (no observations)` (normal outcome) |
-| Step 5 `gh api` POST non-zero (after 1 retry) | Record `self-retrospective-failed (<reason>)`; staging file kept for manual retry; run ends normally |
+| Step 5 `mcp__github__issue_write` (create) call fails (after 1 retry) | Record `self-retrospective-failed (<reason>)`; staging file kept for manual retry; run ends normally |
 
 ## Comment body template
 

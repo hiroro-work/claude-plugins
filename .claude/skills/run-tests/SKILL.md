@@ -19,7 +19,7 @@ This project is a Claude Code plugins marketplace. "Tests" here means verifying 
 
 ## Subagent Instructions
 
-> Verify this Claude Code plugins marketplace repository. Perform the following checks and return a structured summary.
+> Verify this Claude Code plugins marketplace repository. Perform the following checks **yourself, directly, in this agent, using Read/Bash/Glob** — do not spawn a nested `Agent` and do not dispatch any `Skill()`. Re-delegation is an observed failure mode: the executor stops to wait on its child and returns no verdict, which the caller then treats as a parse failure. Return a structured summary.
 >
 > ### Checks
 >

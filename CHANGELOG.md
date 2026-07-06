@@ -2,6 +2,16 @@
 
 ## 2026-07-06
 
+### dev-workflow v1.86.6 / dev-workflow-bundle v1.96.6
+
+- fix(dev-workflow): compact `references/plan-format.md` and `references/simplicity-self-audit.md`
+  - Structural-only change, no behavior change. This is subtask 2 of 3 from `.claude/plans/dev-workflow-improvement-ideas.md` § 着手順 item 5 (A1 第2弾) — `plan-format.md` shrinks from 40,246 to 39,783 chars (−463, −1.2%) and `simplicity-self-audit.md` shrinks from 45,165 to 44,839 chars (−326, −0.7%)
+  - `plan-format.md`: consolidated the near-duplicate "blockquote rendering convention" bullets that appeared separately under § Empty-Decisions fixed sentences and § Step 4 guidance lines into one shared definition with a cross-reference; tightened wordy prose in § Review guide line and § Localization granularity's closing rationale
+  - `simplicity-self-audit.md`: trimmed a redundant trailing "General principle" restatement and two verbose trailing rationale sentences that duplicated content already stated earlier in the same checklist item
+  - All runtime-referenced definitions were verified byte-identical before/after (Empty-Decisions fixed sentences, the 3 Step 4 guidance-line variants + Trivial conditional, the `## Plan` template fenced block, all bilingual paired samples, and all 33 bold-prose labels in `simplicity-self-audit.md`), and `Skill(verify-skill-refs)` reported zero unambiguous dangling references
+  - The achieved reduction is smaller than the plan's own estimate (high-single-digit to low-double-digit percent): a full pass over all 33 `simplicity-self-audit.md` checklist items found that genuinely redundant or prunable prose is rare — each item is already tightly incident-driven, consistent with the plan's own Risk entry citing a prior compaction-limit precedent (`prose-polish`'s compression-boundary retrospective)
+  - canonical `skills/dev-workflow/` and the `dev-workflow-bundle` copy synced byte-identical (`references/plan-format.md`, `references/simplicity-self-audit.md`)
+
 ### dev-workflow v1.86.5 / dev-workflow-bundle v1.96.5
 
 - fix(dev-workflow): remove duplicated config-default prose from Step 1 and consolidate the duplicated "Prose-integrity self-check (post-fix)" bullet

@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-07-06
+
+### dev-workflow v1.86.5 / dev-workflow-bundle v1.96.5
+
+- fix(dev-workflow): remove duplicated config-default prose from Step 1 and consolidate the duplicated "Prose-integrity self-check (post-fix)" bullet
+  - Structural-only change, no behavior change. Step 1 sub-step 5's restatement of `interactive_commits` / `compact_rules` / `visual_plan_review` / `polish_prose` / `confirm_remaining_steps` / `subagent_model`'s default values and warn-and-fall-back-on-invalid-value behavior is replaced with a pointer to each key's own § Configuration bullet, which remains the single canonical source
+  - Step 3 sub-step 3's "Prose-integrity self-check (post-fix)" bullet (near-duplicate of Step 8 sub-step 3's bullet of the same name) is replaced with a short cross-reference to Step 8's paragraph, applied to plan prose instead of code / doc prose; Step 8's bullet is unchanged and remains canonical
+  - This is subtask 1 of 3 from `.claude/plans/dev-workflow-improvement-ideas.md` § 着手順 item 5 (A1 第2弾) — the SKILL.md itself shrinks from 244,592 to 243,685 chars (−907 chars); an initially-planned extraction of Step 8's post-fix self-check bullets into a new `references/post-fix-self-checks.md` was dropped from scope after Step 3 plan review found it would not meaningfully reduce total per-run read chars (the extraction target fires too frequently on Moderate/Complex tasks to be genuinely "cold")
+  - canonical `skills/dev-workflow/` and the `dev-workflow-bundle` copy synced byte-identical (`SKILL.md`)
+
 ## 2026-07-03
 
 ### dev-workflow v1.86.4 / dev-workflow-bundle v1.96.4

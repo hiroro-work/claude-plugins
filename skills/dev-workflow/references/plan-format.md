@@ -47,7 +47,7 @@ Each item:
 
 ### Review guide line
 
-The `> Review guide` block sits directly under `## Plan`, above Overview, so a reviewer can tell at a glance which sections demand judgment and which are reference detail. It renders as a multi-line blockquote — a heading line followed by one bullet per category — so the must-review and reference groups read on separate lines rather than crammed onto one. Unlike the § Empty-Decisions fixed sentences and § Step 4 guidance lines (which are single sentences whose leading `>` is a spec-visual marker, optional when rendered), this block's `>`-prefixed bullets are themselves the rendered output; do not extend the other two blockquote sections to a multi-line bullet form:
+The `> Review guide` block sits directly under `## Plan`, above Overview, so a reviewer can tell at a glance which sections need judgment and which are reference detail. It renders as a multi-line blockquote — a heading line followed by one bullet per category. Unlike § Empty-Decisions fixed sentences and § Step 4 guidance lines (single sentences using the same **Blockquote rendering convention**), this block's `>`-prefixed bullets **are** the rendered output — don't extend those other two sections to this multi-line form:
 
 - **Must-review** = the sections that need the user's judgment: `Overview` (Goal / Approach / Scope / Difficulty, plus `Highlights` when present) and `Decisions`. `Highlights` is one Overview bullet, not a standalone must-review category — Overview always carries it. Rendering `Overview` in the must-review tier matches § Step 4 presentation order (which already shows Overview in full) and gives empty-`Decisions` plans a substantive review anchor (Goal / Approach).
 - **Reference** = supporting detail the user can skim: `Design`, `Test plan`, `Risks` (omit any that are absent).
@@ -114,12 +114,13 @@ Preference-level choices that satisfy (a) but not (b) — e.g. putting a helper 
 
 When no items qualify under the (a)+(b) criterion, render Decisions with one of these fixed sentences — "no decisions" must be an explicit signal, not a missing section.
 
-Rendering conventions for the sentences below:
+**Blockquote rendering convention** (defined once here; § Step 4 guidance lines below reuse it):
 
 - The leading `>` is Markdown blockquote rendering for visual separation in this spec, not part of the literal text.
 - When extracting, strip the blockquote prefix (`>` plus one separator space).
-- Place the extracted sentence alone in Decisions — no preceding explanation, no trailing elaboration, no padded items alongside.
-- Rendering it as a plain paragraph or as a blockquote in the plan is a presentation choice and does not affect "verbatim" compliance.
+- Rendering it as a plain paragraph or as a blockquote in the output is a presentation choice and does not affect "verbatim" compliance.
+
+Additional rule specific to Decisions: place the extracted sentence alone — no preceding explanation, no trailing elaboration, no padded items alongside.
 
 **Normal mode (no state file):**
 
@@ -180,11 +181,7 @@ Reviewer does not re-check structural compliance (section presence, bullet count
 
 In Step 4, present the plan with one of these literal English guidance lines placed at the bottom of the plan output, after the summary preamble (see § Step 4 presentation order for the full sequence). The template depends on (i) whether Decisions has qualifying items and (ii) whether a state file is active.
 
-Rendering conventions for the variants below:
-
-- The leading `>` is Markdown blockquote rendering for visual separation in this spec, not part of the literal text.
-- When extracting, strip the blockquote prefix (`>` plus one separator space).
-- Rendering it as a plain paragraph or as a blockquote in the output is a presentation choice and does not affect "verbatim" compliance.
+Rendering conventions for the variants below: same **Blockquote rendering convention** as § Empty-Decisions fixed sentences above.
 
 **Decisions has one or more qualifying items (Normal or Resume):**
 
@@ -221,7 +218,7 @@ Source of truth: `SKILL.md` § Configuration `language` bullet maintains the sam
 - **(b) First-use pairing is gated on translation-gap need**: pair the localized term with the source-language original in parentheses only when the resolved `language` does not yet have a settled translation, or when explicitly showing the localized-to-original correspondence once carries value for the reader (e.g. domain jargon a reader may map back to documentation). For concept words whose translation reads naturally in the resolved `language`, omit the parenthetical and use the localized form alone.
 - **(c) Function-word connectives stay in the resolved language only**: words that carry connective / structural function inside a sentence (the resolved-language equivalents of "regarding", "with respect to", "in the case of", "however", "because") are rendered solely in the resolved `language` — never with the source-language counterpart in parentheses or inline. These words are not domain jargon and the pairing would only add noise.
 
-Intent: a native speaker of the resolved `language` reads the output as natural prose, while the verbatim-preserved identifiers (the cross-reference stability the positive-direction rules protect) stay machine-grep-able. Symptom this rule is meant to suppress: defensive over-preservation that sprinkles source-language vocabulary across connective prose, producing output that reads as half-translated to a native reader.
+Intent: a native reader of the resolved `language` sees natural prose, while the verbatim-preserved identifiers stay machine-grep-able. This rule targets defensive over-preservation — sprinkling source-language vocabulary into connective prose, which reads as half-translated.
 
 **Paired bilingual samples** (runtime rendering demonstration, not meta-prose):
 

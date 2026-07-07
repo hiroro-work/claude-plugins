@@ -161,13 +161,24 @@ Record the per-file classification in a result list. `unparsed` and `error` are 
 
 (a) **Pre-invocation reminder**: the next tool call is `Skill(skill-review)` dispatch. Its return is a single fenced JSON verdict — parse it as a structured return value, branch on the `status` enum per § Step 4 (c), and **issue the next tool call (§ Step 5 `Skill(publicity-review)` dispatch) in the same response**. Specifically forbidden between the verdict-parse and the next tool call: user-facing pause phrases per § No-Stall Principle ("Zero designed user-gate points" paragraph), prose summaries of the skill-review verdict that end without a tool call, re-rendering the JSON block as a standalone deliverable. The verdict's per-field log line (`status` / `iterations_used` / `applied_edits_count` / `notes_remaining_count` / `framing`) is recorded inline as part of the next tool call's preceding sentence, not as a standalone turn. See `§ No-Stall Principle`.
 
-(b) Invoke `Skill(skill-review)` with the short form below. `skill-review` accepts the `Base ref` field in its own `## Invocation contract` (same pattern as `publicity-review`), so this form is contract-sanctioned. `Max iterations` is left at its default of `3`:
+(b) **Diff-size assessment (before dispatch)**: filter `changed_files` (§ Step 2's uncapped list — not `prompt_targets`, whose 5-file cap and narrower basename filter exist for `prompt-tuning`'s unrelated walltime concern and would under- or over-count `skill-review`'s actual scope) using `skill-review`'s own **Step 1 — Detect changed skill files** "Filter to files matching" sub-step's scope patterns (`skills/**/SKILL.md`, `skills/**/README.md`, `skills/**/references/**`, `.claude/skills/**/SKILL.md`, `.claude/skills/**/references/**`) — this naturally excludes bundle-copy mirrors under any `plugins/**` tree, since none of those patterns match that prefix. If the filtered set is empty, `skill_review_diff_lines = 0` — do **not** run `git diff --shortstat` with an empty pathspec list; git treats `--` followed by no paths as "no restriction" and silently returns the shortstat for the entire `main..HEAD` diff instead of zero. Otherwise run `git diff --shortstat main -- "<path-1>" "<path-2>" ...` (each path individually quoted) and sum the reported insertions and deletions — either clause is omitted from the output entirely when its count is `0` (e.g. a pure-addition diff renders with no `deletions(-)` substring at all), so treat an absent clause as `0` rather than assuming both always appear.
+
+When `skill_review_diff_lines ≤ 30` (a heuristic threshold, not externally derived — chosen as headroom above the single 21-line diff observed in practice to still consume the full default iteration budget; revisit if further data suggests otherwise), append `Max iterations: 1` to the invocation below. Otherwise append nothing extra — `skill-review`'s own default of `3` applies.
+
+Invoke `Skill(skill-review)` with the form below. `skill-review` accepts both the `Base ref` field (same pattern as `publicity-review`) and the optional `Max iterations` field in its own `## Invocation contract`, so this form — including the conditional second line — is contract-sanctioned:
 
 ```
 Base ref: main
 ```
 
-Do **not** append: triage branch name, the `changed_files` list, an explicit `git diff main HEAD` reference, or any other expansion. The single contract-field line is the entire invocation argument.
+or, when the diff-size assessment above triggers the override:
+
+```
+Base ref: main
+Max iterations: 1
+```
+
+Do **not** append: triage branch name, the `changed_files` list, an explicit `git diff main HEAD` reference, or any other expansion beyond the two contract fields above. `Max iterations` is a documented invocation-contract field, not ad hoc framing/context, so it is exempt from this prohibition when the diff-size assessment triggers it.
 
 (c) **Parse the verdict** with the first-match-wins evaluate-in-order discipline from `.claude/skills/verify-diff/SKILL.md` § (b) Parse & apply, restricted to single-pass dispatch (Converged / Divergence cases are N/A here):
 
@@ -247,7 +258,7 @@ When form 3 fires, render in Japanese:
 - 変更ファイル数（changed files）: `<N>`（main..HEAD）
 - prompt-tuning 対象数（prompt-tuning targets）: `<M>` （overflow があれば `(of <N_eligible> eligible, processed first 5)` を付記）
 - prompt-tuning ファイル別判定（per file）: 各ファイルの分類（`converged` / `max-iter` / `skipped` / `skipped (agent unavailable)` / `error` / `unparsed`）
-- skill-review: `<status> (iterations: <K>, applied: <A>, notes_remaining: <R>, framing: <framing_status>)`。`framing_status` ∈ {`ok`, `framing-failed (suspected — iter=0 on non-empty main..HEAD)`}
+- skill-review: `<status> (iterations: <K>, applied: <A>, notes_remaining: <R>, framing: <framing_status>)`。`framing_status` ∈ {`ok`, `framing-failed (suspected — iter=0 on non-empty main..HEAD)`}。Step 4 (b) の diff-size assessment が `Max iterations: 1` override を発火させた場合、行末に `, max_iterations_override: 1 (diff ≤30 lines)` を追記する
 - publicity-review: `<status> (iterations: <K>, applied: <A>, findings: <F>, remaining: <R>)`
 - rules-review: § Run `Skill(rules-review)` (rules-compliance detection layer) で算出した `rules_review_result` を描画。`no-issues`（違反なし）/ `violations (<N>)`（`<N>` 件検出）/ `error (<reason>)` / `skipped (unavailable)`。`error` / `skipped` の詳細は下の warning 行
 - release-integrity: `<ok | VIOLATION (<N> skills)>` — § Release-integrity check (deterministic bump-presence) で算出した `release_integrity_result` を描画。bundle skill 変更が無いか全て bump/CHANGELOG 揃いなら `ok`、欠落があれば `VIOLATION (<N> skills)`（`<N>` = 違反 skill 数、詳細は下の warning 行）

@@ -186,7 +186,9 @@ main thread の run あたり総読込 chars の下限（SKILL.md 244.6k + main-
 
 **初回パスの前倒し（2026-07-02 user 指摘反映）**: 初回 consolidation パスは G2a とセットで 1 手目に統合（§ 次の 1 手参照 — budget-defer queue の積み上がり防止と cap headroom の確保のため。conservative 範囲限定）。本節の残り scope は**月次ルーチン化**（定常運転と、L1 後に解禁される攻めた統廃合）で、従来どおり A1 とセット。
 
-**具体項目（2026-07-02 追加）**: (i) `subagent_model` governed-site 列挙の 3 箇所重複（Configuration の `subagent_model` bullet / 「`Agent` tool usage」bullet / Step 2 sub-step 1 の read-site list）を defined-once + cross-ref に統合（既存規律「Token defined-once + cross-reference」の適用。削除でなく統合なので B6 とは別枠）、(ii) G4 が定義する version-tagged history note sunset の実行（G4 は基準定義、本 pass が実行の場）。
+**具体項目（2026-07-02 追加、2026-07-07 更新）**: (i) `subagent_model` governed-site 列挙の重複状態監査（旧想定は 3 箇所重複だったが 1 手目 v1.86.1 のレビューで誤りと判明 — 実在した重複は Configuration `subagent_model` bullet と Step 2 sub-step 1 の 2 箇所のみで既に解決済み。「`Agent` tool usage」bullet は別コンテンツで意図的に保護されており統合対象外。以降は月次ルーチンでの drift 定期監査として継続）、(ii) G4 が定義する version-tagged history note sunset の実行（G4 は基準定義、本 pass が実行の場）。
+
+**landed（月次ルーチン設置 + 具体項目実行、subtask 3 / 2026-07-07）**: 月次 consolidation ルーチンを `.claude/skills/dev-workflow-monthly-consolidation/SKILL.md`（project-local skill）として設置。既存 sibling（`dev-workflow-triage` / `triage-review`）の拡張は dispatch 形状の不一致により不採用、独立新設を選択（詳細は decomposition state file `.claude/plans/dev-workflow.a1-cold-extraction-g2b-consolidation.md` subtask 3 参照）。具体項目の検証結果: (i) `subagent_model` governed-site 重複は上記のとおり 2 箇所のみで既に解決済み、dangling reference 0 件を repo-wide grep で確認。(ii) G4 history note sunset 適格性チェック — `visual_plan_review`（実際の default flip は v1.85.0 / 2026-07-02、5 日経過）、`polish_prose`（実際の default flip は v1.84.0 / 2026-07-01、6 日経過）のいずれも calendar-anchor 基準（≥4 週間 = 28 日）に未達のため、現時点で sunset 対象なし。
 
 ### B6: 設定キー削減 — G4 lifecycle 適用第 1 弾（Tier 1、G4 とセット）【新規 2026-07-02】
 
@@ -336,7 +338,7 @@ Claude Code native 機能が in-house 機構を置換できるようになった
 - **A2（Step 番号廃止）/ A3（phase 別 sub-skill 分割）/ D10（step 別 model override）**: 旧版の判断を維持（理由は旧版参照）
 - **非対話 full-auto mode / Codex 対応**: 旧版の判断を維持
 - **confirm_remaining_steps の default flip（false → true）**: 実験的機能は opt-in default という既存規律に従い当面 false 維持。polish_prose と同じく実績ベースで graduate を別途判断（コスト削減効果はあるがルール抽出という資産形成を落とすトレードオフがあるため、graduate 判断には F13 の実測が欲しい）
-- **B6 洗い出しで削除非対象と判定した設定キー（再提案しないこと）**: `interactive_commits` / `custom_instructions` / `workability_retrospective.backlog_dir`（根拠は B6 の per-key 判定表参照）、`compact_rules` / `confirm_remaining_steps`（本 repo の config で `true` 設定・使用中 — 使用実績は需要の**正の証拠**として有効。逆に未使用は需要なしの根拠にならない、B6 判定軸参照。graduate 判断は上の bullet どおり F13 待ち）、`reviewer` / `language` / `check_commands` / `test_commands` / `hooks` / `self_retrospective.feedback`（core 機能）、`subagent_model`（コスト削減の能動 lever — 値の見直しは D12、governed-site 3 箇所重複の統合は G2b 具体項目 (i)）
+- **B6 洗い出しで削除非対象と判定した設定キー（再提案しないこと）**: `interactive_commits` / `custom_instructions` / `workability_retrospective.backlog_dir`（根拠は B6 の per-key 判定表参照）、`compact_rules` / `confirm_remaining_steps`（本 repo の config で `true` 設定・使用中 — 使用実績は需要の**正の証拠**として有効。逆に未使用は需要なしの根拠にならない、B6 判定軸参照。graduate 判断は上の bullet どおり F13 待ち）、`reviewer` / `language` / `check_commands` / `test_commands` / `hooks` / `self_retrospective.feedback`（core 機能）、`subagent_model`（コスト削減の能動 lever — 値の見直しは D12、governed-site 重複状態の監査は G2b 具体項目 (i) 参照）
 
 ## 相互依存マップ
 
@@ -367,7 +369,7 @@ Claude Code native 機能が in-house 機構を置換できるようになった
 5. **A1 第 2 弾 + G2b**（L1 完了後。第一歩は references の hot/cold 実測分類 — 済（2026-07-06）、§ A1 参照。残りは 3 subtask に分解して実行中 — decomposition state file: `.claude/plans/dev-workflow.a1-cold-extraction-g2b-consolidation.md`）
    - subtask 1（A1(ii) の一部 — SKILL.md 内重複 prose の dedup、scope 縮小版）— 済（2026-07-06）、§ A1 の landed note 参照
    - subtask 2（A1(iii) — hot reference 圧縮: plan-format.md / simplicity-self-audit.md）— 未着手
-   - subtask 3（G2b — 月次 consolidation ルーチン設置 + subagent_model 3 箇所重複統合 + G4 history note sunset）— 未着手
+   - subtask 3（G2b — 月次 consolidation ルーチン設置 + subagent_model governed-site 重複監査（解決済み確認） + G4 history note sunset 適格性チェック（対象なし））— 済（2026-07-07）
 6. **C6** → **F13 軽量版**（→ C6 完了後に counts 拡張）
 7. **E11**
 8. 実需・実測の観測後に個別判断: C7 / C8 / C9 / D9 / D11 / D12 / H1 → H2 / U2 / P1 / B4（+ B6 deferred 分 = review_iterations map 形式の廃止判断、G4 stage 3 = visual_plan_review / polish_prose のフラグ削除判断）

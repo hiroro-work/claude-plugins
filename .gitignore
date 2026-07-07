@@ -1,5 +1,5 @@
 # claude-code
 .claude/*.local.*
-.claude/plans/archive/
+.claude/plans
 .claude/retrospectives/
 .triage/

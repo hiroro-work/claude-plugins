@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-07-07
+
+### dev-workflow v1.86.7 / dev-workflow-bundle v1.96.7
+
+- fix(dev-workflow): note that a branch change from session start is normal when it points to the recorded base-commit (auto-triage #157)
+  - Category: missing-branch; Step 10 had no guidance distinguishing a harness-initiated branch pre-switch from a genuine anomaly, causing wasted root-cause investigation
+- fix(dev-workflow): add pre-existing vs regression discrimination for check_commands (auto-triage #155)
+  - Category: wrong-default; check_commands ran against the full working tree with no way to distinguish pre-existing linter violations from regressions, wasting effort triaging unrelated existing issues
+
 ## 2026-07-06
 
 ### dev-workflow v1.86.6 / dev-workflow-bundle v1.96.6

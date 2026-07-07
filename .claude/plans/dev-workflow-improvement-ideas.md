@@ -140,7 +140,7 @@ task brief は § 次の 1 手に記載。品質軸での位置づけ: review it
 
 ### A1: thin-core 化第 2 弾 — 測定指標を「run あたり総読込 chars」に再定義（Tier 1、L1 後）
 
-**概要**: 旧版の A1 は「SKILL.md 単体の削減」だったが、**hot-path reference への切り出しは per-run 総読込では削減ゼロ**になるため、指標を「SKILL.md 常駐 + hot references の run あたり総読込 chars」に置き直す。難易度 tier を問わず全 run で main thread が読む chars は下限 **399.0k**（shipped default 設定。実測は下記参照。旧概算「387k」は grep ベースの推測値で、実測により更新）。
+**概要**: 旧版の A1 は「SKILL.md 単体の削減」だったが、**hot-path reference への切り出しは per-run 総読込では削減ゼロ**になるため、指標を「SKILL.md 常駐 + hot references の run あたり総読込 chars」に置き直す。難易度 tier を問わず全 run で main thread が読む chars は下限 **397.3k**（shipped default 設定、2026-07-07 時点。実測は下記参照。旧概算「387k」は grep ベースの推測値で、実測により更新。2026-07-06 実測時点の 399.0k は subtask 1・2 の landed 分を反映する前の値）。
 
 **実測結果（2026-07-06、手順(i) 実施）**: `skills/dev-workflow/references/` 配下 12 ファイルへの言及箇所を SKILL.md 全文から悉皆 grep し、各参照が main thread 直読みか subagent context 限定か、無条件 Read かフラグ限定か（default 値込み）を一次情報から確認した。
 
@@ -164,11 +164,17 @@ main thread の run あたり総読込 chars の下限（SKILL.md 244.6k + main-
 - **shipped default 設定**: **399.0k chars**（Trivial task でもこの 6 ファイルは全て Read される）
 - **本 repo 自身の dogfooding config**（`compact_rules` / `self_retrospective.feedback` / `workability_retrospective.enabled` を全て有効化）: 399.0k + 58.0k（flag 限定 hot 3 件） = **457.0k chars**
 
+**2026-07-07 更新（subtask 1・2 の landed 分を反映）**: SKILL.md は subtask 1 で 244,592 → 243,685 chars（−907）、hot references は subtask 2 で `plan-format.md` 40,246 → 39,783（−463）・`simplicity-self-audit.md` 45,165 → 44,839（−326）に圧縮済み（他 4 ファイルは不変）。再計算した下限は shipped default 設定で **397.3k chars**（243,685 + 153,593）、dogfooding config 込みで **455.3k chars**（397.3k + 58.0k）。上記の 399.0k / 457.0k は 2026-07-06 の A1 手順(i) 実測時点（subtask 1・2 landed 前）のベースラインとして残す。
+
 旧分類（grep ベースの推測）は task-decomposition.md と visual-plan-review.md を cold（限定的）と誤分類していた。前者は Step 1.5 が分割提案の有無に関わらず無条件で読み、後者は `visual_plan_review` の default が `true` に切り替わった時点（v1.81.0）で実質常時 hot に変わっている。
 
 **手順**: (i) 第一歩として 12 references の hot / cold 実測分類（済 — 上記実測結果。F13 軽量版の読込メトリクスと半分重なるため F13 はこの結果を再利用する）、(ii) cold 化できる SKILL.md 内重量ブロック（Step 1 parsing prose / Configuration 節の二重管理 = 旧 B5 / Step 3 / Step 7 / Step 8）の切り出し、(iii) hot reference 自体の圧縮（plan-format 40k / simplicity-self-audit 45k は切り出し先の肥大でもある）。
 
-**landed（手順(ii) 一部、subtask 1 / 2026-07-06）**: dev-workflow v1.86.5 / dev-workflow-bundle v1.96.5。Step 1 sub-step 5 の設定 parsing prose と § Configuration の重複（旧 B5）を解消し、Step 3 / Step 8 間で重複していた「Prose-integrity self-check (post-fix)」bullet を一本化。SKILL.md は 244,592 → 243,685 chars（−907 chars）。**scope 縮小**: 当初計画した Step 8 post-fix self-check 群（6 bullet）+ Step 3 の Approach-reconsideration self-audit の新規 reference 切り出しは、Step 3 plan review（peer review）で「post-fix 分岐は Moderate/Complex タスクで高頻度に発火するため、SKILL.md（常時 Read）から reference（post-fix 時のみ Read）への relocation は run あたり総読込 chars をほぼ動かさない」と指摘され scope 外とした（本節冒頭の「切り出しだけでは無条件 Read のままなら削減ゼロ」と同種の教訓）。Step 7 の重量ブロックも当初候補だったが、Concurrent rules-review / code review launch は既に共有 mechanics を cross-ref 化済みで対象外と判断。**残作業**: 手順(ii) の Step 8 post-fix self-check 群の切り出し可否は改めて要評価（未着手、tracked subtask 化はしない）。手順(iii)（hot reference 圧縮）は subtask 2 として別 run で実施予定
+**landed（手順(ii) 一部、subtask 1 / 2026-07-06）**: dev-workflow v1.86.5 / dev-workflow-bundle v1.96.5。Step 1 sub-step 5 の設定 parsing prose と § Configuration の重複（旧 B5）を解消し、Step 3 / Step 8 間で重複していた「Prose-integrity self-check (post-fix)」bullet を一本化。SKILL.md は 244,592 → 243,685 chars（−907 chars）。**scope 縮小**: 当初計画した Step 8 post-fix self-check 群（6 bullet）+ Step 3 の Approach-reconsideration self-audit の新規 reference 切り出しは、Step 3 plan review（peer review）で「post-fix 分岐は Moderate/Complex タスクで高頻度に発火するため、SKILL.md（常時 Read）から reference（post-fix 時のみ Read）への relocation は run あたり総読込 chars をほぼ動かさない」と指摘され scope 外とした（本節冒頭の「切り出しだけでは無条件 Read のままなら削減ゼロ」と同種の教訓）。Step 7 の重量ブロックも当初候補だったが、Concurrent rules-review / code review launch は既に共有 mechanics を cross-ref 化済みで対象外と判断。手順(ii) の Step 8 post-fix self-check 群の切り出し可否は subtask 4 で再評価済み（後述）。手順(iii)（hot reference 圧縮）は subtask 2 として実施済み（後述）。
+
+**landed（手順(iii)、subtask 2 / 2026-07-06）**: dev-workflow v1.86.6 / dev-workflow-bundle v1.96.6。hot reference 自体を圧縮: `plan-format.md` 40,246 → 39,783 chars（−463、−1.2%）、`simplicity-self-audit.md` 45,165 → 44,839 chars（−326、−0.7%）。runtime-referenced definitions・closed list はすべて圧縮前後で byte-identical であることを確認し、`Skill(verify-skill-refs)` で dangling reference 0 件を確認。実現できた削減率は当初見積り（高一桁〜低二桁 %）より小さい — `simplicity-self-audit.md` の 33 項目すべてを精査したが、真に冗長な prose は少なく、各項目がすでに incident-driven で簡潔だったため。
+
+**landed（手順(ii) 残り、subtask 4 / 2026-07-07）**: subtask 1 で見送った Step 8 post-fix self-check 群（6 bullet、実測 5,410 chars）と Step 3 の Approach-reconsideration self-audit 段落（実測 1,804 chars）の reference 切り出しを再評価し、両方とも**切り出し見送り**を最終判断（詳細は decomposition state file `.claude/plans/dev-workflow.a1-cold-extraction-g2b-consolidation.md` subtask 4 参照）。理由: 前者は post-fix 分岐（特に Comment-verbosity self-check）が「code was modified」のたび毎回発火し、Simple 以上のタスクで高頻度に到達するため、cold 化しても期待削減量は run あたり数百 chars（現行下限 ≈397.3k 比で 0.1% 未満）に留まり固定コストに見合わない。後者は発火条件がより希少（iter 1→2 境界で Critical ≥ 3 または (Critical + Major) ≥ 10 かつ approach-alternative finding 併存）で期待削減量は相対的に大きい（≈1.5k chars/run、下限比 0.4% 未満）ものの、単一段落を独立 reference 化するのは既存 reference file（1 ファイル 9.7k–44.8k chars、hot/cold 分類は上記実測表を参照）の形と不釣り合い。両ブロックを 1 ファイルへ統合する hybrid alternative も検討したが同様に不採用。これにより A1 第 2 弾 + G2b の残作業は完了。
 
 **リスク・上限**: No-Stall 節・runtime-referenced definitions（state 初期化 / closed list / USER GATE 宣言）は inline 残置必須（canonical rule）のため削減に上限。着地目標は hot/cold 実測後に設定する（旧版の「90–110k」は SKILL.md 単体指標の数字なので流用しない）。切り出しは既存 canonical 5 点（元節ラベル残置 + 委譲ポインタ + 逐語コピー + runtime 定義 inline + repo-wide grep 0 dangling）に従う。bundle copy 同期 + ペア bump（patch）。**切り出しだけでは無条件 Read のままなら削減ゼロ**という原則を実測から得た知見として明記する — task-decomposition.md / visual-plan-review.md は既に SKILL.md 外の独立 reference なのに main-thread hot なままの実例であり、切り出し（(ii)/(iii)）は「読込を条件付きにできる場合」にのみ効果を持つ。逆に総 chars を最も動かすレバーは flag 自体の削除（G4 stage3 の `visual_plan_review` / `polish_prose`）であり、これは G4 との単なる副次連動ではなく A1 の total-chars 指標そのものを動かす主要レバーである。
 
@@ -366,10 +372,11 @@ Claude Code native 機能が in-house 機構を置換できるようになった
 2. **L1**（安全網 — A1 の前提）— 済（2026-07-02）
 3. **L2**（小粒・独立。1–2 の合間に随時）— 済（2026-07-03）
 4. **G4 定義 + B6 第 1 弾の deprecation notice**（小粒・独立。同一 PR 可。実削除は待機期間後の別 PR。A1 + G2b の手前に置く — 消す予定のテキストを A1 で再構成しない順序を守る）— 済（2026-07-03）。**landed**: `.claude/rules/project.rules.local.md`（新規ルール、version 管理対象外）のみ。実装時のスコープ縮小（2026-07-03 user 指摘反映）: 当初 G4 の tombstone 機構を `task_decomposition`（B6 第 1 弾、着手前にすでに user 判断で lifecycle を経ず即時削除済み）へ retroactive 適用し SKILL.md/README.md に closed list + warn チェックを追加したが、「もう存在しないキー1つのための恒久的な SKILL.md 肥大化はコストに見合わない」との user 指摘を受けて revert（`4ece3d1`）。G2a/G2b/A1 の char-budget 優先方針と整合させ、tombstone の実装自体は次の実際のキー削除（例: G4 stage 3 の `visual_plan_review` / `polish_prose`）まで先送り。dev-workflow / dev-workflow-bundle の version bump も revert 済み（1.86.3 / 1.96.3 のまま変更なし）
-5. **A1 第 2 弾 + G2b**（L1 完了後。第一歩は references の hot/cold 実測分類 — 済（2026-07-06）、§ A1 参照。残りは 3 subtask に分解して実行中 — decomposition state file: `.claude/plans/dev-workflow.a1-cold-extraction-g2b-consolidation.md`）
+5. **A1 第 2 弾 + G2b**（L1 完了後。第一歩は references の hot/cold 実測分類 — 済（2026-07-06）、§ A1 参照。残りは 4 subtask に分解して実行 — decomposition state file: `.claude/plans/dev-workflow.a1-cold-extraction-g2b-consolidation.md`）— 済（2026-07-07）
    - subtask 1（A1(ii) の一部 — SKILL.md 内重複 prose の dedup、scope 縮小版）— 済（2026-07-06）、§ A1 の landed note 参照
-   - subtask 2（A1(iii) — hot reference 圧縮: plan-format.md / simplicity-self-audit.md）— 未着手
+   - subtask 2（A1(iii) — hot reference 圧縮: plan-format.md / simplicity-self-audit.md）— 済（2026-07-06）、§ A1 の landed note 参照
    - subtask 3（G2b — 月次 consolidation ルーチン設置 + subagent_model governed-site 重複監査（解決済み確認） + G4 history note sunset 適格性チェック（対象なし））— 済（2026-07-07）
+   - subtask 4（A1(ii) 残り — Step 8 post-fix self-check 群 + Step 3 Approach-reconsideration self-audit の reference 切り出し再評価、結論は切り出し見送り）— 済（2026-07-07）、§ A1 の landed note 参照
 6. **C6** → **F13 軽量版**（→ C6 完了後に counts 拡張）
 7. **E11**
 8. 実需・実測の観測後に個別判断: C7 / C8 / C9 / D9 / D11 / D12 / H1 → H2 / U2 / P1 / B4（+ B6 deferred 分 = review_iterations map 形式の廃止判断、G4 stage 3 = visual_plan_review / polish_prose のフラグ削除判断）

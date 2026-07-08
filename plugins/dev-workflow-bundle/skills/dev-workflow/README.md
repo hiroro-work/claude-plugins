@@ -194,14 +194,14 @@ Automatic adjustment by task difficulty (evaluated in Step 2) — the same cap i
 
 | Difficulty | Examples | Review effect | Quality steps skipped (difficulty-skip matrix) |
 | --- | --- | --- | --- |
-| Trivial | Typo, one-line edit, config value change (single unambiguous solution) | `N_plan = N_code = 0` — Step 3 (Plan Review) & Step 8 (Code Review) skipped entirely | Step 6 Tidy + Step 6.5 Polish Prose + Step 7.5 Rules Compliance |
-| Simple | Typo fix, config tweak, obvious bug fix | `N_plan = N_code = 1` | Step 6 Tidy + Step 6.5 Polish Prose |
-| Moderate | Multi-file changes within one module, feature following existing patterns | `N_plan = min(2, N_plan)`, `N_code = min(2, N_code)` | none |
+| Trivial | Typo, one-line edit, config value change, or a mechanical multi-site edit with one clearly-correct replacement (e.g. a version bump or an unambiguous rename) | `N_plan = N_code = 0` — Step 3 (Plan Review) & Step 8 (Code Review) skipped entirely | Step 6 Tidy + Step 6.5 Polish Prose + Step 7.5 Rules Compliance |
+| Simple | Obvious bug fix, or a small feature addition that fully follows an existing pattern with no new design decisions | `N_plan = N_code = 1` | Step 6 Tidy + Step 6.5 Polish Prose + Step 7.5 Rules Compliance |
+| Moderate | A change requiring at least one genuine design decision, or spanning multiple modules | `N_plan = min(2, N_plan)`, `N_code = min(2, N_code)` | none |
 | Complex | Cross-module, new patterns, API changes, significant refactoring | Keep both configured values (`N_plan`, `N_code`) | none |
 
 The **difficulty-skip matrix** (rightmost column) is applied unconditionally — keyed on the assessed tier alone, with no config flag — reusing the same pre-completed-mark + entry-point-guard mechanism as the Trivial Step 3 / Step 8 skip. Skipped quality steps are always named in the Completion summary (never silent). **Step 9 (`hooks.on_complete`) is never skipped by the matrix at any tier** — it is a project-configured open list, so difficulty-gating it would make behavior project-dependent.
 
-The **Trivial** tier is classified conservatively: only a genuinely self-evident change with a single unambiguous solution qualifies. Any doubt — a multi-part edit, a non-unique fix, or uncertainty about the approach — falls to Simple or above, so internal review (Step 3 / Step 8) is retained. For Trivial tasks the Step 6 Tidy, Step 6.5 Polish Prose, and Step 7.5 Rules Compliance steps are skipped per the matrix above, while the Step 4 plan-approval gate, Step 7 `check_commands` / `test_commands`, and `hooks.on_complete` still run.
+The **Trivial** tier covers any change with one obviously correct, mechanical fix — line, file, or module count alone does not disqualify a change as long as the fix is uniform across every site (e.g. a version bump touching manifests in several modules stays Trivial). Escalate to Simple or above only when the change requires an actual judgment call: more than one plausible approach, behavior-affecting logic, or genuine ambiguity about the correct fix. For Trivial and Simple tasks alike, the Step 6 Tidy, Step 6.5 Polish Prose, and Step 7.5 Rules Compliance steps are skipped per the matrix above, while the Step 4 plan-approval gate, Step 7 `check_commands` / `test_commands`, and `hooks.on_complete` still run. On Simple, Step 8's single code-review iteration is the run's primary rules-compliance defense in Step 7.5's place — its reviewer prompt flags obvious `.claude/rules/` violations as a safety net.
 
 **Exception to Simple**: a change that touches an external library's configuration file or type-level API is classified at least Moderate (not Simple) when the library has had a recent major-version bump. The primary detection is a `git diff` against the base commit on the project's package manifest; when that misses (e.g. the bump landed in a previous task), rely on `git log` on the manifest or conversational context for the same signal. This protects against stale configuration examples being adopted under the Simple heuristic's weakened review iterations.
 
@@ -546,7 +546,7 @@ The workflow begins at Step 2 (Step 1 is settings load, Step 1.5 is task decompo
 | 6 | Tidy | Reduce complexity via the built-in `simplify` skill (falls back to the in-house `tidy` skill when `simplify` is unavailable); skipped for Trivial / Simple tasks per the difficulty-skip matrix |
 | 6.5 | Polish Prose | (Only when `polish_prose: true`) Refine resolved-language comments / descriptions in changed files via the `prose-polish` skill (file mode, `sonnet`); skipped for Trivial / Simple tasks per the difficulty-skip matrix |
 | 7 | Check / Test | Run check_commands + run-tests |
-| 7.5 | Rules Compliance Review | Verify `.claude/rules/` compliance via `rules-review` skill; skipped for Trivial tasks per the difficulty-skip matrix |
+| 7.5 | Rules Compliance Review | Verify `.claude/rules/` compliance via `rules-review` skill; skipped for Trivial / Simple tasks per the difficulty-skip matrix |
 | 8 | Code Review | Code review by reviewer (up to N_code iterations; skipped entirely for Trivial tasks, N_code=0) |
 | 9 | Completion Hooks | Run `hooks.on_complete` (only if configured) |
 | 10 | Interactive Commits | (Only when `interactive_commits: true`) Group working-tree changes into commits and iterate per-commit with the user. The workflow never pushes — that stays the user's responsibility |

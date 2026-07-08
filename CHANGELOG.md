@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-07-08
+
+### dev-workflow v1.87.0 / dev-workflow-bundle v1.97.0
+
+- feat(dev-workflow): loosen Trivial/Simple difficulty-classification criteria and extend the difficulty-skip matrix to skip Step 7.5 on Simple
+  - **Behavior change**: the Trivial tie-break no longer escalates a change to Simple or above merely for spanning several lines, files, or modules — it stays Trivial as long as the fix is mechanical and uniform across every site (e.g. a version bump or an unambiguous rename, even one touching manifests in several modules), escalating only when the change requires an actual judgment call. Simple no longer requires the change to be a bug fix — a small feature addition that fully follows an existing pattern with no new design decisions now qualifies, regardless of file count **within a single module** (a uniform edit spanning multiple modules still escalates to Moderate). Simple also now skips Step 7.5 (Rules Compliance Review) in addition to Step 6 Tidy and Step 6.5 Polish Prose, matching Trivial's skip set; Step 8's single code-review iteration becomes the run's primary rules-compliance defense at this tier (its reviewer prompt already flags obvious `.claude/rules/` violations as a safety net)
+  - **Prompt-tuning fix**: empirical verification (`/prompt-tuning`, scoped to this diff) surfaced a genuine textual ambiguity — the new Moderate "or spans multiple modules" clause didn't state whether it also narrowed Trivial's own mechanical-uniform-edit tie-break (which already tolerated multi-site spread), so a mechanical multi-module edit like a version bump could read as either Trivial or Moderate. Fixed by making the Trivial tie-break explicitly include "modules" in its non-escalation list and by scoping the Moderate clause explicitly to the Simple↔Moderate boundary; re-verified clean (no hedging) across 2 fresh-subagent iterations
+  - **Downstream automation note**: non-interactive / routine `dev-workflow` runs will now classify more tasks as Trivial or Simple than before, running fewer Step 3 / Step 8 review iterations and skipping Step 7.5 on Simple. Automated runners do not read this CHANGELOG, so review any routine config that assumes the previous, more conservative classification
+  - Coordinated multi-site sweep: SKILL.md (Step 2's Adjust N by difficulty tier definitions and marking logic, Step 7's "Concurrent rules-review launch" `If available` guard, the Step 7.5 GATE line, the Step 7.5 "Difficulty exception" paragraph and "Responsibility scope" Step 8 note, Step 8 sub-step 1's reviewer-payload line, the Completion difficulty-skip reminder note) and README.md (the difficulty table, the Trivial/Simple classification paragraph, the workflow-steps table's Step 7.5 row)
+  - canonical `skills/dev-workflow/` and the `dev-workflow-bundle` copy synced byte-identical (`SKILL.md`, `README.md`)
+
 ## 2026-07-07
 
 ### dev-workflow v1.86.7 / dev-workflow-bundle v1.96.7

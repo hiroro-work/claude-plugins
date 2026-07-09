@@ -5,7 +5,7 @@ Deep reference for Step 1.5. Read this when either:
 - Normal sub-mode is running, or
 - Resume sub-mode is running (`--resume <state-file>`)
 
-`EnterPlanMode` is reserved for Step 2 (and only when `visual_plan_review: false`; on the `visual_plan_review: true` path Step 2 skips Plan Mode — see `SKILL.md` § Configuration). Any proposal in this step is a plain yes/no dialogue, not a plan.
+`EnterPlanMode` is reserved for Step 2 (and only when `plan_review_gate: "plan-mode"`; on the `visual` / `crit` paths Step 2 skips Plan Mode — see `SKILL.md` § Configuration). Any proposal in this step is a plain yes/no dialogue, not a plan.
 
 ## State file schema
 

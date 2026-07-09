@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-07-09
+
+### dev-workflow v1.88.0 / dev-workflow-bundle v1.98.0
+
+- feat(dev-workflow): re-enumerate the Step 4 plan-review gate setting from a boolean into a `plan_review_gate` enum (`plan-mode` / `visual` / `crit`) and add an opt-in **`crit`** gate (<https://github.com/tomasz-tomczyk/crit>)
+  - **Deprecation notice**: `visual_plan_review` (boolean) is deprecated in favor of `plan_review_gate` (string enum) — the old key keeps working via a compat mapping (`true → visual`, `false → plan-mode`; the new key wins when both are set), but projects should migrate at their convenience. Removal follows `.claude/rules/project.rules.local.md`'s Config-flag lifecycle (experimental → graduate → deprecation notice → tombstoned removal); no removal is scheduled yet
+  - **New capability (opt-in, experimental)**: setting `plan_review_gate: "crit"` runs the external `crit` CLI (a separately-installed local review tool, not bundled with this skill) as Step 4's review surface instead of the bundled visual gate. crit returns the same three-value contract (`approve` / `rewrite-approach` / `fallback`) the visual gate already uses. Availability is detected via the `crit --version` exit code; when crit is unavailable, its launch fails, or the local browser is unreachable, Step 4 falls back to the bundled **`visual`** gate rather than straight to chat (`crit` → `visual` → chat), so a `crit`-selecting user still gets a browser review. The default remains `visual` — this is purely additive, no default changed
+  - **Verified against crit 0.17.1** (Homebrew, 2026-07-09) via real launches, not against the initial handoff document's WebFetch-derived assumptions alone — several of which turned out stale (must use `crit plan --name <slug> <file>`, not bare `crit <file>`; exit code doesn't distinguish approve/revise; no `--timeout` flag). Full contract and rationale: `references/crit-plan-review.md`
+  - New `skills/dev-workflow/references/crit-plan-review.md` (mirrors `references/visual-plan-review.md`'s structure) holds the crit gate's full procedure; `SKILL.md` gained only a Configuration bullet rewrite and a short Step 4 branch, keeping the resident footprint small
+  - Coordinated multi-site sweep: SKILL.md (§ Configuration scalar-key list, default YAML example, the `plan_review_gate` bullet, the `Agent` tool usage bullet, the `subagent_model` bullet and Step 2's cross-step-variable init note, the § No-Stall Principle Step 4 gate bullet and its background-boundary restatement, Step 1 sub-step 5's config-parse enumeration, the `EnterPlanMode` reservation note, Step 2's `plan_mode_active` resolution, the Codebase-research delegation guard, Step 4 sub-step 2's path (b) branch and routing table, the Completion staging-artifact-cleanup paragraph), `references/plan-format.md` (§ Path scope), `references/task-decomposition.md` (`EnterPlanMode` reservation note), `references/visual-plan-review.md` (self-referential `plan_review_gate` conditions + a sibling cross-reference to the new crit reference), and README.md (Settings-reference table row, the `#### plan_review_gate` subsection, the Step 2 / Step 4 workflow-table rows, the invalid-value error-table row)
+  - `allowed-tools` gains `Bash(crit *)`
+  - canonical `skills/dev-workflow/` and the `dev-workflow-bundle` copy synced byte-identical (`SKILL.md`, `README.md`, `references/plan-format.md`, `references/task-decomposition.md`, `references/visual-plan-review.md`, new `references/crit-plan-review.md`)
+
 ## 2026-07-08
 
 ### dev-workflow v1.87.0 / dev-workflow-bundle v1.97.0

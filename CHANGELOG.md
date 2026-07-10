@@ -2,6 +2,15 @@
 
 ## 2026-07-10
 
+### dev-workflow v1.88.2 / dev-workflow-bundle v1.98.2
+
+- fix(dev-workflow): notice users when a `dev-workflow-bundle` sibling skill is unavailable, instead of leaving detection scattered across silent per-step skip messages
+  - Category: wrong-default; Step 1 assumed the default reviewer `ask-peer` is "always available when dev-workflow is installed" and skipped probing it — but `ask-peer` (like `rules-review` / `extract-rules` / `tidy` / `prose-polish`) is registered as its own independent plugin in `marketplace.json` in addition to being a `dev-workflow-bundle` member, so installing `dev-workflow` alone does not guarantee any of them are present. A user could go many runs without ever connecting several small, scattered per-step skip messages into "the bundle isn't installed"
+  - Step 1 now always probes the resolved reviewer regardless of which one is configured. A new cross-step `bundle_skills_unavailable` ledger (same hoist pattern as the existing `difficulty_skipped_steps`) is appended at each of the five existing skill-unavailability fallback sites — reviewer (`ask-peer` only; the other five supported reviewer values are unrelated independent plugins), `rules-review` (Step 7.5), `extract-rules` (Step 11), the Step 6 cleanup skill's `tidy` fallback, and `prose-polish` (Step 4 / Step 6.5, recorded independently per call site) — and rendered as one aggregated Completion reminder, so a partially-installed bundle is never silently missed run after run
+  - Also defines the previously-undefined behavior when both `simplify` and its `tidy` fallback are unavailable in Step 6: the cleanup pass is skipped entirely with a note, folding into Step 6's existing completion path rather than leaving the case unhandled
+  - Coordinated multi-site sweep: `SKILL.md` (Step 1 sub-step 3's reviewer-probe fix + ledger declaration, the Prerequisites `rules-review skill` / `extract-rules skill` / `Cleanup skill` bullets, Step 6 sub-step 2's `tidy` fallback bullet and sub-step 3's completion path, Step 4's "Plan-body prose polish" paragraph, Step 6.5 sub-step 3, and a new Completion "Bundle-skill availability reminder" paragraph) and README.md (a new Prerequisites note + two new Error/edge-case table rows)
+  - canonical `skills/dev-workflow/` and the `dev-workflow-bundle` copy synced byte-identical (`SKILL.md`, `README.md`)
+
 ### dev-workflow v1.88.1 / ask-peer v2.4.5 / rules-review v1.5.2 / tidy v1.4.2 / prose-polish v1.6.1 / dev-workflow-bundle v1.98.1
 
 - fix(dev-workflow): re-anchor the `Model:` / `subagent_model` validity check on the `Agent` tool's live `model` schema instead of a hardcoded closed set

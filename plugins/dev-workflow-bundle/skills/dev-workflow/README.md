@@ -593,6 +593,8 @@ To get the full benefit of dev-workflow, the following skills are recommended:
 - **prose-polish skill**: Used for the Step 4 plan-body polish and Step 6.5 (Polish Prose), both gated by the `polish_prose` setting (default `true`, opt-out). When `polish_prose` is not `true` — or the skill is not installed — those passes are skipped and the plan and changed-file prose are presented un-polished
 - **`gh` CLI, authenticated** (only if `self_retrospective.feedback` is set to an `owner/repo` value): required for Step 11.5 to submit via `gh api` POST to `/repos/<feedback>/issues`. The backing token only needs `Issues: write` on the target repo (no full `repo` scope). If `gh` is missing or unauthenticated, Step 11.5 aborts with an actionable message; switch `feedback` to a local path to disable the `gh` requirement
 
+`reviewer` (when `ask-peer`), `rules-review`, `extract-rules`, `tidy` (the Step 6 cleanup fallback), and `prose-polish` are each `dev-workflow-bundle` sibling skills, installed separately from `dev-workflow` itself — installing `dev-workflow` alone does not guarantee they are present. See the Error / edge case behavior table below for what happens when one is unavailable.
+
 ## Error / edge case behavior
 
 | Situation | Behavior |
@@ -623,6 +625,8 @@ To get the full benefit of dev-workflow, the following skills are recommended:
 | `workability_retrospective.backlog_dir` not a non-empty string | Warns and falls back to `.claude/improvements` |
 | Step 11.6 detection subagent returns malformed content | Skip the disposition gate; terminal summary `skipped`; no retry in the same session |
 | Step 11.6 backlog write / state-file create fails | Recorded as a warning in the terminal summary; remaining candidates continue |
+| Any `dev-workflow-bundle` sibling skill (`ask-peer` as reviewer / `rules-review` / `extract-rules` / the Step 6 `tidy` fallback / `prose-polish`) unavailable | Recorded to a run-level ledger; surfaced as one aggregated reminder at Completion |
+| Step 6 cleanup: both `simplify` and `tidy` unavailable | Step 6 is skipped entirely with a note (no cleanup edits applied this run) |
 
 ## Notes
 

@@ -108,7 +108,7 @@
       "description": "Peer engineer for code review, planning, and brainstorming",
       "source": "./skills/ask-peer",
       "skills": ["./"],
-      "version": "2.4.4",
+      "version": "2.4.5",
       "author": {
         "name": "hiropon"
       },
@@ -129,7 +129,7 @@
       "description": "Guided development workflow: planning, review, implementation, testing, and rule maintenance",
       "source": "./skills/dev-workflow",
       "skills": ["./"],
-      "version": "1.88.0",
+      "version": "1.88.1",
       "author": {
         "name": "hiropon"
       },
@@ -140,7 +140,7 @@
       "description": "Development workflow bundle (includes peer + extract-rules + dev-workflow + rules-review + tidy + prose-polish)",
       "source": "./plugins/dev-workflow-bundle",
       "skills": ["./skills/ask-peer", "./skills/dev-workflow", "./skills/extract-rules", "./skills/rules-review", "./skills/tidy", "./skills/prose-polish"],
-      "version": "1.98.0",
+      "version": "1.98.1",
       "author": {
         "name": "hiropon"
       },
@@ -162,7 +162,7 @@
       "description": "Check code changes for .claude/rules/ compliance using parallel sub-agent review",
       "source": "./skills/rules-review",
       "skills": ["./"],
-      "version": "1.5.1",
+      "version": "1.5.2",
       "author": {
         "name": "hiropon"
       },
@@ -173,7 +173,7 @@
       "description": "Review changed code for reuse, quality, and efficiency, then apply cleanup edits.",
       "source": "./skills/tidy",
       "skills": ["./"],
-      "version": "1.4.1",
+      "version": "1.4.2",
       "author": {
         "name": "hiropon"
       },
@@ -184,7 +184,7 @@
       "description": "Refactor verbose or unnatural prose into concise, native-sounding text in a configured target language using a sonnet subagent (file mode rewrites in place, text mode returns the result)",
       "source": "./skills/prose-polish",
       "skills": ["./"],
-      "version": "1.6.0",
+      "version": "1.6.1",
       "author": {
         "name": "hiropon"
       },

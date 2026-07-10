@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-07-10
+
+### dev-workflow v1.88.1 / ask-peer v2.4.5 / rules-review v1.5.2 / tidy v1.4.2 / prose-polish v1.6.1 / dev-workflow-bundle v1.98.1
+
+- fix(dev-workflow): re-anchor the `Model:` / `subagent_model` validity check on the `Agent` tool's live `model` schema instead of a hardcoded closed set
+  - Category: missing-branch; `ask-peer` / `tidy` / `prose-polish` / `rules-review` and dev-workflow's `subagent_model` all validated the `Model:` argument against a fixed closed set (`sonnet` / `opus` / `haiku`), so newly-shipped model families such as `fable` had no branch to be accepted — the check silently fell back to the pre-fix default instead of applying the requested model. The validity predicate now points at whichever model ids the current `Agent` tool's `model` parameter actually accepts (checked live against the session's loaded tool schema — the same primary-source-verification convention `ask-peer` already documents — rather than a fixed list), so future model families no longer require a repeat of this same multi-file edit. Each skill's own fallback target is unchanged (`sonnet` for `prose-polish`; `inherit` for `tidy` / `rules-review` / `ask-peer`; dev-workflow's tiered built-in default for `subagent_model`)
+  - Also fixed the identical pattern in the project-local `.claude/skills/publicity-review/SKILL.md` (not version-bumped — project-local, not registered in `marketplace.json`)
+  - canonical `skills/{ask-peer,dev-workflow,rules-review,tidy,prose-polish}/` and their `dev-workflow-bundle` copies synced byte-identical (`SKILL.md`)
+
 ## 2026-07-09
 
 ### dev-workflow v1.88.0 / dev-workflow-bundle v1.98.0

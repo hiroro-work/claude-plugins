@@ -23,7 +23,7 @@ The caller passes these fields in natural language (the skill extracts them from
 - `File:` / `Files:` *(file mode — one or more relative paths)* — the files whose target-language prose is rewritten in place. Multiple paths may be listed (one per line or comma-separated).
 - `Text:` *(text mode — the prose to refactor)* — the block of text to polish and return.
 - `Language:` *(optional, default `ja`, e.g. `ja` / `en`)* — the target language whose prose is refactored. In file mode, only prose written in this language is rewritten; prose in other languages is left untouched.
-- `Model:` *(optional, default `sonnet`)* — the model id applied as the `model` parameter on the refactor `Agent` dispatch (Step 3 (a)). **Validity predicate**: a value is valid only if it is exactly one of the closed set `{sonnet, opus, haiku}` (the ids the `Agent` `model` parameter accepts); an absent field or any value outside that set (including a full `claude-*` id) falls back to the default `sonnet` — sonnet produces more concise, natural prose than the larger models this skill is meant to clean up after.
+- `Model:` *(optional, default `sonnet`)* — the model id applied as the `model` parameter on the refactor `Agent` dispatch (Step 3 (a)). **Validity predicate**: a value is valid only if it is one of the model ids the current `Agent` tool's `model` parameter accepts — check the tool's live schema loaded in the current session rather than a fixed list, since Anthropic adds new model families over time (`sonnet` / `opus` / `haiku` / `fable` as of this writing); a full `claude-*` id (e.g. `claude-sonnet-5`) is outside that parameter's accepted aliases and is therefore invalid too. An absent field or an invalid value falls back to the default `sonnet` — sonnet produces more concise, natural prose than the larger models this skill is meant to clean up after.
 
 **Pass related files together (file mode)** — cross-file duplicate-comment detection (`## Process` Step 3's `recommendations`) works only when the related files are listed together in a **single** file-mode invocation: the refactor subagent can spot a comment duplicated across files only when it sees those files in one dispatch.
 
@@ -43,7 +43,7 @@ This fixed mode gate (one selector group present → that mode; both → ambiguo
 ### Step 1 — Determine mode and parse inputs (main thread)
 
 1. Resolve `Language:` to `<resolved-language>` — the provided value, else the default `ja`. This resolved value is echoed in the return contract's `language` field (so a caller that passed nothing can tell the skill defaulted to `ja`).
-2. Parse the optional `Model:` value per `§ Invocation contract`'s `Model` field — hold a valid `{sonnet, opus, haiku}` value for the Step 3 (a) dispatch; absent or out-of-set → default `sonnet`.
+2. Parse the optional `Model:` value per `§ Invocation contract`'s `Model` field — hold a valid value for the Step 3 (a) dispatch; absent or invalid → default `sonnet`.
 3. Determine the mode per `§ Invocation contract` § Mode determination. On `ambiguous args` / `incomplete args`, emit the corresponding early-return verdict and stop.
 4. **File mode**: collect the listed paths into `target_files` (the scope-check baseline for Step 3 (b)). **Text mode**: hold the input text as `input_text`.
 

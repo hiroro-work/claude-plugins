@@ -16,13 +16,13 @@ Check code changes for compliance with `.claude/rules/` rule files.
 /rules-review                        # Check diff from HEAD~1
 ```
 
-An optional `Model:` value (`sonnet` / `opus` / `haiku`) may also be passed as a natural-language argument — an independent optional field (not part of a fixed-arity mode gate). When present and valid it is applied as the `model` parameter on each reviewer `Agent` dispatch in §5 (a caller such as `dev-workflow` uses this to run the review on a cheaper model). When absent, the reviewer `Agent` inherits the session model (backward-compatible default). `Model:` is **only effective on the Claude Code `Agent`-dispatch path**; on the inline / Codex fallback path no `Agent` is spawned, so the value is moot (the executing agent's own model governs).
+An optional `Model:` value — one of the model ids the current `Agent` tool's `model` parameter accepts (`sonnet` / `opus` / `haiku` / `fable` as of this writing; check the tool's live schema loaded in the current session rather than this fixed list, since Anthropic adds new model families over time) — may also be passed as a natural-language argument — an independent optional field (not part of a fixed-arity mode gate). When present and valid it is applied as the `model` parameter on each reviewer `Agent` dispatch in §5 (a caller such as `dev-workflow` uses this to run the review on a cheaper model). When absent or invalid, the reviewer `Agent` inherits the session model (backward-compatible default). `Model:` is **only effective on the Claude Code `Agent`-dispatch path**; on the inline / Codex fallback path no `Agent` is spawned, so the value is moot (the executing agent's own model governs).
 
 ## Processing Flow
 
 ### 1. Prepare
 
-1. Parse `--base-commit <sha>` from `$ARGUMENTS`. If not provided, use `git rev-parse HEAD~1`. Also parse the optional `Model:` value (`sonnet` / `opus` / `haiku`) from `$ARGUMENTS` (see § Usage); hold it for §5's reviewer `Agent` dispatch. Absent or invalid → no model override (inherit)
+1. Parse `--base-commit <sha>` from `$ARGUMENTS`. If not provided, use `git rev-parse HEAD~1`. Also parse the optional `Model:` value from `$ARGUMENTS` (see § Usage); hold it for §5's reviewer `Agent` dispatch. Absent or invalid → no model override (inherit)
 2. Get changed files: `git diff --name-only <base-commit>`
 3. If no changed files, output `No changed files` as the final prose result, then emit the verdict per `## Return contract` and end the processing flow (no further processing steps)
 

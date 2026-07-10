@@ -16,9 +16,9 @@ hooks:
 self_retrospective:
   feedback: "SonicGarden/dev-workflow-issues"
 compact_rules: true
-visual_plan_review: true
 workability_retrospective:
   enabled: true
 polish_prose: true
 confirm_remaining_steps: true
+plan_review_gate: "visual"
 ---

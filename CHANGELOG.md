@@ -2,6 +2,13 @@
 
 ## 2026-07-10
 
+### dev-workflow v1.88.3 / dev-workflow-bundle v1.98.3
+
+- fix(dev-workflow): recognize non-shared per-platform/per-screen implementations as a distinct-verification-path decompose signal
+  - Category: ambiguity; Step 1.5's primary decompose signal (distinct verification paths) did not spell out that implementing the same feature as 2+ non-shared per-platform / per-screen implementations (e.g. independent PC-screen and mobile-screen controller/view code) is itself an instance of that signal — a real run treated exactly this pattern as a single task instead of proposing a PC-first/mobile-second split. Extended the primary signal bullet's parenthetical with this case and an explicit carve-out for a single shared responsive implementation (which does not qualify, since it has one verification path)
+  - Considered adding a fourth named axis (alongside workproduct-independence / dead-on-arrival / upper-design-document-input), but Step 3 plan review found this would misrepresent the established pattern: those three axes each exist specifically for cases the primary signal does *not* cover, whereas this case is a direct instance of the primary signal itself. Folded into the existing bullet instead, keeping the precedence paragraph unchanged
+  - canonical `skills/dev-workflow/` and the `dev-workflow-bundle` copy synced byte-identical (`references/task-decomposition.md`)
+
 ### dev-workflow v1.88.2 / dev-workflow-bundle v1.98.2
 
 - fix(dev-workflow): notice users when a `dev-workflow-bundle` sibling skill is unavailable, instead of leaving detection scattered across silent per-step skip messages

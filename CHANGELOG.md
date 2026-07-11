@@ -2,6 +2,12 @@
 
 ## 2026-07-10
 
+### dev-workflow v1.89.1 / dev-workflow-bundle v1.99.1
+
+- fix(dev-workflow): warn before side-effecting external-tool launches in Step 5 (auto-triage #159)
+  - Category: other; Step 5 could launch an external process with a real-world side effect (e.g. opening an actual browser window during background CLI verification) with no warning, leaving the user unable to attribute the resulting artifact to the correct launch. Step 5 gained a new sub-step requiring a pre-launch warning in the resolved `language` and a distinguishable per-launch identifier.
+  - canonical `skills/dev-workflow/` and the `dev-workflow-bundle` copy synced byte-identical (`SKILL.md`)
+
 ### dev-workflow v1.89.0 / dev-workflow-bundle v1.99.0
 
 - feat(dev-workflow): add an experimental opt-in `--fast` invocation flag for lower-thoroughness, faster runs

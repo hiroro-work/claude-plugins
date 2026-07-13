@@ -171,6 +171,7 @@ hooks:
 | `interactive_commits` | bool | `true` | Whether Step 10 (Interactive Commits) groups working-tree changes into commits and iterates per-commit with the user; also gates Step 11's rule-update commit proposal |
 | `compact_rules` | bool | `false` | Whether Step 11 sub-step 3 dispatches `Skill(extract-rules) --compact` and opens the compaction approval gate (experimental, opt-in) |
 | `plan_review_gate` | string | `visual` | Which surface Step 4 uses for plan approval — `plan-mode` (built-in Plan Mode + `ExitPlanMode`), `visual` (default; bundled browser-based structured review gate — summary header, collapsible sections, Decision cards, per-element comments, mermaid diagrams), or `crit` (opt-in; the external `crit` CLI, falling back to `visual` when unavailable). `visual` / `crit` are local CLI / Remote Control only — on Claude Code on the Web both fall back to a no-Plan-Mode chat approval, though Step 2 still skips Plan Mode. Deprecated boolean predecessor: `visual_plan_review` (`true → visual`, `false → plan-mode`) |
+| `commit_review_gate` | string | `diff` | Which surface Step 10 uses for each commit's code-diff review — `diff` (default; the existing chat-text presentation with the accept/adjust/cancel gate) or `crit` (opt-in; launches the external `crit` CLI scoped to just that commit's files, falling back to `diff` when unavailable or unreachable). Independent of `plan_review_gate` — see the `commit_review_gate` section below |
 | `polish_prose` | bool | `true` | Whether the workflow's two `prose-polish` passes (Step 6.5 file-mode polish of changed files + Step 4 plan-body polish) run; Step 6.5 is still subject to the difficulty-skip matrix (default-on, opt-out) |
 | `custom_instructions` | string | (none) | Free-form instructions applied across all phases |
 | `check_commands` | list&lt;string&gt; | (none) | Static checks (lint / format / typecheck, etc.) |
@@ -283,6 +284,19 @@ Note: `visual` and `crit` are both local-only features. On Claude Code on the We
 **Legacy key**: `visual_plan_review` (boolean) is deprecated but still read for backward compatibility — `true` maps to `visual`, `false` maps to `plan-mode`; when both keys are set, `plan_review_gate` wins.
 
 **Behavior change from v1.70.0**: the default flipped from `false` (opt-in Plan Mode-skip) to `true` (now `visual`) — projects that leave `plan_review_gate` unset skip Plan Mode and use the browser-based gate by default; set `plan_review_gate: "plan-mode"` to opt out. (History: v1.70.0 introduced the visual gate as an experimental opt-in; v1.72.0 made it skip Plan Mode entirely; v1.81.0 removed the experimental marker; **v1.88.0** renamed the boolean `visual_plan_review` to the `plan_review_gate` enum and added the opt-in `crit` gate.)
+
+#### `commit_review_gate`
+
+Controls which surface Step 10 (Interactive Commits) uses to review each commit's code diff: `diff` (default) or `crit`. Independent of `plan_review_gate` — the two gates cover different Steps and have different non-`crit` defaults (Step 4's is a rich bundled browser gate; Step 10's is plain chat text), so they are not unified into one setting.
+
+- `diff` (default): the workflow's existing per-commit presentation — Subject / Body / Files / Verification / Diff rendered in chat (verbatim / condensed / skeleton depending on size), gated by the existing accept/adjust/cancel per-commit accept gate.
+- `crit` (opt-in): drives the external **[crit](https://github.com/tomasz-tomczyk/crit)** CLI — the same separately-installed local review tool `plan_review_gate: "crit"` can use — scoped to just the current commit's files, so you review the actual code diff in the browser (inline comments, approve / request-changes) before the commit lands. Availability (`crit --version`) and local-browser reachability (`CLAUDE_CODE_REMOTE`) are checked once per run and cached, independently of any check `plan_review_gate: "crit"` already performed. When either check fails, the whole run falls back to `diff` mode with a one-line note; when a specific commit's crit launch itself is interrupted, only that commit falls back to `diff` — crit stays in use for the rest of the run. See `skills/dev-workflow/references/crit-commit-review.md` for the full contract.
+
+```yaml
+commit_review_gate: "crit"
+```
+
+Invalid values are ignored with a warning and fall back to `diff`. To opt in for one project, set `commit_review_gate: "crit"` in `.claude/dev-workflow.md` or `~/.claude/dev-workflow.local.md` / `.claude/dev-workflow.local.md`.
 
 #### `polish_prose`
 
@@ -561,7 +575,7 @@ The workflow begins at Step 2 (Step 1 is settings load, Step 1.5 is task decompo
 | 7.5 | Rules Compliance Review | Verify `.claude/rules/` compliance via `rules-review` skill; skipped for Trivial / Simple tasks per the difficulty-skip matrix; under `--fast` it still runs but its own fix → re-verify loop is capped to a single pass |
 | 8 | Code Review | Code review by reviewer (up to N_code iterations; skipped entirely for Trivial tasks, N_code=0; capped at 1 iteration under `--fast`) |
 | 9 | Completion Hooks | Run `hooks.on_complete` (only if configured) |
-| 10 | Interactive Commits | (Only when `interactive_commits: true`) Group working-tree changes into commits and iterate per-commit with the user. The workflow never pushes — that stays the user's responsibility |
+| 10 | Interactive Commits | (Only when `interactive_commits: true`) Group working-tree changes into commits and iterate per-commit with the user (each commit's diff reviewed via chat text by default, or via the external `crit` CLI when `commit_review_gate: "crit"`). The workflow never pushes — that stays the user's responsibility |
 | 11 | Update Rules | Update rules via `extract-rules`, then (when `interactive_commits: true`) propose committing the resulting `.claude/rules/` changes as a single commit. Sub-step 3 (Char-count compaction gate) runs only when `compact_rules: true` (experimental, opt-in). The `confirm_remaining_steps` proceed/skip gate (see below) also fires under `--fast` regardless of that setting |
 | 11.5 | Self-Retrospective | (Only if `self_retrospective.feedback` is set; runs regardless of task difficulty) Spawn a subagent to extract sanitized bundle-skill improvement signal, present it with a destination header, and submit on user approval. See `references/self-retrospective.md` |
 | 11.6 | Workability Retrospective | (Only if `workability_retrospective.enabled: true`; runs regardless of task difficulty) Spawn a subagent to detect skill-ization / lint-rule candidates from the session, then offer a per-candidate disposition gate (act now / subtask / backlog / reject). See `references/workability-retrospective.md` |
@@ -620,6 +634,7 @@ To get the full benefit of dev-workflow, the following skills are recommended:
 | `review_iterations` map has an absent / non-positive / wrong-type `plan` or `code` key | Warns, uses default `3` for that phase only (the valid key is kept) |
 | `compact_rules` is not a boolean | Warns and falls back to `false` |
 | `plan_review_gate` is not a valid value | Warns and falls back to `visual` |
+| `commit_review_gate` is not a valid value | Warns and falls back to `diff` |
 | `polish_prose` is not a boolean | Warns and falls back to `true` |
 | `custom_instructions` is not a string | Warns and ignores |
 | `hooks.on_complete` has invalid format | Warns and ignores |

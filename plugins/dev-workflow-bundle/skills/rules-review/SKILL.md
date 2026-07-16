@@ -70,6 +70,8 @@ Host-aware dispatch:
 
 Detect availability by inspecting the current tool surface. Do not attempt speculative tool calls just to probe availability. Do not substitute `claude -p`, `codex`, or other external CLIs; the inline path is the defined fallback. Collect results identically in all paths.
 
+**No stall after dispatch**: once the reviewer `Agent`s are launched (Claude Code path) or the subagent / delegation mechanism is invoked (Codex path), do not end the response with a status-only message such as "dispatched — will report when complete". Continue to § 6. Aggregate Results as soon as the dispatched reviewers' results are available in the same flow; a dispatch is not itself a stopping point.
+
 Each reviewer (dispatched or inline) receives the following prompt:
 
 ```

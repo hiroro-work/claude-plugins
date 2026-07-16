@@ -2,6 +2,27 @@
 
 ## 2026-07-16
 
+### ask-peer v2.4.6 / dev-workflow-bundle v1.101.1
+
+- fix(ask-peer): add error-handling structure & message-safety audit to code review focus (auto-triage #164)
+  - Category: other; code review missed a nested try/catch that deviated from the plan and a one-time-use link leaked into a user-facing error message
+
+### dev-workflow v1.91.1 / dev-workflow-bundle v1.101.1
+
+- fix(dev-workflow): self-sweep pattern-class rule violations in Step 7.5 (auto-triage #161)
+  - Category: missing-branch; pattern-class rule violations took multiple review round-trips to fully resolve; Step 7.5 now greps the whole file for the same violation token right after the first fix
+- fix(dev-workflow): clarify Step 7.5's 2-cycle cap is count-based, not identity-based (auto-triage #161)
+  - Category: ambiguity; "violations still persist" could be misread as requiring the same violations to recur across cycles
+- fix(dev-workflow): re-run check_commands after Step 9 hooks write to the tree (auto-triage #161)
+  - Category: missing-branch; Post-hook attribution check verifies write attribution, not content-level invariants like mirrored-file-pair sync
+- fix(dev-workflow): propose layer-based commit split for cross-layer changes (auto-triage #164)
+  - Category: missing-branch; commit grouping bundled a multi-layer change set into one commit with no alternative offered
+
+### rules-review v1.5.3 / dev-workflow-bundle v1.101.1
+
+- fix(rules-review): add no-stall reminder after reviewer Agent dispatch (auto-triage #162)
+  - Category: missing-branch; sessions observed the skill ending its turn with a "dispatched, will report" stall message instead of continuing to aggregate results
+
 ### ask-codex v1.2.2
 
 - docs(ask-codex): note in the "Resume a session" section that `exec`-level flags (`-C`, `--full-auto`) are not accepted by `codex exec resume`

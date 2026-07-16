@@ -1,5 +1,22 @@
 # Changelog
 
+## 2026-07-16
+
+### ask-codex v1.2.2
+
+- docs(ask-codex): note in the "Resume a session" section that `exec`-level flags (`-C`, `--full-auto`) are not accepted by `codex exec resume`
+  - Observed failure: composing the Common-options flags onto the resume subcommand fails with `error: unexpected argument '-C' found` (codex-cli 0.144.4). The note documents that the resumed session inherits the original session's working directory, that the sandbox can be adjusted via `-c sandbox_mode="workspace-write"`, and that `-m MODEL` remains available on resume
+
+### dev-workflow v1.91.0 / dev-workflow-bundle v1.101.0
+
+- feat(dev-workflow): add experimental opt-in `implementation_executor` config key + `--executor` invocation flag for delegating Step 5 implementation work units
+  - **Default: `main` (current behavior)** — set `implementation_executor: <value>` in `.claude/dev-workflow.md` / `.claude/dev-workflow.local.md`, or pass `--executor <value>` on a single invocation, to opt in. The key selects who executes Step 5 implementation work units — `main` (main thread, unchanged), `subagent` (the existing settled-unit delegation path becomes the default route per unit via the `Agent` tool), or one of the external-CLI skills `ask-claude` / `ask-codex` / `ask-gemini` / `ask-copilot` / `ask-agy` (per-unit dispatch via the named `Skill()` driving the CLI in workspace-write mode)
+  - The spec-completeness and not-judgment-heavy guards still decide per unit, so hybrid execution (some units delegated, some main-thread) is the expected outcome; the main thread always retains user gates, the Step 5 self-audit sub-steps (run as post-delegation verification), Step 7+ verification, and Step 10 commits
+  - `ask-peer` is intentionally not a supported executor value (reviewer-persona skill returning feedback, not edits), and executor unavailability falls back to `main` for the run with a one-line note and no user gate
+  - New `skills/dev-workflow/references/executor-prompt.md` (canonical dispatch payload: work-unit spec template with `--- LABEL ---` fences, executor discipline closed list, per-executor dispatch mechanics, post-return orchestrator duties) keeps the resident SKILL.md footprint small
+  - Coordinated multi-site sweep: `SKILL.md` (§ Usage command lines, § Mode Detection modifier note, § Configuration scalar-key list + default YAML example + new `implementation_executor` bullet + the `Agent` tool usage bullet, Step 1 sub-step 5's config-parse enumeration, Step 5 sub-step 2's delegation paragraph), new `references/executor-prompt.md`, and `README.md` (usage block, settings-reference table row, new `#### implementation_executor` subsection, invalid-value error-table row)
+  - canonical `skills/dev-workflow/` and the `dev-workflow-bundle` copy synced byte-identical (`SKILL.md`, `README.md`, new `references/executor-prompt.md`)
+
 ## 2026-07-13
 
 ### dev-workflow v1.90.1 / dev-workflow-bundle v1.100.1

@@ -21,7 +21,7 @@
       "description": "Get a second opinion from OpenAI Codex",
       "source": "./skills/ask-codex",
       "skills": ["./"],
-      "version": "1.2.1",
+      "version": "1.2.2",
       "author": {
         "name": "hiropon"
       },
@@ -129,7 +129,7 @@
       "description": "Guided development workflow: planning, review, implementation, testing, and rule maintenance",
       "source": "./skills/dev-workflow",
       "skills": ["./"],
-      "version": "1.90.1",
+      "version": "1.91.0",
       "author": {
         "name": "hiropon"
       },
@@ -140,7 +140,7 @@
       "description": "Development workflow bundle (includes peer + extract-rules + dev-workflow + rules-review + tidy + prose-polish)",
       "source": "./plugins/dev-workflow-bundle",
       "skills": ["./skills/ask-peer", "./skills/dev-workflow", "./skills/extract-rules", "./skills/rules-review", "./skills/tidy", "./skills/prose-polish"],
-      "version": "1.100.1",
+      "version": "1.101.0",
       "author": {
         "name": "hiropon"
       },

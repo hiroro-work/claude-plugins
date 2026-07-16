@@ -36,6 +36,9 @@ Use `exec resume --last` to continue the most recent session with a follow-up pr
 codex exec resume --last "Your follow-up prompt"
 ```
 
+> **Note:** `exec`-level flags such as `-C` and `--full-auto` are not accepted by `exec resume` — the resumed session inherits the original session's working directory.
+> To adjust the sandbox on resume, use `-c sandbox_mode="workspace-write"`; `-m MODEL` remains available.
+
 ## Examples
 
 **Ask a coding question:**

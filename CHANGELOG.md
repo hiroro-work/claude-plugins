@@ -2,6 +2,14 @@
 
 ## 2026-07-17
 
+### dev-workflow v1.92.2 / dev-workflow-bundle v1.103.2
+
+- refactor(dev-workflow): extract the four largest Step procedure bodies out of `SKILL.md` into `references/step*.md` to bring it under Claude Code's 256KB single-Read cap
+  - `SKILL.md` had grown to 280.8KB (284,339 chars), exceeding the main-thread Read tool's 256KB hard cap (Claude Code reported it as unreadable in one Read). Verbatim-extracted the bulky procedure bodies of Step 2 (Create Plan sub-steps 3–5), Step 5 (Implement sub-steps 1, 3–8, 10), Step 7 (Check / Test — the `check_commands` pre-existing-vs-regression bullet + the `test_commands` self-check suite), and Step 8 (Code Review — sub-step 3's fix-time self-checks) into new `references/step2-create-plan.md` / `step5-implement.md` / `step7-check-test.md` / `step8-code-review.md`, leaving each Step's section label, entry/skip/gate declarations, runtime cross-step variable inits, and a delegation pointer inline. Result: `SKILL.md` → ~236KB (~20KB under the cap), no runtime behavior change (structural refactor, patch bump)
+  - Cross-step runtime state kept inline (per the "keep runtime-referenced definitions inline" rule): Step 2's variable-init block + Adjust N by difficulty, Step 5's sub-step 2 delegation guidance + sub-step 9 `implementation_diff_paths` snapshot, Step 7's two concurrent-launch paragraphs (launch-state variables), and Step 8's iteration-loop skeleton + Deferred verification pass. Inbound cross-references to the moved labels resolve via the delegation pointers (which name each cross-referenced label verbatim and enumerate the remaining moved sub-steps by unambiguous shortened form); verified with `verify-skill-refs`
+  - This is subtask 1 of 3 from `.claude/plans/dev-workflow.shrink-skill-md.md`: this subtask clears the 256KB hard-rejection; the single-un-paginated-Read goal (< ~25k tokens per page) and the 40k-char Large-file warning are addressed by the follow-up subtasks
+  - canonical `skills/dev-workflow/` and the `dev-workflow-bundle` copy synced byte-identical (`SKILL.md` + 4 new `references/step*.md` + the `references/simplicity-self-audit.md` cross-reference-note update)
+
 ### dev-workflow v1.92.1 / dev-workflow-bundle v1.103.1
 
 - chore(dev-workflow): consolidate the duplicated session-file-identification procedure in `references/workability-retrospective.md` §1.3 (monthly-consolidation 2026-07-17)

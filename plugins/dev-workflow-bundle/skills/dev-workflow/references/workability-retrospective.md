@@ -16,13 +16,7 @@ This file is read whenever `workability_retrospective.enabled` is `true` at Step
 
 1. Re-validate `workability_retrospective.enabled`. If it is not `true` (default `false`, or a non-boolean that fell back to `false`), this file should not have been reached — exit Step 11.6 with the terminal summary (0 candidates, skipped).
 2. Resolve `backlog_dir`: the merged-config `workability_retrospective.backlog_dir` when present and a non-empty string, else the default `.claude/improvements`. Hold the resolved value; do **not** create the directory yet (creation is deferred to the **backlog** disposition branch in §4, so a run with no backlog-disposed candidate never touches the filesystem).
-3. **Session file identification** (required by §2) — identical to `references/self-retrospective.md` §1.4:
-   - Run `pwd` to get the current working directory.
-   - Encode the path: replace `/` and `.` with `-` (leading `-` kept). Example: `/Users/alice/projects/foo` → `-Users-alice-projects-foo`.
-   - Expand `~` to the literal `$HOME` value before constructing the Glob pattern.
-   - Use `Glob` with pattern `<$HOME>/.claude/projects/<encoded-path>/*.jsonl`. `Glob` returns newest-first; pick the first entry.
-   - The latest-modified heuristic can pick the wrong file when multiple Claude Code instances run against the same repo. Inform the user which file was selected so they can catch a mismatch at the §4 preview (the user can reject all candidates if the session is wrong).
-   - If the glob returns no matches, exit Step 11.6 with a warning ("No session jsonl found for this repo — Step 11.6 requires conversation history to scan.") and the terminal summary (0 candidates, skipped).
+3. **Session file identification** (required by §2) — follow `references/self-retrospective.md` §1.4's procedure verbatim (`pwd` → encode the path → tilde-expand to an absolute `Glob` pattern → pick the newest `.jsonl`, informing the user which file was selected), with two Step 11.6 substitutions: on no matches, exit Step 11.6 with a warning ("No session jsonl found for this repo — Step 11.6 requires conversation history to scan.") and the terminal summary (0 candidates, skipped); and at the §4 preview the user rejects all candidates (rather than `skip`ping) if the selected session is wrong.
 
 Every pre-flight exit emits the terminal summary as `skipped` (§6).
 

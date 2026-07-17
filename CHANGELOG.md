@@ -2,6 +2,12 @@
 
 ## 2026-07-17
 
+### dev-workflow v1.92.1 / dev-workflow-bundle v1.103.1
+
+- chore(dev-workflow): consolidate the duplicated session-file-identification procedure in `references/workability-retrospective.md` §1.3 (monthly-consolidation 2026-07-17)
+  - §1.3 already labeled its procedure "identical to `references/self-retrospective.md` §1.4" yet restated all six `pwd` → encode → `Glob` newest-`.jsonl` steps verbatim; replaced the restatement with a pointer to the canonical §1.4 procedure plus only the Step 11.6-specific deltas (the no-match exit wording and the §4-preview reject-all-candidates affordance), matching the sibling `references/rule-extraction-axis.md` §1 pointer-only pattern. −395 chars, no behavior change (G2b monthly consolidation)
+  - canonical `skills/dev-workflow/` and the `dev-workflow-bundle` copy synced byte-identical (`references/workability-retrospective.md`)
+
 ### dev-workflow v1.92.0 / dev-workflow-bundle v1.103.0
 
 - feat(dev-workflow): defer Step 8 code-review verification to a single loop-exit pass

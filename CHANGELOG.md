@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-07-17
+
+### rules-review v1.6.0 / dev-workflow-bundle v1.102.0
+
+- feat(rules-review): add optional `Files:` scope argument
+  - Narrows the reviewed changed-file set to a caller-specified subset (intersection of the diff's changed files and the listed paths); an empty intersection folds into the existing `No changed files` early-exit, and a `Files:`-scoped review adds a reviewer-prompt note to flag suspected rule-relevant ripple to out-of-scope files. Backward-compatible — an absent/invalid `Files:` reviews all changed files as before. This is the scoping mechanism `dev-workflow` will use to avoid re-scanning the full base-commit diff on review-finding re-runs (follow-up subtask)
+
 ## 2026-07-16
 
 ### ask-peer v2.4.6 / dev-workflow-bundle v1.101.1

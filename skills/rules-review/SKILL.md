@@ -18,12 +18,14 @@ Check code changes for compliance with `.claude/rules/` rule files.
 
 An optional `Model:` value — one of the model ids the current `Agent` tool's `model` parameter accepts (`sonnet` / `opus` / `haiku` / `fable` as of this writing; check the tool's live schema loaded in the current session rather than this fixed list, since Anthropic adds new model families over time) — may also be passed as a natural-language argument — an independent optional field (not part of a fixed-arity mode gate). When present and valid it is applied as the `model` parameter on each reviewer `Agent` dispatch in §5 (a caller such as `dev-workflow` uses this to run the review on a cheaper model). When absent or invalid, the reviewer `Agent` inherits the session model (backward-compatible default). `Model:` is **only effective on the Claude Code `Agent`-dispatch path**; on the inline / Codex fallback path no `Agent` is spawned, so the value is moot (the executing agent's own model governs).
 
+An optional `Files:` value — a comma- or newline-separated list of repo-relative file paths — may likewise be passed as a natural-language argument, an **independent optional field** (not part of a fixed-arity mode gate; same standing as `Model:`). When present, the changed-file set (§ 1. Prepare) is narrowed to the intersection of the diff's changed files and this list, so the review covers only those files; when absent or invalid, all changed files are reviewed (the backward-compatible default). A caller such as `dev-workflow` uses this to scope a re-check to just the files a review-finding fix touched, rather than re-scanning the full base-commit diff. When the intersection is empty (none of the listed paths changed since `<base-commit>`), the § 1. Prepare `No changed files` early-exit fires (a loud `no-issues`), so an empty scope never silently passes.
+
 ## Processing Flow
 
 ### 1. Prepare
 
-1. Parse `--base-commit <sha>` from `$ARGUMENTS`. If not provided, use `git rev-parse HEAD~1`. Also parse the optional `Model:` value from `$ARGUMENTS` (see § Usage); hold it for §5's reviewer `Agent` dispatch. Absent or invalid → no model override (inherit)
-2. Get changed files: `git diff --name-only <base-commit>`
+1. Parse `--base-commit <sha>` from `$ARGUMENTS`. If not provided, use `git rev-parse HEAD~1`. Also parse the optional `Model:` value from `$ARGUMENTS` (see § Usage); hold it for §5's reviewer `Agent` dispatch. Absent or invalid → no model override (inherit). Also parse the optional `Files:` value from `$ARGUMENTS` (see § Usage); hold it for step 2's changed-file narrowing. Absent or invalid → no narrowing (review all changed files)
+2. Get changed files: `git diff --name-only <base-commit>`. When `Files:` was provided (step 1's `Files:` parse), narrow this set to the intersection of it and the parsed paths (repo-relative match) — a listed path that did not change since `<base-commit>` simply drops out. When `Files:` was absent or invalid, keep the full changed-file set (backward-compatible). All downstream steps (rule matching, grouping, per-group diff capture) operate on this possibly-narrowed set
 3. If no changed files, output `No changed files` as the final prose result, then emit the verdict per `## Return contract` and end the processing flow (no further processing steps)
 
 ### 2. Collect Rules
@@ -71,6 +73,8 @@ Host-aware dispatch:
 Detect availability by inspecting the current tool surface. Do not attempt speculative tool calls just to probe availability. Do not substitute `claude -p`, `codex`, or other external CLIs; the inline path is the defined fallback. Collect results identically in all paths.
 
 **No stall after dispatch**: once the reviewer `Agent`s are launched (Claude Code path) or the subagent / delegation mechanism is invoked (Codex path), do not end the response with a status-only message such as "dispatched — will report when complete". Continue to § 6. Aggregate Results as soon as the dispatched reviewers' results are available in the same flow; a dispatch is not itself a stopping point.
+
+**Scoped re-check note (conditional on `Files:`)**: when `Files:` narrowed the changed-file set (§ 1. Prepare), append this sentence at the end of the reviewer prompt's `**Scope**` paragraph below — `This review is scoped to a caller-specified subset of the changed files. If you suspect a change in these files has a rule-relevant ripple effect on files outside this subset, raise it as a finding.` Omit it entirely when `Files:` was absent (full-scope review — the prompt is unchanged).
 
 Each reviewer (dispatched or inline) receives the following prompt:
 

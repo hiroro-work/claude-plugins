@@ -2,6 +2,12 @@
 
 ## 2026-07-17
 
+### dev-workflow v1.92.0 / dev-workflow-bundle v1.103.0
+
+- feat(dev-workflow): defer Step 8 code-review verification to a single loop-exit pass
+  - Step 8's code-review loop no longer re-runs Step 7 (Check / Test) + Step 7.5 (Rules Compliance Review) after every fix iteration. Instead each iteration's fixed files accumulate into a new `step8_fix_files` cross-step variable, and a single loop-exit "Deferred verification (Step 8 fix aggregate)" pass runs check/test once (when any fix landed) plus a `Files:`-scoped `rules-review` over just those files (the rules-review gate is skipped on Simple tier, matching Step 7.5's own difficulty-skip; the check/test gate always runs). Both Step 7 concurrent background launches (rules-review, code review) become initial-pass-only, and the previous per-iteration "re-run pass" machinery is removed. This wires up the `Files:` scope argument added to `rules-review` in v1.6.0
+  - **Behavior change / tradeoff**: the "Always re-run Step 7/Step 7.5 — no exceptions" green-tree invariant is intentionally relaxed — a Step 8 fix's breakage is now caught at loop exit rather than between iterations (bounded by the loop-exit check/test 3-retry loop + the Step 10 commit gate). No config flag; applies to every run
+
 ### rules-review v1.6.0 / dev-workflow-bundle v1.102.0
 
 - feat(rules-review): add optional `Files:` scope argument

@@ -1,6 +1,8 @@
 ---
 reviewer: "ask-peer"
-review_iterations: 2
+review_iterations:
+  plan: 1
+  code: 2
 check_commands:
   - "jq empty .claude-plugin/marketplace.json plugins/*/.claude-plugin/plugin.json"
   - "! git ls-files --others --exclude-standard 'skills/**/*.stdout' 'skills/**/*.stderr' 'plugins/dev-workflow-bundle/skills/**/*.stdout' 'plugins/dev-workflow-bundle/skills/**/*.stderr' | grep -q ."
@@ -21,4 +23,5 @@ workability_retrospective:
 polish_prose: true
 confirm_remaining_steps: true
 plan_review_gate: "visual"
+commit_review_gate: "crit"
 ---

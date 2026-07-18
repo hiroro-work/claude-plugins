@@ -17,7 +17,7 @@ Emit each reminder whose condition holds, in the resolved `language`, in the ord
 
 The reminder is omitted when `difficulty_skipped_steps` is empty (Moderate / Complex tasks, or `-i`-skipped Adjust N runs — see the Step 2-entry init). The step names (`Step 6 Tidy` / `Step 6.5 Polish Prose` / `Step 7.5 Rules Compliance Review`) stay verbatim regardless of `language`. Trivial and Simple skip the same three steps (see Step 2's Adjust N by difficulty) — the example above applies to both, substituting the assessed tier.
 
-**Fast-mode-skip reminder** (paired with the difficulty-skip reminder above, per the warning-string differentiation rule — a separate ledger keeps a fast-mode-caused skip from being misread as a difficulty-driven one): when `fast_mode_skipped_steps` (initialized at Step 2 entry, populated by `--fast`'s N-forcing and Step 6.5-only skip paragraphs) is non-empty, surface a line in the resolved `language` naming the steps `--fast` skipped:
+**Fast-mode-skip reminder** (paired with the difficulty-skip reminder above, per the warning-string differentiation rule — a separate ledger keeps a fast-mode-caused skip from being misread as a difficulty-driven one): when `fast_mode_skipped_steps` (initialized at Step 2 entry, populated by the run's `--fast` skip/cap sites — Step 2's N-forcing / Step 6.5-only skip, plus the Step 7.5 and Step 8 deferred 1-pass caps) is non-empty, surface a line in the resolved `language` naming the steps `--fast` skipped:
 
 - `language: ja`: `fast モードにより <steps> を skip しました` — 例: `fast モードにより Step 3 Plan Review / Step 6.5 Polish Prose を skip しました`
 - `language: en`: `Skipped <steps> per fast mode` — e.g. `Skipped Step 3 Plan Review / Step 6.5 Polish Prose per fast mode`

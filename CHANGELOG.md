@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-07-18
+
+### dev-workflow v1.92.3 / dev-workflow-bundle v1.103.3
+
+- refactor(dev-workflow): extract the remaining Step procedure bodies and the Configuration per-key detail out of `SKILL.md` into `references/*.md` (subtask 2 of 4 from `.claude/plans/dev-workflow.shrink-skill-md.md`)
+  - Verbatim-extracted the procedure bodies of Step 1 (Load Settings sub-steps 1/5/8/9), Step 3 (Plan Review per-iteration procedure), Step 4 (Finalize Plan sub-step 2 presentation body), Step 6 (Tidy sub-steps 1–4), Step 6.5 (Polish Prose sub-steps 1–4), Step 7.5 (Rules Compliance sub-steps 1–3 + the `--fast` 1-pass cap), Step 9 (Completion Hooks sub-steps 1–4), Step 11 (Update Rules sub-steps 1/2/5), and Completion (the derived-artifact cleanup + the eight reminder render bodies) into new `references/step1-load-settings.md` / `step3-plan-review.md` / `step4-finalize-plan.md` / `step6-tidy.md` / `step6.5-polish-prose.md` / `step7.5-rules-compliance.md` / `step9-completion-hooks.md` / `completion.md` (Step 11 extended the existing `references/update-rules.md`); moved the Configuration per-key detail into a new `references/configuration.md`, leaving one-line bold-label summary bullets inline as the index. Result: `SKILL.md` → ~169KB (from ~242KB); no runtime behavior change (structural refactor, patch bump)
+  - Kept inline per the "keep runtime-referenced definitions inline" rule: every USER APPROVAL GATE declaration, closed list, and cross-step runtime variable / contract — Step 1's reviewer-family classification + `bundle_skills_unavailable` init + N_plan/N_code resolution + phase-registration list, Step 4's four-bucket response closed list + Trivial re-activation runtime, Step 6's Cross-layer review handoff ledger, Step 7.5's persistent-violations gate declaration + the `code_review_stale` / `fast_mode_skipped_steps` contract note, Step 11's confirm-remaining-steps gate + `rule-extraction-active` gate + state-variable contract, Completion's partition paragraph + subtask-resume routing + execution-time deferral gate, and the Configuration `Agent` tool-usage bullet
+  - Cross-references to relocated content updated (Step 8's Deferred-verification reuse pointer → `references/step7.5-rules-compliance.md`; the Configuration Merge-strategy summary → `references/step1-load-settings.md`; the `Agent`-bullet back-reference inside `references/configuration.md`); verified with `verify-skill-refs` (zero cross-reference violations)
+  - Realistic floor: this subtask's enumerated scope floors `SKILL.md` at ~169KB because Step 2 / 5 / 7 / 8, the No-Stall Principle, and Prerequisites stay inline (out of scope for subtask 2); the parent plan's 55KB / 40KB targets require a further subtask covering those — recorded in `.claude/plans/dev-workflow.shrink-skill-md.md`
+  - canonical `skills/dev-workflow/` and the `dev-workflow-bundle` copy synced byte-identical
+
 ## 2026-07-17
 
 ### dev-workflow v1.92.2 / dev-workflow-bundle v1.103.2

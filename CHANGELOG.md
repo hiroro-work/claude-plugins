@@ -2,6 +2,14 @@
 
 ## 2026-07-19
 
+### dev-workflow v1.93.0 / dev-workflow-bundle v1.104.0
+
+- feat(dev-workflow): add the incremental-depth (walking-skeleton) decomposition axis to Step 1.5's `references/task-decomposition.md` § B. Normal sub-mode
+  - New decompose signal: for a new feature whose minimal end-to-end happy path can be verified on its own, propose subtask 1 = a walking skeleton (happy path only, hardcoding / stubs allowed but wired for real so the E2E passes) and the rest = fleshing-out subtasks (validation → error handling → edge cases → polish), each carrying its own verification path in `verification_hint`
+  - Unlike the existing axes, which *recognize* a split line already present in the request, this axis *manufactures* a split line along the depth dimension as a proposal strategy; a discriminator resolves the overlap with the primary distinct-verification-path signal (pre-existing line → first-signal label; manufactured line → `incremental-depth` label, with pre-existing recognition taking precedence in the judgment order), and the skeleton subtask records which parts are stubbed so reviewers do not re-raise known stubs
+  - Coordinated 3-site sweep in one diff: (i) the § B.1 signal list, (ii) the precedence paragraph (both the "subtask too small" veto-override enumeration and the "Multi-axis disagreement default" enumeration), (iii) a skeleton→fleshing-out example under B.3.c; the axis stays subordinate to the absolute atomicity veto by its own "must pass E2E through real wiring" definition
+  - canonical `skills/dev-workflow/` and the `dev-workflow-bundle` copy synced byte-identical
+
 ### dev-workflow v1.92.5 / dev-workflow-bundle v1.103.5
 
 - refactor(dev-workflow): semantically compress the remaining out-of-scope `SKILL.md` sections (Step 1 / 4 / 10 / 11 / 11.5 / 11.6 / Configuration / Completion / Workflow artifacts) under the same inline-retention discipline as subtask 3 (subtask 5 of 5 from `.claude/plans/dev-workflow.shrink-skill-md.md`)

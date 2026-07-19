@@ -59,12 +59,13 @@ When a state file is in play, surface parent progress with a single top-level pr
      - Cross-layer work where earlier layers are shippable standalone (e.g. data model → admin page → user-facing feature)
      - Large refactors that benefit from staged rollout
      - **Upper-design-document input axis**: the task input itself is an **upper-level design document that explicitly enumerates independent work units** (a parent plan listing independently-mergeable stages, a handoff document with multiple subtasks already linked via `depends_on`, or any document whose structure already declares the boundaries between independently deliverable units). When the input document has already authored the split boundaries, decompose into the units the document defines rather than re-deriving the split — treat that declaration as a decompose signal even when the distinct-verification-path signal is not separately visible
+     - **Incremental-depth axis (walking skeleton)**: the task is a **new feature whose minimal end-to-end (E2E) happy path can be verified on its own**. Propose subtask 1 = a **walking skeleton** (happy path only; hardcoding / stubbing allowed, but wired for real so the E2E passes) and the rest = fleshing-out subtasks (validation → error handling → edge cases → performance / polish), each carrying its own verification path (an error-case test, etc.) in `verification_hint`. **This axis differs in kind from the signals above**: the others *recognize* a split line already present in the request, whereas this one *manufactures* a split line along the depth dimension as a proposal strategy. Once the line is drawn each fleshing-out subtask satisfies the primary distinct-verification-path signal, so a discriminator resolves the overlap: label the decompose rationale (step 1's one-line chat message) with the **first (distinct verification path) signal when the split line pre-exists in the request** and with **`incremental-depth` when this axis manufactured the line** — recognizing a pre-existing line takes precedence in the judgment order. Instruct the skeleton subtask to record in its `description` / `verification_hint` **which parts were left hardcoded / stubbed and which fleshing-out subtask resolves each** — Step 3 (Plan Review) / Step 8 (Code Review) reviewers receive the subtask scope in their payload, so a recorded stub is not re-raised as a finding. An atomicity-breaking split can never be a valid skeleton (a skeleton must pass E2E through real wiring), so this axis stays subordinate to the atomicity veto by its own definition
    - **Do NOT decompose (vetoes)**:
      - Single-concern work with one verification path (typo, config tweak, obvious bug fix with an obvious solution)
      - Changes where splitting would break atomicity (e.g. a cross-caller rename must land as one commit to keep the tree compiling)
      - Subtasks so small that per-subtask PR / review overhead would exceed the benefit
 
-   **Precedence when signals conflict**: the primary signal (distinct verification paths) overrides all vetoes — a truly split verification surface is evidence that the atomicity / overhead concern is mis-framed. The workproduct-independence, dead-on-arrival, and upper-design-document input axes override the "subtask too small" overhead veto — independent shippable PRs carry their own review-load reduction that justifies the per-subtask overhead. The atomicity veto (a split that breaks the tree mid-flight) remains absolute and is not overridden by these axes (an atomicity-breaking split has no independent workproduct unit by definition). Otherwise vetoes override the remaining non-primary positive signals (and-list, cross-layer, staged refactor). **Multi-axis disagreement default**: when the primary signal says "single verification path" but the workproduct-independence, dead-on-arrival, or upper-design-document input axis says "yes" (or vice versa), err on the decompose-favoring side per the "When signals are mixed" rule above — auto-merge into one task only when the primary signal AND every other axis all agree "no decompose".
+   **Precedence when signals conflict**: the primary signal (distinct verification paths) overrides all vetoes — a truly split verification surface is evidence that the atomicity / overhead concern is mis-framed. The workproduct-independence, dead-on-arrival, upper-design-document input, and incremental-depth axes override the "subtask too small" overhead veto — independent shippable PRs carry their own review-load reduction that justifies the per-subtask overhead. The atomicity veto (a split that breaks the tree mid-flight) remains absolute and is not overridden by these axes (an atomicity-breaking split has no independent workproduct unit by definition). Otherwise vetoes override the remaining non-primary positive signals (and-list, cross-layer, staged refactor). **Multi-axis disagreement default**: when the primary signal says "single verification path" but the workproduct-independence, dead-on-arrival, upper-design-document input, or incremental-depth axis says "yes" (or vice versa), err on the decompose-favoring side per the "When signals are mixed" rule above — auto-merge into one task only when the primary signal AND every other axis all agree "no decompose".
 2. **If "do NOT decompose"**: mark `Step 1.5` as `completed`, set the "effective task" to the original request, and proceed to Step 2 without creating a state file
 3. **If "decompose"**:
    a. Draft a subtask list conforming to the "State file schema" above. `verification_hint` describes how completion will be observed (e.g. "migration runs clean", "new auth spec passes", "UI login → logout works end-to-end"). Keep each subtask small enough to ship as a single PR
@@ -82,6 +83,21 @@ When a state file is in play, surface parent progress with a single top-level pr
       ...
 
       Proceed? (yes / adjust / no = run as one task)
+      ```
+
+      For the **incremental-depth axis**, subtask 1 is the skeleton and each later subtask carries its own error- / edge-case verification, e.g.:
+
+      ```text
+      Proposed breakdown into 3 subtasks:
+
+      1. Skeleton: end-to-end happy path (hardcoded token, no validation)
+         Verification: login → dashboard works end-to-end in the browser
+      2. Real auth + input validation
+         Verification: invalid-credential and malformed-input cases rejected with the right errors
+         (depends_on: [1])
+      3. Session expiry + edge cases
+         Verification: expired-session redirect + concurrent-login edge cases pass
+         (depends_on: [2])
       ```
 
       The `verification_hint` is shown as **advisory context** — it helps the user sanity-check the split, but a `yes` only locks in subtask boundaries, order, `depends_on`, and purposes. Verification hints remain AI-authored draft and may be refined in Step 2, consistent with Step 2's Simplicity self-audit which treats `verification_hint` as draft within otherwise-approved state files.

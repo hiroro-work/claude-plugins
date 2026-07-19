@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-07-19
+
+### dev-workflow v1.92.5 / dev-workflow-bundle v1.103.5
+
+- refactor(dev-workflow): semantically compress the remaining out-of-scope `SKILL.md` sections (Step 1 / 4 / 10 / 11 / 11.5 / 11.6 / Configuration / Completion / Workflow artifacts) under the same inline-retention discipline as subtask 3 (subtask 5 of 5 from `.claude/plans/dev-workflow.shrink-skill-md.md`)
+  - Moved still-inline **procedure bodies** into the corresponding `references/*.md` while keeping every **runtime-referenced definition inline** (variable inits/lifecycles, USER-GATE declarations, gate closed lists, cross-step re-entry pointers, stable anchors): **Step 4**'s sub-step 1 (Step 3-completion verification), sub-step 1.5 (Prose-language self-audit), and sub-step 3's rewrite-approach Trivial-re-activation runtime → `references/step4-finalize-plan.md`; **Step 1**'s sub-step 3 reviewer-availability probe + sub-step 7 Tool-availability/burst registration mechanics → `references/step1-load-settings.md` (the **Phase-boundary self-audit** operative sentences + the **Task-handle resolution convention** + the **Reviewer-family classification** + the `bundle_skills_unavailable` ledger init/append stay inline); **Completion**'s two-stage extract-rules-output partition mechanics → `references/completion.md` § Partition (the `uncommitted_*` set names + single-scan instruction stay inline)
+  - Tightened in place (no delegation — closed-list / USER-GATE / always-active contracts that must stay inline): the Configuration `Agent`-tool-usage bullet (3 fixed dispatch sites + 2 conditional delegations preserved), the Merge-strategy Scalar bullet, Step 11's confirm-remaining-steps skip branch + `rule-extraction-active` gate rationale (the `compaction_applied_count` / `below_threshold_failed_files` establishment kept inline per the "keep runtime-referenced definitions inline" rule — a peer-review-flagged correction), Step 11.5 / 11.6 dispatch-once coordination, Step 10's unexpected-branch + post-hook-attribution prose, and the Workflow-artifacts exclusion paragraph
+  - Result: `SKILL.md` → 119,422 chars (from 130,074 — an 8.2% reduction). No runtime behavior change (structural refactor + prose compression, patch bump)
+  - **Parent-goal status — the `<100KB` subagent-full-read target (goal 2) is NOT reached and requires a re-architecture**: under the inline-retention discipline the achievable floor is well above 100KB (maximal safe compression reaches only ~114–116KB) — subtasks 1–3 already extracted the heavy procedure bodies, so what remains inline is predominantly runtime contracts, USER-GATE closed lists, and always-active behavioral rules (the No-Stall Principle) that must stay inline. Crossing the ~25k-token (~100KB) subagent single-Read threshold requires the same multi-skill re-architecture the 40k Large-file-warning goal needs (splitting `SKILL.md` into multiple skills), which is out of this subtask's scope — surfaced at this run's Completion deferral gate as a candidate re-architecture subtask rather than left in untracked prose
+  - canonical `skills/dev-workflow/` and the `dev-workflow-bundle` copy synced byte-identical
+
 ## 2026-07-18
 
 ### dev-workflow v1.92.4 / dev-workflow-bundle v1.103.4

@@ -8,13 +8,13 @@ Reference loaded by `dev-workflow-triage` during the "Judge each Finding" step (
 
 - [ ] The problem the Finding describes **reproduces in the current file state** — read `skills/<target>/SKILL.md` and `skills/<target>/references/*.md` and confirm the ambiguity / missing-branch / wrong-default / rules-conflict is still present.
 - [ ] The `Suggested fix direction` translates to a **local edit** — a paragraph rewrite, a new clause inside an existing section, an explicit step addition, a rules-reference insertion. It should be expressible as one `Edit` tool call (one `old_string` → `new_string`).
-- [ ] The edit target sits inside the target's canonical directory — `skills/<target>/` for the 5 bundle skills, `.claude/skills/dev-workflow-triage/` for the self target (SKILL.md or `references/*.md` in either case). Never a rules file, never a different skill, never outside those directories.
+- [ ] The edit target sits inside the target's canonical directory — `skills/<target>/` for the 6 bundle skills, `.claude/skills/dev-workflow-triage/` for the self target (SKILL.md or `references/*.md` in either case). Never a rules file, never a different skill, never outside those directories.
 - [ ] The fix doesn't trigger a cascade — i.e. doesn't require simultaneous edits to sibling files or cross-skill coordination to remain consistent.
 
 ### Reject when **any** is true
 
 1. **Already addressed**: reading the current file shows the Finding's concern is already handled (a later commit after the retrospective was generated covered it).
-2. **Out-of-scope target mentioned in description**: `Target skill` is within the triage scope (the 5 bundle skills + `dev-workflow-triage`), but the `Description` body actually complains about a different skill's behavior (in or out of scope). Not the triage target's fault to fix.
+2. **Out-of-scope target mentioned in description**: `Target skill` is within the triage scope (the 6 bundle skills + `dev-workflow-triage`), but the `Description` body actually complains about a different skill's behavior (in or out of scope). Not the triage target's fault to fix.
 3. **Too abstract**: the `Suggested fix direction` doesn't point at a concrete edit ("improve the error handling", "make it clearer", "consider X better"). Without a concrete landing point, a single-pass Edit can't be responsibly planned.
 4. **Rules file required**: the only plausible fix is editing `.claude/rules/*.md`. Rules updates are owned by `extract-rules`. A `rules-conflict` Finding can still be accepted when the fix is *referencing* existing rules from the skill — only reject when the rules themselves need new content.
 5. **Large restructure**: the fix implies splitting a SKILL.md, introducing new section structure, reshuffling cross-skill responsibilities, or editing more than one file / creating new files. Not safe for a single-pass autonomous run.
@@ -36,7 +36,7 @@ Quick reference for per-case dispositions. SKILL.md's procedural prose is author
 | `Findings: N` trailer is **present** AND disagrees with `### Finding` count | Whole issue → `parse-error`; post comment; leave open |
 | `Findings: N` trailer is **absent** | Not a parse-error — `### Finding` heading count is canonical; proceed with normal triage |
 | Any of the 4 required fields missing in any Finding | Whole issue → `parse-error`; post comment; leave open |
-| `Target skill` outside the triage scope (the 5 bundle skills + `dev-workflow-triage`) | Whole issue → `parse-error`; post comment; leave open |
+| `Target skill` outside the triage scope (the 6 bundle skills + `dev-workflow-triage`) | Whole issue → `parse-error`; post comment; leave open |
 | `Category` outside the 5-value set (`ambiguity`/`missing-branch`/`wrong-default`/`rules-conflict`/`other`) | Whole issue → `parse-error`; post comment; leave open |
 | Description text names a skill other than the declared `Target skill` | Per-Finding `reject` (out-of-scope target in description) |
 | `marketplace.json` has no `dev-workflow` plugin entry (or file missing) at producer or consumer time | Treat the resolved version as `unknown`. Producer emits `**Producer version:** dev-workflow vunknown`; consumer's `producer_version == "unknown"` triggers Reject #7 stale-issue path on every Finding (still gated by the (i)+(ii) AND with doubt fall-through, so false rejects remain bounded) |

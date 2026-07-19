@@ -80,6 +80,6 @@ Mapping between the prose status token and the JSON `status` field:
 | `TEST_FAILED` | `drift` |
 | `EXECUTION_ERROR` | `error` |
 
-- `checked_count`: number of bundle member entries actually inspected (6 at the time of writing — `ask-peer`, `dev-workflow`, `extract-rules`, `rules-review`, `tidy`, `prose-polish`). If the list could not be loaded (`EXECUTION_ERROR` from Step 1), set this to `0`.
+- `checked_count`: number of bundle member entries actually inspected (7 at the time of writing — `ask-peer`, `dev-workflow`, `extract-rules`, `rules-review`, `tidy`, `prose-polish`, `mobpro`). If the list could not be loaded (`EXECUTION_ERROR` from Step 1), set this to `0`.
 - `drift_files[]`: drift / one-sided-presence entries, populated only for `status: "drift"`. Empty array for `ok` and `error`. The `path` value preserves the raw line as it appeared in `diff -rq` output so that downstream rendering does not need to re-derive it.
 - `reason`: required on `status: "error"`. Short, ≤ 80 characters. Examples: `marketplace.json missing`, `dev-workflow-bundle plugin entry absent`, `jq not in PATH`, `canonical missing: skills/ask-peer`.

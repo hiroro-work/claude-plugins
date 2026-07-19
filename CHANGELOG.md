@@ -2,6 +2,19 @@
 
 ## 2026-07-19
 
+### mobpro v1.0.0 / dev-workflow-bundle v1.105.0
+
+- feat(mobpro): add a new learning-oriented development-workflow skill and register it as a `dev-workflow-bundle` member (subtask 2 of 4 from `.claude/plans/dev-workflow.mobpro.md`)
+  - `mobpro` is a mob-programming-style workflow that runs the same quality gates as `dev-workflow` (plan review, checks/tests, rules-compliance review, code review, interactive commits, rule maintenance) by calling the same bundle sibling skills, while pausing at learning checkpoints so a junior engineer can follow what is being built and why; the AI always drives, the junior navigates (reads diffs, predicts findings, approves commits)
+  - This release is the **walking skeleton**: M1–M13 run once with built-in defaults (no config-file reading), the checkpoint reduced to a single "any questions?" form; the deeper learning gates (teach-back / prediction quiz / error-reading practice / configurable checkpoint tempo), config-file reading, the `commit_review_gate: crit` branch, session resume, and the full state-file lifecycle are deferred to follow-up subtasks
+  - Files: `skills/mobpro/{SKILL.md, README.md, references/configuration.md, references/inline-defs.md}`; the design's §5.10 dev-workflow inline-definition transcriptions (a)–(g) are collected in `references/inline-defs.md`, each with a `Keep in sync with dev-workflow SKILL.md § <section>` note. `mobpro` reads `dev-workflow`'s reference files as install-time siblings (`../dev-workflow/references/*.md`), verified for the installed-cache layout by a Step 0 smoke test — so it must be installed via the bundle
+  - Registration: `mobpro` plugin entry (`source: ./skills/mobpro`, `skills: ["./"]`, v1.0.0) + `dev-workflow-bundle` `skills` array / description / version bump; canonical `skills/mobpro/` and the `dev-workflow-bundle` copy synced byte-identical; governed bundle-member enumerations swept (`project.rules.md`, `dev-workflow-triage` triage-scope, `verify-bundle-sync` prose count)
+
+### dev-workflow v1.94.0 / dev-workflow-bundle v1.105.0
+
+- chore(dev-workflow): add `mobpro` to `references/self-retrospective.md`'s bundle-skill enumeration so `mobpro` improvement signals are in scope for the self-retrospective (all five sites — Purpose / Scope / keep-as-is skill names / Distribution-aware header / Target-skill-validation gate)
+  - canonical `skills/dev-workflow/` and the `dev-workflow-bundle` copy synced byte-identical
+
 ### dev-workflow v1.93.0 / dev-workflow-bundle v1.104.0
 
 - feat(dev-workflow): add the incremental-depth (walking-skeleton) decomposition axis to Step 1.5's `references/task-decomposition.md` § B. Normal sub-mode

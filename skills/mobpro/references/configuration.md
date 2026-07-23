@@ -17,9 +17,9 @@ error_reading_practice: true   # default: true  (non-boolean → true)
 ---
 ```
 
-- **`checkpoint`** — where the M6 learning checkpoint fires. `unit`: after each M6 implementation unit, plus the M5 teach-back. `subtask`: once after all M6 units complete, plus the M5 teach-back. `off`: no checkpoint, and M5 becomes a normal approval (no teach-back). Invalid value → `unit`. In every setting, a junior's "understood, go ahead" always skips an individual checkpoint. *(Skeleton: only the form (c) "any questions?" checkpoint is implemented; the `unit` / `subtask` / `off` dispatch and the teach-back arrive in a later subtask.)*
-- **`quiz`** — whether the (b) lightweight-quiz checkpoint form and the M9 pre-review prediction quiz are used. Default `true`; a non-boolean falls back to `true`. *(Skeleton: off — quiz arrives in a later subtask.)*
-- **`error_reading_practice`** — whether the junior reads the error first on the **first** M8 failure of a run before the AI fixes it. Default `true`; a non-boolean falls back to `true`. *(Skeleton: off — practice arrives in a later subtask.)*
+- **`checkpoint`** — where the M6 learning checkpoint fires. `unit`: after each M6 implementation unit, plus the M5 teach-back. `subtask`: once after all M6 units complete, plus the M5 teach-back. `off`: no checkpoint, and M5 becomes a normal approval (no teach-back). Invalid value → `unit`. In every setting, a junior's "understood, go ahead" always skips an individual checkpoint. *(Implemented; default `unit`.)*
+- **`quiz`** — whether the (b) lightweight-quiz checkpoint form and the M9 pre-review prediction quiz are used. Default `true`; a non-boolean falls back to `true`. *(Implemented; default `true`.)*
+- **`error_reading_practice`** — whether the junior reads the error first on the **first** M8 failure of a run before the AI fixes it. Default `true`; a non-boolean falls back to `true`. *(Implemented; default `true`.)*
 
 ## Fallback keys (read from dev-workflow config)
 

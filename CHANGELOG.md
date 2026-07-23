@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-07-23
+
+### mobpro v1.1.0 / dev-workflow-bundle v1.106.0
+
+- feat(mobpro): implement the learning gates on the M1–M13 walking skeleton (subtask 3 of 4 from `.claude/plans/dev-workflow.mobpro.md`)
+  - Adds the M5 teach-back (fires when `checkpoint` is not `off`), the M6 three-form checkpoint dispatch — (a) teach-back / (b) lightweight quiz (`AskUserQuestion`, dropped from the pool when `quiz: false`) / (c) open question — with `checkpoint` tempo control (`unit` / `subtask` / `off`) and least-recently-used form rotation, the M8 first-failure error-reading practice (`error_reading_practice: true`), and the M9 pre-review prediction quiz + result cross-check (`quiz: true`)
+  - Operational detail and the ja/en prompt pairs live in a new `skills/mobpro/references/learning-gates.md` (a mobpro-own reference, not a `dev-workflow` transcription); the SKILL.md M-steps carry each gate's firing condition and delegate the detail, and the explanation-length discipline (preview ≤ 6 lines / walkthrough 1–2 lines per file / finding 1–2 lines) is consolidated there as its single source of truth
+  - The three gate-driving keys (`checkpoint` / `quiz` / `error_reading_practice`) resolve to their built-in defaults (`unit` / `true` / `true`); config-file reading to override them is deferred to subtask 4, so the `off` / `false` / `subtask` branches are written but not config-reachable until then
+  - canonical `skills/mobpro/` and the `dev-workflow-bundle` copy synced byte-identical
+
 ## 2026-07-19
 
 ### mobpro v1.0.0 / dev-workflow-bundle v1.105.0

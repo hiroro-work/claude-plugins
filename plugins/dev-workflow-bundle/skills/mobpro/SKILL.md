@@ -8,7 +8,7 @@ allowed-tools: Agent, Read, Write, Edit, Glob, Grep, TaskCreate, TaskUpdate, Tas
 
 A learning-oriented development workflow. It runs the same quality gates as `dev-workflow` by calling the same `dev-workflow-bundle` sibling skills under the same conventions, but it re-shapes the flow around a junior engineer's understanding: the AI is always the driver and writes every edit, while the junior navigates — thinking about the approach, explaining the plan in their own words, reading diffs, predicting review findings, and judging commits. Quality is never traded for pedagogy: `mobpro` runs M4 and M7–M12 gates in full, with no difficulty-based skipping.
 
-> **Walking-skeleton status**: this is the M1–M13 skeleton. It runs one full pass with built-in defaults (no config-file reading), the checkpoint reduced to form (c) "any questions?", and the deeper learning gates (M5 teach-back, M9 quiz, M8 error-reading practice, the 3-form checkpoint dispatch) not yet implemented. Config-file reading, the M11 `commit_review_gate: crit` branch, M2 Resume sub-mode, and the full M13 state-file lifecycle arrive in later subtasks.
+> **Walking-skeleton status**: this is the M1–M13 skeleton. It runs one full pass with built-in defaults (no config-file reading). The learning gates — M5 teach-back, the 3-form M6 checkpoint dispatch, M8 error-reading practice, M9 prediction quiz — are implemented and fire on their built-in defaults. Config-file reading (to override those defaults), the M11 `commit_review_gate: crit` branch, M2 Resume sub-mode, and the full M13 state-file lifecycle arrive in later subtasks.
 
 ## Usage
 
@@ -49,7 +49,7 @@ There is no `--init`, no `--fast`, no `--executor`, and no difficulty assessment
 | `workability-retrospective.md` | M12 (only when `workability_retrospective.enabled`) | Step 11.6-equivalent procedure |
 | `completion.md` | M13 | § Completion reminders render bodies + staging-artifact cleanup |
 
-**Constraint scope**: this "read only the table" rule binds the orchestrator (this SKILL.md) and covers **dev-workflow** files only — `mobpro` freely reads its **own** `references/` (`configuration.md`, `inline-defs.md`) as normal skill-internal reads. It does **not** bind reviewer subagents dispatched at M4 / M9 — a reviewer following `step3-plan-review.md`'s instructions to read `review-categories.md` / `simplicity-self-audit.md` is normal and out of scope.
+**Constraint scope**: this "read only the table" rule binds the orchestrator (this SKILL.md) and covers **dev-workflow** files only — `mobpro` freely reads its **own** `references/` (`configuration.md`, `inline-defs.md`, `learning-gates.md`) as normal skill-internal reads. It does **not** bind reviewer subagents dispatched at M4 / M9 — a reviewer following `step3-plan-review.md`'s instructions to read `review-categories.md` / `simplicity-self-audit.md` is normal and out of scope.
 
 **NEEDS-FALLBACK path**: if the sibling-relative read cannot resolve in a given install (the Step 0 smoke test returned NEEDS-FALLBACK), resolve `dev-workflow`'s source directory absolutely via `jq -r '(.plugins[] | select(.name == "dev-workflow") | .source)' <marketplace.json>` and read from there instead. (Skeleton records this path; the smoke test found the installed-cache layout READY, so the sibling-relative form is the primary path.)
 
@@ -71,12 +71,13 @@ There is no `--init`, no `--fast`, no `--executor`, and no difficulty assessment
 
 `mobpro`'s core discipline, the pedagogical counterpart to dev-workflow's `§ No-Stall Principle`. It is a two-sided rule: `mobpro` stops **only** at the two closed lists below, and nowhere else. It takes effect once M2 has settled the effective task (mirroring dev-workflow's No-Stall scoping "after Step 1.5 resolves the effective task") — so M1's reviewer-fallback prompt and M2's learning-goal / decomposition / leftover-picker dialogues precede the principle and are not listed here.
 
-**(1) Learning stops (closed list).** In this skeleton, the only deliberate learning-stop points are:
+**(1) Learning stops (closed list).** The deliberate learning-stop points are:
 
-- The M6 checkpoint in form (c) — an open "any questions?" opportunity after a unit's walkthrough.
+- The M5 teach-back (when `checkpoint` is not `off`).
+- The M6 checkpoint (when `checkpoint` is not `off`; firing position fixed by the `checkpoint` tempo setting, form chosen per [`references/learning-gates.md`](references/learning-gates.md) § A (checkpoint forms & dispatch)).
+- The M8 first-failure error-reading practice (when `error_reading_practice: true`).
+- The M9 pre-review prediction quiz and its result cross-check (when `quiz: true`).
 - A junior's question raised after an M6 / M11 walkthrough (respond, then continue; if no question comes, do not stop).
-
-(The M5 teach-back, the M8 error-reading practice, the M9 prediction quiz, and the 3-form checkpoint dispatch — teach-back / lightweight quiz / open question — arrive in a later subtask and will extend this list.)
 
 **(2) User gates (closed list — approval / judgment).** M5 plan approval; M8 check/test fail-stop (error-stop after 3 retries) and the two scope stops; M9 persistent-violations gate and unresolved-findings gate; M11 commit gates (commit-plan approval / per-commit accept / fold-or-defer / ambiguous-adjust); M12 gates (compaction approval / confirm-remaining-steps / rule-update commit / workability disposition); M13 deferral-exclusion gate and PR-URL prompt.
 
@@ -98,7 +99,7 @@ The full definition — the in-session-state files this workflow owns (plan docu
 
 ## M1 — Load settings
 
-1. **Skeleton** (no config-file reading — see § Configuration): resolve every key to its built-in default: `reviewer` → `ask-peer`; `review_iterations` → `3` per phase unless `-i` overrides; `interactive_commits` → `true`; `hooks.on_complete` → none (unset) — these two mirror dev-workflow's own defaults (`dev-workflow/SKILL.md` § Configuration) and are fixed here as built-in values rather than read from that file, per § Runtime reads' constraint scope, so sub-step 4's conditional omissions below are resolvable without reading it; `checkpoint` → treated as "form (c) only"; `quiz` / `error_reading_practice` → off in this skeleton; `language` → merged config → `~/.claude/settings.json` `language` → default `ja`.
+1. **Skeleton** (no config-file reading — see § Configuration): resolve every key to its built-in default: `reviewer` → `ask-peer`; `review_iterations` → `3` per phase unless `-i` overrides; `interactive_commits` → `true`; `hooks.on_complete` → none (unset) — these two mirror dev-workflow's own defaults (`dev-workflow/SKILL.md` § Configuration) and are fixed here as built-in values rather than read from that file, per § Runtime reads' constraint scope, so sub-step 4's conditional omissions below are resolvable without reading it; `checkpoint` → `unit`; `quiz` → `true`; `error_reading_practice` → `true` (they resolve to their built-in defaults here; config-file reading to override them is a later subtask — see the walking-skeleton status above); `language` → merged config → `~/.claude/settings.json` `language` → default `ja`.
 2. Read `../dev-workflow/references/prerequisites.md`. Probe the resolved reviewer with a one-word `ping`; on failure retry once; on persistent failure present that file's three-option fallback prompt (switch reviewer / self-review / pause at the gate). Initialize `bundle_skills_unavailable = []` (append discipline per that file).
 3. Resolve `N_plan` / `N_code`: `-i N` (positive integer) > `review_iterations` (scalar or `{plan, code}` map, same validation as dev-workflow) > default `3`. **No difficulty-based reduction** — every gate is a teaching surface.
 4. Register all phases with the Task tools (`TodoWrite` fallback where Task tools are unavailable) in one upfront burst: the M1–M13 rows + `M4-1 … M4-N_plan` + `M9-1 … M9-N_code`. Conditional omissions (exactly three): omit `M2` in Resume sub-mode; omit `M10` when `hooks.on_complete` is unset; omit `M11` when `interactive_commits` is false. `M12` is always one row (it branches internally on the 11.5 / 11.6 conditions).
@@ -137,14 +138,14 @@ For each iteration M4-1 … M4-N_plan, in order:
 ## M5 — Plan approval (teach-back gate — USER GATE)
 
 1. Present the full plan in chat (always chat; `plan_review_gate` is not adopted — see [`references/configuration.md`](references/configuration.md)).
-2. **Skeleton**: normal approval confirmation (the teach-back prompt arrives in a later subtask).
+2. **Teach-back** (when `checkpoint` is not `off`): ask the junior to summarize the plan in their own words — prompt and correction discipline in [`references/learning-gates.md`](references/learning-gates.md) § B (M5 teach-back). When `checkpoint: off`, skip the teach-back and present a normal approval confirmation only.
 3. Classify the reply semantically into three buckets: **accept** (→ implementation) / **adjust** (revise the plan → add one M4 iteration → re-review → re-enter M5) / **withdraw** (end the workflow). Interrogative / non-committal replies re-classify via a confirming question.
 4. Run a one-line read-back before applying any revise instruction (same discipline as dev-workflow Step 4's read-back).
 
 ## M6 — Implementation loop
 
 1. **Unit segmentation**: if the plan's Design is a numbered step list, each step is a unit; otherwise segment into 3–7 units and register them as implementation sub-rows (additions, not a replacement of the M6 row).
-2. Per unit: (a) **preview** ≤ 6 lines (what / why / which files) → (b) **AI edits** (main-thread; never delegate to a subagent — the junior must see the edit as it happens) → (c) **walkthrough**: 1–2 lines per changed file + one line for any design decision → (d) **checkpoint** in form (c) (skeleton).
+2. Per unit: (a) **preview** ≤ 6 lines (what / why / which files) → (b) **AI edits** (main-thread; never delegate to a subagent — the junior must see the edit as it happens) → (c) **walkthrough**: 1–2 lines per changed file + one line for any design decision → (d) **checkpoint** — timing (per the `checkpoint` tempo), form, and skip-behavior all per [`references/learning-gates.md`](references/learning-gates.md) § A (checkpoint forms & dispatch). Preview and walkthrough lengths follow [`references/learning-gates.md`](references/learning-gates.md) § E (explanation length discipline).
 3. Apply `custom_instructions` throughout. Per the § Workflow artifacts exclusion, treat `.claude/`-internal state files as excluded from every downstream changed-file enumeration.
 4. After all units land, record `implementation_diff_paths = git diff <base_commit> --name-only` (read by M11's Post-hook attribution check).
 
@@ -158,12 +159,12 @@ For each iteration M4-1 … M4-N_plan, in order:
 ## M8 — Check / test (quality gate, max 3 retries)
 
 1. Run `check_commands` in order; on all-pass, run `test_commands` in order (`Skill(run-tests)` etc.).
-2. **Skeleton**: `error_reading_practice` is off, so a failure is fixed immediately (the first-failure error-reading practice arrives in a later subtask). Fix → re-run, up to 3 retries; exceeding that reports and stops (error-stop).
+2. **On failure**: when `error_reading_practice: true` and this is the **first** check/test failure of the run, give the junior a chance to read the error before the AI fixes it (prompt + discipline, including the second-and-later-failure handling, in [`references/learning-gates.md`](references/learning-gates.md) § C (error-reading practice)). Fix → re-run, up to 3 retries; exceeding that reports and stops (error-stop).
 3. **Scope stops**: two step-internal USER GATES apply during `check_commands` (the only non-completing exits here) — the pre-execution scope-narrowing stop and the scope-drift stop. Read [`references/inline-defs.md`](references/inline-defs.md) § (c) and apply both.
 
 ## M9 — Rules + code review (quality gate)
 
-1. **Skeleton**: `quiz` is off, so no prediction quiz (it arrives in a later subtask).
+1. **Pre-review prediction quiz** (when `quiz: true`): before dispatching the reviews below, ask the junior once where findings might land, and cross-check against the actual results afterward (prompt + cross-check discipline in [`references/learning-gates.md`](references/learning-gates.md) § D (prediction quiz)).
 2. **Rules compliance**: call `Skill(rules-review) --base-commit <base_commit>`. Violations → fix → explain each fix in 1–2 lines. The 2nd-cycle procedure and the persistent-violations user gate follow `../dev-workflow/references/step7.5-rules-compliance.md`.
 3. **Code review** (M9-1 … M9-N_code): build the payload from `../dev-workflow/references/step8-code-review.md` § Sub-step 1 (the three review categories a/b/c — full rubric in `review-categories.md`, which the reviewer reads, as at M4 — untracked-file inclusion, `.claude/rules/` safety-net, continuation item) — payload definition only; iteration / stop discipline follows this procedure — and pass it to `Skill(<reviewer>)`. Judge → apply or reject-with-reason (files edited by an applied fix append to `m9_fix_files`) → explain each in 1–2 lines → no actionable findings marks the rest `completed`.
 4. **Unresolved-findings gate**: if actionable findings remain after N_code iterations, present them for a user decision (correspond / accept-and-continue / stop) — same shape as dev-workflow Step 8 sub-step 4.

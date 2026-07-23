@@ -140,7 +140,7 @@
       "description": "Development workflow bundle (includes peer + extract-rules + dev-workflow + rules-review + tidy + prose-polish + mobpro)",
       "source": "./plugins/dev-workflow-bundle",
       "skills": ["./skills/ask-peer", "./skills/dev-workflow", "./skills/extract-rules", "./skills/rules-review", "./skills/tidy", "./skills/prose-polish", "./skills/mobpro"],
-      "version": "1.105.0",
+      "version": "1.106.0",
       "author": {
         "name": "hiropon"
       },
@@ -151,7 +151,7 @@
       "description": "Learning-oriented development workflow (mob-programming style): runs the same quality gates as dev-workflow while pausing at learning checkpoints so a junior engineer can follow what is being built and why. The AI drives; the junior navigates.",
       "source": "./skills/mobpro",
       "skills": ["./"],
-      "version": "1.0.0",
+      "version": "1.1.0",
       "author": {
         "name": "hiropon"
       },

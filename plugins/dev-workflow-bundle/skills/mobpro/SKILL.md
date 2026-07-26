@@ -98,6 +98,10 @@ There is no `--init`, no `--fast`, no `--executor`, and no difficulty assessment
 
 The full definition — the in-session-state files this workflow owns (plan documents under `.claude/plans/`, decomposition state files, backlog files, the rule-extraction candidate file, and other staging artifacts under `.claude/`) and excludes structurally from every changed-file enumeration — is transcribed in [`references/inline-defs.md`](references/inline-defs.md) § (b) Workflow artifacts (`Keep in sync with dev-workflow SKILL.md § Workflow artifacts`). M6 / M7 / M9 / M11 apply that single shared exclusion when building any changed-file set. This heading is the stable anchor other M-steps reference as "§ Workflow artifacts".
 
+## Dispatch authorization
+
+This skill's procedure dispatches subagents, so invoking the skill **is** the request to use that mechanism: an ambient instruction allowing subagent dispatch only when the user asked for it — a **permission-shaped restriction** — is already satisfied by this invocation. Do not ask the user to re-confirm the dispatch, and do not silently substitute inline execution for a dispatch this procedure specifies. Only two things justify that substitution: **technical availability** (the dispatch tool is not present and callable on the current tool surface), and an **explicit contract term from the caller** bounding this skill to its own thread. A permission-shaped restriction is neither.
+
 ## M1 — Load settings
 
 1. **Resolve settings**: read [`references/configuration.md`](references/configuration.md) § Resolution procedure and follow it from top to bottom. Resolution must complete before sub-step 4's registration burst, whose conditional omissions read the resolved `hooks.on_complete` / `interactive_commits`.

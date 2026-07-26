@@ -59,7 +59,11 @@ marketplace.json の全プラグインについて:
 - 各 `SKILL.md` にYAMLフロントマターが存在すること
 - 各エージェント定義ファイルにYAMLフロントマターが存在すること
 
-### 5. スキル・エージェント動作確認
+### 5. bundle 横断ディレクティブの同一性
+
+`dev-workflow-bundle` の `skills` 配列の各メンバーの `SKILL.md` が `## Dispatch authorization` 節を持ち、その本文が全メンバーで byte-identical であること（`run-tests` Check 7 と同一項目。source of truth は `.claude/rules/project.rules.md` § プラグイン構造 の「**bundle 全メンバーに複製する横断ディレクティブは byte-identical を保ち、メンバー追加時に必ず同梱する**」bullet）。
+
+### 6. スキル・エージェント動作確認
 
 各プラグイン/スキルの機能が正常に動作することを確認。
 
@@ -116,6 +120,19 @@ jq . plugins/<plugin>/.claude-plugin/plugin.json > /dev/null
 ### Step 6: フロントマター存在確認
 
 各 `SKILL.md` と エージェントファイルの先頭が `---` で始まることを確認してください。
+
+### Step 6.5: bundle 横断ディレクティブの同一性確認
+
+`dev-workflow-bundle` の `skills` 配列を反復し、各メンバーの `SKILL.md` に `## Dispatch authorization` 見出しがあること、かつ節本文のハッシュが全メンバーで一致することを確認してください（検証項目 5）。欠落または分岐しているメンバーを報告します。
+
+```bash
+for e in $(jq -r '(.plugins[] | select(.name=="dev-workflow-bundle") | .skills[])' .claude-plugin/marketplace.json); do
+  n="${e#./skills/}"
+  # 前後の空行を trim してから比較する（run-tests Check 7 と同じ delimitation。
+  # trim しないと末尾空行だけの差分を文言分岐と誤判定する）
+  printf '%-14s %s\n' "$n" "$(awk '/^## Dispatch authorization$/{f=1;next} f&&/^## /{exit} f{print}' "skills/$n/SKILL.md" | sed -e '/./,$!d' | tail -r | sed -e '/./,$!d' | tail -r | md5 -q)"
+done
+```
 
 ### Step 7: スキル・エージェント動作テスト
 

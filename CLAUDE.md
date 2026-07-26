@@ -186,6 +186,8 @@ ln -s ../../../skills/<skill-b> plugins/<bundle-name>/skills/<skill-b>
 
 `skills` 配列と `plugins/<bundle-name>/skills/` 配下の symlink セットは **必ず一致** させること（`/verify-plugins` と `run-tests` が整合性を検証する）。
 
+`dev-workflow-bundle` にメンバーを追加する場合はもう 1 つ義務がある: 新メンバーの `SKILL.md` に横断ディレクティブ `## Dispatch authorization` を他メンバーと byte-identical に同梱すること（漏れると `/verify-plugins` と `run-tests` Check 7 が落ちる）。文言・配置の source of truth は `.claude/rules/project.rules.md` § プラグイン構造 の「**bundle 全メンバーに複製する横断ディレクティブは byte-identical を保ち、メンバー追加時に必ず同梱する**」bullet。
+
 ### wrapper 共通: 開発・テスト用シンボリックリンク作成
 
 ```bash

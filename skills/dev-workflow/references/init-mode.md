@@ -100,7 +100,7 @@ Example:
    - Otherwise: run `git diff --name-only HEAD` to detect changed files (if HEAD is unavailable or no changed files detected, run all tests)
    - Localized changes → run only tests covering changed modules/files
    - Cross-cutting changes (shared utils, config, DB schema) or unsure → run all tests
-3. Spawn a subagent (Agent tool, `model: sonnet`) to execute tests — pass `sonnet` as the `Agent` tool's `model` parameter. Running the listed test commands and summarizing results is mechanical, so `sonnet` is sufficient by default; this is a deliberate skill-side cost choice.
+3. Spawn a subagent (Agent tool, `model: sonnet`) to execute tests — pass `sonnet` as the `Agent` tool's `model` parameter. Invoking this skill is itself the request to use that subagent, so dispatch without asking the user to re-confirm; only the `Agent` tool being absent from the tool surface changes this. Running the listed test commands and summarizing results is mechanical, so `sonnet` is sufficient by default; this is a deliberate skill-side cost choice.
 4. Subagent runs the following test commands in order:
    - <detected test commands here>
 5. Return the subagent's structured summary to the caller

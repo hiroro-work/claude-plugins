@@ -38,6 +38,10 @@ Evaluate against the two mode selectors — the `File:` / `Files:` group and `Te
 
 This fixed mode gate (one selector group present → that mode; both → ambiguous; neither → incomplete) surfaces a conflicting or empty argument set as a loud error rather than silently picking a mode. On both early-return errors `mode` is `null` (no mode was selected); callers branch on `status == "error"` + `reason`.
 
+## Dispatch authorization
+
+This skill's procedure dispatches subagents, so invoking the skill **is** the request to use that mechanism: an ambient instruction allowing subagent dispatch only when the user asked for it — a **permission-shaped restriction** — is already satisfied by this invocation. Do not ask the user to re-confirm the dispatch, and do not silently substitute inline execution for a dispatch this procedure specifies. Only two things justify that substitution: **technical availability** (the dispatch tool is not present and callable on the current tool surface), and an **explicit contract term from the caller** bounding this skill to its own thread. A permission-shaped restriction is neither.
+
 ## Process
 
 ### Step 1 — Determine mode and parse inputs (main thread)
@@ -111,7 +115,7 @@ Dispatch a fresh subagent via the `Agent` tool (`subagent_type: general-purpose`
 > ```
 > ````
 
-**`Agent`-unavailable fallback**: detect availability by inspecting the current tool surface — do not attempt a speculative call to probe it. When the `Agent` tool is absent (e.g. this skill runs inside a nested subagent context where nested `Agent` is not surfaced), perform the refactor inline in the main thread once, constructing the same fenced JSON block defined above so Step 3 (b)'s parser handles both paths identically. The inline pass runs on the executing agent's own model (the `Model` value is moot with no `Agent` to spawn). Being invoked as a sub-skill via `Skill()` does **not** by itself trigger this path — decide by whether `Agent` is exposed and callable, not by invocation lineage.
+**`Agent`-unavailable fallback**: detect availability by inspecting the current tool surface — do not attempt a speculative call to probe it. When the `Agent` tool is absent (e.g. this skill runs inside a nested subagent context where nested `Agent` is not surfaced), perform the refactor inline in the main thread once, constructing the same fenced JSON block defined above so Step 3 (b)'s parser handles both paths identically. The inline pass runs on the executing agent's own model (the `Model` value is moot with no `Agent` to spawn). Being invoked as a sub-skill via `Skill()` does **not** by itself trigger this path, and neither does a permission-shaped restriction (see `§ Dispatch authorization` — intentionally restated here so the rule fires at the decision moment) — decide by whether `Agent` is exposed and callable, not by invocation lineage.
 
 **Dispatch failure**: if the `Agent` dispatch itself errors, times out, or returns an empty response, emit `{"status": "error", ..., "reason": "dispatch error"}` per `## Return contract` and stop — caught before the parse step, and distinct from a returned-but-unparseable verdict (Step 3 (b) sub-case 1). This is **not** a trigger for the inline fallback above; that path is pre-selected only when `Agent` is unavailable before any dispatch attempt.
 

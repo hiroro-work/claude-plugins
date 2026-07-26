@@ -41,7 +41,7 @@ The **dispatcher is the first step, in execution order Step 11 → Step 11.5 →
 - **Reference files**: the absolute path of this file, plus — **for each active axis** — that axis's reference (`references/rule-extraction-axis.md` and / or `references/self-retrospective.md` and / or `references/workability-retrospective.md`), so the subagent reads each active axis's authoritative spec.
 - **Repo root**: absolute `pwd` (for project-local identifier recognition during sanitization, and — for the workability axis — linter-config detection).
 - **Language**: the language code resolved at `SKILL.md` Step 1 (e.g. `ja`, `en`). Unknown codes pass through — the subagent produces best-effort output.
-- **Model**: dispatch with the `Agent` tool (`subagent_type: general-purpose`), plus `model: <subagent_model>` when the Step 2-resolved `subagent_model` is a model id (omit `model` when it is `inherit`, the backward-compatible default).
+- **Model**: dispatch with the `Agent` tool (`subagent_type: general-purpose`) — dispatch without asking the user to re-confirm; per the calling skill's `§ Dispatch authorization`, a permission-shaped restriction does not justify substituting inline execution — plus `model: <subagent_model>` when the Step 2-resolved `subagent_model` is a model id (omit `model` when it is `inherit`, the backward-compatible default).
 
 ## Subagent instructions
 

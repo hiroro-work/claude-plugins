@@ -2,6 +2,13 @@
 
 ## 2026-07-26
 
+### mobpro v1.3.1 / dev-workflow-bundle v1.108.1
+
+- refactor(mobpro): trim design rationale out of `references/configuration.md`, which M1 reads on every run
+  - Removed: the two-group opening paragraph, the per-key reasoning in § Not-adopted keys, the `commit_review_gate` asymmetry section, and the closed list's completeness argument. § Not-adopted keys now gives each key's resolved behavior in one line, while the key table and § Resolution procedure are untouched, so M1 still resolves entirely from this file. 7,536 → 6,185 chars
+  - `README.md`'s **Deliberately ignored** paragraph picks up the reasoning a user would actually ask for — chiefly why `commit_review_gate: crit` is honored while `plan_review_gate` is not: `crit` swaps only the diff-*viewing* surface, whereas `plan_review_gate` would move the *approval* surface out of chat, and the plan approval is where the M5 teach-back happens. A new `references/config-rationale.md` was considered and rejected — it would ship to every consuming project as a third site to keep in sync
+  - § Fallback keys' sync note now also states the membership criterion (a key belongs there when it governs a step `mobpro` also runs), so "closed list of 14 is complete" stays checkable as `dev-workflow` gains keys. `SKILL.md` needed no edit; canonical and bundle copy synced byte-identical
+
 ### ask-peer v2.5.0 / dev-workflow v1.95.0 / extract-rules v1.23.0 / mobpro v1.3.0 / prose-polish v1.7.0 / rules-review v1.7.0 / tidy v1.5.0 / dev-workflow-bundle v1.108.0
 
 - feat(bundle): declare that invoking a skill authorizes its subagent dispatches, so a permission-shaped restriction in the surrounding session can no longer silently degrade a dispatch into inline execution

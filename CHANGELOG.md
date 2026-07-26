@@ -2,6 +2,15 @@
 
 ## 2026-07-26
 
+### mobpro v1.3.2 / dev-workflow-bundle v1.108.2
+
+- refactor(mobpro): stop explaining `run-tests` in the runtime path — the missing-test-skill branch never needed to know which skill is absent
+  - **User-visible**: M8's missing-test-skill note no longer points at `dev-workflow --init` / `run-tests`. It asks the user to point `test_commands` at a skill that exists in the project and sends them to `README.md` § Configuration, which now carries the `--init` instructions (both `language: ja` and `language: en` forms)
+  - `references/configuration.md`'s `test_commands` / `run-tests` paragraph and `SKILL.md` M8's matching explanation are both gone — neither changed M8's decision, which is the same whichever skill is absent. `test_commands`' **Default** column entry stays; that value is read at resolution time
+  - M8 sub-step 1 now states the `test_commands` entry shape (`each entry must be of the form Skill(<name>)`) at the point it runs, mirroring `dev-workflow` § Step 7 — without it, a project setting a shell command there diverges from `dev-workflow` silently
+  - Also dropped from `references/configuration.md`: the `runs on defaults alone` line, and § Fallback keys' provenance sentence — replaced by a shorter clause inside that section's existing sync note: the **Default** column is the only runtime source for those values
+  - `references/configuration.md` 6,185 → 5,589 chars, `SKILL.md` 34,219 → 34,017; the `references/configuration.md` pointers in `SKILL.md` go 6 → 5. Canonical and bundle copy synced
+
 ### mobpro v1.3.1 / dev-workflow-bundle v1.108.1
 
 - refactor(mobpro): trim design rationale out of `references/configuration.md`, which M1 reads on every run

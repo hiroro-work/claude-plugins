@@ -48,7 +48,7 @@ When `error_reading_practice: true` **and** this is the **first** check/test fai
 - `language: ja`: `エラーが出た。まずエラーメッセージを読んでみて — どのあたりが原因だと思う？`
 - `language: en`: `An error came up. Read the error message first — where do you think the cause is?`
 
-After the junior's guess (or "I don't know" — do not press), the AI states the actual cause in 1–2 lines (per § E, explanation length discipline) and fixes it. **Second and later failures in the same run are fixed immediately** with no practice. The M9 loop-exit aggregate re-verification reuses M8's check/test procedure but **never** inserts the practice (it runs with practice off).
+After the junior's guess (or "I don't know" — do not press), the AI states the actual cause in 1–2 lines (per § E, explanation length discipline) and fixes it. **Second and later failures in the same run are fixed immediately** with no practice. Re-entries of M8 as a **verification pass** never insert the practice either — that is `SKILL.md` § Checkpoint Principle's "Primary-pass rule" paragraph, which owns the closed list of such re-entry sites; do not re-enumerate them here.
 
 ## § D. M9 pre-review prediction quiz + cross-check
 

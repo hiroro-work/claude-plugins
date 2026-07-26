@@ -6,8 +6,6 @@ The model is mob-programming with a fixed driver: **the AI always drives** (it w
 
 > **Install**: use the `dev-workflow-bundle` plugin. `mobpro` reads `dev-workflow`'s reference files as install-time siblings, so a standalone `mobpro`-only install will not work.
 
-> **Status**: this is the walking-skeleton release (M1–M13 one pass). It runs with built-in defaults, a single "any questions?" checkpoint, and the standard quality gates. The richer learning gates (teach-back, prediction quiz, error-reading practice, the configurable checkpoint tempo), config-file reading, the crit commit-review branch, and session resume arrive in follow-up releases.
-
 ## When to use mobpro vs dev-workflow
 
 | Use `mobpro` | Use `dev-workflow` |
@@ -18,21 +16,41 @@ The model is mob-programming with a fixed driver: **the AI always drives** (it w
 
 Both use the same reviewer, checks, tests, and rules — so the quality bar is identical. `mobpro` only adds learning pauses on top.
 
+## Typical sessions
+
+- **Onboarding.** A new team member needs to learn the project's routing, test conventions, and review standards. Run a real feature request through `mobpro`: they explain the plan back, read each diff, predict where the reviewer will find things, and approve each commit — the feature ships and the codebase gets explained in the same pass.
+- **Splitting a parent task between a junior and a senior.** Decompose at kickoff, run the first subtask or two under `mobpro` while the junior learns the shape of the change, then hand the rest to a senior with `/dev-workflow --resume <slug>`. The state file carries the subtask boundaries across the handoff — see § Interop with dev-workflow.
+- **Teaching review literacy on a bug fix.** A small fix is often the better vehicle: the junior reads the failing output before the AI touches it, predicts the review findings, then sees which predictions the reviewer actually raised.
+
 ## Usage
 
 ```text
 /mobpro [-i N] <task>              # Start a learning session
-/mobpro --resume <state-file>      # Resume a decomposed subtask (follow-up release)
+/mobpro --resume <state-file>      # Resume a decomposed subtask
 ```
 
 `-i N` caps the plan-review and code-review iteration counts (same meaning as `dev-workflow`). There is no `--init`, `--fast`, or `--executor`.
 
 ## Interop with dev-workflow
 
-`mobpro` and `dev-workflow` share the same decomposition **state-file** schema and path (`.claude/plans/dev-workflow.<slug>.md`). So a parent task can be started under `mobpro` (learning through the first subtasks) and the rest handed off to a senior with `/dev-workflow --resume <slug>` — or the reverse. 
+`mobpro` and `dev-workflow` share the same decomposition **state-file** schema and path (`.claude/plans/dev-workflow.<slug>.md`). So a parent task can be started under `mobpro` (learning through the first subtasks) and the rest handed off to a senior with `/dev-workflow --resume <slug>` — or the reverse.
 
 **Single-writer rule**: never run two sessions (mobpro or dev-workflow) against the same state file at once — parallel writers race on both the file and the shared `git HEAD` base-commit and silently corrupt subtask boundaries. Hand off sequentially: finish (and commit) one subtask, then resume in the other tool.
 
 ## Configuration
 
-`mobpro` reads three of its own keys (`checkpoint`, `quiz`, `error_reading_practice`) and inherits the rest (reviewer, checks, tests, language, …) from your `dev-workflow` configuration. See [`references/configuration.md`](references/configuration.md) for the full schema. It runs with sensible defaults even when no config file exists.
+`mobpro` reads two config layers of its own, then falls back to your `dev-workflow` configuration for everything that describes the project. It runs on sensible defaults even when no config file exists anywhere, and it never writes to `dev-workflow`'s files.
+
+**Its own keys** — read from `.claude/mobpro.md` (team-shared, git-tracked), then `.claude/mobpro.local.md` (personal, gitignored); the later layer wins:
+
+| Key | Values | Default | Effect |
+| --- | --- | --- | --- |
+| `checkpoint` | `unit` / `subtask` / `off` | `unit` | Where the learning checkpoint fires: after each implementation unit, once after all of them, or never (`off` also turns the plan-approval teach-back into a plain approval) |
+| `quiz` | boolean | `true` | Whether the lightweight-quiz checkpoint form and the pre-review prediction quiz are used |
+| `error_reading_practice` | boolean | `true` | Whether the junior reads the error first on the run's first check/test failure |
+
+**Inherited from dev-workflow** — the project-characteristic keys (`reviewer`, `check_commands`, `test_commands`, `language`, `interactive_commits`, `commit_review_gate`, `hooks`, and the rest of the closed list) are read from `~/.claude/dev-workflow.local.md` → `.claude/dev-workflow.md` → `.claude/dev-workflow.local.md` using dev-workflow's own merge rules. Setting `commit_review_gate: "crit"` there makes `mobpro` show each commit's diff in crit's browser view instead of chat — usually easier for a junior to read. `crit` is a separately-installed local CLI, so the gate falls back to the chat diff when it is not installed or no local browser is reachable (as on Claude Code on the Web).
+
+**Deliberately ignored** — `plan_review_gate` (and its deprecated predecessor `visual_plan_review`), `implementation_executor`, and `subagent_model` are dev-workflow keys `mobpro` does not honor. They are ignored silently, since they remain valid settings for `dev-workflow` itself.
+
+See [`references/configuration.md`](references/configuration.md) for the full schema, the complete fallback list, and the reasoning behind each ignored key.

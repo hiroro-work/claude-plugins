@@ -21,7 +21,7 @@ error_reading_practice: true   # default: true  (non-boolean → true)
 
 These project-characteristic keys are read from `dev-workflow`'s three layers (`~/.claude/dev-workflow.local.md` → `.claude/dev-workflow.md` → `.claude/dev-workflow.local.md`) using the same per-class merge semantics as `dev-workflow` (see [`inline-defs.md`](inline-defs.md) § (a)). `mobpro` never writes to these files.
 
-`Keep this list and its Default column in sync with dev-workflow references/configuration.md — a key belongs here when it governs a step mobpro also runs and is not carved out by § Not-adopted keys.` A key absent from all three layers resolves to its Default below — transcribed here because `mobpro` does not read `dev-workflow`'s own config documentation at runtime (§ Runtime reads in `SKILL.md`), so this table is the only place a run can learn these values. This closed list of 14 is complete:
+`Keep this list and its Default column in sync with dev-workflow references/configuration.md — a key belongs here when it governs a step mobpro also runs and is not carved out by § Not-adopted keys. The Default column is the only runtime source for these values (SKILL.md § Runtime reads).` A key absent from all three layers resolves to its Default below. This closed list of 14 is complete:
 
 | Key | Default | Used by |
 | --- | --- | --- |
@@ -39,10 +39,6 @@ These project-characteristic keys are read from `dev-workflow`'s three layers (`
 | `hooks.on_complete` | none (unset) | M10 registration and execution |
 | `self_retrospective.feedback` | none (unset) | M12 |
 | `workability_retrospective` | `enabled: false`, `backlog_dir: .claude/improvements` | M12 |
-
-`mobpro` runs on defaults alone even when no config file exists anywhere.
-
-**`test_commands`' default needs a `run-tests` skill to exist.** `run-tests` is not a bundled skill — `dev-workflow --init` generates it into the consuming project, and `mobpro` has no `--init` of its own. So on a project that has never run `--init`, the default resolves to a skill that is not there. M8 handles that case explicitly rather than treating it as a test failure (see `SKILL.md` § M8 — Check / test).
 
 ## Not-adopted keys
 

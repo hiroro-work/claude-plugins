@@ -2,6 +2,40 @@
 
 ## 2026-07-27
 
+### dev-workflow v1.95.1 / dev-workflow-bundle v1.111.1
+
+- fix(dev-workflow): drop the repo-specific gitignore assertion from the Step 2 audit's external-reference check (follow-up to auto-triage #178)
+  - Category: ambiguity; the example asserted a concrete plan-document path is gitignored — a per-project fact the workflow's own § Workflow artifacts deliberately does not rely on, and one that reads as a broken pointer in a distributed skill. It now names the class of location instead of the path
+- refactor(dev-workflow): move the Step 7.5 deferred-bookkeeping rationale out of the hot-path reference
+  - `references/step7.5-rules-compliance.md` is read on every non-skipped Step 7.5 run, and its sub-step 1 carried a sentence explaining why the scope note exists rather than what to do. The explanation now lives in `README.md`'s Step 7.5 row, which ships inside the plugin source; the reference keeps the directive alone
+- fix(dev-workflow): make Step 7's concurrent-launch deferred-bookkeeping scope note conditional (follow-up to auto-triage #169)
+  - Category: missing-branch; the background-launch path injected the note unconditionally, which would suppress a genuine paired-bump violation on runs that defer nothing — it now carries the same condition as the direct-invoke path
+- fix(dev-workflow): resolve the option-order contradiction in Step 7's base-commit comparison (follow-up to auto-triage #175)
+  - Category: ambiguity; the preference clause was appended after a sentence that still listed `git stash` first, so a top-to-bottom reader stashes before reaching it — path (ii) is now one ordered fallback chain
+- fix(dev-workflow): give Step 5 sub-step 8's same-class grep a searchable anchor (follow-up to auto-triage #179)
+  - Category: ambiguity; "grep the edited scope for the same-class values" named neither a scope nor a pattern, and an un-marked value is a bare numeral — it now names the touched files and the class's unit token
+- fix(dev-workflow): consolidate the duplicated form in Step 5 sub-step 4 (vi) (follow-up to auto-triage #177)
+  - Category: ambiguity; enumerated form (a) restated the umbrella clause it hung off, leaving two distinct forms after absorption
+- fix(dev-workflow): prohibit partial salvage of a stale background-review report (auto-triage #179)
+  - Category: ambiguity; Step 7's Flag lifecycle contract now discards a stale result whole instead of allowing a subset of its findings to be reused
+- fix(dev-workflow): apply the derived-value provisional marker to all same-class values in one edit (auto-triage #179)
+  - Category: ambiguity; Step 5 sub-step 8 requires all-or-none marking across same-class figures plus a grep-verify step
+- fix(dev-workflow): add a plan self-audit for a delete/no-dup justified by an external reference (auto-triage #178)
+  - Category: missing-branch; verify the cited location is recipient-visible / version-controlled before accepting the justification (holds under `--fast`)
+- fix(dev-workflow): sharpen the comment-conciseness self-check with concrete failure modes (auto-triage #177)
+  - Category: ambiguity; Step 5 sub-step 4 (vi) names the recurring comment smells and adds a same-change sweep
+- fix(dev-workflow): add a stale-cache phantom-violation diagnostic to Step 7 check discrimination (auto-triage #175)
+  - Category: wrong-default; re-run with the cache invalidated before treating an unchanged-file violation as real
+- fix(dev-workflow): prefer non-tree-mutating base-commit comparison over `git stash` in Step 7 (auto-triage #175)
+  - Category: wrong-default; `stash pop` can fail to restore — prefer the `--base-commit` arg or a scratch `git worktree`
+- fix(dev-workflow): pass a deferred-bookkeeping scope note to the in-run Step 7.5 rules-review (auto-triage #169)
+  - Category: missing-branch; suppress the deterministic false-flag of version-bump / CHANGELOG deferred to the Step 10 bookkeeping point
+
+### extract-rules v1.23.1 / dev-workflow-bundle v1.111.1
+
+- fix(extract-rules): document that there is no diff-base / sha change-origin argument (auto-triage #176)
+  - Category: missing-branch; a usage note distinguishing `--from-conversation` / `--from-pr` from `--base-commit`-style args
+
 ### mobpro v1.6.0 / dev-workflow-bundle v1.111.0
 
 - feat(mobpro): write the plan in a shape the junior can read, and drop the `Difficulty` field it could never fill

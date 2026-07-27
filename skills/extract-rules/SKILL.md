@@ -28,6 +28,8 @@ Analyzes existing codebase to identify what Claude would get wrong without proje
 # Multiple specs allowed (space-separated) → cross-analysis detects org-wide principles
 ```
 
+**Change-origin flags**: extract-rules scopes a change-based extraction only from a conversation session (`--from-conversation`) or a PR (`--from-pr`) — it has **no** diff-base / commit-sha origin argument. A `--base-commit <sha>` (or similar diff-range) argument belongs to diff-scoped reviewer skills, not here; passing one is unsupported. Use `--from-conversation` / `--from-pr` for change-based extraction, or no flag for a full-codebase scan.
+
 ## Configuration
 
 Settings file: `extract-rules.local.md` (YAML frontmatter only, no markdown body)

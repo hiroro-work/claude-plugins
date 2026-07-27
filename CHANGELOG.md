@@ -4,6 +4,14 @@
 
 ### dev-workflow v1.95.1 / dev-workflow-bundle v1.111.1
 
+- fix(dev-workflow): make Step 7's concurrent-launch deferred-bookkeeping scope note conditional (follow-up to auto-triage #169)
+  - Category: missing-branch; the background-launch path injected the note unconditionally, which would suppress a genuine paired-bump violation on runs that defer nothing — it now carries the same condition as the direct-invoke path
+- fix(dev-workflow): resolve the option-order contradiction in Step 7's base-commit comparison (follow-up to auto-triage #175)
+  - Category: ambiguity; the preference clause was appended after a sentence that still listed `git stash` first, so a top-to-bottom reader stashes before reaching it — path (ii) is now one ordered fallback chain
+- fix(dev-workflow): give Step 5 sub-step 8's same-class grep a searchable anchor (follow-up to auto-triage #179)
+  - Category: ambiguity; "grep the edited scope for the same-class values" named neither a scope nor a pattern, and an un-marked value is a bare numeral — it now names the touched files and the class's unit token
+- fix(dev-workflow): consolidate the duplicated form in Step 5 sub-step 4 (vi) (follow-up to auto-triage #177)
+  - Category: ambiguity; enumerated form (a) restated the umbrella clause it hung off, leaving two distinct forms after absorption
 - fix(dev-workflow): prohibit partial salvage of a stale background-review report (auto-triage #179)
   - Category: ambiguity; Step 7's Flag lifecycle contract now discards a stale result whole instead of allowing a subset of its findings to be reused
 - fix(dev-workflow): apply the derived-value provisional marker to all same-class values in one edit (auto-triage #179)

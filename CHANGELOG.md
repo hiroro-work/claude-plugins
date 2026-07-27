@@ -2,6 +2,15 @@
 
 ## 2026-07-27
 
+### mobpro v1.6.0 / dev-workflow-bundle v1.111.0
+
+- feat(mobpro): write the plan in a shape the junior can read, and drop the `Difficulty` field it could never fill
+  - **User-visible**: the plan presented at M5 no longer uses dev-workflow's `Overview` / `Decisions` / `Design` / `Test plan` / `Risks` structure, which is built for peer review between seniors. It is now `What we're building` / `Build order` / `Why this order` / `Choices I made` / `How we'll check it works`, plus an optional `Watch-outs` — plain wording, the build order first, and each fork in the road explained rather than handed to the junior as a decision to arbitrate. M5 only ever asked for approval, so the plan no longer carries a section implying otherwise
+  - `Build order` is now the only input to M6's unit segmentation: each step is one implementation unit, so the plan doubles as the list of diffs the junior will review. The "3–10 units" sizing rule moved from M6 to the template, where those steps are authored
+  - `Difficulty` is gone. dev-workflow's template requires it, but `mobpro` runs no difficulty assessment and had nothing to put there — runs so far omitted the field by hand
+  - M4's reviewer now reads the new `references/plan-format.md` § Template + § Review lens in place of dev-workflow's `Decisions` (a)+(b) criterion and § Step 3 (f) content-quality rubric — a `mobpro` plan has no `Decisions` section. § Review lens carries one mapping rule covering the rest of the review payload, so a `Decisions` / `Design` / `Test plan` remedy prescribed anywhere in it reads as `Choices I made` / `Build order` / `How we'll check it works`, and no finding can ask for a section back. It also owns the structural check that the plan carries all five required sections
+  - Size: new `references/plan-format.md` is 3,630 chars, read once per run at M3; `SKILL.md` 35,829 → 36,524, still over the repo's 32k guideline. dev-workflow's `plan-format.md` is still read at M3, now for § Localization granularity alone
+
 ### mobpro v1.5.0 / dev-workflow-bundle v1.110.0
 
 - refactor(mobpro): retire two names left over from the removed checkpoint mechanism, and settle how M6 renders an oversized diff

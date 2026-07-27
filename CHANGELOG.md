@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-07-27
+
+### mobpro v1.4.0 / dev-workflow-bundle v1.109.0
+
+- feat(mobpro): re-aim the teaching model from measuring comprehension to narrating the work, and put a diff review where the per-unit checkpoint used to be
+  - **Breaking — `mobpro` no longer has configuration of its own.** `.claude/mobpro.md` and `.claude/mobpro.local.md` are no longer read, and the three keys they carried (`checkpoint` / `quiz` / `error_reading_practice`) are gone with no replacement — the behavior they gated is now fixed, so there is nothing to opt out of. M1 warns once if either file is still present, so a project that relied on them sees the change rather than absorbing it silently. This is a deliberate departure from this repo's config-flag lifecycle (deprecation notice, then a calendar-anchored wait): the keys were removed in the same change that removed the behavior, at the user's explicit decision taken before implementation started. The tombstone itself follows the standard lifecycle — drop all three of its sites (`SKILL.md` M1, `references/configuration.md` § Resolution procedure step 3, `README.md` § Configuration) once ≥ 4 weeks have passed since this release with no report of a project relying on the removed keys
+  - **User-visible**: the junior is no longer asked to answer anything. The M5 teach-back, the M6 checkpoint's three question forms, the M8 first-failure error-reading practice, the M9 pre-review prediction quiz, and M3's Socratic prompt are all replaced by AI narration — M3 states the approach it chose and why, M8 states which part of the error it read and what that says, M9 states where it expects findings before running the reviews and cross-checks afterward. Narration asks nothing, so it never pauses the run
+  - **The one recurring stop is now a diff review after every M6 implementation unit**, and that is where the junior's questions land. Units are segmented finer (3–10 rather than 3–7 — one meaningful change per review), and the review's display surface follows `commit_review_gate`: setting it to `crit` now opens crit during implementation as well as at the commit gate. M6 and M11 determine crit availability independently
+  - M6 still commits nothing: each unit's review shows that unit's own delta rather than everything since the base commit, and no ref or working-tree state moves. The commit gate at M11 is unchanged
+  - New `references/walkthrough-review.md` holds the diff-review surface and its range mechanics; `references/learning-gates.md` is rewritten around the narration model, with the walkthrough and narration length caps widened to carry explanation rather than a one-line summary
+  - Size: `references/configuration.md` 5,589 → 4,506 chars and `references/learning-gates.md` 5,802 → 4,910, but `SKILL.md` 34,017 → 35,884 — this change widens `SKILL.md`'s overage against the repo's 32k guideline rather than narrowing it. The new `references/walkthrough-review.md` adds 9,422, read once per M6 loop
+
 ## 2026-07-26
 
 ### mobpro v1.3.2 / dev-workflow-bundle v1.108.2

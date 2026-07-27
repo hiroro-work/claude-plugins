@@ -2,6 +2,28 @@
 
 ## 2026-07-27
 
+### dev-workflow v1.95.1 / dev-workflow-bundle v1.111.1
+
+- fix(dev-workflow): prohibit partial salvage of a stale background-review report (auto-triage #179)
+  - Category: ambiguity; Step 7's Flag lifecycle contract now discards a stale result whole instead of allowing a subset of its findings to be reused
+- fix(dev-workflow): apply the derived-value provisional marker to all same-class values in one edit (auto-triage #179)
+  - Category: ambiguity; Step 5 sub-step 8 requires all-or-none marking across same-class figures plus a grep-verify step
+- fix(dev-workflow): add a plan self-audit for a delete/no-dup justified by an external reference (auto-triage #178)
+  - Category: missing-branch; verify the cited location is recipient-visible / version-controlled before accepting the justification (holds under `--fast`)
+- fix(dev-workflow): sharpen the comment-conciseness self-check with concrete failure modes (auto-triage #177)
+  - Category: ambiguity; Step 5 sub-step 4 (vi) names the recurring comment smells and adds a same-change sweep
+- fix(dev-workflow): add a stale-cache phantom-violation diagnostic to Step 7 check discrimination (auto-triage #175)
+  - Category: wrong-default; re-run with the cache invalidated before treating an unchanged-file violation as real
+- fix(dev-workflow): prefer non-tree-mutating base-commit comparison over `git stash` in Step 7 (auto-triage #175)
+  - Category: wrong-default; `stash pop` can fail to restore — prefer the `--base-commit` arg or a scratch `git worktree`
+- fix(dev-workflow): pass a deferred-bookkeeping scope note to the in-run Step 7.5 rules-review (auto-triage #169)
+  - Category: missing-branch; suppress the deterministic false-flag of version-bump / CHANGELOG deferred to the Step 10 bookkeeping point
+
+### extract-rules v1.23.1 / dev-workflow-bundle v1.111.1
+
+- fix(extract-rules): document that there is no diff-base / sha change-origin argument (auto-triage #176)
+  - Category: missing-branch; a usage note distinguishing `--from-conversation` / `--from-pr` from `--base-commit`-style args
+
 ### mobpro v1.6.0 / dev-workflow-bundle v1.111.0
 
 - feat(mobpro): write the plan in a shape the junior can read, and drop the `Difficulty` field it could never fill

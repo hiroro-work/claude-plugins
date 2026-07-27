@@ -2,6 +2,14 @@
 
 ## 2026-07-27
 
+### mobpro v1.5.0 / dev-workflow-bundle v1.110.0
+
+- refactor(mobpro): retire two names left over from the removed checkpoint mechanism, and settle how M6 renders an oversized diff
+  - **New**: M6's chat diff surface now states how to render an oversized unit diff instead of leaving each run to decide. It uses the verbatim / condensed / skeleton ladder, the three threshold keys, and the defaults the commit gate at M11 already uses — including any override set in the dev-workflow config layers — so both diff surfaces in one session render the same way. The `crit` surface is unaffected, since crit renders the diff itself. `references/configuration.md` § Fallback keys stays a closed list of 14: its membership rule now carves out keys a procedure reference resolves in place, which is how M11 has always read these three
+  - Two internal renames, no behavior change. `§ Checkpoint Principle` → `§ Learning-Stop Principle`: v1.4.0 removed the `checkpoint` mechanism the name pointed at, and what the section holds is the stop discipline — `mobpro`'s counterpart to dev-workflow's `§ No-Stall Principle`. `references/walkthrough-review.md` → `references/diff-review.md`: the file only ever described the diff review, while "walkthrough" names a different step (M6 sub-step 2 (c), whose length cap is now labelled **Per-file walkthrough**)
+  - `README.md` now documents that the M6 diff review stages each unit's paths with `git add` and unstages them at loop exit, so a reader can predict what `mobpro` does to the git index before running it
+  - Size: `references/diff-review.md` 9,422 → 11,377 chars, the growth being the rendering ladder on a file read once per M6 loop; `SKILL.md` 35,884 → 35,829, unchanged in substance and still over the repo's 32k guideline
+
 ### mobpro v1.4.0 / dev-workflow-bundle v1.109.0
 
 - feat(mobpro): re-aim the teaching model from measuring comprehension to narrating the work, and put a diff review where the per-unit checkpoint used to be

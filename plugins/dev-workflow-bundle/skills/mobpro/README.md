@@ -31,6 +31,8 @@ Both use the same reviewer, checks, tests, and rules — so the quality bar is i
 
 `-i N` caps the plan-review and code-review iteration counts (same meaning as `dev-workflow`). There is no `--init`, `--fast`, or `--executor`.
 
+**The plan is written for the junior to read** — plain wording, a numbered build order up front, and the reasoning for that order stated rather than assumed, with each fork in the road explained instead of handed over as a decision to make. Each step of that build order becomes one implementation unit, so the plan doubles as the list of diffs the junior will review (source of truth: [`references/plan-format.md`](references/plan-format.md)).
+
 **The git index during the implementation loop**: so that each unit's diff review shows just that unit's delta rather than everything since the run started, `mobpro` stages the unit's changed paths with `git add` and leaves them staged until the loop ends, then unstages that set in one pass — nothing is committed until the commit gate. A path you had staged yourself is left alone unless a unit's review touched it — and then it loses only its staging, never its content (source of truth: [`references/diff-review.md`](references/diff-review.md) § Per-unit review range's **M6-exit unstage** paragraph).
 
 ## Interop with dev-workflow

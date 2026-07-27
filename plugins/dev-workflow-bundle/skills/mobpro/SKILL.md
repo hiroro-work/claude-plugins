@@ -34,7 +34,7 @@ There is no `--init`, no `--fast`, no `--executor`, and no difficulty assessment
 | --- | --- | --- |
 | `task-decomposition.md` | M2 | Decompose (§ B) / resume (§ A) / state-file schema |
 | `prerequisites.md` | M1 / M7 (+ M4 / M9 callee failure) | Callee retry / fallback protocol (reviewer 3-option fallback, `simplify`→`tidy` resolution, etc.) |
-| `plan-format.md` | M3 | Plan document § Template + § Localization granularity |
+| `plan-format.md` | M3 | § Localization granularity only — the plan's shape is mobpro's own `references/plan-format.md` |
 | `step3-plan-review.md` | M4 | The six-category review payload definition (sub-step 1 payload only; iteration / stop discipline follows M4 below) |
 | `step7.5-rules-compliance.md` | M9 | Persistent-violations gate + 2nd-cycle procedure |
 | `step8-code-review.md` | M9 | § Sub-step 1 code-review payload definition (payload only; the payload carries a pointer to `review-categories.md § Code review categories` that the **reviewer** reads — out of orchestrator scope, as at M4) |
@@ -48,7 +48,7 @@ There is no `--init`, no `--fast`, no `--executor`, and no difficulty assessment
 | `workability-retrospective.md` | M12 (only when `workability_retrospective.enabled`) | Step 11.6-equivalent procedure |
 | `completion.md` | M13 | § Completion reminders render bodies + staging-artifact cleanup |
 
-**Constraint scope**: this "read only the table" rule binds the orchestrator (this SKILL.md) and covers **dev-workflow** files only — `mobpro` freely reads its **own** `references/` (`configuration.md`, `inline-defs.md`, `learning-gates.md`, `diff-review.md`) as normal skill-internal reads. It does **not** bind reviewer subagents dispatched at M4 / M9 — a reviewer following `step3-plan-review.md`'s instructions to read `review-categories.md` / `simplicity-self-audit.md` is normal and out of scope.
+**Constraint scope**: this "read only the table" rule binds the orchestrator (this SKILL.md) and covers **dev-workflow** files only — `mobpro` freely reads its **own** `references/` (`configuration.md`, `inline-defs.md`, `learning-gates.md`, `diff-review.md`, `plan-format.md`) as normal skill-internal reads. It does **not** bind reviewer subagents dispatched at M4 / M9 — a reviewer following `step3-plan-review.md`'s instructions to read `review-categories.md` / `simplicity-self-audit.md` is normal and out of scope.
 
 **NEEDS-FALLBACK path**: if the sibling-relative read cannot resolve in a given install (the Step 0 smoke test returned NEEDS-FALLBACK), resolve `dev-workflow`'s source directory absolutely via `jq -r '(.plugins[] | select(.name == "dev-workflow") | .source)' <marketplace.json>` and read from there instead.
 
@@ -128,7 +128,7 @@ This skill's procedure dispatches subagents, so invoking the skill **is** the re
 2. **Design-approach narration**: state in 2–3 lines how you intend to build it and why that shape was chosen over the obvious alternative. Ask the junior nothing — this is narration, so it does not pause the run (§ Learning-Stop Principle's "Narration is not a stop" paragraph).
    - `language: ja`: `この機能は<作り方>で作る。<別案>もあるけど<理由>でこちらにした。`
    - `language: en`: `I'll build this by <approach>. <Alternative> was an option too, but <reason> makes this the better shape.`
-3. Author the plan document and `Write` it to `.claude/plans/<slug>.md`, following `../dev-workflow/references/plan-format.md` § Template and § Localization granularity. Apply `custom_instructions` to plan priorities.
+3. Author the plan document and `Write` it to `.claude/plans/<slug>.md`, following [`references/plan-format.md`](references/plan-format.md) § Template. Localization follows `../dev-workflow/references/plan-format.md` § Localization granularity (that section alone). Apply `custom_instructions` to plan priorities.
 4. **Deliberately not adopted**: `EnterPlanMode` (M3/M5 are always chat), the Step 2 research-delegation, the difficulty assessment (Adjust N), the Simplicity self-audit, and the Plan self-check — learning-session plans are small, and simplicity is checked by M4's category (a).
 5. Do not show the plan to the user or ask for approval here — go straight to M4 (same prohibition as dev-workflow Step 2's "no unreviewed-plan presentation").
 
@@ -136,7 +136,7 @@ This skill's procedure dispatches subagents, so invoking the skill **is** the re
 
 For each iteration M4-1 … M4-N_plan, in order:
 
-1. Reuse `../dev-workflow/references/step3-plan-review.md` sub-step 1's six-category review payload definition and pass the full plan + `custom_instructions` + the state-file subtask scope (when decomposed) to `Skill(<reviewer>)`.
+1. Reuse `../dev-workflow/references/step3-plan-review.md` sub-step 1's six-category review payload definition and pass the full plan + `custom_instructions` + the state-file subtask scope (when decomposed) to `Skill(<reviewer>)`. **One substitution**: where that payload has the reviewer read `plan-format.md` for the `Decisions` (a)+(b) criterion and § Step 3 (f) content-quality rubric, hand it [`references/plan-format.md`](references/plan-format.md) § Template + § Review lens instead — resolving that path under **mobpro's** skill directory, not dev-workflow's same-named file. § Review lens carries the mapping rule for the rest of the payload, so the substitution needs nothing further here.
 2. Judge the response semantically: no actionable findings → mark this and remaining iterations `completed` and go to M5.
 3. Findings → apply to the plan (reject unreasonable ones with a stated reason), then **teach**: explain each applied finding as "what review lens this is" in 1–2 lines. Continue to the next iteration.
 4. After N_plan iterations, carry any unresolved points into M5's presentation as "open points".
@@ -151,7 +151,7 @@ For each iteration M4-1 … M4-N_plan, in order:
 
 ## M6 — Implementation loop
 
-1. **Unit segmentation**: if the plan's Design is a numbered step list, each step is a unit; otherwise segment into 3–10 units — one unit is one meaningful change the junior can follow in a single diff review — and register them as implementation sub-rows (additions, not a replacement of the M6 row). Initialize the loop-local state [`references/diff-review.md`](references/diff-review.md) defines — `m6_review_base` (to `base_commit`), `m6_staged_paths` (to `[]`), and `m6_crit_available` (unset until its probe runs). All three are M6-loop-local, so none is a § Cross-step state variables member.
+1. **Unit segmentation**: each `Build order` step in the plan is one unit — register them as implementation sub-rows (additions, not a replacement of the M6 row), splitting any step that covers more than one meaningful change into one row per change as you register it. If the plan carries no `Build order` section, segment it into 3–10 units yourself under the same rule. Initialize the loop-local state [`references/diff-review.md`](references/diff-review.md) defines — `m6_review_base` (to `base_commit`), `m6_staged_paths` (to `[]`), and `m6_crit_available` (unset until its probe runs). All three are M6-loop-local, so none is a § Cross-step state variables member.
 2. Per unit: (a) **preview** ≤ 6 lines (what / why / which files) → (b) **AI edits** (main-thread; never delegate to a subagent — the junior must see the edit as it happens) → (c) **walkthrough** per changed file → (d) **diff review** — read [`references/diff-review.md`](references/diff-review.md) and [`references/learning-gates.md`](references/learning-gates.md) § A (M6 diff review) and follow them. Both are loop-invariant: read them once at loop entry, then apply per unit. Preview and walkthrough lengths follow [`references/learning-gates.md`](references/learning-gates.md) § D (explanation length discipline).
 3. Apply `custom_instructions` throughout. Per the § Workflow artifacts exclusion, treat `.claude/`-internal state files as excluded from every downstream changed-file enumeration.
 4. After the last unit's review resolves, run the **M6-exit unstage** defined in [`references/diff-review.md`](references/diff-review.md) § Per-unit review range — the diff reviews leave their paths staged on purpose, and this is the one place that clears them, so M11 still sees new files as untracked.

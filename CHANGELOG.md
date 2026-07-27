@@ -4,6 +4,10 @@
 
 ### dev-workflow v1.95.1 / dev-workflow-bundle v1.111.1
 
+- fix(dev-workflow): drop the repo-specific gitignore assertion from the Step 2 audit's external-reference check (follow-up to auto-triage #178)
+  - Category: ambiguity; the example asserted a concrete plan-document path is gitignored — a per-project fact the workflow's own § Workflow artifacts deliberately does not rely on, and one that reads as a broken pointer in a distributed skill. It now names the class of location instead of the path
+- refactor(dev-workflow): move the Step 7.5 deferred-bookkeeping rationale out of the hot-path reference
+  - `references/step7.5-rules-compliance.md` is read on every non-skipped Step 7.5 run, and its sub-step 1 carried a sentence explaining why the scope note exists rather than what to do. The explanation now lives in `README.md`'s Step 7.5 row, which ships inside the plugin source; the reference keeps the directive alone
 - fix(dev-workflow): make Step 7's concurrent-launch deferred-bookkeeping scope note conditional (follow-up to auto-triage #169)
   - Category: missing-branch; the background-launch path injected the note unconditionally, which would suppress a genuine paired-bump violation on runs that defer nothing — it now carries the same condition as the direct-invoke path
 - fix(dev-workflow): resolve the option-order contradiction in Step 7's base-commit comparison (follow-up to auto-triage #175)

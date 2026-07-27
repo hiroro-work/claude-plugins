@@ -4,11 +4,11 @@ Operational detail for `mobpro`'s learning gates — the M6 diff review, the M8 
 
 The prompt wording is given as **paired bilingual samples** (a `language: ja` line and a `language: en` line) that demonstrate the runtime rendering; the surrounding meta-prose is the rule. Render each prompt in the run's resolved `language`.
 
-Nothing here asks the junior to answer a comprehension question (`SKILL.md` § Checkpoint Principle's "Narration is not a stop" paragraph). The AI narrates; the junior learns by reading each diff and asking whatever the narration left open.
+Nothing here asks the junior to answer a comprehension question (`SKILL.md` § Learning-Stop Principle's "Narration is not a stop" paragraph). The AI narrates; the junior learns by reading each diff and asking whatever the narration left open.
 
 ## § A. M6 diff review
 
-The junior reviews each implementation unit's diff. This is the implementation loop's recurring learning stop and where their questions land; `SKILL.md` § Checkpoint Principle owns its firing condition and [`walkthrough-review.md`](walkthrough-review.md) its display surface.
+The junior reviews each implementation unit's diff. This is the implementation loop's recurring learning stop and where their questions land; `SKILL.md` § Learning-Stop Principle owns its firing condition and [`diff-review.md`](diff-review.md) its display surface.
 
 **Opening the review**: state the point of this unit's diff, then hand the diff over.
 
@@ -21,7 +21,7 @@ The junior reviews each implementation unit's diff. This is the implementation l
 
 ## § B. M8 error narration
 
-When `check_commands` or `test_commands` fails, the AI does not stop to hand the error to the junior — it narrates its own read of the error, then fixes it. **Every** failure is narrated; there is no first-failure-only special case, and a verification-pass re-entry of M8 narrates the same way (so `SKILL.md` § Checkpoint Principle's "Primary-pass rule" paragraph does not reach this section).
+When `check_commands` or `test_commands` fails, the AI does not stop to hand the error to the junior — it narrates its own read of the error, then fixes it. **Every** failure is narrated; there is no first-failure-only special case, and a verification-pass re-entry of M8 narrates the same way (so `SKILL.md` § Learning-Stop Principle's "Primary-pass rule" paragraph does not reach this section).
 
 - `language: ja`: `<コマンド名> が落ちた。<エラーメッセージのどこを見て何を読み取ったか>。原因は<原因>なので<直し方>で直す。`
 - `language: en`: `<command> failed. <which part of the error message was read, and what it says>. The cause is <cause>, so the fix is <fix>.`
@@ -33,14 +33,14 @@ Before dispatching `rules-review` and the code reviewer, the AI states where it 
 - `language: ja`: `これからルール準拠チェックとコードレビューをかける。<指摘されそうな箇所>が引っかかりそう — <理由>。`
 - `language: en`: `We're about to run the rules-compliance check and code review. I expect <spots> to get flagged — <why>.`
 
-After the reviews return, cross-check the prediction against the actual findings, **acknowledging what the prediction got right before naming what it missed** — the miss is the part worth explaining. This narration fires only on M9's primary pass (`SKILL.md` § Checkpoint Principle's "Primary-pass rule" paragraph).
+After the reviews return, cross-check the prediction against the actual findings, **acknowledging what the prediction got right before naming what it missed** — the miss is the part worth explaining. This narration fires only on M9's primary pass (`SKILL.md` § Learning-Stop Principle's "Primary-pass rule" paragraph).
 
 ## § D. Explanation length discipline
 
 Narration is the session's main channel, so these caps are wide enough to carry a real explanation and narrow enough to stay out of lecture territory:
 
 - **Preview** (M6 unit announcement): ≤ 6 lines.
-- **Diff walkthrough** (M6): 1–3 lines per changed file, plus 1–2 lines for why it was done that way.
+- **Per-file walkthrough** (M6): 1–3 lines per changed file, plus 1–2 lines for why it was done that way.
 - **Narration-class single explanations** — M3's design-approach narration, M5's plan explanation, the M8 error read (§ B), the M9 prediction and its cross-check (§ C), and each answer to a junior's question (§ A): 2–3 lines each.
 - **Applied-finding explanations** (M4 and M9, one per finding): 1–2 lines each — deliberately tighter than the narration class, because a findings list is read as a list.
 

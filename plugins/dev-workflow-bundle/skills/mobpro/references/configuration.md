@@ -1,12 +1,12 @@
 # mobpro Configuration
 
-`mobpro` has no configuration of its own — every key it honors comes from `dev-workflow`'s layers (§ Fallback keys), and every pedagogical choice is fixed rather than configurable (`SKILL.md` § Checkpoint Principle).
+`mobpro` has no configuration of its own — every key it honors comes from `dev-workflow`'s layers (§ Fallback keys), and every pedagogical choice is fixed rather than configurable (`SKILL.md` § Learning-Stop Principle).
 
 ## Fallback keys
 
 These project-characteristic keys are read from `dev-workflow`'s three layers (`~/.claude/dev-workflow.local.md` → `.claude/dev-workflow.md` → `.claude/dev-workflow.local.md`) using the same per-class merge semantics as `dev-workflow` (see [`inline-defs.md`](inline-defs.md) § (a)). `mobpro` never writes to these files.
 
-`Keep this list and its Default column in sync with dev-workflow references/configuration.md — a key belongs here when it governs a step mobpro also runs and is not carved out by § Not-adopted keys. The Default column is the only runtime source for these values (SKILL.md § Runtime reads).` A key absent from all three layers resolves to its Default below. This closed list of 14 is complete:
+`Keep this list and its Default column in sync with dev-workflow references/configuration.md — a key listed there belongs here when it governs a step mobpro also runs and is not carved out by § Not-adopted keys. (The three diff-size thresholds are not candidates: that file has no entry for them — interactive-commits.md owns them, and their defaults reach M6 through the transcription in diff-review.md § Display surface rather than through this Default column.) The Default column is the only runtime source for the values in this table (SKILL.md § Runtime reads).` A key absent from all three layers resolves to its Default below. This closed list of 14 is complete:
 
 | Key | Default | Used by |
 | --- | --- | --- |

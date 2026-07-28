@@ -2,6 +2,11 @@
 
 ## 2026-07-28
 
+### dev-workflow v1.99.0 / mobpro v1.10.0 / dev-workflow-bundle v1.115.0
+
+- **Behavior change**: with `commit_review_gate: "crit"`, each diff the browser opens now carries a story — a prologue naming what the change does, its key changes and its risks, plus chapters grouping the diff's hunks — in place of a bare file-by-file diff. The prologue comes from the commit message, whose body crit otherwise drops on the way to the browser. This covers `dev-workflow` Step 10 (Interactive Commits) and `mobpro`'s M11 (Commit), plus `mobpro`'s M6 (Implementation loop) per-unit review — M6 lands no commit, so its prologue comes from the unit's stated point instead
+  - Needs a crit build carrying the `story` subcommand (verified against 0.18.1). On an older build, or when crit rejects the story, the round falls through to the previous behavior — the diff opens without a story and nothing else changes
+
 ### dev-workflow v1.98.1 / dev-workflow-bundle v1.114.1
 
 - fix(dev-workflow): make four cross-reference anchors resolvable

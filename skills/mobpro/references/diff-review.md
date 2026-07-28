@@ -6,11 +6,11 @@ Operational detail for `mobpro`'s **M6 diff review** display surface — the bra
 
 Branch on the resolved `commit_review_gate` ([`configuration.md`](configuration.md) § Fallback keys), the same key M11 reads:
 
-- **`diff`** (the default): render `git diff <m6_review_base>..<unit_obj>` in chat inside a fenced block, preceded by the opening line in [`learning-gates.md`](learning-gates.md) § A (M6 diff review).
+- **`diff`** (the default): render `git diff <m6_review_base>..<unit_obj>` in chat inside a fenced block, preceded by the line [`learning-gates.md`](learning-gates.md) § A (M6 diff review)'s "Opening the review" paragraph gives.
 
   **Rendering mode.** Pick the mode per `../dev-workflow/references/diff-presentation.md` § Rendering ladder. Capture the diff once — the same output the render consumes — and use that capture as the measurement input, slicing it on `diff --git a/<path> b/<path>` boundaries wherever the chosen mode truncates per file. The full-diff command the skeleton trailer names is `git diff <m6_review_base>..<unit_obj> -- "<path>"`.
 
-- **`crit`**: launch crit on the same range (§ crit path), emitting [`learning-gates.md`](learning-gates.md) § A's opening line **in the same turn as the launch, before the junior opens the browser**, so it guides their reading (the same discipline `SKILL.md` M11 applies to its "point of this diff" note on its own crit path).
+- **`crit`**: launch crit on the same range (§ crit path), emitting the line [`learning-gates.md`](learning-gates.md) § A's "Opening the review" paragraph gives **in the same turn as the launch, before the junior opens the browser**, so it guides their reading (the same discipline `SKILL.md` M11 applies to its "point of this diff" note on its own crit path).
 
 ## Per-unit review range
 
@@ -30,11 +30,12 @@ One inherited property worth knowing: `git write-tree` snapshots the whole index
 
 ## crit path
 
-Read `../dev-workflow/references/crit-commit-review.md` and reuse the parts below, substituting this file's range endpoints for its own and reading its "Step 10 run" scope as **the M6 loop**. `Keep the step pointers below in sync with ../dev-workflow/references/crit-commit-review.md § Procedure — they name that file's steps and describe their content, so a renumbering or a change of what a step does lands here too.`
+Read `../dev-workflow/references/crit-commit-review.md` and reuse the parts below, substituting this file's range endpoints for its own and reading its "Step 10 run" scope as **the M6 loop**. `Keep the pointers below in sync with ../dev-workflow/references/crit-commit-review.md § Procedure and § Story prologue — they name that file's steps and sections and describe their content, so a renumbering or a change of what a step does lands here too.`
 
 - **§ crit CLI contract** — the CLI facts, the `--range` mode rationale, the read-both-streams `approved:` rule, and the no-`--no-open` / no-`--quiet` finding.
 - **§ Procedure step 1's "Check availability and reachability" step** — the probes (`crit --version`, `printenv CLAUDE_CODE_REMOTE`), run **once for the whole M6 loop**. Cache the combined result as `m6_crit_available`, M6-loop-local like `m6_review_base` and likewise not a `SKILL.md` § Cross-step state variables member. The distinct name matters: M11 writes upstream's `crit_commit_review_available` when it re-runs both probes at its own gate (that step's own self-contained-check convention), so a shared name would have one gate overwrite the other's answer.
 - **§ Procedure step 2's "If either check failed" disposition** — one informational note (here, one per M6 loop rather than per unit), its install-URL vs no-local-browser wording including the both-failed tie-break, and no re-attempt for the rest of the loop. This unit and every one after it render on the chat surface (§ Display surface's `diff` bullet) — the failing probe does not skip the unit that triggered it.
+- **§ Story prologue** — run over the same `<m6_review_base>..<unit_obj>` endpoints, immediately before the launch below. One substitution: M6 lands no commit, so the prose comes from this unit's point — the sentence [`learning-gates.md`](learning-gates.md) § A's "Opening the review" paragraph has the AI state — in place of a commit subject and body.
 - **§ Procedure step 3's per-round launch** — launching `crit --range <m6_review_base>..<unit_obj>` as **background Bash**, never the `Agent` tool, so `SKILL.md` M12 sub-step 3's only-direct-`Agent`-use invariant holds. Skip its `git rev-parse HEAD` base resolution and its object-build sub-step: § Per-unit review range owns both, and M6's base is `m6_review_base`, not `HEAD`.
 - **§ Procedure step 4's "Read the decision, then unstage" step** — read the decision from both captured streams, but skip its unstage; § Per-unit review range defers that to M6 exit.
 - **§ Procedure step 6's "No machine iteration cap" note** — each round blocks on a real browser submit, so the loop is human-paced.

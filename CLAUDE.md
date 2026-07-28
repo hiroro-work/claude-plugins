@@ -19,8 +19,8 @@ Claude Code用プラグインを公開するためのマーケットプレイス
 │       └── README.md         # (任意、ユーザー向け設定リファレンスなど)
 ├── plugins/                  # wrapper 方式のプラグインのみ
 │   └── <plugin-name>/
-│       ├── skills/           # bundle の場合、複数 skill への symlink
-│       │   └── <skill-name>  # → ../../../skills/<skill-name>
+│       ├── skills/           # bundle の場合、複数 skill 分のエントリ
+│       │   └── <skill-name>  # skills/<skill-name> の実ディレクトリコピー
 │       ├── .claude-plugin/   # (エージェント依存 / フック定義プラグイン)
 │       │   └── plugin.json
 │       ├── agents/           # (エージェント依存プラグインのみ)
@@ -92,8 +92,8 @@ wrapper には **2 つのサブパターン** がある。必要なファイル�
 
 | サブパターン | 用途 | `.claude-plugin/plugin.json` | `agents/` | `skills/` |
 |---|---|---|---|---|
-| **A. エージェント / フック wrapper** | エージェント依存 (`translate`)、フック定義 (`caffeinate`) | 必須 | エージェント依存なら必須 | 単一スキル symlink |
-| **B. bundle wrapper** | 複数スキルの束 (`dev-workflow-bundle`) | 不要 | 不要 | 複数スキルの symlink + marketplace.json の `skills` 配列 |
+| **A. エージェント / フック wrapper** | エージェント依存 (`translate`)、フック定義 (`caffeinate`) | 必須 | エージェント依存なら必須 | 単一スキルのエントリ |
+| **B. bundle wrapper** | 複数スキルの束 (`dev-workflow-bundle`) | 不要 | 不要 | 複数スキルのエントリ + marketplace.json の `skills` 配列 |
 
 ### サブパターン A: エージェント / フック wrapper
 
@@ -184,7 +184,9 @@ ln -s ../../../skills/<skill-b> plugins/<bundle-name>/skills/<skill-b>
 }
 ```
 
-`skills` 配列と `plugins/<bundle-name>/skills/` 配下の symlink セットは **必ず一致** させること（`/verify-plugins` と `run-tests` が整合性を検証する）。
+`skills` 配列と `plugins/<bundle-name>/skills/` 配下のエントリセットは **必ず一致** させること（`/verify-plugins` と `run-tests` が整合性を検証する）。
+
+**wrapper 配下の `skills/` エントリは symlink ではなく実ディレクトリコピー**（`ln -s` の例は upstream bug 修正後の想定形）。plugin cache が symlink を解決しない bug（[anthropics/claude-code#53948](https://github.com/anthropics/claude-code/issues/53948)）を回避するため commit `56026cb` で全 wrapper を一括変換済み。詳細と検証ツール側の扱いは `.claude/rules/project.rules.md` § プラグイン構造 の wrapper エントリ bullet を参照。
 
 `dev-workflow-bundle` にメンバーを追加する場合はもう 1 つ義務がある: 新メンバーの `SKILL.md` に横断ディレクティブ `## Dispatch authorization` を他メンバーと byte-identical に同梱すること（漏れると `/verify-plugins` と `run-tests` Check 7 が落ちる）。文言・配置の source of truth は `.claude/rules/project.rules.md` § プラグイン構造 の「**bundle 全メンバーに複製する横断ディレクティブは byte-identical を保ち、メンバー追加時に必ず同梱する**」bullet。
 

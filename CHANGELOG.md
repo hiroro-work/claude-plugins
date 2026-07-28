@@ -2,6 +2,17 @@
 
 ## 2026-07-28
 
+### dev-workflow v1.98.1 / dev-workflow-bundle v1.114.1
+
+- fix(dev-workflow): make four cross-reference anchors resolvable
+  - Category: ambiguity; `§ Step 1 registration mechanics` was cited from six sites while the bold label actually read `**Registration mechanics**`, `Merge strategy per key type` was cited as a bold-prose label while its target was plain prose, and `see Step 1.5` carried no descriptor. The label is renamed, the paragraph bolded, and the step named. Separately, § Localization granularity's `Applies to` sentence now lists the same output categories as `references/configuration.md`'s `language` bullet, which it claims to mirror
+
+### dev-workflow v1.98.0 / mobpro v1.9.0 / dev-workflow-bundle v1.114.0
+
+- **Behavior change**: `mobpro` no longer asks at kickoff what the junior wants to learn. The AI explains as it works, so what the junior takes away comes out of the narration and the per-unit diff reviews rather than from goals declared before any code exists. The wrap-up learning summary stays, now drawn from what the session actually built and explained instead of measured against pre-declared goals; the state-file body no longer carries a learning-goal line
+- **Behavior change**: both workflows now say what a phase does wherever an internal step identifier reaches user-facing output. A bare `Step 10` or `M11` forced the reader back through earlier output to recover its meaning, so gate prompts, skip notes, ledger records, and completion reminders either pair the number with the phase name (`Step 10 (Interactive Commits)` / `M11 (Commit)`) or drop the number and name the phase. The identifiers themselves are unchanged — the new `§ Phase naming in user-facing output` section in each SKILL.md governs output only
+  - Ledger and gate strings changed — anything matching them exactly needs updating. `fast_mode_skipped_steps`: `Step 7.5 re-verification skipped (fast mode)` → `Step 7.5 Rules Compliance Review re-verification skipped (fast mode)`. `bundle_skills_unavailable`: `rules-review unavailable (Step 7.5)` → `rules-review unavailable (rules compliance review)`, and likewise for the `ask-peer` / `extract-rules` / `tidy` / `prose-polish` records. The commit gate's verification line is now `Check / Test:` (was `Step 7:`), and the compaction reminder names the rule-update phase
+
 ### dev-workflow v1.97.0 / mobpro v1.8.0 / dev-workflow-bundle v1.113.0
 
 - **Behavior change**: `mobpro` now honors `plan_review_gate`. M5's plan approval opens the bundled browser gate (`visual`, the default) or crit (`crit`) instead of always running in chat. **To keep the chat approval, set `plan_review_gate: "plan-mode"`** in `.claude/dev-workflow.md` — `mobpro` never enters Plan Mode, so for it that value simply means chat. Either browser gate falls back to the chat approval when no local browser is reachable. The deprecated `visual_plan_review` boolean maps the same way it does for `dev-workflow`

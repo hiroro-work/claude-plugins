@@ -2,7 +2,9 @@
 
 Canonical home for the detection rules the lint executor applies. `SKILL.md` injects this file verbatim into the dispatch payload as `--- CHECK RULES ---` (single canonical home; do not duplicate these rules in `SKILL.md`).
 
-**Path convention**: every file reference in this document — including manifest anchors — is **target-root-relative** (`SKILL.md`, `references/<file>.md`), so a `Target dir:` override resolves identically to the default target.
+**Path convention**: every file reference in this document — including manifest anchors — is **target-root-relative** (`SKILL.md`, `references/<file>.md`), so the same rule text applies to every root and a `Target dir:` override resolves identically.
+
+**Per-root resolution**: a run lints one or more roots (`SKILL.md` § Target roots). Every pass is root-scoped — heading indexes, `§` resolution, the class (c) identifier pattern, and the class (e) name authority all come from the root the candidate was extracted from. A candidate never resolves against another root's content. Manifest entries (classes (b) / (d)) carry a `root` column and are checked only against that root; a manifest entry whose root is absent from this run is skipped silently, not reported as stale.
 
 ## Class (a) — Cross-reference resolution
 
@@ -47,18 +49,20 @@ Both manifest-driven classes follow the same operating rules:
 
 Entry schema: `id` / `site_a` (file + stable anchor phrase) / `site_b` (same) / `compare` (the equivalence to judge).
 
+All four entries below carry `root: skills/dev-workflow`.
+
 | id | site_a | site_b | compare |
 | --- | --- | --- | --- |
-| merge-strategy-overlay | `SKILL.md` § Configuration, "Merge strategy per key type" paragraph | `SKILL.md` § Step 1: Load Settings, sub-step 1's "Overlay" procedure | Same key-type classes with the same per-class merge semantics (scalar replace / list append / list-replace / hooks deep-merge / null-clears / absent-inherits) |
-| localization-enumeration | `SKILL.md` § Configuration, `language` bullet's enumeration of localized outputs | `references/plan-format.md` § Localization granularity, opening "Applies to" sentence | Same output-category set (each category present on both sides) |
+| merge-strategy-overlay | `SKILL.md` § Configuration, "Merge strategy per key type" paragraph | `references/step1-load-settings.md` § Sub-step 1 — Overlay / merge procedure (`SKILL.md` Step 1's sub-step 1 is now a one-line delegating pointer to it) | Same key-type classes with the same per-class merge semantics (scalar replace / list append / list-replace / hooks deep-merge / null-clears / absent-inherits) |
+| localization-enumeration | `references/configuration.md`, the `language` bullet's enumeration of localized outputs (`SKILL.md` § Configuration's `language` bullet is now a one-line index into it) | `references/plan-format.md` § Localization granularity, opening "Applies to" sentence | Same output-category set (each category present on both sides) |
 | no-stall-gate-enum | `SKILL.md` § No-Stall Principle, user-gate enumeration | Each bullet's named definition site ("defined in ..." pointer), plus every `USER APPROVAL GATE` marker in `SKILL.md` | Every enumerated gate's definition site exists; every `USER APPROVAL GATE` marker has a corresponding enumeration bullet |
 | init-adaptive-regions | `references/init-mode.md`, the run-tests SKILL.md Template's "keep that list in sync" note | `references/init-mode.md`, step 4a's "Adaptive regions" closed list | Each listed adaptive region exists as a span of the embedded template, and no other template span is described as per-project-adaptive outside the list |
 
 Judgment: read both sites and compare per the `compare` column. Divergence → warning `class: "b"` naming the pair `id` and the diverging member.
 
-## Class (c) — Bare-number Step references
+## Class (c) — Bare-number step references in prose
 
-1. Candidate extraction: Grep `\bStep [0-9]+(\.[0-9]+)?\b` (word-boundary) across the target files.
+1. Candidate extraction: Grep the candidate's root identifier pattern (word-boundary) across the target files — `\bStep [0-9]+(\.[0-9]+)?\b` for a `Step`-shaped root, `\bM[0-9]+(-[0-9]+)?\b` for an `M`-shaped one.
 2. **Allowed forms** (closed list — matching candidates are compliant, not findings):
    - **Heading / full-title forms**: a heading line, or the full `Step N: <Title>` form (number + colon + title) anywhere in prose.
    - **Number + stable-descriptor pair**: the same sentence binds a stable descriptor to the number — a possessive paragraph reference (`Step 7's "Concurrent rules-review launch" paragraph`), a sub-step qualifier (`Step 8 sub-step 1's review-payload definition`), a parenthesized title (`Step 9 (Completion Hooks)`), or an adjacent quoted stable phrase.
@@ -71,11 +75,38 @@ Judgment: read both sites and compare per the `compare` column. Divergence → w
 
 § Manifest discipline applies. Entry schema: `id` / `site_pattern` (the Grep pattern locating actual sites, plus the filter distinguishing real sites from mere mentions) / `enumeration_site` (where the closed list lives) / `documented_exclusions` (prose-declared exceptions to respect).
 
+The single entry below carries `root: skills/dev-workflow`.
+
 | id | site_pattern | enumeration_site | documented_exclusions |
 | --- | --- | --- | --- |
-| subagent-model-read-sites | `subagent_model` across `SKILL.md`, filtered to dispatch / propagation statements (lines that pass, resolve, or propagate a model — not mere mentions of the key) | `SKILL.md` § Configuration, `subagent_model` bullet ("It governs (i) ... (ii) ..." enumeration) | Sites the prose itself declares excluded from governance — e.g. the Step 2 research delegation's "excluded from `subagent_model` governance" declaration. Declared exclusions are compliant, not gaps |
+| subagent-model-read-sites | `subagent_model` across `SKILL.md`, filtered to dispatch / propagation statements (lines that pass, resolve, or propagate a model — not mere mentions of the key) | `references/configuration.md`, the `subagent_model` bullet's "It governs (i) ... (ii) ..." enumeration (`SKILL.md` § Configuration's own bullet is now a one-line index into it) | Sites the prose itself declares excluded from governance — e.g. the Step 2 research delegation's "excluded from `subagent_model` governance" declaration. Declared exclusions are compliant, not gaps |
 
 Judgment: an actual site located by `site_pattern` that is covered by **neither** the enumeration **nor** a documented exclusion → warning `class: "d"` naming the site line and the enumeration it is missing from.
+
+## Class (e) — Bare identifier in a user-facing output literal
+
+The machine counterpart of each root's `§ Phase naming in user-facing output` section: a literal string the tree tells the orchestrator to put in front of the user must not carry the root's identifier without naming what that phase does. **Status-affecting** — the core predicate is closed and mechanical (identifier present AND no authority name present); extraction ambiguity is what the demotion rule below absorbs.
+
+**1. Build the root's name-authority set** (once per root). Grep the authority named for that root in `SKILL.md` § Target roots and collect the phase names:
+
+- A `Step`-shaped root: the phase registration list in `SKILL.md` Step 1's sub-step 7 — each list item's `Step <n>: <Name>` yields the name `<Name>`, stripping a bracketed command suffix (`Step 7: Check / Test [check: …]` → `Check / Test`) and a parenthesized registration condition (`Step 10: Interactive Commits (only if …)` → `Interactive Commits`). Add the `###` heading name for any phase the list omits.
+- An `M`-shaped root: each `## M<n> — <Name>` heading yields `<Name>`, minus any trailing parenthetical (`## M8 — Check / test (quality gate, max 3 retries)` → `Check / test`).
+
+Match names **case-insensitively** and on whitespace-normalized text — the same phase legitimately appears title-cased in a heading and sentence-cased in a rendered label, and that is a casing choice, not a second description.
+
+**2. Extract output literals** (the closed list of literal-bearing forms — a candidate outside these forms is not extracted at all):
+
+- A paired-sample line: `` - `language: <lang>`: `<literal>` `` — the backticked `<literal>` is the candidate.
+- A blockquote line (`> …`) inside a section whose prose marks it as shown to the user verbatim (a guidance line, a fixed sentence). The whole line is the candidate.
+- A backticked literal whose surrounding prose marks it as emitted: the verb set `render` / `emit` / `warn` / `present` / `report` / `surface` / `note`, or an append into a ledger the tree says is rendered verbatim (the "append X to `<ledger>`" form). The backticked span is the candidate.
+
+Skip candidates inside fenced code blocks using the same mechanical fence filter as § Class (a)'s Extraction exclusions.
+
+**3. Judge each candidate.** A candidate whose text contains the root's identifier pattern **and** no name from step 1's authority set is a **violation** (`class: "e"`), reported with the literal and the identifier that stands bare. A candidate carrying no identifier at all is compliant by the drop-the-number option — not a finding. A candidate carrying both is compliant.
+
+**4. Demotion rule.** Report `class: "e-demoted"` (warning) instead when extraction is uncertain: the prose around a backticked span is ambiguous about whether the string is emitted or merely discussed; the literal is a template whose `<placeholder>` would be substituted with a name at render time; or the candidate is itself an exemplar of the naming rule (a section documenting the forbidden form must be allowed to quote it). When in doubt, demote — the class's status-affecting weight is what makes over-reporting costly.
+
+**Known template case**: a literal whose identifier list is a placeholder (`<registered steps, each as number + phase name>`) names no phase at extraction time yet renders compliantly. Treat a placeholder that itself demands the paired form as compliant, not as a violation.
 
 ## Common FP-suppression principle
 
@@ -84,8 +115,8 @@ When a candidate's classification is uncertain — extraction ambiguity, exempla
 ## Executor pipeline (run in this order)
 
 1. **Enumerate** the target files from the `--- TARGET FILES ---` payload.
-2. **Extraction pass** (Grep tool only — ripgrep-class; never Bash `grep`): run **one scoped Grep per pattern across the whole target root** — the returned file column gives per-file grouping for free, so do not loop per file. Patterns: the class (a) variant seeds (`§` broad seed for section references, `"[^"]+" paragraph` for bold-label references — refine as needed within the variant closed list), the § Class (c) step 1 pattern, and each class (d) manifest entry's `site_pattern`. Then apply the mechanical fence filter (§ Class (a)'s Extraction exclusions) to the collected candidates.
-3. **Index pass**: one scoped Grep of heading lines (`^#{1,4}\s`) across the target root, grouped per file into the heading indexes. No bold-span index — see § Class (a)'s Resolution procedure step 1.
-4. **Set difference (mechanical pre-filter)**: (i) class (a) — normalize candidates per § Class (a)'s Resolution procedure and resolve them against the heading indexes and candidate-driven label Greps under the scope model; resolved candidates are dropped. (ii) class (c) — drop candidates matching the regex-classifiable allowed forms (a candidate on a heading line; `Step [0-9.]+:` colon-title; `Step [0-9.]+ \(`; `Step [0-9.]+'s "`; `Step [0-9.]+ sub-step`). Only the residue of both classes proceeds to judgment.
-5. **Judgment pass** (LLM judgment, residue only): apply the class (a) demotion rule to the unresolved residue; classify the class (c) residue against the full allowed-forms closed list; read the class (b) / (d) manifest sites and judge divergence / gaps / anchor staleness.
-6. **Assemble the verdict JSON** per the schema in the `--- EXECUTOR PROMPT ---` payload, filling `checked` with the per-pass counts: `files` (target files enumerated), `refs_extracted` (class (a) candidates surviving the fence filter), `refs_unresolved` (class (a) residue left unresolved after step 4), `manifest_pairs` (class (b) plus class (d) manifest entries judged), `step_candidates` (class (c) candidates from step 2).
+2. **Extraction pass** (Grep tool only — ripgrep-class; never Bash `grep`): run **one scoped Grep per pattern across the whole target root** — the returned file column gives per-file grouping for free, so do not loop per file. Patterns: the class (a) variant seeds (`§` broad seed for section references, `"[^"]+" paragraph` for bold-label references — refine as needed within the variant closed list), the § Class (c) step 1 pattern per root, each class (d) manifest entry's `site_pattern`, and the § Class (e) step 2 literal-bearing forms (a `language:` sample-line seed, a blockquote-line seed anchored on a leading `>`, and an emit-verb seed covering `render` / `emit` / `warn` / `present` / `report` / `surface` / `note` / `append`). Then apply the mechanical fence filter (§ Class (a)'s Extraction exclusions) to the collected candidates.
+3. **Index pass**: one scoped Grep of heading lines (`^#{1,4}\s`) across the target files, grouped per file into per-root heading indexes; the same pass feeds each root's class (e) name authority when that authority is heading-derived. No bold-span index — see § Class (a)'s Resolution procedure step 1.
+4. **Set difference (mechanical pre-filter)**: (i) class (a) — normalize candidates per § Class (a)'s Resolution procedure and resolve them against the heading indexes and candidate-driven label Greps under the scope model; resolved candidates are dropped. (ii) class (c) — drop candidates matching the regex-classifiable allowed forms (a candidate on a heading line; a colon-title form such as `Step [0-9.]+:`; a parenthesized-title form such as `Step [0-9.]+ \(`; a possessive-label form such as `Step [0-9.]+'s "`; a sub-step qualifier such as `Step [0-9.]+ sub-step` — read the identifier part from the candidate's own root pattern). (iii) class (e) — build each root's name-authority set per § Class (e) step 1, then drop every output literal that carries no identifier, and every literal that carries both an identifier and an authority name. Only the residue of the three classes proceeds to judgment.
+5. **Judgment pass** (LLM judgment, residue only): apply the class (a) demotion rule to the unresolved residue; classify the class (c) residue against the full allowed-forms closed list; apply the class (e) demotion rule to its residue (extraction certainty only — the identifier-vs-name predicate was already settled mechanically at step 4); read the class (b) / (d) manifest sites for the roots present in this run and judge divergence / gaps / anchor staleness.
+6. **Assemble the verdict JSON** per the schema in the `--- EXECUTOR PROMPT ---` payload, filling `checked` with the per-pass counts: `roots` (roots linted), `files` (target files enumerated), `refs_extracted` (class (a) candidates surviving the fence filter), `refs_unresolved` (class (a) residue left unresolved after step 4), `manifest_pairs` (class (b) plus class (d) manifest entries judged), `step_candidates` (class (c) candidates from step 2), `output_literals` (class (e) candidates from step 2).

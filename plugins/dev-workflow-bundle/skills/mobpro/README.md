@@ -2,7 +2,7 @@
 
 A learning-oriented development workflow for pairing with a junior engineer. `mobpro` runs the **same quality gates** as `dev-workflow` — plan review, static checks, tests, rules-compliance review, code review, interactive commits, and rule maintenance — but re-shapes the flow so a junior can follow *what* is being built and *why*.
 
-The model is mob-programming with a fixed driver: **the AI always drives** (it writes every edit) and narrates as it goes — what it is about to do, what it just did, and why. The junior **navigates**: after each implementation unit they review that unit's diff and ask whatever the narration left open, and they approve each commit. The junior does not write code, and `mobpro` never asks them to answer a comprehension question — the learning is in reading each diff, hearing the reasoning, and judging.
+The model is mob-programming with a fixed driver: **the AI always drives** (it writes every edit) and narrates as it goes — what it is about to do, what it just did, and why. The junior **navigates**: after each implementation unit they review that unit's diff and ask whatever the narration left open, and they approve each commit. The junior does not write code, and `mobpro` never asks them to answer a comprehension question — nor does it ask up front what they want to learn, since what they take away comes out of the work rather than from goals declared before any code exists. The learning is in reading each diff, hearing the reasoning, and judging.
 
 > **Install**: use the `dev-workflow-bundle` plugin. `mobpro` reads `dev-workflow`'s reference files as install-time siblings, so a standalone `mobpro`-only install will not work.
 

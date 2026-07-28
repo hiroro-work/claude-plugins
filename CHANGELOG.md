@@ -2,6 +2,11 @@
 
 ## 2026-07-28
 
+### dev-workflow v1.98.1 / dev-workflow-bundle v1.114.1
+
+- fix(dev-workflow): make four cross-reference anchors resolvable
+  - Category: ambiguity; `§ Step 1 registration mechanics` was cited from six sites while the bold label actually read `**Registration mechanics**`, `Merge strategy per key type` was cited as a bold-prose label while its target was plain prose, and `see Step 1.5` carried no descriptor. The label is renamed, the paragraph bolded, and the step named. Separately, § Localization granularity's `Applies to` sentence now lists the same output categories as `references/configuration.md`'s `language` bullet, which it claims to mirror
+
 ### dev-workflow v1.98.0 / mobpro v1.9.0 / dev-workflow-bundle v1.114.0
 
 - **Behavior change**: `mobpro` no longer asks at kickoff what the junior wants to learn. The AI explains as it works, so what the junior takes away comes out of the narration and the per-unit diff reviews rather than from goals declared before any code exists. The wrap-up learning summary stays, now drawn from what the session actually built and explained instead of measured against pre-declared goals; the state-file body no longer carries a learning-goal line

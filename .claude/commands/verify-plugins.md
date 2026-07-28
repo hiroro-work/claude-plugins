@@ -45,7 +45,7 @@ marketplace.json の各プラグインを `source` プレフィックスで分�
 - `<source>/skills/` がある場合、配下エントリがシンボリックリンクであること、参照先 `skills/<skill>/SKILL.md` が存在すること
 - `<source>/agents/` がある場合、各 `.md` ファイルに YAML frontmatter が存在すること
 - `<source>/.claude-plugin/plugin.json` がある場合、有効な JSON であること
-- bundle の場合（`skills` 配列が specific パスを含む）: `skills` 配列の各パスが `skills/<name>/SKILL.md` に解決されること、かつ `<source>/skills/` 配下の symlink セットと一致すること
+- bundle の場合（`skills` 配列が specific パスを含む）: `skills` 配列の各パスが `skills/<name>/SKILL.md` に解決されること、かつ `<source>/skills/` 配下のエントリセットと一致すること
 
 ### 3. バージョン整合性
 
@@ -89,9 +89,9 @@ marketplace.json の各プラグインについて、`source` プレフィック
 **wrapper 方式（`source: "./plugins/..."`）**:
 
 1. `source` ディレクトリが存在すること
-2. `<source>/skills/` がある場合、配下エントリがシンボリックリンクであり、参照先 `skills/<skill>/SKILL.md` が存在すること
+2. `<source>/skills/` がある場合、配下エントリが **シンボリックリンク（参照先 `skills/<skill>/SKILL.md` が存在）または `SKILL.md` を含む実ディレクトリ** であること。全 wrapper は commit `56026cb` で symlink から実コピーへ変換済み（[anthropics/claude-code#53948](https://github.com/anthropics/claude-code/issues/53948) 回避）なので、実ディレクトリを不備として報告しないこと（source of truth: `.claude/rules/project.rules.md` § プラグイン構造 の wrapper エントリ bullet）
 3. `<source>/agents/` がある場合、各 `.md` に YAML frontmatter が存在すること
-4. **bundle の場合** (`skills` 配列が specific パスを含む): 配列内の各パスが `skills/<name>/SKILL.md` に解決されること、かつ `<source>/skills/` 配下の symlink セットと `skills` 配列のセットが一致すること（どちらか一方にしかないエントリを検出）
+4. **bundle の場合** (`skills` 配列が specific パスを含む): 配列内の各パスが `skills/<name>/SKILL.md` に解決されること、かつ `<source>/skills/` 配下のエントリセットと `skills` 配列のセットが一致すること（どちらか一方にしかないエントリを検出）
 
 ```bash
 # wrapper 方式のシンボリックリンク確認例

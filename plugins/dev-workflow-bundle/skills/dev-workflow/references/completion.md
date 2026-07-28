@@ -29,7 +29,7 @@ The reminder is omitted when `fast_mode_skipped_steps` is empty (`--fast` not pa
 - `language: ja`: `dev-workflow-bundle の一部スキルが今回の実行で利用できませんでした: <list>。\`dev-workflow-bundle\` プラグインが完全にインストールされているか確認してください。`
 - `language: en`: `Some dev-workflow-bundle sibling skills were unavailable this run: <list>. Check whether the \`dev-workflow-bundle\` plugin is fully installed.`
 
-Render `<list>` as the ledger's recorded entries verbatim, comma-separated (the skill names and step labels stay verbatim per § Localization granularity's "file-internal identifiers" rule; only the surrounding connective sentence is localized). The reminder is omitted entirely when `bundle_skills_unavailable` is empty — the common case where the bundle is fully installed.
+Render `<list>` as the ledger's recorded entries verbatim, comma-separated (the skill names and the recorded `<context>` phase descriptions stay verbatim per § Localization granularity's "file-internal identifiers" rule; only the surrounding connective sentence is localized). The reminder is omitted entirely when `bundle_skills_unavailable` is empty — the common case where the bundle is fully installed.
 
 **Step 10 partial-state line**: if Step 10 ended via its `Mid-loop cancel` branch (see `references/interactive-commits.md` § Mid-loop cancel), emit the localized partial-completion token defined at § Step 10's "Localized summary tokens" paragraph. On a normal completion path, omit this line.
 
@@ -49,8 +49,8 @@ The reminder is omitted when `uncommitted_examples_changes` is empty.
 
 **Step 11 staging-dir reminder**: when `uncommitted_staging_changes` (the partitioned set for `staging_output_dir`, default `.claude/rules-staging/`) is non-empty, surface a reminder in the resolved `language` (`<N>` = number of uncommitted staging files, `<staging_dir>` = the resolved directory). The message keeps the promote-review framing — staged entries are 1st-observation candidates normally promoted to `.claude/rules/` on a later re-observation rather than adopted as-is, and the localized suffix notes they were also committable at the gate:
 
-- `language: ja`: `\`<staging_dir>\` に未レビューの extract-rules 候補が <N> 件あります — 手動で確認し、採用するものを \`.claude/rules/\` へ promote してください（またはゲートで commit 可能でした）`
-- `language: en`: `<N> extract-rules candidate(s) under \`<staging_dir>\` await review — inspect and promote accepted files to \`.claude/rules/\` manually (or commit them at the Step 11 gate)`
+- `language: ja`: `\`<staging_dir>\` に未レビューの extract-rules 候補が <N> 件あります — 手動で確認し、採用するものを \`.claude/rules/\` へ promote してください（ルール更新コミットゲートで commit することも可能でした）`
+- `language: en`: `<N> extract-rules candidate(s) under \`<staging_dir>\` await review — inspect and promote accepted files to \`.claude/rules/\` manually (or commit them at the rule-update commit gate)`
 
 The reminder is omitted when `uncommitted_staging_changes` is empty.
 
@@ -58,8 +58,10 @@ The reminder is omitted when `uncommitted_staging_changes` is empty.
 
 **(i) Commit clause** — when `compaction_applied_count > 0` (the Step 11 sub-step 3 char-count compaction gate landed user-accepted edits) **and** `uncommitted_rule_changes` (the output_dir partition from § Step 11 extract-rules output reminders) is non-empty — i.e. the compaction edits were **not** committed by Step 11's "Commit rule updates" gate (compaction edits live under `.claude/rules/`, so an accepted rule-update commit stages them along with the other rule changes) — surface a separate manual-commit reminder in the resolved `language` (rendered in file-unit count, distinct from the rule-update reminder above which counts uncommitted rule files):
 
-- `language: ja`: `Step 11 で <N> 件のルールファイルを圧縮しました — PR を開く前に手動で commit してください`
-- `language: en`: `Step 11 compacted <N> rule files — please commit manually before opening a PR`
+This reminder drops the step number and names the phase (§ Phase naming in user-facing output's "drop the number" option).
+
+- `language: ja`: `ルール更新フェーズで <N> 件のルールファイルを圧縮しました — PR を開く前に手動で commit してください`
+- `language: en`: `The rule-update phase compacted <N> rule files — please commit manually before opening a PR`
 
 This commit clause is omitted when `compaction_applied_count == 0` OR `uncommitted_rule_changes` is empty (the latter means the compaction edits are already committed). The `uncommitted_rule_changes`-non-empty test is a **coarse proxy** for "the compaction edits are still uncommitted": a partial `adjust` at the rule-update gate that committed the compacted files but left other rule files uncommitted can over-fire this clause — a harmless redundant nudge, not a data-loss path.
 

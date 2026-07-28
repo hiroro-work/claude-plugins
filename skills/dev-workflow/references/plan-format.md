@@ -128,7 +128,7 @@ Additional rule specific to Decisions: place the extracted sentence alone — no
 
 **Resume mode (executing a subtask from a decomposition state file):**
 
-> No user decisions required (subtask scoped — boundaries approved in prior Step 1.5).
+> No user decisions required (subtask scoped — boundaries approved in prior Step 1.5 (Task Decomposition)).
 
 ## Subtask / Resume handling
 
@@ -185,19 +185,19 @@ Rendering conventions for the variants below: same **Blockquote rendering conven
 
 **Decisions has one or more qualifying items (Normal or Resume):**
 
-> Decisions has items requiring your judgment — see the full plan above for details. The plan has been reviewed in Step 3.
+> Decisions has items requiring your judgment — see the full plan above for details. The plan has been reviewed in Step 3 (Plan Review).
 
 **Decisions is empty, Normal mode:**
 
-> No user decisions required — approve if the approach looks reasonable. Full plan details appear above. The plan has been reviewed in Step 3 for correctness and convention compliance.
+> No user decisions required — approve if the approach looks reasonable. Full plan details appear above. The plan has been reviewed in Step 3 (Plan Review) for correctness and convention compliance.
 
 **Decisions is empty, Resume mode (subtask execution):**
 
-> No user decisions required (subtask scoped — boundaries approved in prior Step 1.5). Full plan details appear above.
+> No user decisions required (subtask scoped — boundaries approved in prior Step 1.5 (Task Decomposition)). Full plan details appear above.
 
 Pick exactly one variant and use its literal text verbatim — do not concatenate variants, do not reword the sentence content.
 
-**N_plan=0 conditional (Trivial or `--fast`)**: when N_plan = 0 and Step 3 was therefore skipped, the "The plan has been reviewed in Step 3 ..." sentence is false, and the Step 4 user-approval gate is the sole review of the plan — so this must be signaled regardless of which variant is chosen. N_plan=0 has two distinct causes with two distinct replacement sentences (never conflate them — the wrong one asserts something false about the task): (i) **genuine Trivial assessment** (N_code = 0 too) — use `Step 3 (internal review) was skipped because this task was assessed Trivial — this approval is the sole review.`; (ii) **`--fast` forced N_plan=0 on a non-Trivial tier** (N_code stays ≥ 1) — use `Step 3 (internal review) was skipped because fast mode skips Plan Review for this run — this approval is the sole review.` instead, since the task was not assessed Trivial and saying so would contradict the difficulty log line (`SKILL.md` Step 2's Adjust N by difficulty), which names the real tier. Apply the applicable sentence per variant: for a variant that **contains** a "The plan has been reviewed in Step 3 ..." sentence, **replace** that sentence with it; for a variant that **contains no** such sentence (the Resume-mode empty-Decisions variant), **append** it. The lead clause of each variant ("Decisions has items requiring your judgment ..." / "No user decisions required ...") is unchanged in both cases — only the review-status sentence is substituted or appended.
+**N_plan=0 conditional (Trivial or `--fast`)**: when N_plan = 0 and Step 3 was therefore skipped, the "The plan has been reviewed in Step 3 ..." sentence is false, and the Step 4 user-approval gate is the sole review of the plan — so this must be signaled regardless of which variant is chosen. N_plan=0 has two distinct causes with two distinct replacement sentences (never conflate them — the wrong one asserts something false about the task): (i) **genuine Trivial assessment** (N_code = 0 too) — use `Step 3 (Plan Review) was skipped because this task was assessed Trivial — this approval is the sole review.`; (ii) **`--fast` forced N_plan=0 on a non-Trivial tier** (N_code stays ≥ 1) — use `Step 3 (Plan Review) was skipped because fast mode skips Plan Review for this run — this approval is the sole review.` instead, since the task was not assessed Trivial and saying so would contradict the difficulty log line (`SKILL.md` Step 2's Adjust N by difficulty), which names the real tier. Apply the applicable sentence per variant: for a variant that **contains** a "The plan has been reviewed in Step 3 ..." sentence, **replace** that sentence with it; for a variant that **contains no** such sentence (the Resume-mode empty-Decisions variant), **append** it. The lead clause of each variant ("Decisions has items requiring your judgment ..." / "No user decisions required ...") is unchanged in both cases — only the review-status sentence is substituted or appended.
 
 ## Localization granularity
 
@@ -208,7 +208,7 @@ Source of truth: `SKILL.md` § Configuration `language` bullet maintains the sam
 **Two-way rule:**
 
 - **Translate**: generic technical concepts that have natural equivalents in the target language. The output must read naturally to a native speaker of the resolved language. Examples: primary source → 一次情報源 (`ja`), self-audit → 自己監査 (`ja`), blast radius → 影響範囲 (`ja`), edge case → 境界ケース (`ja`).
-- **Preserve verbatim**: file-internal identifiers — function names, config key names (`check_commands`, `review_iterations`), section anchors (`Step 7.5`), stable cross-reference labels (`§ No-Stall Principle`), file paths (`references/plan-format.md`), skill names (`Skill(verify-diff)`), and section headings (`Overview` / `Decisions` / `Design` / `Test plan` / `Risks` / `Unknowns`).
+- **Preserve verbatim**: file-internal identifiers — function names, config key names (`check_commands`, `review_iterations`), section anchors (`Step 7.5`), stable cross-reference labels (`§ No-Stall Principle`), file paths (`references/plan-format.md`), skill names (`Skill(rules-review)`), and section headings (`Overview` / `Decisions` / `Design` / `Test plan` / `Risks` / `Unknowns`). Preserving a step anchor verbatim does not license writing it bare: whenever one appears in output, pair it with what that phase does per the running skill's § Phase naming in user-facing output section.
 
 **First-use pairing**: on the first occurrence of a translated concept within a given output block (preamble, expanded section, completion summary), pair the localized phrasing with the original technical term in parentheses (e.g. `一次情報源（primary source）` for `language: ja`). Subsequent occurrences within the same block use the localized form alone. This convention is consistent with § User-gate summary preamble's jargon pairing rule, which is a preamble-specific specialization of this broader principle — § User-gate summary preamble adds format constraints specific to preamble bullets (e.g. pairing with an identifying handle when the localized and original terms coincide under `language: en`).
 
@@ -244,7 +244,7 @@ The other user-gates listed in `SKILL.md` § No-Stall Principle (Step 1.5 dialog
 **Format constraints (closed list):**
 
 - Bulleted list, 3–5 items, each one sentence.
-- Technical jargon pairs the localized phrasing with the original technical term in parentheses on first use within the preamble (e.g. `品質ゲート（check_commands / Step 7.5）` for `language: ja`, `quality gate (check_commands / Step 7.5)` for `language: en`). When the localized phrasing and the original technical term coincide (typically under `language: en` for English-origin jargon), pair the term with its identifying handle instead (e.g. `Step 7.5 (Rules Compliance Review)`, `rules-review (the rules-compliance reviewer skill)`) so the parenthetical still adds disambiguating information.
+- Technical jargon pairs the localized phrasing with the original technical term in parentheses on first use within the preamble (e.g. `品質ゲート（check_commands / Step 7.5 Rules Compliance Review）` for `language: ja`, `quality gate (check_commands / Step 7.5 Rules Compliance Review)` for `language: en`). When the localized phrasing and the original technical term coincide (typically under `language: en` for English-origin jargon), pair the term with its identifying handle instead (e.g. `Step 7.5 (Rules Compliance Review)`, `rules-review (the rules-compliance reviewer skill)`) so the parenthetical still adds disambiguating information.
 - Quoted heading anchors from rule files or other source files (e.g. a rule's section heading referenced from the preamble) are kept verbatim regardless of the resolved `language` — they are file-internal identifiers, not localizable prose.
 - Output language follows the resolved `language` (see `SKILL.md` § Configuration; default `ja`).
 - Mark the boundary between preamble and the rest of the output with a bold lead-in placed at the top of the preamble, above the first bullet (`**Summary**` for `language: en`, `**概要**` for `language: ja` — the lead-in text is localized to follow the resolved `language`). A fenced section is an acceptable alternative but is redundant when a bold lead-in is present — do not emit both.

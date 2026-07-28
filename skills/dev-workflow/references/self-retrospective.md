@@ -9,7 +9,7 @@ This file is read whenever `self_retrospective.feedback` is set at Step 1, regar
 ## 1. Pre-flight checks
 
 1. Re-validate `self_retrospective.feedback` auto-detect:
-   - Empty string `""` → treat as unset. Warn `self_retrospective.feedback is empty — Step 11.5 skipped.` and exit Step 11.5 with the terminal summary (0 findings, skipped).
+   - Empty string `""` → treat as unset. Warn `self_retrospective.feedback is empty — self-retrospective skipped.` and exit Step 11.5 with the terminal summary (0 findings, skipped).
    - Starts with `/`, `~/`, `./`, or `../` → **path mode**.
    - Matches `^[\w.-]+/[\w.-]+$` → **repo mode**.
    - Otherwise → warn with this exact message and exit Step 11.5:
@@ -17,7 +17,7 @@ This file is read whenever `self_retrospective.feedback` is set at Step 1, regar
      ```text
      `self_retrospective.feedback` value '<value>' is neither a path
      (must start with `/`, `~/`, `./`, `../`) nor an `owner/repo` string
-     — Step 11.5 skipped.
+     — self-retrospective skipped.
      ```
 
 2. Repo mode: run `gh auth status`. On failure (gh not installed or not authenticated), abort Step 11.5 with:
@@ -46,7 +46,7 @@ This file is read whenever `self_retrospective.feedback` is set at Step 1, regar
    - Expand `~` to the literal `$HOME` value before constructing the Glob pattern — `Glob` does not guarantee tilde expansion, so always pass an absolute path.
    - Use `Glob` with pattern `<$HOME>/.claude/projects/<encoded-path>/*.jsonl`. `Glob` returns results sorted by modification time (newest first), so pick the first entry.
    - The "latest-modified" heuristic can pick the wrong file when multiple Claude Code instances are running against the same repo. Inform the user which file was selected so they can catch a mismatch at §4 preview time (user can `skip` if the session is wrong).
-   - If the glob returns no matches, abort Step 11.5 with a warning ("No session jsonl found for this repo — Step 11.5 requires conversation history to scan.") and emit the terminal summary (0 findings, skipped).
+   - If the glob returns no matches, abort Step 11.5 with a warning ("No session jsonl found for this repo — the self-retrospective requires conversation history to scan.") and emit the terminal summary (0 findings, skipped).
 
 Every abort in this section emits the terminal summary as `skipped` — pre-flight never produces a `failed` state, which is reserved for submission attempts that were actually made (section 5).
 

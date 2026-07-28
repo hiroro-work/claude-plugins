@@ -35,8 +35,8 @@ These are the `dev-workflow` **inline** definitions that `mobpro` needs but that
 
 - **Approval token closed list** (judge each reply semantically, not by exact phrase): **accept** (affirmative — "OK" / "approve" / "next" / "コミットして" / "進めて" or equivalent) / **adjust** (a specific revision demand — subject change, file regrouping, split) / **cancel** / **stop** (explicit halt) / **NOT approval** (interrogative or non-committal — "look good?" / "これでいい？"; treat as `adjust` and re-present, never silently advance). When presenting a gate, include at least one short accept token so brief replies are known valid.
 - **Localized summary tokens** (single source of truth; M13 references the same paired form):
-  - `language: ja`: `M11 部分完了: <N>/<total> コミット適用済み`
-  - `language: en`: `M11 partial completion: <N>/<total> commits landed`
+  - `language: ja`: `M11（Commit）部分完了: <N>/<total> コミット適用済み`
+  - `language: en`: `M11 (Commit) partial completion: <N>/<total> commits landed`
 - **`landed_count` lifecycle**: initialized to `0` at M1 (SKILL.md § Cross-step state variables); incremented by exactly 1 on each commit's zero exit; a retry / abort / failed commit does not increment; an `--amend` / re-commit is not re-incremented.
 - **Post-hook attribution check**: run `git diff <base_commit> --name-only` (`step10_diff_paths`), compute `hook_introduced_paths = step10_diff_paths − implementation_diff_paths` after first subtracting the § (b) Workflow artifacts set, cross-reference the remainder against the review-hook applied sites; surface any unattributed path with `git diff <base_commit> -- <path>` and require explicit resolution (confirm as an expected side-effect, or `git checkout HEAD -- <path>`) before commit grouping.
 - **Branch-ancestry guard**: an unexpected current branch is normal when the environment pre-creates a working branch, **as long as** the branch descends from `<base_commit>` (`git merge-base --is-ancestor <base_commit> HEAD`, zero exit = it does). Non-zero exit → stop and surface the discrepancy rather than switching branches unilaterally.
@@ -47,7 +47,7 @@ These are the `dev-workflow` **inline** definitions that `mobpro` needs but that
 
 - **`rule-extraction-active` gate** (double-count defense): rule extraction is **inactive** if (a) any `hooks.on_complete` entry contains the string `extract-rules`, OR (b) M10 ran a hook whose output shows `extract-rules --from-conversation` ran this session (signal: output contains `staged_count` or `promoted_count`). When inactive, skip all conversation-derived extraction (do not dispatch the shared scan on rule-extraction's behalf, do not call `extract-rules`) — this preserves the staged-promotion 1st→2nd-observation escalation from miscounting one session as two.
 - **Session-scan wiring**: when rule-extraction is active, M12 dispatches the shared scan (or consumes an already-dispatched result) per `../dev-workflow/references/session-scan.md`.
-- **extract-rules-unavailable fallback**: if `extract-rules` is unavailable, save reusable patterns to `.claude/plans/rules-candidates-<YYYY-MM-DD>.md` (append if present), inform the user, and append `extract-rules unavailable (M12)` to `bundle_skills_unavailable`.
+- **extract-rules-unavailable fallback**: if `extract-rules` is unavailable, save reusable patterns to `.claude/plans/rules-candidates-<YYYY-MM-DD>.md` (append if present), inform the user, and append `extract-rules unavailable (rule update)` to `bundle_skills_unavailable`.
 - **Rule-update commit gate firing condition**: fires only when `interactive_commits` is true AND there are uncommitted changes under any of extract-rules' three output directories (`output_dir` / `examples_output_dir` / `staging_output_dir`), detected via `git status --porcelain=v1 --untracked-files=all -z` filtered to those dirs with the § (b) Workflow artifacts set subtracted.
 
 ## (g) Completion inline definitions (M13)

@@ -201,7 +201,7 @@ Pick exactly one variant and use its literal text verbatim — do not concatenat
 
 ## Localization granularity
 
-Applies to all user-facing prose produced by this skill — plan body content, user-gate preambles, violation/finding lists, Step 10 commit-plan / per-commit gate framing prose (verbatim git output and file paths remain English), Completion summary, and Step 11.5 `Description` / `Suggested fix direction` paragraphs. The resolved `language` (see `SKILL.md` § Configuration) controls the output language.
+Applies to all user-facing prose produced by this skill — plan body content, user-gate preambles, violation/finding lists, the Step 2 difficulty-assessment log, Step 10 commit-plan / per-commit gate framing prose and the Step 11 "Commit rule updates" gate output (verbatim git output and file paths remain English), Completion summary, and Step 11.5 `Description` / `Suggested fix direction` paragraphs. The resolved `language` (see `SKILL.md` § Configuration) controls the output language.
 
 Source of truth: `SKILL.md` § Configuration `language` bullet maintains the same enumeration — keep in sync when categories are added or removed.
 

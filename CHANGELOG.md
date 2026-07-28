@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-07-28
+
+### dev-workflow v1.96.0 / mobpro v1.7.0 / dev-workflow-bundle v1.112.0
+
+- **Behavior change**: the diff-size thresholds `diff_verbatim_line_threshold` / `diff_verbatim_threshold` / `diff_condensed_threshold` are no longer read from `.claude/dev-workflow.local.md` — they are fixed internal constants (100 lines / 4000 chars / 20000 chars) in the new `references/diff-presentation.md`. Any value set for them is now ignored, so **the guidance in the dev-workflow v1.74.6 and v1.59.0 entries below — "set to `99999999` in `.claude/dev-workflow.local.md`" — is revoked**. Both skills warn once at settings load if a config layer still sets one of the three (`mobpro` honored them at its M6 diff review, so it carries its own tombstone). Grounds: overriding the ladder yields near-zero value — every setting of it produces the same commit-gate decision from the same diff, changing only how many lines of that diff are printed on the way to it, and the untruncated diff stays one `git diff` away in every mode. Skipping the deprecation notice and the calendar-anchored waiting period is a **deliberate deviation** from the config-flag lifecycle: that rule protects downstream projects whose config depends on a documented opt-out, and the user's removal decision came at the plan-approval gate rather than before planning, so the exception path's precondition is not met literally. The protection it offers is nonetheless met here — these keys appeared on no configuration surface to depend on, and the tombstone warns loudly on any layer that still sets one
+- fix(dev-workflow): resolve the Step 10 default-branch guard from a local ref before querying the remote
+  - Category: missing-branch; `references/interactive-commits.md`'s Default-branch guard resolved the default branch only via `git remote show origin`, which reaches the network — on an offline or unauthenticated host it returned no `HEAD branch` line, the guard silently skipped, and commits landed on the default branch. It now tries `git symbolic-ref -q --short refs/remotes/origin/HEAD` first and falls back to the remote query only when that ref is unset
+- fix(dev-workflow, mobpro): declare the git subcommands the commit step actually invokes
+  - Category: missing-branch; both skills' `allowed-tools` omitted `git symbolic-ref` / `git merge-base` / `git remote show` / `git switch -c`, which the default-branch guard and the branch-ancestry guard require. The gap only surfaced outside auto-approve permission modes
+- refactor(dev-workflow, mobpro): extract the shared diff-scoping and diff-rendering procedures into `references/diff-presentation.md`
+  - The detached-review-object technique (stage → `write-tree` → `commit-tree` → `reset --`, plus the verified fact that crit accepts the resulting dangling object as `--range`'s head) and the verbatim / condensed / skeleton rendering ladder now live once each, in `<base>` / `<head>` vocabulary with a per-caller endpoint table. Step 10's commit gate, its crit path, and mobpro M6 supply their own endpoints and point here instead of restating the steps
+- docs(dev-workflow): scope `commit_review_gate` to code-diff review rather than Step 10 alone
+  - The key also governs mobpro's M6 per-unit review, so both descriptions now present Step 10 as one consumer, and `references/configuration.md` is the stated source of truth for the key's semantics
+
 ## 2026-07-27
 
 ### dev-workflow v1.95.1 / dev-workflow-bundle v1.111.1

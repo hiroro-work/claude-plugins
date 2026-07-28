@@ -80,7 +80,7 @@ Per-key detail (defaults, accepted values, behavior, opt-in / opt-out, behavior-
 - **implementation_executor**: Who executes Step 5 work units — `main` (default) / `subagent` / `ask-claude` / `ask-codex` / `ask-gemini` / `ask-copilot` / `ask-agy`; `--executor` overrides. Experimental.
 - **interactive_commits**: Whether Step 10 Interactive Commits and the Step 11 rule-update commit gate run (default `true`).
 - **compact_rules**: Whether Step 11 sub-step 3's Char-count compaction gate runs (default `false`; experimental).
-- **plan_review_gate**: Step 4 approval surface — `plan-mode` / `visual` (default) / `crit`; the deprecated `visual_plan_review` boolean is still resolved via a compat mapping.
+- **plan_review_gate**: Plan approval surface — `plan-mode` / `visual` (default) / `crit`; Step 4's gate is one consumer. The deprecated `visual_plan_review` boolean is still resolved via a compat mapping.
 - **commit_review_gate**: Code-diff review surface — `diff` (default) / `crit`; Step 10's per-commit gate is one consumer. Independent of `plan_review_gate`.
 - **polish_prose**: Whether the two `prose-polish` passes (Step 4 plan-body + Step 6.5) run (default `true`).
 - **confirm_remaining_steps**: Whether Step 11 asks before running the rule-maintenance / retrospective steps (default `false`; experimental; also fires under `--fast`).

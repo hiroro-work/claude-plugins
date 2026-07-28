@@ -312,12 +312,18 @@
     // What the viewer knows about each plan section, in match-priority order:
     // `match` lists title prefixes (lowercased) that map to the type; `open` opens
     // the section by default. The Decisions/Risks render paths key off `type` below.
+    // Prefixes beyond the dev-workflow ones belong to the sibling mobpro skill — the whole
+    // `buildorder` list is mobpro's, since dev-workflow has no matching heading. Source of
+    // truth: mobpro's `references/plan-format.md` § Template; keep in sync — a heading
+    // renamed there and not here silently returns a mobpro plan to all-collapsed. Those
+    // prefixes stop short of an apostrophe so straight vs. curly quotes cannot break the match.
     const SECTION_TYPES = [
-      { type: "overview", match: ["overview"], open: true },
-      { type: "decisions", match: ["decision"], open: true },
+      { type: "overview", match: ["overview", "what we"], open: true },
+      { type: "decisions", match: ["decision", "choices i made"], open: true },
+      { type: "buildorder", match: ["build order", "why this"], open: true },
       { type: "design", match: ["design"] },
-      { type: "test", match: ["test plan", "test"] },
-      { type: "risks", match: ["risk", "unknown"] },
+      { type: "test", match: ["test plan", "test", "how we"] },
+      { type: "risks", match: ["risk", "unknown", "watch-out"] },
       { type: "context", match: ["context"], open: true },
     ];
     const OPEN_TYPES = new Set(SECTION_TYPES.filter((s) => s.open).map((s) => s.type));

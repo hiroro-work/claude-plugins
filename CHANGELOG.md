@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-07-29
+
+### dev-workflow v1.100.0 / mobpro v1.11.0 / dev-workflow-bundle v1.116.0
+
+- `review_iterations` now accepts `0`, which turns that review phase off for the project. `review_iterations: {plan: 0}` runs without Plan Review, `{code: 0}` without Code Review and a scalar `0` without either. Previously `0` was rejected as invalid and silently replaced by the default `3` with a warning. A phase turned off this way is skipped exactly as the Trivial tier skips it, and — because it is your own declaration rather than the workflow's decision — it raises no Completion-summary skip reminder, unlike the difficulty-skip and `--fast` skips. Negative and non-integer values are still invalid and still fall back to `3`
+  - `mobpro` honors a configured `0` too, rather than clamping to `1`: the two skills read the same config file, so they must resolve the same counts. With `{code: 0}` `mobpro`'s M9 (Rules + code review) narrows to its rules-compliance half rather than being skipped, since that half reads no iteration count
+- fix(dev-workflow): stop three difficulty / mode caps from *raising* an iteration count
+  - Category: wrong-default; the Simple tier assigned `N_plan = N_code = 1` and `--fast` assigned `N_code = 1` unconditionally rather than as a `min` against the resolved value, so either could push a count up. This was unobservable while `0` was rejected at parse time and becomes reachable now. All caps are `min` forms, and Adjust N states that every tier only lowers
+- fix(dev-workflow): key the Step 4 Trivial re-activation on the assessed tier instead of `N_code = 0`
+  - Category: wrong-default; that re-activation (which re-derives difficulty when an approach-level change lands on a task assessed Trivial) identified Trivial by `N_code = 0`, on the documented premise that no other path produced that value. A configured code-phase `0` breaks the premise, so a project that merely turned Code Review off would have had its difficulty assessment re-derived
+
 ## 2026-07-28
 
 ### dev-workflow v1.99.0 / mobpro v1.10.0 / dev-workflow-bundle v1.115.0

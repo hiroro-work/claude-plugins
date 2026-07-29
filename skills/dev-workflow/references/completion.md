@@ -22,7 +22,7 @@ The reminder is omitted when `difficulty_skipped_steps` is empty (Moderate / Com
 - `language: ja`: `fast モードにより <steps> を skip しました` — 例: `fast モードにより Step 3 Plan Review / Step 6.5 Polish Prose を skip しました`
 - `language: en`: `Skipped <steps> per fast mode` — e.g. `Skipped Step 3 Plan Review / Step 6.5 Polish Prose per fast mode`
 
-The reminder is omitted when `fast_mode_skipped_steps` is empty (`--fast` not passed, or a Trivial-tier run where fast mode had nothing left to force). The step names stay verbatim regardless of `language`.
+The reminder is omitted when `fast_mode_skipped_steps` is empty. Three ways that happens: `--fast` was not passed; a Trivial-tier run left fast mode nothing to force; or every site that would have recorded was already off — e.g. a Simple-tier run whose plan phase is configured `0` (the N-forcing site appends only when N_plan was ≥ 1 beforehand) and whose Step 6.5 / Step 7.5 rows the difficulty-skip matrix had already completed. The step names stay verbatim regardless of `language`.
 
 **Bundle-skill availability reminder** (per [`references/plan-format.md`](plan-format.md) § Localization granularity): when `bundle_skills_unavailable` (declared at Step 1 sub-step 3's "Initialize the bundle-unavailability ledger here" bullet, appended at the sites named there) is non-empty, surface a line in the resolved `language` naming which `dev-workflow-bundle` sibling skills were unavailable this run, so a partially-installed bundle is never silently missed run after run:
 

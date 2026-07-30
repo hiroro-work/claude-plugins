@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-07-30
+
+### dev-workflow v1.101.0 / mobpro v1.12.0 / ask-peer v2.5.1 / dev-workflow-bundle v1.117.0
+
+- **Behavior change**: `dev-workflow`'s plan section `Design` is now `Build order`, and it is always an ordered, numbered list — the "structure by file when the changes are non-sequential" alternative is gone. The order is the order the work lands in, and Step 5 executes it step by step, so approving a plan approves that sequence. Work with no inherent order is still numbered, with one line saying the order is free. Both workflows now name this section identically, so `mobpro`'s § Review lens no longer maps between them
+  - Write each step as `N. **<heading>** — <detail>`: a verb-first bold heading naming the file(s) it touches, then the detail. The bold heading is what splits summary from detail in the browser gate below; the em dash is only the conventional separator
+  - `Build order` moved from the `Review guide` line's `reference` tier to `must-review`, alongside `Overview` and `Decisions`. In chat, Step 4's condensed view now shows the step headings in place of the former file list; the headings name the files, so the file-level orientation is unchanged
+  - Anything matching the old section name needs updating: plan templates, plan-authoring prompts, and tooling that greps for `### Design`
+- feat(dev-workflow): collapse Build order steps in the browser plan-review gate
+  - Each step opens showing only its bold heading and expands on click, which is what lets `Build order` sit in the must-review tier without the section opening at full length; a step written without a bold heading renders uncollapsed. Commenting on a step works while it is collapsed. This is the `visual` gate only — the `plan-mode` approval modal and the `crit` gate render the plan as written, which is why each heading has to carry its step on one line. The viewer's classifier no longer carries a `Design` entry, so a pre-rename plan document classifies as an ordinary section and opens collapsed
+- fix(ask-peer): rename the stale `Design` references in the plan-review payload
+  - Category: ambiguity; the parallel-fan-out atomicity audit pointed the reviewer twice at "the plan's Design", a section no plan format produces any more
+
 ## 2026-07-29
 
 ### dev-workflow v1.100.0 / mobpro v1.11.0 / dev-workflow-bundle v1.116.0

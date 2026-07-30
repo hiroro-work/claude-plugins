@@ -14,7 +14,7 @@ To review exactly the delta between two states while unrelated changes sit uncom
 
 A caller that hands `<head>` to an external review tool owns verifying that the tool accepts a dangling object ([`crit-commit-review.md`](crit-commit-review.md) § crit CLI contract records that verification for crit).
 
-**On failure**: a `git add` / `write-tree` / `commit-tree` that exits non-zero leaves no `<head>` to range against, so the caller falls back to whichever surface needs no new object — that disposition is the caller's. A step 5 unstage that fails is different: retry once after a 1–2 second sleep, then render a one-line note with `<reason>` (the last non-empty stderr line, truncated to ≤ 80 characters, or `(no stderr)` when empty) and proceed. Either way, do **not** auto-recover (no `git reset --hard`, no manual index or ref manipulation) and leave the staged paths as they are — every caller re-stages by pathspec before it next touches the index, so leftovers are inert.
+**On failure**: a `git add` / `write-tree` / `commit-tree` that exits non-zero leaves no `<head>` to range against, so the caller falls back to whichever surface needs no new object — that disposition is the caller's. A step 5 unstage that fails is different: retry once after a 1–2 second sleep, then render a one-line note with `<reason>` (the last non-empty stderr line, truncated to ≤ 80 characters, or `(no stderr)` when empty) and proceed. Either way, do **not** auto-recover (no `git reset --hard`, no manual index or ref manipulation) and leave the staged paths as they are. Leftovers cannot reach a commit: a caller either re-stages by pathspec before it next touches the index, or replaces the index outright (`git read-tree`) before committing.
 
 ### Caller endpoints
 
@@ -22,8 +22,14 @@ Each caller supplies these three values and does **not** restate the steps above
 
 | Caller | `<base>` | Resolution timing | Unstage point |
 | --- | --- | --- | --- |
-| [`crit-commit-review.md`](crit-commit-review.md) — Step 10's crit path | `HEAD`, via `git rev-parse HEAD` | once per commit, at that commit's first round | after every round |
+| [`interactive-commits.md`](interactive-commits.md) — Step 10's per-commit candidate (steps 1–2 on its pathspec derivation only; step 3 on both) | `HEAD`, via `git rev-parse HEAD` | once per commit, when that commit's candidate is built | only on its non-landing exits — see the note below |
 | `mobpro` `references/diff-review.md` — M6 per-unit review | `m6_review_base` | initialized at M6 loop entry, then advanced to the previous unit's `<head>` as each unit's review resolves | once, at M6 exit |
+| [`step5-implement.md`](step5-implement.md) — Step 5 per-Build-order-step boundary | `step5_boundary_base` | initialized to `<base-commit>` at Step 5 entry, then advanced to the previous step's `<head>` as each Build order step's edits land | once, at Step 5 exit |
+
+Two rows above use only part of the five-step shape:
+
+- **`interactive-commits.md`** — no unstage on the landing path: its `c. Land the candidate` commits the index it set, leaving the index equal to the new `HEAD`, so there is nothing left to reset. The exits that leave before that commit do reset the paths they staged — see its § Per-commit loop sub-step `a`, which holds that closed list. It uses steps 1–2 only where it derives a tree from a pathspec; where the tree comes from a Build order boundary nothing is staged and only step 3 applies. Step 10's `crit` path is **not** a caller here despite reviewing a dangling object — it ranges against this caller's candidate ([`crit-commit-review.md`](crit-commit-review.md)'s **Scoping mechanism — detached review object, no ref ever moves** bullet).
+- **`step5-implement.md`** — steps 1–3 and 5 only: it records objects for Step 10 to consume instead of reviewing them, so step 4 has no counterpart. The objects stay dangling here; the ref-moving landing that eventually consumes them belongs to [`interactive-commits.md`](interactive-commits.md) § Per-commit loop.
 
 ## Rendering ladder
 

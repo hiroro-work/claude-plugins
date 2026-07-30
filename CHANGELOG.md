@@ -2,6 +2,17 @@
 
 ## 2026-07-30
 
+### dev-workflow v1.102.0 / mobpro v1.13.0 / dev-workflow-bundle v1.118.0
+
+- **Behavior change**: Step 10 (Interactive Commits) now proposes **one commit per approved `Build order` step** instead of grouping the finished working tree from scratch. Step 5 records each step's landing point as a dangling git object (new sub-step 2.5), and Step 10 builds each commit's tree from that object, plus a final commit for whatever Steps 6–9 changed. Because a commit's content comes from its recorded step rather than from a file list, **two commits may now touch the same file** — a sequence that revisits a file no longer collapses into one commit, which is what "build small, then flesh it out" normally does
+  - The commit mechanism changed with it: each commit is built as a `git commit-tree` candidate, presented as its own diff against the parent, then landed by setting the index to that candidate's tree (`git read-tree`) and committing it. Hooks keep their veto — they run on the `git commit`, before the ref moves — and the working tree is never touched, so unstaged files (this workflow's own plan documents among them) stay exactly where they were
+  - `interactive_commits: false` is unaffected: no landing points are recorded and Step 10 stays unregistered. Runs that have none recorded — the key enabled only after implementation, an interrupted session, a failed recording — fall back to the previous cohesion-based grouping and say so in one line
+  - `interactive_commits` now also gates Step 5: when `true`, Step 5 stages each Build order step's edited paths to record its landing point, so the key governs index activity during implementation as well as the commit phase. Setting it `false` records nothing, exactly as before
+  - `allowed-tools` gains `Bash(git read-tree *)` in both skills
+- feat(mobpro): M11's commit plan now comes out as one commit per implementation unit the junior reviewed, in review order. M6 already recorded each unit as a chained object, so the diffs approved during the loop and the commits approved at the end are the same slices
+- The `crit` commit-review path no longer builds a review object of its own — it ranges against the per-commit candidate, so its per-round object build and its unstage step are gone
+- `Step 2 § Simplicity self-audit`'s **Commit-split boundary alignment with file-level staging** item is now skipped whenever `interactive_commits` is `true` — the audit runs at plan time, so it keys on the config flag
+
 ### dev-workflow v1.101.0 / mobpro v1.12.0 / ask-peer v2.5.1 / dev-workflow-bundle v1.117.0
 
 - **Behavior change**: `dev-workflow`'s plan section `Design` is now `Build order`, and it is always an ordered, numbered list — the "structure by file when the changes are non-sequential" alternative is gone. The order is the order the work lands in, and Step 5 executes it step by step, so approving a plan approves that sequence. Work with no inherent order is still numbered, with one line saying the order is free. Both workflows now name this section identically, so `mobpro`'s § Review lens no longer maps between them

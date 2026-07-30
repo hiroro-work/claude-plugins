@@ -2,6 +2,18 @@
 
 ## 2026-07-30
 
+### dev-workflow v1.102.1 / dev-workflow-bundle v1.118.1
+
+- fix(dev-workflow): add test-behavior discrimination self-audit to Step 5 (auto-triage #184)
+  - Category: missing-branch; Step 5 lacked a check that a newly added test for interactive/dynamic behavior actually discriminates the fix — added sub-check (x) directing a revert-would-fail mutation test before review
+- fix(dev-workflow): document the Step 7 concurrent-launch nesting-bound cost (auto-triage #180)
+  - Category: wrong-default; the "do not nest a further Agent" bound makes the callee run its review inline-sequentially instead of dispatching its own parallel reviewers — documented the cost so intended-design vs regression is distinguishable
+
+### mobpro v1.13.1 / dev-workflow-bundle v1.118.1
+
+- fix(mobpro): order M9 prediction narration with this-run text first (auto-triage #182)
+  - Category: wrong-default; M9 § C left prediction ordering unspecified, so predictions pointed outward while findings concentrate on freshly-written prose — fixed the ordering to lead with this-run text
+
 ### dev-workflow v1.102.0 / mobpro v1.13.0 / dev-workflow-bundle v1.118.0
 
 - **Behavior change**: Step 10 (Interactive Commits) now proposes **one commit per approved `Build order` step** instead of grouping the finished working tree from scratch. Step 5 records each step's landing point as a dangling git object (new sub-step 2.5), and Step 10 builds each commit's tree from that object, plus a final commit for whatever Steps 6–9 changed. Because a commit's content comes from its recorded step rather than from a file list, **two commits may now touch the same file** — a sequence that revisits a file no longer collapses into one commit, which is what "build small, then flesh it out" normally does

@@ -267,9 +267,10 @@ Controls which surface a plan approval renders on: `plan-mode`, `visual` (defaul
 - `plan-mode`: the unchanged built-in Plan Mode flow — `EnterPlanMode` → chat-rendered condensed plan → `ExitPlanMode`.
 - `visual` (default): the bundled **browser-based, structured review gate**. Unlike the `ExitPlanMode` approval modal (which renders the same plan markdown), it turns the plan into a review-optimized surface the modal cannot offer:
   - a **summary header** (Goal as title; Difficulty / Scope / Risks-count chips) for a 5-second scan
-  - **collapsible sections** — must-review (Overview / Decisions / Context) open, reference sections (Design / Test plan / Risks) collapsed, Risks carrying a count badge
+  - **collapsible sections** — the must-review tier (Overview / Decisions / Build order) opens by default, as does Context where a plan carries one; the reference sections (Test plan / Risks) start collapsed, Risks carrying a count badge
+  - **collapsible Build order steps** — each step shows only its bold heading and opens its detail on click, so the section stays a one-line-per-step list even though it is must-review
   - **Decision cards** rendering each Decision's Question / Recommendation / Alternative, with a one-click **Keep recommendation / Switch to alternative** toggle (a switch is applied as a Recommendation↔Alternative swap when you submit)
-  - **per-element comments** — comment on an individual Decision, Design step, risk, or paragraph, not just a whole section
+  - **per-element comments** — comment on an individual Decision, Build order step, risk, or paragraph, not just a whole section
   - **mermaid diagrams** rendered as SVG (flowcharts / sequence diagrams), where the modal shows only the raw fenced text
 
   Step 4 launches this gate **only when the local browser is reachable** (the agent and the user share a machine — local CLI / Remote Control). The gate serves the plan on a local `127.0.0.1` server (the bundled `scripts/plan-review/serve.mjs` viewer), opens your browser, and lets you review and comment per element, then choose **approve** or **revise**. `approve` proceeds to implementation; `revise` applies your comments (and any recommendation/alternative switches) to the plan and re-runs the gate, highlighting what changed since your previous review. Falls back to a no-Plan-Mode chat approval on unreachable browser (`CLAUDE_CODE_REMOTE`) or launch failure.
@@ -616,26 +617,26 @@ Plans produced in Step 2 and presented in Step 4 follow a fixed structure so you
 | --- | --- | --- |
 | Overview | Yes | Goal, highlights (high-impact callouts — DB migrations, destructive ops, breaking changes; omitted when none), difficulty, scope (files), approach — at most 5 bullets, one line each. 30-second scan |
 | Decisions | Yes | Up to 5 items where **your** judgment is actually needed, OR a fixed "no decisions" sentence (see below) |
-| Design | Yes | Detailed design body — an ordered, numbered list of implementation steps when the work is sequential, otherwise structured by file |
-| Test plan | Yes | Test files to add/update, test types, coverage — or justification for no tests; each case may reference the Design step it verifies |
+| Build order | Yes | The body of the plan — always an ordered, numbered list of implementation steps, each written as `N. **<heading>** — <detail>`. The order is the order the work lands in, and Step 5 executes it step by step |
+| Test plan | Yes | Test files to add/update, test types, coverage — or justification for no tests; each case may reference the Build order step it verifies |
 | Risks / Unknowns | Optional | Non-trivial risks or open questions |
 
 ### The Decisions section
 
-This is the attention anchor. An item lands in Decisions only if **both** are true: (a) reasonable engineers could legitimately disagree, AND (b) switching later would require non-trivial rework. Preference-level choices that are cheap to reverse do not belong here — they stay in Design. Full criterion in [`references/plan-format.md`](references/plan-format.md) § Decisions criterion (AND condition).
+This is the attention anchor. An item lands in Decisions only if **both** are true: (a) reasonable engineers could legitimately disagree, AND (b) switching later would require non-trivial rework. Preference-level choices that are cheap to reverse do not belong here — they stay in Build order. Full criterion in [`references/plan-format.md`](references/plan-format.md) § Decisions criterion (AND condition).
 
 When no items qualify, the section is still rendered with one of two fixed sentences (one for Normal mode, one for Resume / subtask mode) — so "no decisions" becomes an unambiguous signal rather than a missing-by-mistake section. Canonical strings in [`references/plan-format.md`](references/plan-format.md) § Empty-Decisions fixed sentences.
 
 In Resume mode, subtask boundaries, order, and purposes were already approved in the parent run's Step 1.5 — only in-subtask judgment calls surface in Decisions. Details in [`references/plan-format.md`](references/plan-format.md) § Subtask / Resume handling.
 
-**Two-tier presentation**: in chat, Step 4 shows a condensed view — Overview (including highlights), Decisions, and the files Design will touch. The full plan (Design body, Test plan, Risks) lives in the approval modal, which renders the complete plan file. A `Review guide` line at the top marks which sections need your judgment (Overview, Decisions) vs reference detail (Design, Test plan, Risks).
+**Two-tier presentation**: in chat, Step 4 shows a condensed view — Overview (including highlights), Decisions, and the Build order step headings (which name the files each step touches). The per-step detail, Test plan, and Risks live in the approval modal, which renders the complete plan file. A `Review guide` line at the top marks which sections need your judgment (Overview, Decisions, Build order) vs reference detail (Test plan, Risks).
 
 ### How to review a plan quickly
 
 1. Read the `Review guide` line and Overview — including any Highlights (≤ 30 seconds).
 2. Read the guidance line at the top of the plan — Step 4 leads with one of three literal lines that tell you where to focus.
 3. If Decisions has items, engage with each one (the real work). If Decisions is empty, approve after a light skim.
-4. The rest of the plan — Design, Test plan, Risks — is in the approval modal and has already been reviewed in Step 3 by the reviewer skill; open the modal and skim only if something looks off. (Exception: when N_plan=0 — a Trivial task, any non-Trivial task run with `--fast`, or a configured plan-phase `review_iterations` of `0` — Step 3 is skipped and the plan is unreviewed — read it carefully before approving.)
+4. Scan the Build order step headings — they are the sequence the work will land in, and approving the plan approves it. The per-step detail, Test plan, and Risks are in the approval modal and have already been reviewed in Step 3 by the reviewer skill; open the modal and skim only if something looks off. (Exception: when N_plan=0 — a Trivial task, any non-Trivial task run with `--fast`, or a configured plan-phase `review_iterations` of `0` — Step 3 is skipped and the plan is unreviewed — read it carefully before approving.)
 
 ## Prerequisites
 

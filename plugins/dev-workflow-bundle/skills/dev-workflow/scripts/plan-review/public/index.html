@@ -103,15 +103,20 @@
       margin: 12px 0; padding: 0 16px; background: var(--bg);
     }
     details.section[open] { padding-bottom: 8px; }
-    details.section > summary {
-      cursor: pointer; list-style: none; padding: 12px 0;
-      display: flex; align-items: center; gap: 10px; font-weight: 600;
+    /* Disclosure affordance, shared by sections and by the Build order steps inside them
+       (details.step, collapsed by collapseBuildOrderSteps) — one glyph, one rotation. */
+    details.section > summary, details.step > summary {
+      cursor: pointer; list-style: none; display: flex;
     }
-    details.section > summary::-webkit-details-marker { display: none; }
-    details.section > summary::before {
-      content: "▸"; color: var(--muted); font-size: 12px; transition: transform .12s;
+    details.section > summary::-webkit-details-marker,
+    details.step > summary::-webkit-details-marker { display: none; }
+    details.section > summary::before, details.step > summary::before {
+      content: "▸"; color: var(--muted); transition: transform .12s;
     }
-    details.section[open] > summary::before { transform: rotate(90deg); }
+    details.section[open] > summary::before,
+    details.step[open] > summary::before { transform: rotate(90deg); }
+    details.section > summary { padding: 12px 0; align-items: center; gap: 10px; font-weight: 600; }
+    details.section > summary::before { font-size: 12px; }
     /* Context = the "why" framing; tint it so it reads as lead context, not a structural section */
     details.section.is-context { background: var(--bg-soft); border-color: #c9d3dd; }
     details.section.is-context > summary .sec-title { color: var(--muted); }
@@ -123,7 +128,9 @@
     }
     .badge-risk { background: #fff4ec; color: var(--risk); }
     .sec-body { padding-top: 2px; }
-    .sec-body > :first-child { margin-top: 4px; }
+    /* .step-body is inside .sec-body, so every .sec-body descendant rule already reaches it;
+       this one needs naming because it is a direct-child selector. */
+    .sec-body > :first-child, .step-body > :first-child { margin-top: 4px; }
     .sec-body h1 { font-size: 20px; }
     .sec-body h2 { font-size: 17px; }
     .sec-body h3, .sec-body h4 { font-size: 14px; }
@@ -137,6 +144,11 @@
     .sec-body table { border-collapse: collapse; }
     .sec-body th, .sec-body td { border: 1px solid var(--border); padding: 4px 10px; }
     .sec-body .mermaid { background: var(--bg); text-align: center; margin: 10px 0; }
+    /* Build order steps: the section sits in the must-review tier yet opens at N one-line
+       headings. The disclosure triangle itself is shared with details.section above. */
+    details.step > summary { align-items: baseline; gap: 8px; }
+    details.step > summary::before { font-size: 10px; }
+    details.step > .step-body { padding: 2px 0 2px 18px; }
     .sec-body blockquote { border-left: 3px solid var(--border); margin: 8px 0; padding: 0 12px; color: var(--muted); }
     /* decision cards */
     .decision-card {
@@ -309,24 +321,29 @@
     // so the two stay in sync.
     const COMMENT_BLOCK_TAGS = ["P", "BLOCKQUOTE", "PRE", "H4", "H5", "H6"];
 
-    // What the viewer knows about each plan section, in match-priority order:
-    // `match` lists title prefixes (lowercased) that map to the type; `open` opens
-    // the section by default. The Decisions/Risks render paths key off `type` below.
-    // Prefixes beyond the dev-workflow ones belong to the sibling mobpro skill — the whole
-    // `buildorder` list is mobpro's, since dev-workflow has no matching heading. Source of
-    // truth: mobpro's `references/plan-format.md` § Template; keep in sync — a heading
-    // renamed there and not here silently returns a mobpro plan to all-collapsed. Those
+    // What the viewer knows about each plan section, in match-priority order: `match` lists title
+    // prefixes (lowercased) that map to the type; `open` opens the section by default;
+    // `collapseSteps` collapses each of the section's numbered steps to its bold heading. The
+    // Decisions/Risks render paths key off `type` below.
+    // Both skills' plan formats share the `Build order` heading; the remaining alternate prefixes
+    // in each list are mobpro's own heading names. Source of truth for the shared prefix:
+    // dev-workflow's `references/plan-format.md` § Template (mobpro's same-named file follows it);
+    // mobpro's own headings are defined in that file. Keep in sync either way — a
+    // heading renamed upstream and not here silently returns that plan to all-collapsed. Those
     // prefixes stop short of an apostrophe so straight vs. curly quotes cannot break the match.
+    // mobpro's `Why this order` takes its own type rather than riding along with buildorder: it
+    // wants the same open-by-default treatment but must not have its reasoning collapsed away.
     const SECTION_TYPES = [
       { type: "overview", match: ["overview", "what we"], open: true },
       { type: "decisions", match: ["decision", "choices i made"], open: true },
-      { type: "buildorder", match: ["build order", "why this"], open: true },
-      { type: "design", match: ["design"] },
+      { type: "buildorder", match: ["build order"], open: true, collapseSteps: true },
+      { type: "whyorder", match: ["why this"], open: true },
       { type: "test", match: ["test plan", "test", "how we"] },
       { type: "risks", match: ["risk", "unknown", "watch-out"] },
       { type: "context", match: ["context"], open: true },
     ];
     const OPEN_TYPES = new Set(SECTION_TYPES.filter((s) => s.open).map((s) => s.type));
+    const STEP_COLLAPSE_TYPES = new Set(SECTION_TYPES.filter((s) => s.collapseSteps).map((s) => s.type));
 
     function classify(title) {
       const t = title.toLowerCase().replace(/\s+/g, " ").trim();
@@ -354,7 +371,7 @@
           const title = h[1];
           const base = slugify(title);
           let id = base, n = 1;
-          while (seen[id]) id = `${base}-${++n}`; // probe until unused so "Design 2" can't collide with a 2nd "Design"
+          while (seen[id]) id = `${base}-${++n}`; // probe until unused so "Build order 2" can't collide with a 2nd "Build order"
           seen[id] = 1;
           cur = { title, type: classify(title), id, lines: [] };
           sections.push(cur);
@@ -640,7 +657,7 @@
     }
 
     // Attach a hover comment affordance to each commentable block element in a rendered body.
-    // List items are commentable individually (Design steps / Risks / Test items); paragraphs,
+    // List items are commentable individually (Build order steps / Risks / Test items); paragraphs,
     // code blocks, blockquotes, sub-headings, and tables are commentable as whole blocks.
     // AREA_INSIDE = tags whose textarea is appended *inside* the element (valid flow content);
     // others receive it as a sibling (afterend). DIV is the synthetic table wrapper from below.
@@ -686,6 +703,65 @@
       for (const t of targets) {
         if (prevSet && !prevSet.has(normText(t.textContent))) t.classList.add("block-changed");
         attachComment(t, `${sectionId}::${++n}`);
+      }
+    }
+
+    // Collapse each Build order step to its bold heading, opening the detail on click — what lets
+    // the section sit in the must-review tier without opening at full length. The step shape is
+    // `N. **<heading>** — <detail>` (plan-format.md § Template); markdown puts that heading
+    // directly under the <li> in a tight list and inside a wrapping <p> in a loose one (blank
+    // lines between steps), and both are handled. A step that does not open with a bold heading,
+    // or carries nothing behind one, is left alone — graceful degradation for plans predating the
+    // shape.
+    //
+    // Must run *after* attachElementComments, for two reasons. The 💬 button and its textarea are
+    // by then direct children of the <li>, so draining the <li> up to the first affordance leaves
+    // them outside the nested <details> and a collapsed step stays commentable. And stripping the
+    // separator below rewrites a text node inside the <li>, which attachElementComments reads for
+    // the comment excerpt and for block-changed diff matching — run it first and every step reads
+    // as changed on a revise re-launch.
+    const STEP_SEP_RE = /^\s*[—–-]\s*/;
+    function collapseBuildOrderSteps(bodyEl) {
+      // First element child, but only when nothing except whitespace precedes it.
+      const leadEl = (el) => {
+        for (let n = el.firstChild; n; n = n.nextSibling) {
+          if (n.nodeType === 3) { if (n.data.trim()) return null; continue; }
+          return n.nodeType === 1 ? n : null;
+        }
+        return null;
+      };
+      const isAffordance = (n) =>
+        n.nodeType === 1 && (n.classList.contains("cbtn") || n.classList.contains("comment-input"));
+
+      // Safe to iterate the live collection: the loop only rearranges each <li>'s own children.
+      for (const ol of bodyEl.querySelectorAll(":scope > ol")) {
+        for (const li of ol.children) {
+          if (li.tagName !== "LI") continue;
+          const head = leadEl(li); // the <strong> in a tight list, the wrapping <p> in a loose one
+          const strong = head && head.tagName === "P" ? leadEl(head) : head;
+          if (!strong || strong.tagName !== "STRONG") continue;
+
+          const owner = strong.parentNode; // only needed to put the heading back on the skip path
+          const sep = strong.nextSibling; // the "— " between heading and detail, in either shape
+          const sum = document.createElement("summary");
+          sum.appendChild(strong); // detaching it leaves the <li> holding detail + affordances only
+          let hasDetail = false;
+          for (let n = li.firstChild; n && !isAffordance(n); n = n.nextSibling) {
+            if (n.textContent.replace(STEP_SEP_RE, "").trim()) { hasDetail = true; break; }
+          }
+          if (!hasDetail) { owner.insertBefore(strong, owner.firstChild); continue; }
+
+          const inner = document.createElement("div");
+          inner.className = "step-body";
+          while (li.firstChild && !isAffordance(li.firstChild)) inner.appendChild(li.firstChild);
+          // Drop the separator; it reads as a stray dash once heading and detail are split apart.
+          if (sep && sep.nodeType === 3) sep.data = sep.data.replace(STEP_SEP_RE, "");
+          const det = document.createElement("details");
+          det.className = "step";
+          det.appendChild(sum);
+          det.appendChild(inner);
+          li.insertBefore(det, li.firstChild);
+        }
       }
     }
 
@@ -807,7 +883,13 @@
       // affordances land on stable rendered blocks (decision cards carry their own).
       highlightCode(planEl);
       await renderMermaid(planEl);
-      for (const r of bodyRefs) if (!r.isCards) attachElementComments(r.bodyEl, r.section.id);
+      // Both passes stay inside the one section body they are handed, so the collapse's
+      // must-run-after-comments ordering is per-section and needs no document-wide barrier.
+      for (const r of bodyRefs) {
+        if (r.isCards) continue;
+        attachElementComments(r.bodyEl, r.section.id);
+        if (STEP_COLLAPSE_TYPES.has(r.section.type)) collapseBuildOrderSteps(r.bodyEl);
+      }
     }
 
     document.querySelectorAll(".decision-radio").forEach((radio) => {

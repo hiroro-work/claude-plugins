@@ -28,7 +28,7 @@ When `check_commands` or `test_commands` fails, the AI does not stop to hand the
 
 ## § C. M9 pre-review prediction narration + cross-check
 
-Before dispatching `rules-review` and the code reviewer, the AI states where it expects findings to land, naming the specific spots and why they are exposed. **Order the prediction with the text written this run first** — the rule / declaration / bookkeeping prose just added for consistency — ahead of any prediction about pre-existing assets, because findings concentrate on freshly-written text far more often than on long-standing code, so leading with it counters the reflex to predict outward while the risk sits inside:
+Before dispatching `rules-review` and the code reviewer, the AI states where it expects findings to land, naming the specific spots and why they are exposed. **Order the prediction with what this run wrote first** (the code and prose just added — e.g. a rule or bookkeeping paragraph added for consistency) ahead of any prediction about pre-existing assets, because findings concentrate on freshly-written content far more often than on long-standing code, so leading with it counters the reflex to predict outward while the risk sits inside. The sample below shows the single-spot form; with more than one spot, fill the slot with one clause per spot in that order, and when no pre-existing asset is worth predicting, name only this run's text rather than adding a negative prediction:
 
 - `language: ja`: `これからルール準拠チェックとコードレビューをかける。<指摘されそうな箇所>が引っかかりそう — <理由>。`
 - `language: en`: `We're about to run the rules-compliance check and code review. I expect <spots> to get flagged — <why>.`

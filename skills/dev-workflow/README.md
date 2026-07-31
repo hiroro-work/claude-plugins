@@ -607,6 +607,12 @@ The workflow begins at Step 2 (Step 1 is settings load, Step 1.5 is task decompo
 | 11.5 | Self-Retrospective | (Only if `self_retrospective.feedback` is set; runs regardless of task difficulty) Spawn a subagent to extract sanitized bundle-skill improvement signal, present it with a destination header, and submit on user approval. See `references/self-retrospective.md` |
 | 11.6 | Workability Retrospective | (Only if `workability_retrospective.enabled: true`; runs regardless of task difficulty) Spawn a subagent to detect skill-ization / lint-rule candidates from the session, then offer a per-candidate disposition gate (act now / subtask / backlog / reject). See `references/workability-retrospective.md` |
 
+### Step 7 background launches
+
+Step 7 overlaps two read-only analyses with the test phase: the initial-pass `rules-review` (collected at Step 7.5) and the initial-pass code review (collected at Step 8). Both run as background subagents, apply no edits, and are told to run their callee on their own thread rather than nesting a further `Agent` dispatch.
+
+That nesting bound is a constraint the caller imposes, not a claim that nested dispatch is unavailable. Its cost is that the callee then runs its review inline-sequentially instead of dispatching its own per-group / per-perspective parallel reviewers — accepted because both launches already overlap the test phase, so the wall-clock the callee loses internally is time the main thread spends on tests anyway. The inline execution is the deliberate design here, not a regression.
+
 ## Plan format
 
 Plans produced in Step 2 and presented in Step 4 follow a fixed structure so you can scan them quickly and focus on the parts that actually need your judgment. Full specification in [`references/plan-format.md`](references/plan-format.md).

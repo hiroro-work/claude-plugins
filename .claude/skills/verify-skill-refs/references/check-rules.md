@@ -1,10 +1,10 @@
 # Check Rules — verify-skill-refs
 
-Canonical home for the detection rules the lint executor applies. `SKILL.md` injects this file verbatim into the dispatch payload as `--- CHECK RULES ---` (single canonical home; do not duplicate these rules in `SKILL.md`).
+Canonical home for the detection rules this lint applies. Two executors share them: `scripts/lint.mjs` implements everything mechanically decidable and a dispatched subagent judges the rest — § Executor pipeline draws the split. `SKILL.md` injects this file verbatim into the judgment dispatch payload as `--- CHECK RULES ---`, so its length is a cost on every run — keep it terse (single canonical home; do not duplicate these rules in `SKILL.md`).
 
 **Path convention**: every file reference in this document — including manifest anchors — is **target-root-relative** (`SKILL.md`, `references/<file>.md`), so the same rule text applies to every root and a `Target dir:` override resolves identically.
 
-**Per-root resolution**: a run lints one or more roots (`SKILL.md` § Target roots). Every pass is root-scoped — heading indexes, `§` resolution, the class (c) identifier pattern, and the class (e) name authority all come from the root the candidate was extracted from. A candidate never resolves against another root's content. Manifest entries (classes (b) / (d)) carry a `root` column and are checked only against that root; a manifest entry whose root is absent from this run is skipped silently, not reported as stale.
+**Per-root resolution**: a run lints one or more roots (`SKILL.md` § Target roots). Every pass is root-scoped — heading indexes, the class (c) identifier pattern, and the class (e) name authority all come from the root the candidate was extracted from. `§` resolution is root-scoped too, with one exception the trees require: a reference that **names** another skill resolves in that skill's tree (§ Class (a)'s "Resolution scope model" paragraph). Manifest entries (classes (b) / (d)) carry a `root` column and are checked only against that root; a manifest entry whose root is absent from this run is skipped silently, not reported as stale.
 
 ## Class (a) — Cross-reference resolution
 
@@ -19,28 +19,35 @@ Source of truth for the reference-form convention: `.claude/rules/project.rules.
 **Extraction exclusions (do not extract):**
 
 - Candidates containing an angle-bracket placeholder (`<...>`) — template forms such as `§ <Heading>` document the convention itself and are not references.
-- Candidates inside fenced code blocks (code samples and command snippets quote reference syntax without referring). Mechanical fence filter: one root-wide Grep of the fence-delimiter pattern (`` ^\s*``` ``), grouped per file, then derive the in-fence line intervals from the delimiter pairs and drop candidates whose line number falls inside an interval — no per-candidate Read.
+- Candidates inside fenced code blocks (code samples and command snippets quote reference syntax without referring). The fence delimiters (`` ^\s*``` ``, blockquote marker stripped first) pair in document order into the line intervals a candidate's line number is tested against; an unclosed final fence runs to end of file.
 
 **Resolution procedure:**
 
-1. Build a per-file **heading index** once (all `#`–`####` lines). No bold-span index is built — bold density in this tree makes a full `**...**` index cost far more than the few dozen label keys actually referenced; label keys resolve by reverse lookup in step 4.
-2. Normalize each extracted candidate: strip wrapping backticks / quotes; split off a possessive tail (`'s <descriptor>`) — the text before the possessive is the **heading key**, and a quoted or bold label inside the descriptor tail is a **label key**. Compare heading keys against index entries with whitespace-normalized prefix matching (a reference may cite a stable prefix of a longer heading, e.g. `§ Step 10: Interactive Commits` against the heading `Step 10: Interactive Commits`).
+1. Build a per-file **heading index** and a per-file **bold-span index** once (all `#`–`####` lines; every `**...**` span), each entry carrying its normalized forms. A `§` key resolves against **either** index — the tree points `§` at bold-prose labels as well as headings.
+2. Normalize each extracted candidate: strip wrapping backticks / quotes and trailing sentence punctuation; split off a possessive tail (`'s <descriptor>`) — the text before the possessive is the **heading key**, and a quoted or bold label inside the descriptor tail is a **label key** (a quoted label without a possessive splits the same way). Compare heading keys against index entries with whitespace-normalized prefix matching in **either direction** (a reference may cite a stable prefix of a longer heading, e.g. `§ Step 10: Interactive Commits` against the heading `Step 10: Interactive Commits`; and a key may run past the heading it names, because the reference continues into its own trailing prose). A key also resolves against a heading's **subject** — the heading text before its em-dash gloss, parenthetical qualifier, or colon title — which is the part references actually cite (`§ Workflow artifacts set` naming `Workflow artifacts (cross-step fixed exclusion)`).
 3. **Resolution scope model**:
-   - **Qualified form** → resolve only within the named file.
-   - **Unqualified form** (`§ <Heading>` alone) → resolve in the same file first, then `SKILL.md`, then any other target file. A violation means the key resolves **nowhere in the tree** — `SKILL.md` legitimately cites headings that live in a references file (e.g. `§ User-gate summary preamble`). The same-file → `SKILL.md` order is the documented convention (seed: `references/update-rules.md`'s opening declaration).
+   - **Qualified form** → resolve within the named file. When the run loaded no file of that name, the reference points outside the linted trees and is **out of scope**.
+   - **Owner-named form** (a skill named before the qualifier, a possessive, or a file named earlier on the line) → resolve in that skill's tree. An owner this run did not load is **out of scope**; the linted sibling root is not.
+   - **Unqualified form** (`§ <Heading>` alone) → resolve in the same file first, then `SKILL.md`, then any other file **of the same root**. A violation means the key resolves nowhere at all — `SKILL.md` legitimately cites headings that live in a references file (e.g. `§ User-gate summary preamble`). The same-file → `SKILL.md` order is the documented convention (seed: `references/update-rules.md`'s opening declaration).
    - A key resolving in **more than one file is resolved** — e.g. "Char-count compaction gate" intentionally exists in both `SKILL.md` and `references/update-rules.md` (documented at the top of `references/update-rules.md`). Never flag multi-resolution.
-4. Label keys resolve via a **candidate-driven existence Grep**: for each label key, Grep the literal `**<label>**` (whitespace-normalized) within the resolution scope — cost scales with the number of referenced labels (small), not the tree's bold density (large).
+4. Label keys resolve against the bold-span index from step 1, whitespace-normalized, within the resolution scope — and against the heading index too, since a label sometimes graduates into a heading.
 
 **Demotion rule (violation vs warning):**
 
-- A candidate that fails resolution is a **violation** (`class: "a"`) only when it is **unambiguous**: extracted from running prose (not exemplar / template context) and its normalized key is clean (no placeholder residue, no truncation artifacts).
-- Demote to a warning (`class: "a-demoted"`) when the candidate sits in exemplar context — e.g. `references/review-categories.md`'s cross-reference-stability material contains example-only references (`§ "Single source of truth" rule`) that resolve nowhere by design — or when extraction / normalization is uncertain. When in doubt, demote.
+A candidate that fails resolution is a **violation** (`class: "a"`) only when it is **unambiguous**: extracted from running prose, with a clean normalized key, and unresolvable everywhere. Demote to a warning (`class: "a-demoted"`) on any of these, each of which is decided mechanically:
+
+- **Sibling-root-only resolution** — the key resolves in a sibling root the reference does not name. The target exists, so this cannot be a violation; the pointer merely omits which tree it lives in.
+- **Sub-item anchor** — the key names something below heading level, which no index reaches: a lettered sub-step (`§ (e)`), a dotted anchor whose parent section does resolve (`§ 1.3` under a `1.` heading), or a step inside a section that resolves (`§ Procedure step 4`). An anchor whose own parent is missing stays a violation.
+- **Extraction uncertainty** — an over-long key, unbalanced backticks, or a key ending on a preposition or conjunction, all of which mark a key cut mid-phrase.
+- **Exemplar context** — the candidate sits in a passage that documents the convention by quoting it. This cause is declared as the allowlist in `scripts/lint.mjs`, whose entries name a file plus a verbatim fragment; it is empty whenever the structural causes above already cover every exemplar in the trees.
+
+When in doubt, demote.
 
 ## Manifest discipline (shared by classes (b) and (d))
 
 Both manifest-driven classes follow the same operating rules:
 
-- **Closed list**: only manifest-registered entries are checked. Append an entry whenever a new "keep in sync" / "update both together" directive is added to the target tree.
+- **Closed list**: only manifest-registered entries are checked. Append an entry whenever a new "keep in sync" / "update both together" directive is added to the target tree. The tables below are the single source of truth in both directions: `scripts/lint.mjs` parses them to count `checked.manifest_pairs` and to hand the rows to the judgment stage, so a row added here needs no second edit anywhere.
 - **One-way maintenance**: the manifest lives on this lint-skill side only — writing a sync directive into the distributed dev-workflow prose that points at a project-local skill would be a distribution leak, so the target tree never references this manifest. Upkeep rides the Edit-time coordinated-multi-site-sweep audit and the monthly consolidation pass.
 - **Anchors**: manifest anchors are stable phrase anchors — headings, bold labels, or verbatim prose phrases — never line numbers; file parts are target-root-relative per the Path convention.
 - **Anchor staleness**: when a manifest anchor itself no longer resolves, emit `class: "stale-manifest"` — a manifest-maintenance signal, deliberately distinct from the class's own divergence / gap warning.
@@ -62,14 +69,16 @@ Judgment: read both sites and compare per the `compare` column. Divergence → w
 
 ## Class (c) — Bare-number step references in prose
 
+**Scope: changed lines only.** Unlike the other classes, this one is checked only over the lines a `--base-commit` diff reports as changed or added (plus untracked files in full), and is reported **not applicable** when no `--base-commit` was given — `checked.step_candidates` is then `0`. The predicate is settled inside a single sentence, so no edit elsewhere can turn a compliant line non-compliant and a line-granular diff scope stays sound.
+
 1. Candidate extraction: Grep the candidate's root identifier pattern (word-boundary) across the target files — `\bStep [0-9]+(\.[0-9]+)?\b` for a `Step`-shaped root, `\bM[0-9]+(-[0-9]+)?\b` for an `M`-shaped one.
 2. **Allowed forms** (closed list — matching candidates are compliant, not findings):
    - **Heading / full-title forms**: a heading line, or the full `Step N: <Title>` form (number + colon + title) anywhere in prose.
-   - **Number + stable-descriptor pair**: the same sentence binds a stable descriptor to the number — a possessive paragraph reference (`Step 7's "Concurrent rules-review launch" paragraph`), a sub-step qualifier (`Step 8 sub-step 1's review-payload definition`), a parenthesized title (`Step 9 (Completion Hooks)`), or an adjacent quoted stable phrase.
+   - **Number + stable-descriptor pair**: the same sentence binds a stable descriptor to the number — a possessive paragraph reference (`Step 7's "Concurrent rules-review launch" paragraph`), a sub-step qualifier (`Step 8 sub-step 1's review-payload definition`), a parenthesized title (`Step 9 (Completion Hooks)`), or an adjacent quoted stable phrase. The descriptor binds from **either side**: `Step 6 Tidy` and `Plan Review (Step 3)` are both the pair form.
    - **Descriptor-carrying enumeration items**: a list item naming the step with a descriptive phrase and/or a definition pointer (e.g. `Step 7.5 persistent-violations decision (defined in ...)`), including slash-run lists whose shared descriptor context covers each number.
 
    Source of truth: `.claude/rules/project.rules.md` § SKILL.md設計's bare-number prohibition bullet (its two 許容形) — keep this closed list in sync when that rule evolves.
-3. Residue — a bare number whose sentence binds no descriptor — → warning `class: "c"` with the file and the sentence fragment. Regex-classifiable allowed forms are dropped mechanically at § Executor pipeline step 4; only the residue reaches judgment. This class is warning-only: the long-tail allowed-form classification is judgment-based, and the target tree legitimately contains many compliant pair forms.
+3. Residue — a bare number whose sentence binds no descriptor — → warning `class: "c"` with the file and the sentence fragment. Regex-classifiable allowed forms are dropped by § Executor pipeline's mechanical stage; only the residue reaches judgment. This class is warning-only: the long-tail allowed-form classification is judgment-based, and the target tree legitimately contains many compliant pair forms.
 
 ## Class (d) — Governed-site enumeration gaps (manifest-driven)
 
@@ -98,25 +107,34 @@ Match names **case-insensitively** and on whitespace-normalized text — the sam
 
 - A paired-sample line: `` - `language: <lang>`: `<literal>` `` — the backticked `<literal>` is the candidate.
 - A blockquote line (`> …`) inside a section whose prose marks it as shown to the user verbatim (a guidance line, a fixed sentence). The whole line is the candidate.
-- A backticked literal whose surrounding prose marks it as emitted: the verb set `render` / `emit` / `warn` / `present` / `report` / `surface` / `note`, or an append into a ledger the tree says is rendered verbatim (the "append X to `<ledger>`" form). The backticked span is the candidate.
+- A backticked literal whose surrounding prose marks it as emitted: the verb set `render` / `emit` / `warn` / `present` / `report` / `surface` / `note` / `append`, with the verb in the run of prose **immediately before** the span rather than anywhere on the line. The backticked span is the candidate, and only a multi-word one — a whitespace-free span is a cross-reference, which is class (a) / (c) territory.
 
 Skip candidates inside fenced code blocks using the same mechanical fence filter as § Class (a)'s Extraction exclusions.
 
 **3. Judge each candidate.** A candidate whose text contains the root's identifier pattern **and** no name from step 1's authority set is a **violation** (`class: "e"`), reported with the literal and the identifier that stands bare. A candidate carrying no identifier at all is compliant by the drop-the-number option — not a finding. A candidate carrying both is compliant.
 
-**4. Demotion rule.** Report `class: "e-demoted"` (warning) instead when extraction is uncertain: the prose around a backticked span is ambiguous about whether the string is emitted or merely discussed; the literal is a template whose `<placeholder>` would be substituted with a name at render time; or the candidate is itself an exemplar of the naming rule (a section documenting the forbidden form must be allowed to quote it). When in doubt, demote — the class's status-affecting weight is what makes over-reporting costly.
+**4. Demotion rule.** Report `class: "e-demoted"` (warning) instead when the candidate is itself an exemplar of the naming rule — a section documenting the forbidden form must be allowed to quote it — which is the shared allowlist named in § Class (a)'s "Demotion rule (violation vs warning)" paragraph. Extraction ambiguity is handled by not extracting: step 2's forms require the emit verb to sit in the run of prose immediately before the span, and a span that is a bare cross-reference rather than a sentence is never a candidate. When in doubt, demote — the class's status-affecting weight is what makes over-reporting costly.
 
-**Known template case**: a literal whose identifier list is a placeholder (`<registered steps, each as number + phase name>`) names no phase at extraction time yet renders compliantly. Treat a placeholder that itself demands the paired form as compliant, not as a violation.
+**Known template case**: a literal whose identifier list is a placeholder (`<registered steps, each as number + phase name>`) names no phase at extraction time yet renders compliantly, so a placeholder **that itself demands the paired form** is compliant. Any other placeholder in the literal is irrelevant to this class: in `Step 7: <skill> dispatch failed twice`, no substitution puts a phase name beside the identifier, so the identifier still stands bare and the literal is a violation.
 
 ## Common FP-suppression principle
 
-When a candidate's classification is uncertain — extraction ambiguity, exemplar-vs-real doubt, allowed-form borderline, manifest-site interpretation — resolve toward **warning**, never violation. Violations are reserved for unambiguous class (a) dangling references; every judgment-based determination reports as a warning so the lint's pass/fail status stays deterministic. (The class (a) demotion rule is this principle applied to extraction.)
+When a candidate's classification is uncertain — extraction ambiguity, exemplar-vs-real doubt, allowed-form borderline, manifest-site interpretation — resolve toward **warning**, never violation. Violations are reserved for the unambiguous cases of the two status-affecting classes, (a) and (e); every judgment-based determination reports as a warning so the lint's pass/fail status stays deterministic. (The class (a) demotion rule is this principle applied to extraction; class (e) applies it earlier, by not extracting an ambiguous candidate at all.)
 
-## Executor pipeline (run in this order)
+## Executor pipeline (two stages)
 
-1. **Enumerate** the target files from the `--- TARGET FILES ---` payload.
-2. **Extraction pass** (Grep tool only — ripgrep-class; never Bash `grep`): run **one scoped Grep per pattern across the whole target root** — the returned file column gives per-file grouping for free, so do not loop per file. Patterns: the class (a) variant seeds (`§` broad seed for section references, `"[^"]+" paragraph` for bold-label references — refine as needed within the variant closed list), the § Class (c) step 1 pattern per root, each class (d) manifest entry's `site_pattern`, and the § Class (e) step 2 literal-bearing forms (a `language:` sample-line seed, a blockquote-line seed anchored on a leading `>`, and an emit-verb seed covering `render` / `emit` / `warn` / `present` / `report` / `surface` / `note` / `append`). Then apply the mechanical fence filter (§ Class (a)'s Extraction exclusions) to the collected candidates.
-3. **Index pass**: one scoped Grep of heading lines (`^#{1,4}\s`) across the target files, grouped per file into per-root heading indexes; the same pass feeds each root's class (e) name authority when that authority is heading-derived. No bold-span index — see § Class (a)'s Resolution procedure step 1.
-4. **Set difference (mechanical pre-filter)**: (i) class (a) — normalize candidates per § Class (a)'s Resolution procedure and resolve them against the heading indexes and candidate-driven label Greps under the scope model; resolved candidates are dropped. (ii) class (c) — drop candidates matching the regex-classifiable allowed forms (a candidate on a heading line; a colon-title form such as `Step [0-9.]+:`; a parenthesized-title form such as `Step [0-9.]+ \(`; a possessive-label form such as `Step [0-9.]+'s "`; a sub-step qualifier such as `Step [0-9.]+ sub-step` — read the identifier part from the candidate's own root pattern). (iii) class (e) — build each root's name-authority set per § Class (e) step 1, then drop every output literal that carries no identifier, and every literal that carries both an identifier and an authority name. Only the residue of the three classes proceeds to judgment.
-5. **Judgment pass** (LLM judgment, residue only): apply the class (a) demotion rule to the unresolved residue; classify the class (c) residue against the full allowed-forms closed list; apply the class (e) demotion rule to its residue (extraction certainty only — the identifier-vs-name predicate was already settled mechanically at step 4); read the class (b) / (d) manifest sites for the roots present in this run and judge divergence / gaps / anchor staleness.
-6. **Assemble the verdict JSON** per the schema in the `--- EXECUTOR PROMPT ---` payload, filling `checked` with the per-pass counts: `roots` (roots linted), `files` (target files enumerated), `refs_extracted` (class (a) candidates surviving the fence filter), `refs_unresolved` (class (a) residue left unresolved after step 4), `manifest_pairs` (class (b) plus class (d) manifest entries judged), `step_candidates` (class (c) candidates from step 2), `output_literals` (class (e) candidates from step 2).
+The pipeline runs in two stages with different executors, split by whether the work is decidable mechanically.
+
+### Mechanical stage — `scripts/lint.mjs`
+
+Enumeration, extraction, indexing, class (a) resolution, class (e) judgment, class (c) pre-filtering, and every `checked` count are performed by `scripts/lint.mjs` before the judgment stage is dispatched. The rules in the class sections above are the specification that script implements. What it settles is not the judgment stage's to revisit; `SKILL.md` § Process step 3 describes it for the main thread's benefit, and § Return contract states which of its fields a caller may gate on.
+
+### Judgment stage — this executor
+
+Only what needs judgment reaches the dispatched executor, in the form the script already extracted:
+
+1. **Class (b)** — read both sites of each manifest row supplied in the payload and judge divergence per its `compare` column.
+2. **Class (d)** — for each manifest row supplied, locate the actual sites with its `site_pattern`, and judge which are covered by neither the enumeration nor a documented exclusion.
+3. **Class (c) residue** — classify each residue entry against the full closed list in § Class (c)'s "Allowed forms" paragraph. The regex-classifiable forms were already dropped mechanically, so only the judgment-dependent forms remain.
+
+Anchor staleness (`stale-manifest`) is judged here too, since it is a property of the manifest sites this stage reads.

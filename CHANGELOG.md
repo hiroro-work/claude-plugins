@@ -6,13 +6,23 @@
 
 - fix(dev-workflow): add test-behavior discrimination self-audit to Step 5 (auto-triage #184)
   - Category: missing-branch; Step 5 lacked a check that a newly added test for interactive/dynamic behavior actually discriminates the fix — added sub-check (x) directing a revert-would-fail mutation test before review
+- fix(dev-workflow): say what happens to a Build order step whose write Step 5 sub-step 6 aborts
+  - Category: missing-branch; the path scope check specified the refusal but not the aborted step's disposition, leaving an executor free to substitute a path or open a second wait state — it now reports the step unresolved and continues, with sub-step 7's gate named as the only permitted wait
+- fix(dev-workflow): move Step 5 sub-check (x)'s example into the parenthetical its siblings use
+  - Category: ambiguity; the web-UI example sat in the main clause behind an em dash while every sibling sub-check in the same list keeps concrete material in a "for general software development … / for skill development …" parenthetical
+- fix(dev-workflow): make Step 5 sub-check (x) reachable on the diffs it targets
+  - Category: ambiguity; (x) is gated on a "new structural element" whose enumeration did not cover an added test, and its own trigger read as a property of what the new assertion inspects — so a non-discriminating test suppressed its own detector. The gate now names a newly added test or other new block, and (x) keys on what the implementation changed
 - fix(dev-workflow): document the Step 7 concurrent-launch nesting-bound cost (auto-triage #180)
-  - Category: wrong-default; the "do not nest a further Agent" bound makes the callee run its review inline-sequentially instead of dispatching its own parallel reviewers — documented the cost so intended-design vs regression is distinguishable
+  - Category: wrong-default; the "do not nest a further Agent" bound makes the callee run its review inline-sequentially instead of dispatching its own parallel reviewers — documented the cost in `README.md` § Step 7 background launches so intended-design vs regression is distinguishable, with SKILL.md keeping the operative clause plus a pointer rather than the rationale itself
+- fix(dev-workflow): drop "optionally" from the Step 7 concurrent-launch instruction
+  - Category: ambiguity; the paragraph read as agent discretion while § Configuration counts the same two launches among the three fixed dispatch sites and the paragraph itself says to default to parallel — the sentence now carries only the availability condition it already stated, and the delegated procedure in `references/step7-check-test.md` is swept to match at both launch bullets
 
 ### mobpro v1.13.1 / dev-workflow-bundle v1.118.1
 
 - fix(mobpro): order M9 prediction narration with this-run text first (auto-triage #182)
   - Category: wrong-default; M9 § C left prediction ordering unspecified, so predictions pointed outward while findings concentrate on freshly-written prose — fixed the ordering to lead with this-run text
+- fix(mobpro): make the M9 prediction ordering rule applicable to the sample it sits above
+  - Category: ambiguity; the ordering rule spans several predicted spots while the bilingual sample offers one slot in a single sentence, and it did not say what to do when no pre-existing asset is worth predicting — § C now states the multi-spot expansion and the omit-rather-than-negate case
 
 ### dev-workflow v1.102.0 / mobpro v1.13.0 / dev-workflow-bundle v1.118.0
 

@@ -1,8 +1,6 @@
 ---
 reviewer: "ask-peer"
-review_iterations:
-  plan: 1
-  code: 1
+review_iterations: 1
 custom_instructions: |
   自分で判断できない、難易度が高いと思った場合はask-peerをmodelにfableを指定して相談して
 check_commands:

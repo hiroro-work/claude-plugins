@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-08-01
+
+### dev-workflow v1.102.2 / dev-workflow-bundle v1.118.2
+
+- fix(dev-workflow): name the phase in Step 7's dispatch-failure fallback note
+  - Category: ambiguity; the `Skill()` call-failure bullet's example note rendered `Step 7:` with no phase name, so a reader could not recover what the line was about from the line alone — it now carries the `Step 7 (Check / Test):` form § Phase naming in user-facing output requires
+
 ## 2026-07-30
 
 ### dev-workflow v1.102.1 / dev-workflow-bundle v1.118.1

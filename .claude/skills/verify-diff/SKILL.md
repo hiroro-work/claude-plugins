@@ -1,12 +1,12 @@
 ---
 name: verify-diff
-description: Empirically verify that a code diff achieves its stated objective by dispatching a bias-free executor that actually runs auto-derived evaluation scenarios against the post-diff file. The executor returns a JSON verdict with `suggested_edits`, and this skill applies them iteratively until the executor declares no further fixes are needed, max-iterations is reached, or a safety rail trips. Non-interactive — no user prompts. Use after applying an Edit when you need a dynamic cross-check that complements static reviewers like skill-review.
+description: Empirically verify that a code diff achieves its stated objective by dispatching a bias-free executor that actually runs auto-derived evaluation scenarios against the post-diff file. The executor returns a JSON verdict with `suggested_edits`, and this skill applies them — a single pass by default, or iteratively up to `Max iterations` when the caller raises it. Non-interactive — no user prompts. Use after applying an Edit when you need a dynamic cross-check that complements static reviewers like skill-review.
 allowed-tools: Read, Edit, Agent, TaskCreate, TaskUpdate, TodoWrite, Bash(git diff *), Bash(git checkout HEAD -- *)
 ---
 
 # Verify Diff
 
-The convergence signal is the executor itself returning `suggested_edits: []` on a pass verdict — that is, the executor declares nothing more is left to fix. This skill loops until that signal, max iterations is reached, or a safety rail trips.
+The convergence signal is the executor itself returning `suggested_edits: []` on a pass verdict — that is, the executor declares nothing more is left to fix. By default the skill runs a **single** pass; a caller that raises `Max iterations` loops until that signal, max iterations is reached, or a safety rail trips.
 
 Designed to be called from non-interactive routines such as `dev-workflow-triage`. It never prompts the user; it either returns a structured summary or terminates early with a machine-readable reason code.
 
@@ -18,7 +18,7 @@ The caller passes these fields in natural language (the skill extracts them from
 - `Suggested fix direction` *(required for explicit-args mode; absent for auto-derive mode)* — how the diff was meant to be shaped
 - `Target file` *(required for explicit-args mode; absent for auto-derive mode)* — one relative path (single-file scope; multi-file diffs are out of scope in this mode)
 - `Base ref` *(optional, default `HEAD`)* — git ref to diff against (both modes)
-- `Max iterations` *(optional, default `3`)* — upper bound on the refinement loop (both modes; auto-derive applies the same upper bound to each per-skill loop)
+- `Max iterations` *(optional, default `1`)* — upper bound on the refinement loop (both modes; auto-derive applies the same upper bound to each per-skill loop). Default `1` is a single detect-and-apply pass — a caller that wants the applied fixes re-verified raises it explicitly
 
 ### Mode determination
 
@@ -177,7 +177,7 @@ Generate 1–2 evaluation scenarios plus a requirements checklist from the calle
 
 ### Step 3 — Iteration loop (i = 1 .. Max iterations)
 
-**Pre-register iteration tasks** — before entering the loop, `TaskCreate` one task per iteration named `iteration 1`, `iteration 2`, ..., `iteration <Max iterations>`. Mark `in_progress` (via `TaskUpdate`) before each dispatch, `completed` after parse+apply (for a `converged` verdict, "apply" is a no-op — mark `completed` immediately after parsing the verdict). On early convergence (verdict matches the converged rule) or safety-rail triggered exit (`skipped` / `conflict`), mark remaining iteration tasks `completed` with note matching the exit reason (e.g. `skipped: converged at iter 2`). The "note" lives in the task's `description` field (the `content` field under the `TodoWrite` fallback) — append as `— <reason>`. Where the Task tools are unavailable (e.g. the VSCode extension, or Claude Code before v2.1.142), use the equivalent `TodoWrite` operations instead — the status values and pre-register semantics are identical; `allowed-tools` grants both. Pre-registration is load-bearing: without it, the executor-driven loop tends to stop after the first iteration that looks acceptable, even when gaps remain that further iterations could close.
+**Pre-register iteration tasks** — before entering the loop, `TaskCreate` one task per iteration named `iteration 1`, `iteration 2`, ..., `iteration <Max iterations>`. Mark `in_progress` (via `TaskUpdate`) before each dispatch, `completed` after parse+apply (for a `converged` verdict, "apply" is a no-op — mark `completed` immediately after parsing the verdict). On early convergence (verdict matches the converged rule) or safety-rail triggered exit (`skipped` / `conflict`), mark remaining iteration tasks `completed` with note matching the exit reason (e.g. `skipped: converged at iter 2`). The "note" lives in the task's `description` field (the `content` field under the `TodoWrite` fallback) — append as `— <reason>`. Where the Task tools are unavailable (e.g. the VSCode extension, or Claude Code before v2.1.142), use the equivalent `TodoWrite` operations instead — the status values and pre-register semantics are identical; `allowed-tools` grants both. Pre-registration is load-bearing when a caller raises `Max iterations`: without it, the executor-driven loop tends to stop after the first iteration that looks acceptable, even when gaps remain that further iterations could close.
 
 #### (a) Dispatch bias-free executor
 
@@ -248,6 +248,8 @@ Invoke the `Agent` tool to dispatch a fresh executor. Assemble the dispatch prom
 
 Set `status=unresolved`, `unresolved_gaps = <last remaining_gaps>`. `applied_edits_count` reflects edits that actually landed (not skipped).
 
+`remaining_gaps` is the executor's **pre-apply** judgment, so `unresolved` alongside `applied_edits_count > 0` is the ordinary outcome of a productive pass at the default `Max iterations` of `1`, not an anomaly; raise `Max iterations` to make `converged` reachable after a fix.
+
 ### Step 5 — Emit structured summary
 
 Emit a single fenced JSON block at the end of the response, matching the schema for the mode that ran:
@@ -303,10 +305,11 @@ In auto-derive mode the per-skill loop dispatches an `Agent` for each skill (and
 
 ## Outer review loop interaction (caller-side note)
 
-When invoked from `dev-workflow-triage`'s § Apply accepted Findings (D) per-Finding review subagent's outer loop at outer iter ≥ 2, the cumulative diff against `Base ref = HEAD` may include sibling-review polish edits (from `Skill(skill-review)` / `Skill(publicity-review)`) unrelated to the original Finding's `Description` / `Suggested fix direction`. The bias-free executor may judge those polish lines as "regression" and emit `unresolved` more frequently than it would in iter 1 — this is the expected disposition under outer-loop wrapping, not a `verify-diff` bug.
+When invoked from `dev-workflow-triage`'s § Apply accepted Findings (d-loop) per-Finding review subagent's outer loop at outer iter ≥ 2, the cumulative diff against `Base ref = HEAD` may include sibling-review polish edits (from `Skill(skill-review)` / `Skill(publicity-review)`) unrelated to the original Finding's `Description` / `Suggested fix direction`. The bias-free executor may judge those polish lines as "regression" and emit `unresolved` — this is the expected disposition under outer-loop wrapping, not a `verify-diff` bug. At the default `Max iterations` of `1` every pass that applies edits already ends in `unresolved` (§ Step 4 — Max iterations reached without convergence), so outer-loop wrapping raises the rate of an ordinary disposition rather than introducing an outer-iter-only one.
 
-Caller-side handling: under the (D) design `verify-diff` is invoked via `Skill(verify-diff)` from inside the dispatched per-Finding subagent, not directly from the orchestrator main thread. The subagent treats `unresolved` as a non-fatal warning and proceeds to skill-review; the outer loop's early-exit may absorb the noise once all three callees stop applying edits. The rationale for `Base ref = HEAD` across outer iters: no commit happens until (g), so each callee sees the cumulative working-tree state including prior outer iter's edits. See `dev-workflow-triage` SKILL.md `§ Apply accepted Findings` (D) for the canonical (D) write-up.
+Caller-side handling: under the (d-loop) design `verify-diff` is invoked via `Skill(verify-diff)` from inside the dispatched per-Finding subagent, not directly from the orchestrator main thread. The subagent treats `unresolved` as a non-fatal warning and proceeds to skill-review; the outer loop's early-exit may absorb the noise once all three callees stop applying edits. The rationale for `Base ref = HEAD` across outer iters: no commit happens until (g), so each callee sees the cumulative working-tree state including prior outer iter's edits. See `dev-workflow-triage` SKILL.md `§ Apply accepted Findings` (d-loop) for the canonical outer-loop write-up.
 
 ## Related
 
+- Why the three Pattern A siblings report a final-iteration fix differently: `publicity-review` drops a fixed entry from its residual list because each of its `suggested_edits` names the `finding_index` it resolves, and `skill-review` returns `applied-edits` off its cumulative count. A `remaining_gaps` phrase carries no equivalent link to an individual edit, so `verify-diff` reports the gaps as-is and leaves the reading to the caller (§ Step 4 — Max iterations reached without convergence).
 - `prompt-tuning` — iterative empirical evaluation of a whole prompt against multi-scenario requirement checklists. Shares the anti-self-review philosophy (dispatch a fresh executor; never self-review) but operates at prompt-quality granularity, while `verify-diff` operates on a single diff with a single objective. `verify-diff` automates prompt-tuning's human-in-the-loop by having the executor emit `suggested_edits` from its unclear-points report. The auto-derive mode reuses the same intent-inference pattern from prompt-tuning and re-specializes it for diff-verification granularity.

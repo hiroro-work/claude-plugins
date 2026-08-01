@@ -1,12 +1,12 @@
 ---
 name: publicity-review
-description: Review uncommitted diff for content unsuitable for publication to a public repository — secrets/credentials, user-specific absolute paths, internal-only URLs/hostnames, and personal identifiers. Each iteration dispatches a fresh subagent that returns findings; the main thread applies the subagent's mechanical fixes and re-dispatches until the subagent declares no remaining findings or max iterations is reached. Non-interactive — no user prompts. Use as a final gate before publishing changes; designed to be called from non-interactive routines such as dev-workflow's hooks.on_complete or dev-workflow-triage's per-Finding sub-flow.
+description: Review uncommitted diff for content unsuitable for publication to a public repository — secrets/credentials, user-specific absolute paths, internal-only URLs/hostnames, and personal identifiers. Each iteration dispatches a fresh subagent that returns findings and the main thread applies the subagent's mechanical fixes — a single pass by default, or re-dispatching up to `Max iterations` when the caller raises it. Non-interactive — no user prompts. Use as a final gate before publishing changes; designed to be called from non-interactive routines such as dev-workflow's hooks.on_complete or dev-workflow-triage's per-Finding sub-flow.
 allowed-tools: Read, Edit, Agent, TaskCreate, TaskUpdate, TodoWrite, Bash(git diff *), Bash(git rev-parse *), Bash(git checkout HEAD -- *)
 ---
 
 # Publicity Review
 
-The convergence signal is the executor itself returning `findings: []` AND `suggested_edits: []` on a pass verdict — that is, the subagent declares nothing more is left to flag. This skill loops until that signal, max iterations is reached, a divergence is detected, or a safety rail trips.
+The convergence signal is the executor itself returning `findings: []` AND `suggested_edits: []` on a pass verdict — that is, the subagent declares nothing more is left to flag. By default the skill runs a **single** pass; a caller that raises `Max iterations` loops until that signal, max iterations is reached, a divergence is detected, or a safety rail trips.
 
 The detection scope is narrow on purpose: secrets, user-specific absolute paths (e.g. `/Users/<name>/...`), internal-only URLs / hostnames, personal identifiers, and obvious proprietary internal info. It is **not** a generic linter — license, brand, or stylistic content is out of scope.
 
@@ -17,7 +17,7 @@ Designed to be called from non-interactive routines such as `dev-workflow-triage
 The caller passes these fields in natural language (the skill extracts them from the invocation text):
 
 - `Base ref` *(optional, default `HEAD`)* — git ref to diff against
-- `Max iterations` *(optional, default `2`)* — upper bound on the refinement loop
+- `Max iterations` *(optional, default `1`)* — upper bound on the refinement loop. Default `1` is a single detect-and-apply pass — a caller that wants the applied fixes re-verified raises it explicitly
 - `Model` *(optional, default `sonnet`)* — model for the reviewer `Agent` dispatch, or `inherit` to use the session model. Accepted values are whichever model ids the current `Agent` tool's `model` parameter allows — see `rules-review` SKILL.md's `Model:` paragraph (`§ Usage`) for the live-schema validity check this shares. An **independent optional field** — adding it does not turn the contract into a fixed-arity mode gate (the other fields keep their own defaults). **Default `sonnet`**: publicity-review's detection task is mechanical pattern-matching (secrets / paths / URLs), so it runs on `sonnet` by default — a deliberate skill-side cost choice that applies to **every** caller (e.g. `dev-workflow-triage`, `dev-workflow`'s `hooks.on_complete`). A caller-supplied `Model:` value **wins over** this default (arg-wins). The model applies **only on the Claude Code `Agent`-dispatch path**; on the inline fallback path no `Agent` is spawned, so it is moot (the executing agent's own model governs).
 
 The caller must **not** stage changes while this skill is running. The skill reads the working tree vs `Base ref`; staged content would mix into the diff and corrupt the verdict.
@@ -87,6 +87,8 @@ Invoke the `Agent` tool to dispatch a fresh reviewer, passing the resolved model
 >
 > `old_string` for each `suggested_edit` must match exactly one location in the current file. Include **1–3 lines of surrounding context** so the snippet is unique — short one-liners collide and cause the Edit to fail. Default to one line of context above and one below the offending line; expand only if uniqueness still fails. Emit one `suggested_edits` entry per offending line — do not merge multiple offending lines into a single Edit, since a later iter's apply phase may need to skip individual entries when an `old_string` no longer matches.
 >
+> Every `suggested_edits` entry also carries **`finding_index`** — the 0-based index into your own `findings[]` array of the one finding that edit fixes. The orchestrator treats a finding whose edit lands as resolved, so the index has to be right: a missing or non-integer one fails schema validation and the whole pass is discarded with nothing applied, while one pointing at the wrong finding drops that finding from the residual list — reporting a leak that is still on disk as fixed. One edit fixes exactly one finding; two offending lines produce two findings, two edits, and two distinct indices.
+>
 > **Gate reachability rule (required)**: when there are no findings, you **must** return `findings: []` AND `suggested_edits: []`. Do not emit speculative or "nice to have" edits when nothing was flagged.
 >
 > **`line` field**: always emit `null`. It is reserved and the orchestrator does not consume it; the `file` field carries the per-finding location.
@@ -110,7 +112,7 @@ Invoke the `Agent` tool to dispatch a fresh reviewer, passing the resolved model
 >     }
 >   ],
 >   "suggested_edits": [
->     {"file": "<path>", "old_string": "<unique 1-3 line snippet>", "new_string": "<replacement>", "rationale": "<short>"}
+>     {"file": "<path>", "finding_index": 0, "old_string": "<unique 1-3 line snippet>", "new_string": "<replacement>", "rationale": "<short>"}
 >   ]
 > }
 > ```
@@ -121,13 +123,14 @@ Invoke the `Agent` tool to dispatch a fresh reviewer, passing the resolved model
 Same evaluate-in-order discipline as `verify-diff` § (b) Parse & apply.
 
 1. **Verdict missing or malformed** — no fenced JSON block found, or JSON parse fails → return `status=skipped`, `reason="verdict parse failure"`.
-2. **Schema violation** — required keys (`findings`, `suggested_edits`) missing, values not arrays, or any entry fails its expected per-entry shape (`findings` entries must have `category` ∈ enum, `severity` ∈ `high|medium|low`, `confidence` ∈ `high|medium|low`, non-empty `file` / `snippet` / `rationale`; `suggested_edits` entries must have non-empty `file` / `old_string` / `new_string`) → return `status=skipped`, `reason="verdict schema violation"`. Validating per-entry shape here prevents a malformed entry from crashing a downstream `Edit` call.
+2. **Schema violation** — required keys (`findings`, `suggested_edits`) missing, values not arrays, or any entry fails its expected per-entry shape (`findings` entries must have `category` ∈ enum, `severity` ∈ `high|medium|low`, `confidence` ∈ `high|medium|low`, non-empty `file` / `snippet` / `rationale`; `suggested_edits` entries must have non-empty `file` / `old_string` / `new_string` plus an integer `finding_index` that is a valid index into `findings`, with no two entries sharing the same index) → return `status=skipped`, `reason="verdict schema violation"`. Validating per-entry shape here prevents a malformed entry from crashing a downstream `Edit` call; the uniqueness leg closes the silent variant — two edits naming one finding, only one of which lands, would still drop that finding from the residual list. **Exception** — when `findings == []`, skip the `finding_index` range and uniqueness checks only (every other per-entry check still applies): no index can be valid against an empty array, and that combination is the gate-reachability violation sub-case 3 handles by discarding the edits and converging.
 3. **Converged** — `findings == []` AND `suggested_edits == []` → exit loop with `status=converged` and proceed directly to Step 4. If `suggested_edits` is non-empty while `findings == []`, the gate-reachability rule was violated by the subagent — discard the edits (do not apply them) and treat this iteration as `converged`. Safety rails (c) do not run (no edit applied).
 4. **Divergence** — only when `i >= 2`: if `findings` from this iter is the same multiset as the previous iter (sort each by `(category, file, snippet)` textually before comparison), the loop is not making progress → return `status=skipped`, `reason="divergent findings"`.
 5. **Otherwise** — apply `suggested_edits` in order. The severity / confidence gate in Step 3 (`unresolved` judgment) applies to **iter-end residual findings**, not to apply-phase decisions, so every entry is applied unconditionally:
+   - Reset `resolved_finding_indices` to the empty set at the start of this apply phase — it indexes **this** iteration's `findings[]`, which is the array Step 3's `unresolved` judgment rule reads.
    - Re-Read the target file before each Edit so `old_string` matches current contents.
    - If an `old_string` is not found, skip that entry and continue with the next. This is expected when the subagent emits multiple edits from a single snapshot and a later edit overlaps a region an earlier one already rewrote — the skip is a no-op fallback, not an error.
-   - Increment `applied_edits_count` only for entries whose `Edit` call succeeded.
+   - Increment `applied_edits_count` only for entries whose `Edit` call succeeded, and add each such entry's `finding_index` to `resolved_finding_indices`. A skipped entry contributes neither.
    - After the edits, if at least one Edit succeeded, run the safety rails in (c), then continue to iteration `i + 1`.
 
 #### (c) Per-iteration safety rails — run only if at least one edit was applied
@@ -145,7 +148,11 @@ Same evaluate-in-order discipline as `verify-diff` § (b) Parse & apply.
 
 ### Step 3 — Max iterations reached without convergence
 
-Compute `remaining_findings` and `warnings_findings` from the **last verdict's `findings[]`** using this judgment rule:
+Reached when the loop runs out of iterations without (b) sub-case 3 firing. At the default `Max iterations` of `1` this is the ordinary path for any pass that flagged something.
+
+Start from the **last verdict's `findings[]`** and first drop every finding whose index is in `resolved_finding_indices` — the final iteration applied that finding's mechanical fix, so it is resolved rather than outstanding. This rule is about the **last** iteration, not about the default: every earlier iteration's fixes are already accounted for, because the next iteration's fresh verdict is computed against the edited tree. The last one has no successor to do that, so its landed edit is itself the resolution signal. A caller that wants a re-verification round after the final fix raises `Max iterations`.
+
+Sort the survivors into `remaining_findings` and `warnings_findings` using this judgment rule:
 
 A finding triggers `unresolved` (i.e., goes into `remaining_findings`) if either:
 
@@ -154,7 +161,7 @@ A finding triggers `unresolved` (i.e., goes into `remaining_findings`) if either
 
 Findings that match neither condition (e.g., `severity: low` only, or non-secret with `confidence: low`) go into `warnings_findings`. They are surfaced in the verdict but do not trigger a fail-closed disposition in callers.
 
-If `remaining_findings` is empty (everything left was warnings-only), set `status=converged` (the leaks worth blocking on are gone). Otherwise set `status=unresolved`.
+If `remaining_findings` is empty — every flagged leak was either mechanically fixed by this pass or fell through to warnings-only — set `status=converged` (the leaks worth blocking on are gone). Otherwise set `status=unresolved`, which now means what a caller's fail-closed branch assumes: a leak worth blocking on is still on disk because nothing fixed it.
 
 `applied_edits_count` reflects edits that actually landed (not skipped) cumulatively across all iterations.
 

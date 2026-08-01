@@ -6,14 +6,14 @@ allowed-tools: Read, Edit, Agent, TaskCreate, TaskUpdate, TodoWrite, Bash(git di
 
 # Skill Review
 
-The review walk runs in a fresh subagent per iteration (Pattern A — same shape as `verify-diff` and `publicity-review`); Edit application stays in the main thread to keep the reviewer bias-free. The skill loops the dispatch + apply cycle until the subagent returns no more `mechanical_edits`, max iterations is reached, or a safety rail trips. Designed to be called from non-interactive routines such as `dev-workflow-triage` (d2) or `dev-workflow` `hooks.on_complete`; it never prompts the user.
+The review walk runs in a fresh subagent per iteration (Pattern A — same shape as `verify-diff` and `publicity-review`); Edit application stays in the main thread to keep the reviewer bias-free. By default the skill runs a **single** pass; a caller that raises `Max iterations` loops the dispatch + apply cycle until the subagent returns no more `mechanical_edits`, max iterations is reached, or a safety rail trips. Designed to be called from non-interactive routines such as `dev-workflow-triage` (d2) or `dev-workflow` `hooks.on_complete`; it never prompts the user.
 
 ## Invocation contract
 
 The caller passes these fields in natural language (the skill extracts them from the invocation text):
 
 - `Base ref` *(optional, default `<working-tree-vs-HEAD>`)* — git ref to diff against. When omitted, the skill looks at the working tree's uncommitted + staged changes (the default scope for `dev-workflow` post-implementation review). When specified (e.g. `Base ref: main`), the skill switches to `git diff <Base ref>` semantics — useful for callers like `dev-workflow-triage` that want to review a stack of already-committed changes between a base branch and HEAD.
-- `Max iterations` *(optional, default `3`)* — upper bound on the refinement loop. Default `3` mirrors `verify-diff`'s default; prose-quality polish typically converges in 1–2 iterations.
+- `Max iterations` *(optional, default `1`)* — upper bound on the refinement loop. Default `1` is a single detect-and-apply pass — a caller that wants the applied fixes re-verified raises it explicitly.
 
 The caller must **not** stage changes while this skill is running. The skill reads the working tree; staged content would mix into the diff and corrupt the verdict. (The `Base ref` mode reads committed history vs the ref, so staging interference applies only to the default working-tree mode.)
 
@@ -39,7 +39,7 @@ For each changed skill, in the main thread:
 
 ### Step 3 — Iteration loop (i = 1 .. Max iterations)
 
-**Pre-register iteration tasks** — before entering the loop, `TaskCreate` one task per iteration named `iteration 1`, `iteration 2`, ..., `iteration <Max iterations>`. Mark `in_progress` (via `TaskUpdate`) before each dispatch, `completed` after parse + apply (a converged iteration marks `completed` immediately after parsing). On early convergence (no `mechanical_edits` returned) or safety-rail-triggered exit, mark remaining iteration tasks `completed` with note appended to the task's `description` field (the `content` field under the `TodoWrite` fallback) as `— skipped: converged` / `— skipped: <reason>`. Where the Task tools are unavailable (e.g. the VSCode extension, or Claude Code before v2.1.142), use the equivalent `TodoWrite` operations instead — the status values and pre-register semantics are identical; `allowed-tools` grants both. Pre-registration mirrors `verify-diff` Step 3 — without it, the executor-driven loop tends to stop at the first iteration that looks acceptable.
+**Pre-register iteration tasks** — before entering the loop, `TaskCreate` one task per iteration named `iteration 1`, `iteration 2`, ..., `iteration <Max iterations>`. Mark `in_progress` (via `TaskUpdate`) before each dispatch, `completed` after parse + apply (a converged iteration marks `completed` immediately after parsing). On early convergence (no `mechanical_edits` returned) or safety-rail-triggered exit, mark remaining iteration tasks `completed` with note appended to the task's `description` field (the `content` field under the `TodoWrite` fallback) as `— skipped: converged` / `— skipped: <reason>`. Where the Task tools are unavailable (e.g. the VSCode extension, or Claude Code before v2.1.142), use the equivalent `TodoWrite` operations instead — the status values and pre-register semantics are identical; `allowed-tools` grants both. Pre-registration mirrors `verify-diff` § Step 3 — Iteration loop and is load-bearing when a caller raises `Max iterations` — without it, the executor-driven loop tends to stop at the first iteration that looks acceptable.
 
 #### (a) Dispatch reviewer Agent
 
@@ -121,7 +121,7 @@ Same first-match-wins evaluate-in-order discipline as `verify-diff` § (b) Parse
 
 ### Step 4 — Max iterations reached without convergence
 
-If the loop runs all `Max iterations` without (b) sub-case 3 firing (i.e. the subagent kept emitting `mechanical_edits` to the end, but apply progress stalled — typically all entries skipping because `old_string` collisions), determine the terminal status from cumulative state and the **last iter's** `structural_notes`:
+If the loop runs all `Max iterations` without (b) sub-case 3 firing, determine the terminal status from cumulative state and the **last iter's** `structural_notes`. At the default `Max iterations` of `1` this is the ordinary path for any pass that applied edits; when a caller raises `Max iterations` it also covers a loop where the subagent kept emitting `mechanical_edits` to the end but apply progress stalled (typically all entries skipping because `old_string` collisions):
 
 - cumulative `applied_edits_count > 0` → `applied-edits` (notes_remaining = last-iter `structural_notes` count)
 - cumulative `applied_edits_count == 0` AND last-iter `structural_notes == []` → `no-actionable-findings` (rare degenerate case: subagent emitted unappliable edits but no notes; debug-wise suspect subagent quality drift, but the file state is clean)

@@ -2,6 +2,13 @@
 
 ## 2026-08-01
 
+### dev-workflow v1.103.0 / dev-workflow-bundle v1.119.0
+
+- feat(dev-workflow): count independently deployable units as a decomposition trigger in Step 1.5's `references/task-decomposition.md` § B. Normal sub-mode
+  - The `Workproduct-independence axis` now opens with a count that runs before its judgment prose: count the request's independently deployable or publishable units (cloud functions, plugins, packages, services, jobs, endpoints, CLI commands) and treat 2 or more as a decompose signal even when the verification path is single. Migration and bulk-port tasks are named as the case this misses — the request reads as one unit while holding N deployable artifacts. Where the count is inconclusive the axis stays the judgment call its examples illustrate
+- feat(dev-workflow): add a shared-code boundary heuristic to the subtask-drafting step of the same reference
+  - When candidate units share files, count each unit's exclusive files against the shared set (per file, not per symbol). Ample exclusive files mean the unit boundary is a clean subtask boundary; tiny exclusive counts against a dominant shared set mean the units are proposed as one subtask, which records in its `description` and `verification_hint` that its Build order runs shared base first, then one thin step per unit; anything in between is a judgment call. The heuristic decides where the split lines fall, not whether to decompose — it never reverses the count trigger, and an undecomposed outcome stays the user's call at the proposal gate. Scoped to the subtask (PR) layer — the commit shape follows from the Build order
+
 ### dev-workflow v1.102.2 / dev-workflow-bundle v1.118.2
 
 - fix(dev-workflow): name the phase in Step 7's dispatch-failure fallback note

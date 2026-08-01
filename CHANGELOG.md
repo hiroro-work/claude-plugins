@@ -14,6 +14,8 @@
   - Category: ambiguity; (x) is gated on a "new structural element" whose enumeration did not cover an added test, and its own trigger read as a property of what the new assertion inspects — so a non-discriminating test suppressed its own detector. The gate now names a newly added test or other new block, and (x) keys on what the implementation changed
 - fix(dev-workflow): document the Step 7 concurrent-launch nesting-bound cost (auto-triage #180)
   - Category: wrong-default; the "do not nest a further Agent" bound makes the callee run its review inline-sequentially instead of dispatching its own parallel reviewers — documented the cost in `README.md` § Step 7 background launches so intended-design vs regression is distinguishable, with SKILL.md keeping the operative clause plus a pointer rather than the rationale itself
+- fix(dev-workflow): declare the evaluation order of Step 1's settings-overlay rules
+  - Category: ambiguity; the six rules were a flat list mixing value-shape branches with type-class branches, so a `null` under a List key matched both "explicitly clears" and "append" — opposite outcomes with nothing to arbitrate. The list is now first-match-wins with the value-shape rules first, which is the order the clear rule's `[]` / `{}` forms already implied
 - fix(dev-workflow): drop "optionally" from the Step 7 concurrent-launch instruction
   - Category: ambiguity; the paragraph read as agent discretion while § Configuration counts the same two launches among the three fixed dispatch sites and the paragraph itself says to default to parallel — the sentence now carries only the availability condition it already stated, and the delegated procedure in `references/step7-check-test.md` is swept to match at both launch bullets
 

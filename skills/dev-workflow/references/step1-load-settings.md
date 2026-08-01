@@ -11,13 +11,13 @@ Deep reference for `SKILL.md` **Step 1: Load Settings**. `SKILL.md` keeps inline
    if .claude/dev-workflow.md exists:          overlay its frontmatter onto merged
    if .claude/dev-workflow.local.md exists:    overlay its frontmatter onto merged
    ```
-   "Overlay" = for each key present in the file:
+   "Overlay" = for each key, evaluate the rules below in order and stop at the first match. The two value-shape rules come first on purpose: a key's shape decides the outcome before its type class does, so an explicit clear wins over the merge class the key would otherwise take. Without that ordering a `null` under a List key matches both "clears" and "append" and the two give opposite results.
+   - `null` or empty (`[]`, `{}`) explicitly clears the key — lower-layer value is discarded, not inherited, whatever type class the key falls under below
+   - Key absent from the file: left untouched (inherit from lower layers)
    - Scalar keys: `merged[key] = file[key]` (replace) — this includes `review_iterations` when its value is a map (`{plan, code}`): the whole map replaces the lower layer's value with no per-key cross-layer merge (a map key absent from the higher layer is not back-filled from the lower layer)
    - List keys (`check_commands`): append `file[key]` items after `merged[key]`, then deduplicate (keep first occurrence)
    - List-replace keys (`test_commands`): `merged[key] = file[key]` — the higher layer's whole list replaces the lower layer's (no item-level merge or dedup)
    - `hooks`: deep-merge — for each sub-key (e.g. `on_complete`), append and deduplicate the list
-   - `null` or empty (`[]`, `{}`) explicitly clears the key — lower-layer value is discarded, not inherited
-   - Key absent from the file: left untouched (inherit from lower layers)
    If a file's YAML frontmatter is malformed (parse error), warn the user naming the file, skip that layer, and continue with remaining layers.
 
 ## Sub-step 5 — Parse remaining config keys

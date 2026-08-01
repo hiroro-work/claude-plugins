@@ -4,7 +4,7 @@ Canonical home for the detection rules this lint applies. Two executors share th
 
 **Path convention**: every file reference in this document — including manifest anchors — is **target-root-relative** (`SKILL.md`, `references/<file>.md`), so the same rule text applies to every root and a `Target dir:` override resolves identically.
 
-**Per-root resolution**: a run lints one or more roots (`SKILL.md` § Target roots). Every pass is root-scoped — heading indexes, the class (c) identifier pattern, and the class (e) name authority all come from the root the candidate was extracted from. `§` resolution is root-scoped too, with one exception the trees require: a reference that **names** another skill resolves in that skill's tree (§ Class (a)'s "Resolution scope model" paragraph). Manifest entries (classes (b) / (d)) carry a `root` column and are checked only against that root; a manifest entry whose root is absent from this run is skipped silently, not reported as stale.
+**Per-root resolution**: a run lints one or more roots (`SKILL.md` § Target roots). Every pass is root-scoped — heading indexes, the class (c) identifier pattern, and the class (e) name authority all come from the root the candidate was extracted from. `§` resolution is root-scoped too, with one exception the trees require: a reference that **names** another skill resolves in that skill's tree (§ Class (a)'s "Resolution scope model" paragraph). Each manifest section (classes (b) / (d)) declares the root its entries belong to in one sentence above its table, and those entries are checked only against that root — one root per section, so a table mixing roots would need splitting into two sections. The declaration must carry a literal `root: <path>` token: that is what the script parses, and a section phrased without one has its rows checked on every run. A manifest section whose root is absent from this run is skipped silently, not reported as stale.
 
 ## Class (a) — Cross-reference resolution
 
@@ -23,7 +23,7 @@ Source of truth for the reference-form convention: `.claude/rules/project.rules.
 
 **Resolution procedure:**
 
-1. Build a per-file **heading index** and a per-file **bold-span index** once (all `#`–`####` lines; every `**...**` span), each entry carrying its normalized forms. A `§` key resolves against **either** index — the tree points `§` at bold-prose labels as well as headings.
+1. Build a per-file **heading index** and a per-file **bold-span index** once (all `#`–`####` lines; every `**...**` span), each entry carrying its normalized forms. Both indexes take only lines **outside** fenced blocks, by the same mechanical fence filter as § Class (a)'s Extraction exclusions — a heading or bold span inside a code sample is quoted syntax, not an anchor a reference can resolve to. A `§` key resolves against **either** index — the tree points `§` at bold-prose labels as well as headings.
 2. Normalize each extracted candidate: strip wrapping backticks / quotes and trailing sentence punctuation; split off a possessive tail (`'s <descriptor>`) — the text before the possessive is the **heading key**, and a quoted or bold label inside the descriptor tail is a **label key** (a quoted label without a possessive splits the same way). Compare heading keys against index entries with whitespace-normalized prefix matching in **either direction** (a reference may cite a stable prefix of a longer heading, e.g. `§ Step 10: Interactive Commits` against the heading `Step 10: Interactive Commits`; and a key may run past the heading it names, because the reference continues into its own trailing prose). A key also resolves against a heading's **subject** — the heading text before its em-dash gloss, parenthetical qualifier, or colon title — which is the part references actually cite (`§ Workflow artifacts set` naming `Workflow artifacts (cross-step fixed exclusion)`).
 3. **Resolution scope model**:
    - **Qualified form** → resolve within the named file. When the run loaded no file of that name, the reference points outside the linted trees and is **out of scope**.
@@ -34,12 +34,12 @@ Source of truth for the reference-form convention: `.claude/rules/project.rules.
 
 **Demotion rule (violation vs warning):**
 
-A candidate that fails resolution is a **violation** (`class: "a"`) only when it is **unambiguous**: extracted from running prose, with a clean normalized key, and unresolvable everywhere. Demote to a warning (`class: "a-demoted"`) on any of these, each of which is decided mechanically:
+A candidate that fails resolution is a **violation** (`class: "a"`) only when it is **unambiguous**: extracted from running prose, with a clean normalized key, and unresolvable everywhere. Demote to a warning (`class: "a-demoted"`) on any of these, each of which is decided mechanically. **Evaluate them in the order listed and report the first match** — the list runs from the cause that says the most about the reference to the one that says the least, so a candidate whose target exists in a sibling tree reports that (actionable: name the tree) rather than an extraction artifact that also happens to apply:
 
 - **Sibling-root-only resolution** — the key resolves in a sibling root the reference does not name. The target exists, so this cannot be a violation; the pointer merely omits which tree it lives in.
 - **Sub-item anchor** — the key names something below heading level, which no index reaches: a lettered sub-step (`§ (e)`), a dotted anchor whose parent section does resolve (`§ 1.3` under a `1.` heading), or a step inside a section that resolves (`§ Procedure step 4`). An anchor whose own parent is missing stays a violation.
-- **Extraction uncertainty** — an over-long key, unbalanced backticks, or a key ending on a preposition or conjunction, all of which mark a key cut mid-phrase.
-- **Exemplar context** — the candidate sits in a passage that documents the convention by quoting it. This cause is declared as the allowlist in `scripts/lint.mjs`, whose entries name a file plus a verbatim fragment; it is empty whenever the structural causes above already cover every exemplar in the trees.
+- **Extraction uncertainty** — an over-long key, unbalanced delimiters (backticks or parentheses), or a key ending on a preposition or conjunction, all of which mark a key cut mid-phrase.
+- **Exemplar context** — the candidate sits in a passage that documents the convention by quoting it. This cause is declared as the allowlist in `scripts/lint.mjs`, whose entries name a file plus a verbatim fragment; it is empty whenever the structural causes above already cover every exemplar in the trees. An entry an earlier cause outranks still counts as matched, so it is not reported stale.
 
 When in doubt, demote.
 
@@ -127,7 +127,9 @@ The pipeline runs in two stages with different executors, split by whether the w
 
 ### Mechanical stage — `scripts/lint.mjs`
 
-Enumeration, extraction, indexing, class (a) resolution, class (e) judgment, class (c) pre-filtering, and every `checked` count are performed by `scripts/lint.mjs` before the judgment stage is dispatched. The rules in the class sections above are the specification that script implements. What it settles is not the judgment stage's to revisit; `SKILL.md` § Process step 3 describes it for the main thread's benefit, and § Return contract states which of its fields a caller may gate on.
+Enumeration, extraction, indexing, class (a) resolution, class (e) judgment, class (c) pre-filtering, and every `checked` count are performed by `scripts/lint.mjs` before the judgment stage is dispatched. The rules in the class sections above are the specification that script implements. What it settles is not the judgment stage's to revisit; `SKILL.md` § Process step 3 describes it for the main thread's benefit, and § Return contract states which of its fields a caller may gate on. Numeric bounds live as named constants at the top of that script, not here.
+
+**Narrowed extraction is reported, never silent.** An unclosed fence masks to end of file, and a line with an odd number of backticks has untrustworthy code-span pairing; each emits `class: "scope-narrowed"` with the file and line, so a swallowed region is distinguishable from a clean one. Reported for every tree the run loads, including one loaded only so that references naming it resolve — a swallowed sibling silently escalates a cross-root reference into a class (a) violation. Warning-only, and emitted by the mechanical stage alone.
 
 ### Judgment stage — this executor
 

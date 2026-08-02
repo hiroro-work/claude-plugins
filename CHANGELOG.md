@@ -2,6 +2,19 @@
 
 ## 2026-08-02
 
+### dev-workflow v1.105.0 / mobpro v1.15.0 / dev-workflow-bundle v1.121.0
+
+- feat(dev-workflow)!: reduce the plan-approval gate to one browser surface plus a chat fallback
+  - **Breaking change**: `plan_review_gate` is removed, and with it the `plan-mode` and `crit` plan-approval surfaces. Step 4 now always runs the bundled `visual` browser gate and degrades to a chat approval when no local browser is reachable. A leftover `plan_review_gate` in a config layer is ignored. Projects that set `"plan-mode"` to keep the approval in chat lose that opt-out: the chat approval still exists, but it is now reached only by the automatic reachability degradation rather than by configuration. Removed without a deprecation window on the user's explicit pre-plan decision — a deliberate departure from the standard config-flag lifecycle.
+  - **Plan Mode is never entered.** `EnterPlanMode` / `ExitPlanMode` leave `allowed-tools`, the `plan_mode_active` variable is gone, and `references/step4-finalize-plan.md` collapses to a single presentation path. Step 2's "No code changes in this phase" rule was already enforced by agent discipline under the `visual` default; it now always is.
+  - `references/crit-plan-review.md` is deleted. `commit_review_gate: "crit"` is **unaffected** — the crit commit-review gate stays, and the shared crit CLI facts it used to delegate to the plan-gate reference are now stated in `references/crit-commit-review.md` itself.
+- perf(dev-workflow): probe browser reachability before reading the visual-gate procedure
+  - Step 4's routing table now runs `printenv CLAUDE_CODE_REMOTE` itself and skips reading `references/visual-plan-review.md` (17.4k chars) when the browser is unreachable. On Claude Code on the Web that read happened on every run only for the reference's own first steps to return `fallback`. The reference still re-probes as a self-contained guard, and the anti-skip guard is retained in a narrowed form: a `true` probe result is the only thing that licenses skipping the read.
+- feat(dev-workflow): show Test plan and Risks in the chat approval
+  - They previously appeared only in the plan document; the condensed chat view now carries each one's heading plus a one-line gist, which narrows the gap left by dropping the `ExitPlanMode` modal.
+- chore(mobpro): follow the dev-workflow changes above
+  - M5's approval surface is the visual gate degrading to chat, with the same hoisted reachability probe; `plan_review_gate` leaves the fallback-key table and the scalar-merge list; and `crit-plan-review.md` leaves § Runtime reads. `commit_review_gate: "crit"` still drives M6's per-unit review and M11's per-commit review.
+
 ### dev-workflow v1.104.0 / extract-rules v1.24.0 / mobpro v1.14.0 / dev-workflow-bundle v1.120.0
 
 - feat(dev-workflow)!: replace the review-iteration loops with a single pass per review phase

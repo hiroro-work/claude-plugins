@@ -126,7 +126,7 @@ Read `references/init-mode.md` and follow the procedure.
 
 ### No-Stall Principle
 
-Once the workflow has started (after Step 1.5 resolves the effective task), it must run to Completion without pausing, **except at the explicit user-gate points enumerated below**. Every other step — including every skill invocation, every no-op outcome, every "nothing to report" result — must be judged semantically by the agent and passed through automatically. Do not rely on exact-phrase matching; if the skill result reads as a successful completion (fixes applied, no changes needed, no violations, no new rules, or any equivalent "success / no-op" outcome regardless of wording), treat it as success and proceed to the next step.
+Once the workflow has started (after Step 1.5 resolves the effective task), it must run to Completion without pausing, **except at the explicit user-gate points enumerated below**. Every other step — including every skill invocation, every no-op outcome, every "nothing to report" result — must be judged semantically by the agent and passed through automatically. **Do not rely on exact-phrase matching**; if the skill result reads as a successful completion (fixes applied, no changes needed, no violations, no new rules, or any equivalent "success / no-op" outcome regardless of wording), treat it as success and proceed to the next step.
 
 **Explicit user-gates (the only permissible pause points):**
 

@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-08-03
+
+### dev-workflow v1.105.1 / dev-workflow-bundle v1.121.1
+
+- fix(dev-workflow): resolve the five dangling bold-prose-label cross-references `verify-skill-refs` reports
+  - Category: ambiguity; four references written as `§ No-Stall Principle's "do not rely on exact-phrase matching" rule` — three in `SKILL.md`, one in `references/workability-retrospective.md` — pointed at a clause that was never a bold label, and `references/completion.md` cited `§ Localization granularity`'s identifier-verbatim rule by an unbolded phrase inside the bullet rather than by the bullet's own label. The clause is now `**Do not rely on exact-phrase matching**`, and `completion.md` cites `Preserve verbatim`.
+  - The lint stage of `Skill(verify-skill-refs)` had reported these five as class-(a) violations since before this series started, so every run of a project that lists it in `test_commands` failed Step 7 (Check / Test) on them. A standing failure hides new ones.
+
 ## 2026-08-02
 
 ### dev-workflow v1.105.0 / mobpro v1.15.0 / dev-workflow-bundle v1.121.0

@@ -29,7 +29,7 @@ The reminder is omitted when `fast_mode_skipped_steps` is empty. Three ways that
 - `language: ja`: `dev-workflow-bundle の一部スキルが今回の実行で利用できませんでした: <list>。\`dev-workflow-bundle\` プラグインが完全にインストールされているか確認してください。`
 - `language: en`: `Some dev-workflow-bundle sibling skills were unavailable this run: <list>. Check whether the \`dev-workflow-bundle\` plugin is fully installed.`
 
-Render `<list>` as the ledger's recorded entries verbatim, comma-separated (the skill names and the recorded `<context>` phase descriptions stay verbatim per § Localization granularity's "file-internal identifiers" rule; only the surrounding connective sentence is localized). The reminder is omitted entirely when `bundle_skills_unavailable` is empty — the common case where the bundle is fully installed.
+Render `<list>` as the ledger's recorded entries verbatim, comma-separated (the skill names and the recorded `<context>` phase descriptions stay verbatim per § Localization granularity's "Preserve verbatim" rule; only the surrounding connective sentence is localized). The reminder is omitted entirely when `bundle_skills_unavailable` is empty — the common case where the bundle is fully installed.
 
 **Step 10 partial-state line**: if Step 10 ended via its `Mid-loop cancel` branch (see `references/interactive-commits.md` § Mid-loop cancel), emit the localized partial-completion token defined at § Step 10's "Localized summary tokens" paragraph. On a normal completion path, omit this line.
 

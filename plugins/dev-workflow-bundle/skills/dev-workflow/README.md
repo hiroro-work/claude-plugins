@@ -162,8 +162,7 @@ hooks:
 | `plan_review` | bool | `true` | Whether Step 3 (Plan Review) runs at all — a single reviewer pass when `true` |
 | `code_review` | bool | `true` | Whether Step 8 (Code Review) runs at all — a single review pass plus one Critical-only escalation pass when `true` |
 | `interactive_commits` | bool | `true` | Whether Step 10 (Interactive Commits) proposes one commit per approved Build order step (falling back to grouping working-tree changes by cohesion) and iterates per-commit with the user; also gates Step 11's rule-update commit proposal |
-| `plan_review_gate` | string | `visual` | Which surface a plan approval renders on — `plan-mode` (built-in Plan Mode + `ExitPlanMode`), `visual` (default; bundled browser-based structured review gate — summary header, collapsible sections, Decision cards, per-element comments, mermaid diagrams), or `crit` (opt-in; the external `crit` CLI, falling back to `visual` when unavailable). `visual` / `crit` are local CLI / Remote Control only — on Claude Code on the Web both fall back to a no-Plan-Mode chat approval, though Step 2 still skips Plan Mode. Step 4 is one consumer rather than the key's whole scope — see the `plan_review_gate` section below. |
-| `commit_review_gate` | string | `diff` | Which surface a code-diff review renders on — `diff` (default; the existing chat-text presentation with the accept/adjust/cancel gate) or `crit` (opt-in; launches the external `crit` CLI scoped to just the reviewed files, falling back to `diff` when unavailable or unreachable). Step 10 applies it to each commit's diff, but is one consumer rather than the key's whole scope. Independent of `plan_review_gate` — see the `commit_review_gate` section below |
+| `commit_review_gate` | string | `diff` | Which surface a code-diff review renders on — `diff` (default; the existing chat-text presentation with the accept/adjust/cancel gate) or `crit` (opt-in; launches the external `crit` CLI scoped to just the reviewed files, falling back to `diff` when unavailable or unreachable). Step 10 applies it to each commit's diff, but is one consumer rather than the key's whole scope — see the `commit_review_gate` section below |
 | `implementation_executor` | string | `main` | Experimental, opt-in. Selects who executes Step 5 implementation work units — `main` (default), `subagent`, or one of `ask-claude` / `ask-codex` / `ask-gemini` / `ask-copilot` / `ask-agy`. Unsupported values fall back to `main`; see the `implementation_executor` section below |
 | `polish_prose` | bool | `true` | Whether the workflow's two `prose-polish` passes (Step 6.5 file-mode polish of changed files + Step 4 plan-body polish) run; Step 6.5 is still subject to the difficulty-skip matrix (default-on, opt-out) |
 | `custom_instructions` | string | (none) | Free-form instructions applied across all phases |
@@ -227,40 +226,12 @@ When `true`, the per-commit loop also handles pre-commit hook auto-modifications
 
 **Behavior change** (rule-update commit): under `interactive_commits: true`, the workflow now proposes committing the `.claude/rules/` changes that Step 11 writes — previously those were always left for you to commit manually (a Completion reminder). The proposal is a single commit you can accept, adjust (narrow the file set / edit the subject), or decline; declining keeps the old manual-commit behavior, and the Completion reminder then fires only for whatever `.claude/rules/` changes remain uncommitted. Setting `interactive_commits: false` opts out of both the Step 10 production-code commits and the Step 11 rule-update commit.
 
-#### `plan_review_gate`
-
-Controls which surface a plan approval renders on: `plan-mode`, `visual` (default), or `crit`. Step 4 (Finalize Plan) applies it, but is one consumer rather than the key's whole scope — the bundled `mobpro` skill reads the same key for its own M5 plan approval, where `plan-mode` means chat because `mobpro` never enters Plan Mode.
-
-- `plan-mode`: the unchanged built-in Plan Mode flow — `EnterPlanMode` → chat-rendered condensed plan → `ExitPlanMode`.
-- `visual` (default): the bundled **browser-based, structured review gate**. Unlike the `ExitPlanMode` approval modal (which renders the same plan markdown), it turns the plan into a review-optimized surface the modal cannot offer:
-  - a **summary header** (Goal as title; Difficulty / Scope / Risks-count chips) for a 5-second scan
-  - **collapsible sections** — the must-review tier (Overview / Decisions / Build order) opens by default, as does Context where a plan carries one; the reference sections (Test plan / Risks) start collapsed, Risks carrying a count badge
-  - **collapsible Build order steps** — each step shows only its bold heading and opens its detail on click, so the section stays a one-line-per-step list even though it is must-review
-  - **Decision cards** rendering each Decision's Question / Recommendation / Alternative, with a one-click **Keep recommendation / Switch to alternative** toggle (a switch is applied as a Recommendation↔Alternative swap when you submit)
-  - **per-element comments** — comment on an individual Decision, Build order step, risk, or paragraph, not just a whole section
-  - **mermaid diagrams** rendered as SVG (flowcharts / sequence diagrams), where the modal shows only the raw fenced text
-
-  Step 4 launches this gate **only when the local browser is reachable** (the agent and the user share a machine — local CLI / Remote Control). The gate serves the plan on a local `127.0.0.1` server (the bundled `scripts/plan-review/serve.mjs` viewer), opens your browser, and lets you review and comment per element, then choose **approve** or **revise**. `approve` proceeds to implementation; `revise` applies your comments (and any recommendation/alternative switches) to the plan and re-runs the gate, highlighting what changed since your previous review. Falls back to a no-Plan-Mode chat approval on unreachable browser (`CLAUDE_CODE_REMOTE`) or launch failure.
-- `crit` (opt-in): drives the external **[crit](https://github.com/tomasz-tomczyk/crit)** CLI — a separately-installed local review tool, not bundled with this skill — as the review surface instead. Requires `crit` on `PATH` (`crit --version`); when it is missing, fails to launch, or the local browser is unreachable, Step 4 falls back to the **`visual`** gate above (not straight to chat) so you still get a browser review. See `skills/dev-workflow/references/crit-plan-review.md` for the full contract.
-
-```yaml
-plan_review_gate: "crit"
-```
-
-Invalid values are ignored with a warning and fall back to `visual`. To opt out for one project, set `plan_review_gate: "plan-mode"` in `.claude/dev-workflow.md`; to opt in to `crit`, set `plan_review_gate: "crit"` there or in `~/.claude/dev-workflow.local.md` / `.claude/dev-workflow.local.md`.
-
-**Plan Mode interaction**: both `visual` and `crit` perform non-read-only operations Plan Mode forbids — `visual` launches a browser and writes a served-file copy, `crit` launches a browser and writes directly to the canonical plan document — so choosing either makes **Step 2 skip Plan Mode entirely** — the canonical plan document becomes `.claude/plans/<slug>.md`, and approval comes from the browser submit (or, when unreachable, a chat reply) rather than the `ExitPlanMode` modal. `plan-mode` restores the unchanged `EnterPlanMode → ExitPlanMode` flow.
-
-Note: `visual` and `crit` are both local-only features. On Claude Code on the Web neither browser gate launches — the web UI offers no rich review surface beyond chat — so both always fall back to the chat approval, though Step 2 still skips Plan Mode.
-
-**Behavior change from v1.70.0**: the default flipped from `false` (opt-in Plan Mode-skip) to `true` (now `visual`) — projects that leave `plan_review_gate` unset skip Plan Mode and use the browser-based gate by default; set `plan_review_gate: "plan-mode"` to opt out. (History: v1.70.0 introduced the visual gate as an experimental opt-in; v1.72.0 made it skip Plan Mode entirely; v1.81.0 removed the experimental marker; **v1.88.0** replaced the boolean form with this enum and added the opt-in `crit` gate.)
-
 #### `commit_review_gate`
 
-Controls which surface a code-diff review renders on: `diff` (default) or `crit`. Step 10 (Interactive Commits) applies it to each commit's diff, but it is one consumer rather than the key's whole scope — the bundled `mobpro` skill reads the same key for the per-unit diff review in its implementation loop. Independent of `plan_review_gate` — the two gates cover different review surfaces and have different non-`crit` defaults (Step 4's is a rich bundled browser gate; a code-diff review's is plain chat text), so they are not unified into one setting.
+Controls which surface a code-diff review renders on: `diff` (default) or `crit`. Step 10 (Interactive Commits) applies it to each commit's diff, but it is one consumer rather than the key's whole scope — the bundled `mobpro` skill reads the same key for the per-unit diff review in its implementation loop.
 
 - `diff` (default): the workflow's existing per-commit presentation — Subject / Body / Files / Verification / Diff rendered in chat (verbatim / condensed / skeleton depending on size, per `skills/dev-workflow/references/diff-presentation.md` § Rendering ladder), gated by the existing accept/adjust/cancel per-commit accept gate.
-- `crit` (opt-in): drives the external **[crit](https://github.com/tomasz-tomczyk/crit)** CLI — the same separately-installed local review tool `plan_review_gate: "crit"` can use — scoped to just the current commit's files, so you review the actual code diff in the browser (inline comments, approve / request-changes) before the commit lands. The browser view opens on a story built from the commit message — a prologue naming what the change does, its key changes and its risks, plus chapters grouping the diff's hunks — so the "why" the commit body carries reaches the review surface, which crit otherwise renders subject-only. When crit is too old to have the `story` subcommand, or rejects the story, the browser simply opens the plain diff instead. Availability (`crit --version`) and local-browser reachability (`CLAUDE_CODE_REMOTE`) are checked once per run and cached, independently of any check `plan_review_gate: "crit"` already performed. When either check fails, the whole run falls back to `diff` mode with a one-line note; when a specific commit's crit launch itself is interrupted, only that commit falls back to `diff` — crit stays in use for the rest of the run. See `skills/dev-workflow/references/crit-commit-review.md` for the full contract.
+- `crit` (opt-in): drives the external **[crit](https://github.com/tomasz-tomczyk/crit)** CLI — a separately-installed local review tool, not bundled with this skill — scoped to just the current commit's files, so you review the actual code diff in the browser (inline comments, approve / request-changes) before the commit lands. The browser view opens on a story built from the commit message — a prologue naming what the change does, its key changes and its risks, plus chapters grouping the diff's hunks — so the "why" the commit body carries reaches the review surface, which crit otherwise renders subject-only. When crit is too old to have the `story` subcommand, or rejects the story, the browser simply opens the plain diff instead. Availability (`crit --version`) and local-browser reachability (`CLAUDE_CODE_REMOTE`) are checked once per run and cached, independently of Step 4's own reachability probe. When either check fails, the whole run falls back to `diff` mode with a one-line note; when a specific commit's crit launch itself is interrupted, only that commit falls back to `diff` — crit stays in use for the rest of the run. See `skills/dev-workflow/references/crit-commit-review.md` for the full contract.
 
 ```yaml
 commit_review_gate: "crit"
@@ -555,9 +526,9 @@ The workflow begins at Step 2 (Step 1 is settings load, Step 1.5 is task decompo
 | --- | --- | --- |
 | 1 | Load Settings | Load config, resolve the review phases, register workflow tasks |
 | 1.5 | Task Decomposition | (Normal sub-mode) Decide whether to split the task into subtasks and, if approved, create a state file. (Resume sub-mode) Load the state file and pick the next subtask — the step is executed but not registered as a task entry. |
-| 2 | Create Plan | Create plan (skips Plan Mode by default so the Step 4 gate can fire; set `plan_review_gate: "plan-mode"` to use Plan Mode instead), assess difficulty |
+| 2 | Create Plan | Create plan, assess difficulty |
 | 3 | Plan Review | A single internal review pass by the reviewer; skipped entirely when `plan_review_enabled` is `false` — a Trivial task, any non-Trivial task under `--fast`, or a configured `plan_review: false` |
-| 4 | Finalize Plan | **User approval gate** (a browser-based structured review gate by default — summary header, collapsible sections, Decision cards with a recommend/alternative toggle, per-element comments — when the local browser is reachable, falling back to a no-Plan-Mode chat approval otherwise; set `plan_review_gate: "crit"` for an external-CLI review surface instead, or `"plan-mode"` for the text approval with `ExitPlanMode`); when `polish_prose: true`, the plan body is polished via the `prose-polish` skill before presentation |
+| 4 | Finalize Plan | **User approval gate** — a browser-based structured review gate when the local browser is reachable, degrading to a chat approval otherwise (see § Plan approval surface); when `polish_prose: true`, the plan body is polished via the `prose-polish` skill before presentation |
 | 5 | Implement | Follow the plan |
 | 6 | Tidy | Reduce complexity via the built-in `simplify` skill (falls back to the in-house `tidy` skill when `simplify` is unavailable); skipped for Trivial / Simple tasks per the difficulty-skip matrix |
 | 6.5 | Polish Prose | (Only when `polish_prose: true`) Refine resolved-language comments / descriptions in changed files via the `prose-polish` skill (file mode, `sonnet`); skipped for Trivial / Simple tasks per the difficulty-skip matrix, or under `--fast` (independent of tier) |
@@ -598,14 +569,27 @@ When no items qualify, the section is still rendered with one of two fixed sente
 
 In Resume mode, subtask boundaries, order, and purposes were already approved in the parent run's Step 1.5 — only in-subtask judgment calls surface in Decisions. Details in [`references/plan-format.md`](references/plan-format.md) § Subtask / Resume handling.
 
-**Two-tier presentation**: in chat, Step 4 shows a condensed view — Overview (including highlights), Decisions, and the Build order step headings (which name the files each step touches). The per-step detail, Test plan, and Risks live in the approval modal, which renders the complete plan file. A `Review guide` line at the top marks which sections need your judgment (Overview, Decisions, Build order) vs reference detail (Test plan, Risks).
+**Two-tier presentation**: on the chat approval, Step 4 shows a condensed view — Overview (including highlights), Decisions, the Build order step headings (which name the files each step touches), and a one-line gist of Test plan and Risks. The per-step detail and the full reference sections live in the plan document at `.claude/plans/<slug>.md`, which the chat view points to. A `Review guide` line at the top marks which sections need your judgment (Overview, Decisions, Build order) vs reference detail (Test plan, Risks).
+
+### Plan approval surface
+
+Step 4's approval runs in your browser. The gate serves the plan on a local `127.0.0.1` server (the bundled `scripts/plan-review/serve.mjs` viewer), opens your browser, and lets you review and comment per element, then choose **approve** or **revise**. `approve` proceeds to implementation; `revise` applies your comments (and any recommendation/alternative switches) to the plan and re-runs the gate, highlighting what changed since your previous review. It turns the plan into a review surface plain markdown cannot offer:
+
+- a **summary header** (Goal as title; Difficulty / Scope / Risks-count chips) for a 5-second scan
+- **collapsible sections** — the must-review tier (Overview / Decisions / Build order) opens by default, as does Context where a plan carries one; the reference sections (Test plan / Risks) start collapsed, Risks carrying a count badge
+- **collapsible Build order steps** — each step shows only its bold heading and opens its detail on click, so the section stays a one-line-per-step list even though it is must-review
+- **Decision cards** rendering each Decision's Question / Recommendation / Alternative, with a one-click **Keep recommendation / Switch to alternative** toggle (a switch is applied as a Recommendation↔Alternative swap when you submit)
+- **per-element comments** — comment on an individual Decision, Build order step, risk, or paragraph, not just a whole section
+- **mermaid diagrams** rendered as SVG (flowcharts / sequence diagrams)
+
+The gate needs a local browser — the agent and you on the same machine (local CLI / Remote Control). Where that does not hold, the approval degrades to **chat**: Step 4 probes `CLAUDE_CODE_REMOTE` before it even reads the gate procedure, so on Claude Code on the Web the browser gate is skipped outright; a launch failure or a timeout after the gate has started falls through to the same chat approval. The canonical plan document is always `.claude/plans/<slug>.md`.
 
 ### How to review a plan quickly
 
 1. Read the `Review guide` line and Overview — including any Highlights (≤ 30 seconds).
 2. Read the guidance line at the top of the plan — Step 4 leads with one of three literal lines that tell you where to focus.
 3. If Decisions has items, engage with each one (the real work). If Decisions is empty, approve after a light skim.
-4. Scan the Build order step headings — they are the sequence the work will land in, and approving the plan approves it. The per-step detail, Test plan, and Risks are in the approval modal and have already been reviewed in Step 3 by the reviewer skill; open the modal and skim only if something looks off. (Exception: when `plan_review_enabled` is `false` — a Trivial task, any non-Trivial task run with `--fast`, or a configured `plan_review: false` — Step 3 is skipped and the plan is unreviewed — read it carefully before approving.)
+4. Scan the Build order step headings — they are the sequence the work will land in, and approving the plan approves it. The per-step detail and the full Test plan / Risks are in the plan document (§ Plan approval surface) and have already been reviewed in Step 3 by the reviewer skill; open the plan document and skim only if something looks off. (Exception: when `plan_review_enabled` is `false` — a Trivial task, any non-Trivial task run with `--fast`, or a configured `plan_review: false` — Step 3 is skipped and the plan is unreviewed — read it carefully before approving.)
 
 ## Prerequisites
 
@@ -627,7 +611,6 @@ To get the full benefit of dev-workflow, the following skills are recommended:
 | Settings file has malformed YAML | Warns, skips that layer, continues with remaining layers |
 | `reviewer` unset or unsupported value | Falls back to `ask-peer` |
 | `plan_review` or `code_review` is not a boolean | Warns and falls back to `true` for that phase |
-| `plan_review_gate` is not a valid value | Warns and falls back to `visual` |
 | `commit_review_gate` is not a valid value | Warns and falls back to `diff` |
 | `implementation_executor` is not a valid value | Warns and falls back to `main` |
 | `polish_prose` is not a boolean | Warns and falls back to `true` |

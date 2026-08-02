@@ -23,6 +23,5 @@ workability_retrospective:
   enabled: true
 polish_prose: true
 confirm_remaining_steps: true
-plan_review_gate: "visual"
 commit_review_gate: "crit"
 ---

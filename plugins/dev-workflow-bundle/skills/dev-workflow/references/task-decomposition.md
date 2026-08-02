@@ -5,7 +5,7 @@ Deep reference for Step 1.5. Read this when either:
 - Normal sub-mode is running, or
 - Resume sub-mode is running (`--resume <state-file>`)
 
-`EnterPlanMode` is reserved for Step 2 (and only when `plan_review_gate: "plan-mode"`; on the `visual` / `crit` paths Step 2 skips Plan Mode — see `SKILL.md` § Configuration). Any proposal in this step is a plain yes/no dialogue, not a plan.
+Any proposal in this step is a plain yes/no dialogue, not a plan.
 
 ## State file schema
 
@@ -73,7 +73,7 @@ When a state file is in play, surface parent progress with a single top-level pr
       **Drawing the boundary when units share code**: for each unit, count the files only that unit touches (**exclusive**) against the files two or more units touch (**shared**), counting per file rather than per symbol. Ample exclusive files per unit means the unit boundary is also a clean subtask boundary — split there. When the exclusive counts are tiny against a dominant shared set, the first subtask would drag the whole shared base along with it — propose those units as **one** subtask instead: its `description` records the shape — Build order runs the shared base first, then one thin step per unit, with each shared file assigned to the earliest step that needs it — and its `verification_hint` names each unit's check. Anything between the two is a judgment call — prefer the unit boundary. This decides **where** the split lines fall, never **whether** to decompose: it does not reverse a **Count first** hit, and where the shared set leaves no boundary standing, the single grouping still goes to step 3.c's proposal with those counts as its stated rationale, so step 3.e's "no = run as one task" branch stays the user's call rather than this step's.
 
    b. Validate the draft against the schema (DAG, unique ids, required fields). Revise if invalid
-   c. Present the proposal to the user as a plain message (not Plan Mode). List each subtask with its `verification_hint` so the user can judge the breakdown at a glance, then ask for confirmation. Use this shape:
+   c. Present the proposal to the user as a plain message. List each subtask with its `verification_hint` so the user can judge the breakdown at a glance, then ask for confirmation. Use this shape:
 
       ```text
       Proposed breakdown into <N> subtasks:

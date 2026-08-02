@@ -29,7 +29,7 @@ Source of truth for the reference-form convention: `.claude/rules/project.rules.
    - **Qualified form** → resolve within the named file. When the run loaded no file of that name, the reference points outside the linted trees and is **out of scope**.
    - **Owner-named form** (a skill named before the qualifier, a possessive, or a file named earlier on the line) → resolve in that skill's tree. An owner this run did not load is **out of scope**; the linted sibling root is not.
    - **Unqualified form** (`§ <Heading>` alone) → resolve in the same file first, then `SKILL.md`, then any other file **of the same root**. A violation means the key resolves nowhere at all — `SKILL.md` legitimately cites headings that live in a references file (e.g. `§ User-gate summary preamble`). The same-file → `SKILL.md` order is the documented convention (seed: `references/update-rules.md`'s opening declaration).
-   - A key resolving in **more than one file is resolved** — e.g. "Char-count compaction gate" intentionally exists in both `SKILL.md` and `references/update-rules.md` (documented at the top of `references/update-rules.md`). Never flag multi-resolution.
+   - A key resolving in **more than one file is resolved** — e.g. "Cross-layer review handoff ledger" resolves in both `SKILL.md` § Step 6 (its definition) and `references/step6-tidy.md` (which carries it as a bold span). Never flag multi-resolution.
 4. Label keys resolve against the bold-span index from step 1, whitespace-normalized, within the resolution scope — and against the heading index too, since a label sometimes graduates into a heading.
 
 **Demotion rule (violation vs warning):**

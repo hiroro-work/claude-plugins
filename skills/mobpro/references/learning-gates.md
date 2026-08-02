@@ -33,7 +33,7 @@ Before dispatching `rules-review` and the code reviewer, the AI states where it 
 - `language: ja`: `これからルール準拠チェックとコードレビューをかける。<指摘されそうな箇所>が引っかかりそう — <理由>。`
 - `language: en`: `We're about to run the rules-compliance check and code review. I expect <spots> to get flagged — <why>.`
 
-When `N_code` is `0` the code reviewer is not dispatched, so drop the code-review half of the localized pair above — `コードレビュー` / `code review` — and name only the rules-compliance check (`SKILL.md` M9 sub-step 1's **Pre-review prediction narration**). After the reviews return, cross-check the prediction against the actual findings, **acknowledging what the prediction got right before naming what it missed** — the miss is the part worth explaining. This narration fires only on M9's primary pass (`SKILL.md` § Learning-Stop Principle's "Primary-pass rule" paragraph).
+When `code_review_enabled` is `false` the code reviewer is not dispatched, so drop the code-review half of the localized pair above — `コードレビュー` / `code review` — and name only the rules-compliance check (`SKILL.md` M9 sub-step 1's **Pre-review prediction narration**). After the reviews return, cross-check the prediction against the actual findings, **acknowledging what the prediction got right before naming what it missed** — the miss is the part worth explaining. This narration fires only on M9's primary pass (`SKILL.md` § Learning-Stop Principle's "Primary-pass rule" paragraph).
 
 ## § D. Explanation length discipline
 

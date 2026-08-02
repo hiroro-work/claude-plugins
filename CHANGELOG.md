@@ -1,5 +1,28 @@
 # Changelog
 
+## 2026-08-02
+
+### dev-workflow v1.104.0 / extract-rules v1.24.0 / mobpro v1.14.0 / dev-workflow-bundle v1.120.0
+
+- feat(dev-workflow)!: replace the review-iteration loops with a single pass per review phase
+  - **Breaking change**: `review_iterations` and the `-i` / `--iterations` flags are removed. Step 3 (Plan Review) now runs exactly one reviewer pass, and Step 8 (Code Review) runs one review pass plus **one** escalation pass taken only when that pass reported a Critical finding. Two booleans replace the count: `plan_review` and `code_review` (both default `true`), so the "`0` turns that phase off" capability survives under names that match what they now do. A project that had `review_iterations: {plan: 0}` should set `plan_review: false`; one that had `{code: 0}` should set `code_review: false`. A leftover `review_iterations` is ignored — the phases fall back to their `true` defaults. Removed without a deprecation window on the user's explicit pre-plan decision — a deliberate departure from the standard config-flag lifecycle, justified here because the replacement booleans preserve the only capability the key carried, so a waiting period would gate a behavior-preserving rename.
+  - **Behavior change**: a run that previously took up to 3 plan-review and 3 code-review passes now takes 1 and 1 (+ the conditional escalation). `--fast` keeps skipping Plan Review but no longer touches Code Review, so a `--fast` run that hits a Critical finding now takes the escalation pass it would previously have been capped out of.
+  - The Step 2 sub-step formerly labelled `Adjust N by difficulty` is now `Assess difficulty`: it resolves the two booleans, `subagent_model`, and the difficulty-skip matrix. Trivial turns both phases off; Simple applies the skip matrix only; Moderate and Complex change nothing.
+- feat(dev-workflow)!: remove `compact_rules` and Step 11's char-count compaction gate
+  - **Breaking change**: the gate and its state (`compaction_applied_count` / `below_threshold_failed_files`) are gone, Step 11's sub-steps renumber 1–5, and the Completion compaction reminder is dropped (7 reminders remain). `Skill(extract-rules) --compact` is unaffected and stays available to run manually when a rule file grows past the threshold.
+  - Removed on the user's explicit pre-plan decision — a deliberate departure from the standard config-flag lifecycle, which would have required a deprecation notice and a waiting period first. Justification: compaction is functionally redundant with the standalone `--compact` mode.
+- feat(dev-workflow)!: remove `confirm_remaining_steps` and make its gate unconditional
+  - **Breaking change**: the Step 11 entry gate asking whether to run the rule-maintenance and retrospective steps (Step 11 / 11.5 / 11.6) now fires on **every** run. Projects that left the key unset previously saw no gate, so each run gains one user interaction; in exchange the heaviest tail of the run — the shared session scan and `extract-rules` — can be declined per run.
+  - **Downstream automation note**: a non-interactive caller that drives `dev-workflow` end to end now meets a gate it must answer. Same explicit-decision departure from the config-flag lifecycle as above; unlike `compact_rules` this key had no functional redundancy, so the removal rests on the user's instruction alone.
+- feat(dev-workflow)!: remove the deprecated `visual_plan_review` boolean
+  - **Breaking change**: only `plan_review_gate` is read now. `visual_plan_review: true` should become `plan_review_gate: "visual"`, `false` should become `"plan-mode"`. v1.88.0 promised a deprecation notice before removal; that notice was never issued, so this removal is the same explicit-decision departure as the two above.
+- chore(dev-workflow): drop the mandatory-tombstone clause from this repo's config-flag lifecycle rule
+  - Placing a tombstone for every removed key is now a judgment call reserved for keys whose silent absence would cause real harm, because accumulating one per removal works against the corpus-size reduction this series is pursuing. When a tombstone *is* placed, the existing obligation to put it in every skill that resolves the key still holds. None of the four keys removed above carries one.
+- chore(mobpro): follow the dev-workflow changes above
+  - `-i` / `--iterations` and `review_iterations` are gone from M1's resolution, M4 runs a single plan-review pass, M9 runs a single code-review pass, and M12's confirm-remaining-steps gate is unconditional with the compaction gate removed.
+- chore(extract-rules): stop naming `dev-workflow` Step 11 as the `--compact` caller
+  - Those mentions became false once dev-workflow dropped its compaction gate; the prose is caller-neutral now. The `--apply-conversation-candidates` and `--update` caller descriptions are unchanged.
+
 ## 2026-08-01
 
 ### dev-workflow v1.103.0 / dev-workflow-bundle v1.119.0

@@ -1,6 +1,6 @@
 # Completion (extracted cleanup + reminder render bodies)
 
-Deep reference for `SKILL.md` **Completion**. `SKILL.md` keeps inline: the heading, the Report-summary line, the **Step 11 extract-rules output reminders** set names + single-scan instruction + a pointer to § Partition (this file now owns the partition mechanics), the decomposition subtask-resume routing (the completion-logic source of truth), the **Execution-time deferral/exclusion gate** (USER GATE), and the subtask PR-URL prompt. This file holds the derived-staging-artifact cleanup procedure, the eight Completion reminder render bodies, and the **§ Partition — Step 11 extract-rules output sets** procedure (the source of truth the reminders read); `SKILL.md` Completion delegates here. The cleanup procedure and the eight reminder render bodies are verbatim-extracted, retaining their original formatting; the § Partition mechanics were restructured for standalone reading.
+Deep reference for `SKILL.md` **Completion**. `SKILL.md` keeps inline: the heading, the Report-summary line, the **Step 11 extract-rules output reminders** set names + single-scan instruction + a pointer to § Partition (this file now owns the partition mechanics), the decomposition subtask-resume routing (the completion-logic source of truth), the **Execution-time deferral/exclusion gate** (USER GATE), and the subtask PR-URL prompt. This file holds the derived-staging-artifact cleanup procedure, the Completion reminder render bodies, and the **§ Partition — Step 11 extract-rules output sets** procedure (the source of truth the reminders read); `SKILL.md` Completion delegates here. The cleanup procedure and the reminder render bodies are verbatim-extracted, retaining their original formatting; the § Partition mechanics were restructured for standalone reading.
 
 ## Derived staging artifact cleanup
 
@@ -8,21 +8,21 @@ Deep reference for `SKILL.md` **Completion**. `SKILL.md` keeps inline: the headi
 
 ## Completion reminders
 
-Emit each reminder whose condition holds, in the resolved `language`, in the order below. The Step 11 rule-update / examples-dir / staging-dir / compaction reminders read the `uncommitted_*` partitioned sets produced by § Partition — Step 11 extract-rules output sets (below), plus `compaction_applied_count` / `below_threshold_failed_files` from Step 11 / Step 2.
+Emit each reminder whose condition holds, in the resolved `language`, in the order below. The Step 11 rule-update / examples-dir / staging-dir reminders read the `uncommitted_*` partitioned sets produced by § Partition — Step 11 extract-rules output sets (below).
 
-**Difficulty-skip reminder** (per [`references/plan-format.md`](plan-format.md) § Localization granularity): when `difficulty_skipped_steps` (initialized at Step 2 entry, populated by Step 2's Adjust N by difficulty) is non-empty, surface a line in the resolved `language` naming the steps the difficulty-skip matrix skipped, so the skip is never silent. Render the recorded steps with their tier; the example below pairs the two `language` values:
+**Difficulty-skip reminder** (per [`references/plan-format.md`](plan-format.md) § Localization granularity): when `difficulty_skipped_steps` (initialized at Step 2 entry, populated by Step 2's Assess difficulty) is non-empty, surface a line in the resolved `language` naming the steps the difficulty-skip matrix skipped, so the skip is never silent. Render the recorded steps with their tier; the example below pairs the two `language` values:
 
 - `language: ja`: `難易度判定（<tier> tier）により <steps> を skip しました` — 例: `難易度判定（Trivial tier）により Step 6 Tidy / Step 6.5 Polish Prose / Step 7.5 Rules Compliance Review を skip しました`
 - `language: en`: `Skipped <steps> per the difficulty-skip matrix (<tier> tier)` — e.g. `Skipped Step 6 Tidy / Step 6.5 Polish Prose / Step 7.5 Rules Compliance Review per the difficulty-skip matrix (Trivial tier)`
 
-The reminder is omitted when `difficulty_skipped_steps` is empty (Moderate / Complex tasks, or `-i`-skipped Adjust N runs — see the Step 2-entry init). The step names (`Step 6 Tidy` / `Step 6.5 Polish Prose` / `Step 7.5 Rules Compliance Review`) stay verbatim regardless of `language`. Trivial and Simple skip the same three steps (see Step 2's Adjust N by difficulty) — the example above applies to both, substituting the assessed tier.
+The reminder is omitted when `difficulty_skipped_steps` is empty (Moderate / Complex tasks — see the Step 2-entry init). The step names (`Step 6 Tidy` / `Step 6.5 Polish Prose` / `Step 7.5 Rules Compliance Review`) stay verbatim regardless of `language`. Trivial and Simple skip the same three steps (see Step 2's Assess difficulty) — the example above applies to both, substituting the assessed tier.
 
-**Fast-mode-skip reminder** (paired with the difficulty-skip reminder above, per the warning-string differentiation rule — a separate ledger keeps a fast-mode-caused skip from being misread as a difficulty-driven one): when `fast_mode_skipped_steps` (initialized at Step 2 entry, populated by the run's `--fast` skip/cap sites — Step 2's N-forcing / Step 6.5-only skip, plus the Step 7.5 and Step 8 deferred 1-pass caps) is non-empty, surface a line in the resolved `language` naming the steps `--fast` skipped:
+**Fast-mode-skip reminder** (paired with the difficulty-skip reminder above, per the warning-string differentiation rule — a separate ledger keeps a fast-mode-caused skip from being misread as a difficulty-driven one): when `fast_mode_skipped_steps` (initialized at Step 2 entry, populated by the run's `--fast` skip/cap sites — Step 2's plan-phase forcing / Step 6.5-only skip, plus the Step 7.5 and Step 8 deferred 1-pass caps) is non-empty, surface a line in the resolved `language` naming the steps `--fast` skipped:
 
 - `language: ja`: `fast モードにより <steps> を skip しました` — 例: `fast モードにより Step 3 Plan Review / Step 6.5 Polish Prose を skip しました`
 - `language: en`: `Skipped <steps> per fast mode` — e.g. `Skipped Step 3 Plan Review / Step 6.5 Polish Prose per fast mode`
 
-The reminder is omitted when `fast_mode_skipped_steps` is empty. Three ways that happens: `--fast` was not passed; a Trivial-tier run left fast mode nothing to force; or every site that would have recorded was already off — e.g. a Simple-tier run whose plan phase is configured `0` (the N-forcing site appends only when N_plan was ≥ 1 beforehand) and whose Step 6.5 / Step 7.5 rows the difficulty-skip matrix had already completed. The step names stay verbatim regardless of `language`.
+The reminder is omitted when `fast_mode_skipped_steps` is empty. Three ways that happens: `--fast` was not passed; a Trivial-tier run left fast mode nothing to force; or every site that would have recorded was already off — e.g. a Simple-tier run whose plan phase is configured `false` (the plan-phase forcing site appends only when `plan_review_enabled` was `true` beforehand) and whose Step 6.5 / Step 7.5 rows the difficulty-skip matrix had already completed. The step names stay verbatim regardless of `language`.
 
 **Bundle-skill availability reminder** (per [`references/plan-format.md`](plan-format.md) § Localization granularity): when `bundle_skills_unavailable` (declared at Step 1 sub-step 3's "Initialize the bundle-unavailability ledger here" bullet, appended at the sites named there) is non-empty, surface a line in the resolved `language` naming which `dev-workflow-bundle` sibling skills were unavailable this run, so a partially-installed bundle is never silently missed run after run:
 
@@ -33,7 +33,7 @@ Render `<list>` as the ledger's recorded entries verbatim, comma-separated (the 
 
 **Step 10 partial-state line**: if Step 10 ended via its `Mid-loop cancel` branch (see `references/interactive-commits.md` § Mid-loop cancel), emit the localized partial-completion token defined at § Step 10's "Localized summary tokens" paragraph. On a normal completion path, omit this line.
 
-**Step 11 rule-update reminder** (per [`references/plan-format.md`](plan-format.md) § Localization granularity): `uncommitted_rule_changes` is the partitioned set for output_dir (default `.claude/rules/`); it is also read by the compaction reminder and the decomposition-resume note below. When `uncommitted_rule_changes` is non-empty, surface a manual-commit reminder in the resolved `language` (`<N>` = number of uncommitted rule files):
+**Step 11 rule-update reminder** (per [`references/plan-format.md`](plan-format.md) § Localization granularity): `uncommitted_rule_changes` is the partitioned set for output_dir (default `.claude/rules/`). When `uncommitted_rule_changes` is non-empty, surface a manual-commit reminder in the resolved `language` (`<N>` = number of uncommitted rule files):
 
 - `language: ja`: `\`.claude/rules/\` に未コミットの変更が <N> 件あります — PR を開く前に手動で commit してください`
 - `language: en`: `<N> uncommitted change(s) under \`.claude/rules/\` remain — please commit manually before opening a PR`
@@ -53,26 +53,6 @@ The reminder is omitted when `uncommitted_examples_changes` is empty.
 - `language: en`: `<N> extract-rules candidate(s) under \`<staging_dir>\` await review — inspect and promote accepted files to \`.claude/rules/\` manually (or commit them at the rule-update commit gate)`
 
 The reminder is omitted when `uncommitted_staging_changes` is empty.
-
-**Step 11 compaction reminder** (per [`references/plan-format.md`](plan-format.md) § Localization granularity): this block has two independent clauses.
-
-**(i) Commit clause** — when `compaction_applied_count > 0` (the Step 11 sub-step 3 char-count compaction gate landed user-accepted edits) **and** `uncommitted_rule_changes` (the output_dir partition from § Step 11 extract-rules output reminders) is non-empty — i.e. the compaction edits were **not** committed by Step 11's "Commit rule updates" gate (compaction edits live under `.claude/rules/`, so an accepted rule-update commit stages them along with the other rule changes) — surface a separate manual-commit reminder in the resolved `language` (rendered in file-unit count, distinct from the rule-update reminder above which counts uncommitted rule files):
-
-This reminder drops the step number and names the phase (§ Phase naming in user-facing output's "drop the number" option).
-
-- `language: ja`: `ルール更新フェーズで <N> 件のルールファイルを圧縮しました — PR を開く前に手動で commit してください`
-- `language: en`: `The rule-update phase compacted <N> rule files — please commit manually before opening a PR`
-
-This commit clause is omitted when `compaction_applied_count == 0` OR `uncommitted_rule_changes` is empty (the latter means the compaction edits are already committed). The `uncommitted_rule_changes`-non-empty test is a **coarse proxy** for "the compaction edits are still uncommitted": a partial `adjust` at the rule-update gate that committed the compacted files but left other rule files uncommitted can over-fire this clause — a harmless redundant nudge, not a data-loss path.
-
-**(ii) Below-threshold follow-up** — **unconditional on commit state** (it concerns re-running compaction, not committing): when `below_threshold_failed_files` is non-empty, surface a follow-up reminder naming the files that remain over threshold. `<files>` always renders at the sentence tail so the block-level list never appears mid-sentence:
-
-- `language: ja`: `<M> 件のファイルが閾値を超えています。手動で再度 \`Skill(extract-rules) --compact\` を実行するか、当該ファイルを直接編集してください:` followed by `<files>` on the next line
-- `language: en`: `<M> files still exceed the threshold. Re-run \`Skill(extract-rules) --compact\` manually or edit the files directly:` followed by `<files>` on the next line
-
-Render `<files>` as one path per line — verbatim from `files_processed[].path` (repo-root-relative, e.g. `.claude/rules/project.rules.local.md`; never rewritten to user-absolute `/Users/...` form) — each prefixed with `- ` (hyphen + space, no leading indent) directly below the reminder sentence as a top-level markdown bullet list. This applies for any `M ≥ 1` — single-element lists render as a one-bullet list, not inline, so the layout is identical across runs and the trailing prose clause never floats after the bullet list.
-
-The compaction reminder block is omitted entirely when both clauses are omitted — i.e. when the commit clause does not fire (`compaction_applied_count == 0` OR `uncommitted_rule_changes` empty) AND `below_threshold_failed_files` is empty.
 
 ## Partition — Step 11 extract-rules output sets
 

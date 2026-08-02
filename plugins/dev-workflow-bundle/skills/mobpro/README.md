@@ -14,7 +14,7 @@ The model is mob-programming with a fixed driver: **the AI always drives** (it w
 | You want to pause after each unit and read the diff together | You want the workflow to run to completion without learning pauses |
 | A teaching session (feature or fix as the vehicle) | Routine / non-interactive execution |
 
-Both use the same reviewer, checks, tests, and rules — so the quality bar is identical. `mobpro` only adds learning pauses on top.
+Both use the same reviewer, checks, tests, and rules. `mobpro` adds learning pauses on top; the one gate it does not carry is dev-workflow's Critical-triggered code-review escalation pass.
 
 ## Typical sessions
 
@@ -25,11 +25,11 @@ Both use the same reviewer, checks, tests, and rules — so the quality bar is i
 ## Usage
 
 ```text
-/mobpro [-i N] <task>              # Start a learning session
+/mobpro <task>                     # Start a learning session
 /mobpro --resume <state-file>      # Resume a decomposed subtask
 ```
 
-`-i N` caps the plan-review and code-review iteration counts (same meaning as `dev-workflow`; a positive integer only — `-i 0` falls through to `review_iterations`, see § Configuration). There is no `--init`, `--fast`, or `--executor`.
+There is no `--init`, `--fast`, or `--executor`.
 
 **The plan is written for the junior to read** — plain wording, a numbered build order up front, and the reasoning for that order stated rather than assumed, with each fork in the road shown as a recommendation next to the option it beat, so the junior can weigh the call rather than be handed an undecided choice. Each step of that build order becomes one implementation unit, so the plan doubles as the list of diffs the junior will review (source of truth: [`references/plan-format.md`](references/plan-format.md)).
 
@@ -47,9 +47,9 @@ Those per-unit snapshots are also what the commit gate proposes from: the commit
 
 `mobpro` has **no configuration of its own**. It reads your `dev-workflow` configuration for everything that describes the project, runs on sensible defaults even when no config file exists anywhere, and never writes to `dev-workflow`'s files.
 
-The teaching behavior is deliberately not configurable: the per-unit diff review always fires, and there is no comprehension-check gate to turn on or off. The **review** gates are a different matter — they are project characteristics, so `review_iterations` governs them here exactly as it does in `dev-workflow`, `0` included: `{plan: 0, code: 3}` runs the session without the plan-review pass (the plan still goes to the junior at the approval gate), and `{plan: 3, code: 0}` narrows the rules-and-code-review phase to its rules-compliance half rather than skipping it — name both map keys, since an absent key warns before falling back to `3`. `mobpro` honors a configured `0` rather than raising it to `1`. Earlier versions exposed `checkpoint`, `quiz`, and `error_reading_practice` in `.claude/mobpro.md` / `.claude/mobpro.local.md`; those keys are gone, and `mobpro` warns once if either file is still present so the change is not silent.
+The teaching behavior is deliberately not configurable: the per-unit diff review always fires, and there is no comprehension-check gate to turn on or off. The **review** gates are a different matter — they are project characteristics, so `plan_review` and `code_review` govern them here exactly as they do in `dev-workflow`: `plan_review: false` runs the session without the plan-review pass (the plan still goes to the junior at the approval gate), and `code_review: false` narrows the rules-and-code-review phase to its rules-compliance half rather than skipping it. Earlier versions exposed `checkpoint`, `quiz`, and `error_reading_practice` in `.claude/mobpro.md` / `.claude/mobpro.local.md`; those keys are gone, and `mobpro` warns once if either file is still present so the change is not silent.
 
-**Inherited from dev-workflow** — the project-characteristic keys (`reviewer`, `check_commands`, `test_commands`, `language`, `interactive_commits`, `plan_review_gate`, `commit_review_gate`, `hooks`, and the rest of the closed list) are read from `~/.claude/dev-workflow.local.md` → `.claude/dev-workflow.md` → `.claude/dev-workflow.local.md` using dev-workflow's own merge rules. Setting `commit_review_gate: "crit"` there makes `mobpro` show diffs in crit's browser view instead of chat — both the per-unit diff review during implementation and each commit's diff at the commit gate — which is usually easier for a junior to read. Each of those views opens on a story: a prologue saying what the change does and what to watch for, plus chapters grouping the diff's hunks. At the commit gate it is built from the commit message; during implementation, from the point of that unit. `crit` is a separately-installed local CLI, so both gates fall back to the chat diff when it is not installed or no local browser is reachable (as on Claude Code on the Web).
+**Inherited from dev-workflow** — the project-characteristic keys (`reviewer`, `plan_review`, `code_review`, `check_commands`, `test_commands`, `language`, `interactive_commits`, `plan_review_gate`, `commit_review_gate`, `hooks`, and the rest of the closed list) are read from `~/.claude/dev-workflow.local.md` → `.claude/dev-workflow.md` → `.claude/dev-workflow.local.md` using dev-workflow's own merge rules. Setting `commit_review_gate: "crit"` there makes `mobpro` show diffs in crit's browser view instead of chat — both the per-unit diff review during implementation and each commit's diff at the commit gate — which is usually easier for a junior to read. Each of those views opens on a story: a prologue saying what the change does and what to watch for, plus chapters grouping the diff's hunks. At the commit gate it is built from the commit message; during implementation, from the point of that unit. `crit` is a separately-installed local CLI, so both gates fall back to the chat diff when it is not installed or no local browser is reachable (as on Claude Code on the Web).
 
 `plan_review_gate` picks where the plan approval happens: `visual` — the default — opens the bundled browser review gate, `crit` opens crit instead (falling back to `visual` when crit is missing), and `plan-mode` keeps the approval in chat, since `mobpro` never enters Claude Code's Plan Mode. Whichever browser gate you pick, it falls back to the chat approval on its own when no local browser is reachable, and the AI's short walkthrough of the plan is spoken in chat before the browser opens — so moving the approval surface never costs the junior the explanation.
 

@@ -2,6 +2,20 @@
 
 ## 2026-08-03
 
+### dev-workflow v1.106.0 / mobpro v1.16.0 / dev-workflow-bundle v1.122.0
+
+- feat(dev-workflow): resolve the difficulty tier before the plan exists, and give Trivial / Simple tasks an express lane
+  - The tier used to be assessed at the end of Step 2 (Create Plan), by which point the run had already read the two largest references in the tree. It is now resolved at Step 1.5 (Task Decomposition) from the task text plus cheap probes, and the new `references/tier-assessment.md` is its single home — criteria, lanes, the difficulty-skip matrix, row marking, and escalation. Step 2's old `Assess difficulty` sub-step becomes `Confirm difficulty`, a checkpoint that only ever raises the tier.
+  - **Express lane** (Trivial / Simple): the Step 1.5 decomposition proposal is skipped along with its reference, the plan is authored from a compact template instead of `references/plan-authoring.md`, the Simplicity self-audit runs from a new tier-independent core file, and Step 11 (Update Rules) joins Step 6 (Tidy) / Step 6.5 (Polish Prose) / Step 7.5 (Rules Compliance Review) in the skip matrix. A Trivial task's Step 4 approval is the chat surface directly, so the browser gate's reference is never read. Step 11.5 (Self-Retrospective) and Step 11.6 (Workability Retrospective) are **not** matrix-skipped — each is governed by per-project configuration, which tier-gating would make non-deterministic across projects.
+  - **Measured**: a Trivial run on shipped defaults reads 464,525 → 368,364 chars, **−96,161 (−20.7%)**. A Moderate / Complex run reads 23,952 chars **more** (+4.7%) — accepted, because the express core of the self-audit is read on both lanes and the tier reference is new to both.
+  - **Escalation is one-way, at two fixed checkpoints** — Step 2's Confirm difficulty and Step 5 (Implement) completion. Raising the tier re-derives `plan_review_enabled` / `code_review_enabled`, re-resolves `subagent_model`, returns the skipped rows to `pending`, and reads the references the express lane deferred. There is no de-escalation: a task judged harder than it turned out to be simply pays what the workflow charged before.
+  - **Behavior change**: `subagent_model` now also governs the conditional Step 2 codebase-research delegation, which used to be excluded because the tier was unknown when it fired.
+  - `references/plan-format.md` splits in two. The authoring half (§ Template, § Sizing guidance, § Traceability, the Decisions criterion, § Empty-Decisions fixed sentences, § Subtask / Resume handling, § Step 2 self-check) moves to `references/plan-authoring.md`, read on the full lane only; the presentation half keeps the filename and is read on every lane. `references/simplicity-self-audit.md` splits the same way, with the tier-independent core in `references/simplicity-self-audit-express.md`. An item held back from the express core fires only when the plan makes a design judgment, so noticing one at a low tier is an escalation signal rather than a reason to read the deferred file.
+- perf(dev-workflow): probe crit availability before reading the crit commit-review reference
+  - Under `commit_review_gate: "crit"`, `references/interactive-commits.md` now runs `crit --version` and `printenv CLAUDE_CODE_REMOTE` before reading `references/crit-commit-review.md` (28,253 chars). A project that opted into crit but has it uninstalled, or runs where no local browser is reachable, previously paid that read on every run only to fall back from the reference's own first step. Same shape as the plan gate's reachability probe, hoisted in v1.105.0.
+- chore(mobpro): follow the dev-workflow changes above
+  - M11 and `references/diff-review.md` § crit path probe before reading the crit reference, and § Runtime reads records the added condition. `mobpro` still has no tier assessment and no express lane by design, so only the read-cost changes carry over.
+
 ### dev-workflow v1.105.1 / dev-workflow-bundle v1.121.1
 
 - fix(dev-workflow): resolve the five dangling bold-prose-label cross-references `verify-skill-refs` reports

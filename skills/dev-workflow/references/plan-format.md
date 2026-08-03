@@ -60,7 +60,7 @@ Applying whichever sentence the list above selected (all three cases alike): for
 
 Applies to all user-facing prose produced by this skill — plan body content, user-gate preambles, violation/finding lists, the difficulty log line (`references/tier-assessment.md` § Difficulty log line), Step 10 commit-plan / per-commit gate framing prose and the Step 11 "Commit rule updates" gate output (verbatim git output and file paths remain English), Completion summary, and Step 11.5 `Description` / `Suggested fix direction` paragraphs. The resolved `language` (see `SKILL.md` § Configuration) controls the output language.
 
-Source of truth: `SKILL.md` § Configuration `language` bullet maintains the same enumeration — keep in sync when categories are added or removed.
+Source of truth: `references/configuration.md`'s `language` bullet maintains the same enumeration — keep in sync when categories are added or removed.
 
 **Two-way rule:**
 

@@ -6,7 +6,7 @@ Read this reference when executing:
 
 - **Step 2** — creating the plan (§ Template) and running the author's own checklist (§ Step 2 self-check)
 
-**Full lane only.** The express lane (Trivial / Simple — [`tier-assessment.md`](tier-assessment.md) § Lanes) authors from `references/step2-create-plan.md` § Compact plan template instead and never reads this file; a tier escalation out of that lane reads it as part of rejoining the full lane (§ Escalation).
+**Full lane only.** The express lane (Trivial / Simple — [`tier-assessment.md`](tier-assessment.md) § Lanes) authors from `references/step2-create-plan.md` § Compact plan template instead and never reads this file; a tier escalation out of that lane reads it as part of rejoining the full lane ([`tier-escalation.md`](tier-escalation.md) § What an escalation does, step 3).
 
 ## Template
 

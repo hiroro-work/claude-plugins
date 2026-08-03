@@ -10,7 +10,7 @@ This is the third retrospective axis, orthogonal to the other two:
 - **Step 11.5 self-retrospective** targets the **bundle skills themselves** (`dev-workflow` / `ask-peer` / `extract-rules` / `rules-review`). This step targets **this project's own tooling** (project skills + project linters) and is a different axis.
 - **Step 11.6 (this step)** detects **skill-ization candidates + lint-rule candidates** = project-specific workability improvements.
 
-This file is read whenever `workability_retrospective.enabled` is `true` at Step 1, regardless of the Step 2 difficulty assessment (mirrors Step 11.5); `enabled: false` (the default) still blocks reading this file.
+This file is read whenever `workability_retrospective.enabled` is `true` at Step 1, regardless of the assessed tier (mirrors Step 11.5); `enabled: false` (the default) still blocks reading this file.
 
 ## 1. Pre-flight checks
 

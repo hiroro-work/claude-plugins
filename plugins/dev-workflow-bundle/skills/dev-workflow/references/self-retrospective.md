@@ -4,7 +4,7 @@ Deep reference for Step 11.5. Read this when `self_retrospective.feedback` is se
 
 Purpose: scan the current conversation for signals about how the bundled skills (`dev-workflow`, `ask-peer`, `extract-rules`, `rules-review`, `mobpro`) performed, produce **sanitized**, project-agnostic improvement candidates, and submit them to the configured destination — either a GitHub issue (`owner/repo` feedback) or a local markdown file (path feedback). Raw conversation stays in-session.
 
-This file is read whenever `self_retrospective.feedback` is set at Step 1, regardless of the Step 2 difficulty assessment; unset / invalid `feedback` still blocks reading this file.
+This file is read whenever `self_retrospective.feedback` is set at Step 1, regardless of the assessed tier; unset / invalid `feedback` still blocks reading this file.
 
 ## 1. Pre-flight checks
 

@@ -2,6 +2,20 @@
 
 ## 2026-08-03
 
+### dev-workflow v1.107.0 / mobpro v1.17.0 / dev-workflow-bundle v1.123.0
+
+- feat(dev-workflow): collapse the two post-fix verification cascades into one
+  - Step 7.5 (Rules Compliance Review) used to apply its fixes and then re-verify them itself — re-running Step 7 (Check / Test) and dispatching a 2nd-cycle `rules-review` — after which Step 8 (Code Review) ran the same cycle again over its own fixes. A run with findings in both layers therefore paid up to four check/test runs and three `rules-review` dispatches. Step 7.5's initial pass now applies its fixes and stops; Step 8's deferred verification runs that cycle **once**, over the union of both layers' fixes.
+  - `step8_fix_files` is renamed **`review_fix_files`** and its accumulation window opens earlier — at Step 7.5's fix sub-step rather than after that pass completes — so the aggregate pass covers both layers.
+  - **The persistent-violations user gate is unchanged in kind, but fires from one place**: the deferred verification pass. The one exception is `code_review_enabled: false`, where Step 8 never runs and no aggregate pass would follow — there Step 7.5 keeps re-verifying its own fixes in place.
+  - The two differentiated `--fast` ledger strings collapse to one, since the two sites that emit it are mutually exclusive within a run. Step 8's reviewer payload now says unconditionally that Step 7.5's fixes are not yet re-verified, replacing a note that fired only under `--fast`.
+- perf(dev-workflow): read the tier-escalation procedure only when an escalation fires
+  - `references/tier-assessment.md` is read at Step 1.5 on every run, but its § Escalation body — the three tier-change sites and the five-step procedure — only matters once a checkpoint actually raises the tier. That body moves to a new `references/tier-escalation.md`; the section keeps the two invariants every run relies on (the tier never falls, the decomposition decision is never reopened) plus a pointer.
+  - The four per-step **Difficulty exception** paragraphs (Step 6 / 6.5 / 7.5 / 11) collapse into one **Pre-completed row guard** paragraph beside the Phase-boundary self-audit, with each step keeping a one-line pointer. Every cross-step variable is now initialized in one table at Step 1 sub-step 6 instead of being split across Step 1 and Step 2 entry.
+  - **Measured**: an express-lane run reads **−3,975 chars**, a full-lane run **−665**; the 5,764-char escalation reference loads only when an escalation fires. The corpus is 761,944 chars (dev-workflow 670,722 + mobpro 91,222).
+- chore(mobpro): follow the verification-cascade change
+  - M9 sub-step 2 (rules compliance) appends its fixes to `m9_fix_files` and defers its 2nd cycle and persistent-violations gate to sub-step 5's aggregate re-verification, which already had that shape for code-review fixes. The upstream `code_review_enabled: false` exception does not apply to `mobpro`, whose sub-step 5 runs regardless of that flag.
+
 ### dev-workflow v1.106.0 / mobpro v1.16.0 / dev-workflow-bundle v1.122.0
 
 - feat(dev-workflow): resolve the difficulty tier before the plan exists, and give Trivial / Simple tasks an express lane

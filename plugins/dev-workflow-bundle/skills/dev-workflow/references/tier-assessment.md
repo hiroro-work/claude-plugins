@@ -1,8 +1,8 @@
 # Tier assessment
 
-Deep reference for the difficulty tier: the criteria, the lane the tier selects, the skip matrix it drives, and the one-way escalation that corrects a misjudgement. `SKILL.md` **Step 1.5: Task Decomposition** reads this file and runs § Resolution procedure; `SKILL.md` Step 2's **Confirm difficulty** sub-step and `references/step5-implement.md`'s "Tier escalation checkpoint" sub-step both run § Escalation. Unqualified `§ Configuration` / `§ Step N` / `§ No-Stall Principle` references and `sub-step N` references resolve to `SKILL.md`.
+Deep reference for the difficulty tier: the criteria, the lane the tier selects, the skip matrix it drives, and the one-way escalation that corrects a misjudgement. `SKILL.md` **Step 1.5: Task Decomposition** reads this file and runs § Resolution procedure; § Escalation states the two invariants every run relies on and points at `references/tier-escalation.md`, which `SKILL.md` Step 2's **Confirm difficulty** sub-step and `references/step5-implement.md`'s "Tier escalation checkpoint" sub-step read only when an escalation actually fires. Unqualified `§ Configuration` / `§ Step N` / `§ No-Stall Principle` references and `sub-step N` references resolve to `SKILL.md`.
 
-The tier is resolved **before the plan exists**, from the effective task text plus cheap primary-source probes (reading a file the task names, grepping an identifier it names). Judging on thinner evidence is bounded by § Escalation, which only ever raises the tier.
+The tier is resolved **before the plan exists**, from the effective task text plus cheap primary-source probes (reading a file the task names, grepping an identifier it names). Judging on thinner evidence is bounded by § Escalation's one-way invariant, which only ever raises the tier.
 
 ## Lanes
 
@@ -17,7 +17,7 @@ The tier selects one of two lanes. **express** = Trivial or Simple; **full** = M
 | Step 3 (Plan Review) / Step 8 (Code Review) | skipped on Trivial only | run |
 | Step 4 (Finalize Plan) approval surface | chat approval on Trivial only — `references/visual-plan-review.md` is not read | the visual gate |
 
-Resume sub-mode always reads `references/task-decomposition.md` § A. Resume sub-mode — the effective task is a subtask the state file holds, so the tier cannot be judged before that file is read. On the **full lane in Normal sub-mode** the ordering runs the other way: the tier was assessed against the whole request, and when § B then decomposes and hands subtask 1 to this same invocation, that subtask keeps the parent request's tier. Deliberately conservative — a subtask of a Complex request gets Complex apparatus — and § Escalation forbids lowering it.
+Resume sub-mode always reads `references/task-decomposition.md` § A. Resume sub-mode — the effective task is a subtask the state file holds, so the tier cannot be judged before that file is read. On the **full lane in Normal sub-mode** the ordering runs the other way: the tier was assessed against the whole request, and when § B then decomposes and hands subtask 1 to this same invocation, that subtask keeps the parent request's tier. Deliberately conservative — a subtask of a Complex request gets Complex apparatus — and § Escalation's one-way invariant forbids lowering it.
 
 ## Tier criteria
 
@@ -50,7 +50,7 @@ Keyed on the assessed tier alone, with no config flag: the **express** lane skip
 
 ## Row marking
 
-Apply the same pre-completed-mark plus entry-point-guard mechanism to every row the tier skips. Each guard recognizes the already-`completed` state and passes straight through, and the § Step 1 registration mechanics Phase-boundary self-audit treats such a row as the intended skip rather than an unrun-step bug.
+Mark every row the tier skips `completed` here. Entry-side handling is not this section's — each such row is recognized at its own step by `SKILL.md` § Step 1 registration mechanics' **Pre-completed row guard**.
 
 - **Trivial turns both review phases off**: mark the top-level `Step 3: Plan Review` and `Step 8: Code Review` rows AND the `Step 8-1` row `completed`.
 - **`--fast` forced `plan_review_enabled = false` on a non-Trivial tier**: mark the top-level `Step 3: Plan Review` row `completed` and leave `Step 8: Code Review` / `Step 8-1` untouched. **Only when `plan_review_enabled` was `true` before the forcing**, append `Step 3 Plan Review skipped (fast mode)` to `fast_mode_skipped_steps` — a plan phase already configured `false` was not skipped by fast mode, and a configured `false` raises no reminder at all (§ Configuration's `plan_review` bullet).
@@ -70,26 +70,9 @@ Log the assessed difficulty and the resolved review phases in the resolved `lang
 
 ## Escalation
 
-The tier only ever rises; there is no de-escalation path. (Why that costs nothing is in this skill's `README.md` § Express lane.)
+Two invariants hold on every run, whether or not an escalation ever fires — the rest of this file's readers rely on them, so they stay here:
 
-**Tier-change sites (closed list of 3).** Two are **escalation checkpoints** this section owns end to end — re-assess against § Tier criteria and act only when the new assessment is strictly higher than the current tier:
+- **The tier only ever rises**; there is no de-escalation path. (Why that costs nothing is in this skill's `README.md` § Express lane.)
+- **The decomposition decision is not reopened** — § Lanes' first row is the one deferral escalation never recovers. A task that escalates far enough to have wanted a split records that as a Risks entry instead. (Rationale: this skill's `README.md` § Express lane.)
 
-- **Step 2's Confirm difficulty sub-step**, once the plan body is drafted — before any code is written.
-- **`references/step5-implement.md`'s "Tier escalation checkpoint" sub-step**, once every planned edit has landed — the point where an implementation that outgrew its plan surfaces.
-
-The third is a **re-derivation site owned elsewhere**: `references/step4-finalize-plan.md` § Sub-step 3's express-lane re-activation, when a `rewrite-approach` material change lands on an express-lane plan. It re-runs § Resolution procedure in full rather than taking the incremental path below (the ledgers are rebuilt from scratch, not amended), **clamps the result upward to `max(pre-rewrite tier, new assessment)`** so this site cannot lower the tier either, and then applies this section's **Read what the express lane deferred** step when the clamped tier leaves the express lane. It is named here so this list stays the complete set of places the tier can change.
-
-**What an escalation does**, in order:
-
-1. Set the tier to the new assessment, reset `difficulty_skipped_steps = []` and `fast_mode_skipped_steps = []`, and re-run § Resolution procedure **steps 2–5 in full** — the same in-full re-run the third site above takes, and for the same reason: step 4 owns both `--fast` row-marking bullets, so skipping it would reverse a row `--fast` still wants skipped and leave its ledger entry unwritten. `plan_review_enabled` / `code_review_enabled` come out **re-derived from config and the new tier** rather than raised in place (one of the two exceptions to their monotonic-lowering invariant — `references/step1-load-settings.md` § Sub-step 4 — review-phase resolution), `subagent_model` is re-resolved, and both ledgers are rebuilt from scratch so no record keeps the old tier's token. This is the sole revision of § Configuration's "resolved once" reading: the value is resolved once per tier, and a tier change is what re-resolves it.
-2. **Reverse the row marking, forward of the checkpoint only**: for every row that was `completed` as a skip before this escalation and that **step 1's re-run left unmarked** — the clean test, since the re-run has already re-marked everything the new tier and `--fast` still skip, ledger entries included — set it back to `pending`, provided **its step has not yet been passed**. That last qualifier is load-bearing at the Step 5 checkpoint: `Step 3: Plan Review` sits behind the run there, so it stays `completed` — reopening it would strand a `pending` row for the rest of the run, and the plan is instead brought up to shape by step 3 below, which is what Step 8's reviewer reads. `Step 8: Code Review` and its `Step 8-1` row are forward of both checkpoints and do return to `pending`, which is the Step 5 checkpoint's whole purpose.
-3. **Read what the express lane deferred**: when leaving the express lane, read `references/simplicity-self-audit.md` and re-run the full audit against the plan, and read `references/plan-authoring.md` and bring the plan up to its § Template shape (an escalation at the Step 5 checkpoint does this too — the plan is the record Step 8's reviewer reads). Its § Step 2 self-check re-runs **only at the Step 2 checkpoint**, where the plan is still the thing under review; at the Step 5 checkpoint the implementation has landed, so re-checking the plan's authoring shape would change nothing the run can still act on.
-4. Emit a one-line note in the resolved `language` naming the old tier, the new tier, and the checkpoint that raised it, so the change is never silent. Paired bilingual samples (runtime rendering demonstration):
-   - `language: ja`: `難易度を Simple から Moderate へ引き上げました（Step 2 の Confirm difficulty） — Step 6（Tidy）/ Step 6.5（Polish Prose）/ Step 7.5（Rules Compliance Review）/ Step 11（Update Rules）を実施対象に戻します`
-   - `language: en`: `Difficulty raised from Simple to Moderate (Step 2's Confirm difficulty) — Step 6 (Tidy) / Step 6.5 (Polish Prose) / Step 7.5 (Rules Compliance Review) / Step 11 (Update Rules) return to the run`
-   Name whatever step 2 actually reopened: out of Trivial the list also carries Step 3 (Plan Review) and Step 8 (Code Review), and under `--fast` it carries neither Step 3 nor Step 6.5.
-5. Resume from the point the checkpoint sits at. An escalation at Step 2 continues into Step 3 (Plan Review) if the re-derived `plan_review_enabled` is now `true`; one at Step 5 continues into Step 6 (Tidy), whose row step 2 has just returned to `pending`.
-
-**A row already `completed` because its step ran is never reopened** — escalation returns skipped rows to the run, not finished ones.
-
-**The decomposition decision is not reopened** — § Lanes' first row is the one deferral escalation never recovers. A task that escalates far enough to have wanted a split records that as a Risks entry instead. (Rationale: this skill's `README.md` § Express lane.)
+The procedure itself — the closed list of three tier-change sites, and what an escalation does in order — is in [`tier-escalation.md`](tier-escalation.md). **Read that file only when an escalation is actually being performed**: `SKILL.md` Step 2's **Confirm difficulty** sub-step or [`step5-implement.md`](step5-implement.md)'s "Tier escalation checkpoint" sub-step has re-assessed the tier as strictly higher, or [`step4-finalize-plan.md`](step4-finalize-plan.md) § Sub-step 3's express-lane re-activation has fired.

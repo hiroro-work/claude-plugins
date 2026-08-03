@@ -16,10 +16,10 @@ When no axis is active, no participating step dispatches and this file is never 
 
 ## Dispatch-once contract
 
-The scan is dispatched **once per run**. Its run-scoped state lives in `SKILL.md` Step 2's cross-step init (`session_scan_dispatched` / `session_scan_result`), not here, so the state is well-defined on every path:
+The scan is dispatched **once per run**. Its run-scoped state lives in `SKILL.md` Step 1 sub-step 6's cross-step variable init table (`session_scan_dispatched` / `session_scan_result`), not here, so the state is well-defined on every path:
 
-- `session_scan_dispatched` — `false` at Step 2 entry; set `true` **only by the step that actually performs the dispatch**. A step that reaches its dispatch point with **no active axis of its own to consume** — or that never reaches it at all — never executes that set. Three causes (closed list): Step 11 when `rule-extraction-active` is false; Step 11 when its row was pre-completed by the difficulty-skip matrix, so sub-step 1 is never entered and `rule-extraction-active` is never determined (`references/tier-assessment.md` § Difficulty-skip matrix); and a retrospective step that aborts in its own §1 pre-flight before reaching the dispatch point, so it leaves `session_scan_dispatched` at `false` — this is exactly what routes a later step to the dispatch branch when an earlier step abstained or aborted.
-- `session_scan_result` — `null` at Step 2 entry; set to the subagent's raw return by the dispatching step.
+- `session_scan_dispatched` — `false` at `SKILL.md` Step 1 sub-step 6's cross-step variable init table; set `true` **only by the step that actually performs the dispatch**. A step that reaches its dispatch point with **no active axis of its own to consume** — or that never reaches it at all — never executes that set. Three causes (closed list): Step 11 when `rule-extraction-active` is false; Step 11 when its row was pre-completed by the difficulty-skip matrix, so sub-step 1 is never entered and `rule-extraction-active` is never determined (`references/tier-assessment.md` § Difficulty-skip matrix); and a retrospective step that aborts in its own §1 pre-flight before reaching the dispatch point, so it leaves `session_scan_dispatched` at `false` — this is exactly what routes a later step to the dispatch branch when an earlier step abstained or aborted.
+- `session_scan_result` — `null` at `SKILL.md` Step 1 sub-step 6's cross-step variable init table; set to the subagent's raw return by the dispatching step.
 
 The **dispatcher is the first step, in execution order Step 11 → Step 11.5 → Step 11.6, that reaches its dispatch point with an active axis of its own to consume.** When a participating step reaches its dispatch point:
 

@@ -327,7 +327,7 @@
     // Decisions/Risks render paths key off `type` below.
     // Both skills' plan formats share the `Build order` heading; the remaining alternate prefixes
     // in each list are mobpro's own heading names. Source of truth for the shared prefix:
-    // dev-workflow's `references/plan-format.md` § Template (mobpro's same-named file follows it);
+    // dev-workflow's `references/plan-authoring.md` § Template (mobpro's references/plan-format.md follows it);
     // mobpro's own headings are defined in that file. Keep in sync either way — a
     // heading renamed upstream and not here silently returns that plan to all-collapsed. Those
     // prefixes stop short of an apostrophe so straight vs. curly quotes cannot break the match.
@@ -708,7 +708,7 @@
 
     // Collapse each Build order step to its bold heading, opening the detail on click — what lets
     // the section sit in the must-review tier without opening at full length. The step shape is
-    // `N. **<heading>** — <detail>` (plan-format.md § Template); markdown puts that heading
+    // `N. **<heading>** — <detail>` (plan-authoring.md § Template); markdown puts that heading
     // directly under the <li> in a tight list and inside a wrapping <p> in a loose one (blank
     // lines between steps), and both are handled. A step that does not open with a bold heading,
     // or carries nothing behind one, is left alone — graceful degradation for plans predating the

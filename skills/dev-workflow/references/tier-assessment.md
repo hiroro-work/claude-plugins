@@ -10,14 +10,14 @@ The tier selects one of two lanes. **express** = Trivial or Simple; **full** = M
 
 | | express | full |
 | --- | --- | --- |
-| Step 1.5 decomposition proposal (Normal sub-mode) | skipped, and `references/task-decomposition.md` is not read — the tier **overrides** § B's judgment rather than predicting its outcome | § B runs |
+| Step 1.5 decomposition proposal (Normal sub-mode) | skipped, and neither `references/task-decomposition.md` nor `references/task-decomposition-normal.md` is read — the tier **overrides** § B's judgment rather than predicting its outcome | § B runs |
 | Step 2 plan authoring | `references/step2-create-plan.md` § Compact plan template — `references/plan-authoring.md` is not read | `references/plan-authoring.md` § Template |
 | Step 2 Simplicity self-audit | `references/simplicity-self-audit-express.md` alone | that file plus `references/simplicity-self-audit.md` |
 | Steps skipped outright | the four in § Difficulty-skip matrix | none |
 | Step 3 (Plan Review) / Step 8 (Code Review) | skipped on Trivial only | run |
 | Step 4 (Finalize Plan) approval surface | chat approval on Trivial only — `references/visual-plan-review.md` is not read | the visual gate |
 
-Resume sub-mode always reads `references/task-decomposition.md` § A. Resume sub-mode — the effective task is a subtask the state file holds, so the tier cannot be judged before that file is read. On the **full lane in Normal sub-mode** the ordering runs the other way: the tier was assessed against the whole request, and when § B then decomposes and hands subtask 1 to this same invocation, that subtask keeps the parent request's tier. Deliberately conservative — a subtask of a Complex request gets Complex apparatus — and § Escalation's one-way invariant forbids lowering it.
+Resume sub-mode always reads `references/task-decomposition-resume.md` § A. Resume sub-mode — the effective task is a subtask the state file holds, so the tier cannot be judged before that file is read. On the **full lane in Normal sub-mode** the ordering runs the other way: the tier was assessed against the whole request, and when § B then decomposes and hands subtask 1 to this same invocation, that subtask keeps the parent request's tier. Deliberately conservative — a subtask of a Complex request gets Complex apparatus — and § Escalation's one-way invariant forbids lowering it.
 
 ## Tier criteria
 

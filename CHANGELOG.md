@@ -1,5 +1,25 @@
 # Changelog
 
+## 2026-08-05
+
+### dev-workflow v1.108.0 / mobpro v1.18.0 / dev-workflow-bundle v1.124.0
+
+- perf(dev-workflow): split three shared references so a caller reads only the section it needs
+  - `references/plan-format.md` § Localization granularity moves to a new `references/localization.md`; `references/step8-code-review.md` § Sub-step 1 — reviewer report payload moves to `references/code-review-payload.md`; and `references/task-decomposition.md` splits into a shared core plus `references/task-decomposition-normal.md` (§ B) and `references/task-decomposition-resume.md` (§ A). Each original heading stays as a delegating pointer, so existing cross-references still resolve.
+  - **The decomposition split cuts dev-workflow's own reads**: a Normal run reads 3,483 fewer chars and a Resume run 10,278 fewer, because one of § A / § B was always dead weight. **Express-lane runs read more instead** — 649 chars on Trivial and 1,428 on Simple — since they skip that split and still carry the other two.
+- perf(mobpro): cut the per-run read budget
+  - `references/diff-review.md` § crit path's procedure moves to a new `references/crit-diff-review.md`, read only once both crit probes clear — so a run on the default `commit_review_gate: "diff"` never pays for it. The probe itself stays where it was. A `crit` run reads 845 more chars than before, the price of the conditional read.
+  - M3 and M9 now read the three new dev-workflow references above instead of the whole files they were carved out of.
+  - Every `mobpro` reference read from more than one M-step now declares that it is read once and reused, so the read count no longer depends on interpretation.
+  - Net for a default-configuration run: 247,263 chars on a Normal run (down from 271,590, −9.0%) and 240,468 on a Resume run (−11.5%).
+- feat(mobpro): run M9's two reviews concurrently
+  - `rules-review` and the code reviewer now launch together when background dispatch is available, and are judged in order afterwards. **A rules fix landing between launch and collect does not re-dispatch the code review** — `mobpro` deliberately does not adopt dev-workflow's `code_review_stale` discard-and-re-dispatch here; the fix is still covered by M9's aggregate re-verification and the M11 commit gate. Falls back to sequential dispatch when background dispatch is unavailable.
+- fix(mobpro): correct four read-contract statements
+  - "M12's session scan is `mobpro`'s only direct `Agent` use" was already false on any project with review-class `hooks.on_complete` entries, which `step9-completion-hooks.md` dispatches concurrently. A new § Direct Agent dispatch sites section carries the closed list, and the four sites that asserted the old invariant point at it.
+  - `update-rules.md` resolves the session jsonl through `self-retrospective.md` / `workability-retrospective.md`, so a project with rule extraction active but neither retrospective configured reads one of them — a read the closed list did not admit. It now does.
+  - The `prerequisites.md` row listed M4 / M9 as read points on callee failure, which neither step's body asks for; the row now says those steps apply the protocol from M1's read.
+  - M12 sub-step 3 now states that `session-scan.md` § Inputs' `subagent_model` parameter is omitted, since `mobpro` does not adopt that key.
+
 ## 2026-08-03
 
 ### dev-workflow v1.107.0 / mobpro v1.17.0 / dev-workflow-bundle v1.123.0

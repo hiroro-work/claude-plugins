@@ -81,7 +81,7 @@ The issue body format (`### Finding <N>` headings and 4 labeled fields per Findi
 
 User-facing prose produced by this skill is always in Japanese (`ja`). This is a project-local skill with no configurable language setting.
 
-**Localization boundary** (mirrors `dev-workflow`'s `references/plan-format.md` § Localization granularity):
+**Localization boundary** (mirrors `dev-workflow`'s `references/localization.md` § Localization granularity):
 
 - **Translate**: generic technical concepts — e.g. "Open issues received" → `受信した未解決 issue 数`; "Counts per outcome" → `結果別の件数`; "Accepted-and-committed files" → `accept 済み・コミット済みファイル`
 - **Preserve verbatim**: structured tokens (`accept` / `reject` / `conflict` / `parse-error` / `converged` / `unresolved`, the rules-review verdict statuses `no-issues` / `violations` / `error` plus the orchestrator-side `rules_review_result` dispositions `skipped (no commits)` / `skipped (unavailable)`, and the rules-review `<reason>` tokens `diff collection failed` / `rule loading failed` / `verdict parse failure` / `coverage gap only` (rules-review's own closed enum) plus the orchestrator-synthesized `verdict schema violation`, and all other machine-parsed enum values), field labels in the per-Finding execution log (`target:` / `outer-loop:` / `verify-diff:` / `skill-review:` / `publicity:` / `commit:`) and the Step 4 aggregate summary (`release-bookkeeping:` / `rules-review:` / `triage-branch:` etc.), file paths, commit hashes, config key names, skill names (`Skill(verify-diff)` etc.), `§` section references

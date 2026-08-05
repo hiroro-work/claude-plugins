@@ -2,6 +2,8 @@
 
 `mobpro` has no configuration of its own — every key it honors comes from `dev-workflow`'s layers (§ Fallback keys), and every pedagogical choice is fixed rather than configurable (`SKILL.md` § Learning-Stop Principle).
 
+**Read this file once**, at M1; M12's `subagent_model` carve-out names § Not-adopted keys of that same copy.
+
 ## Fallback keys
 
 These project-characteristic keys are read from `dev-workflow`'s three layers (`~/.claude/dev-workflow.local.md` → `.claude/dev-workflow.md` → `.claude/dev-workflow.local.md`) using the same per-class merge semantics as `dev-workflow` (see [`inline-defs.md`](inline-defs.md) § (a)). `mobpro` never writes to these files.

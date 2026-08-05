@@ -202,7 +202,7 @@ aligned with the project convention.
 Used in filenames and issue titles:
 
 - If the run is executing a decomposed subtask, reuse the state-file `slug` verbatim.
-- Otherwise, derive kebab-case from the effective task's first ~40 chars using the same rule as `task-decomposition.md` B.3.f.
+- Otherwise, derive kebab-case from the effective task's first ~40 chars using the same rule as `task-decomposition-normal.md` B.3.f.
 
 ### Assemble the submission body
 

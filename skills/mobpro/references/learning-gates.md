@@ -1,6 +1,6 @@
 # mobpro Learning Gates
 
-Operational detail for `mobpro`'s learning gates — the M6 diff review, the M8 error narration, the M9 prediction narration, and the explanation-length discipline. `mobpro`'s SKILL.md holds each gate's firing condition and branch skeleton; this file holds the "how to run it" detail and the user-facing prompt wording. It is a `mobpro`-own reference (not a transcription of any `dev-workflow` file), read once at M6 loop entry (§ A is loop-invariant) and at M8 / M9.
+Operational detail for `mobpro`'s learning gates — the M6 diff review, the M8 error narration, the M9 prediction narration, and the explanation-length discipline. `mobpro`'s SKILL.md holds each gate's firing condition and branch skeleton; this file holds the "how to run it" detail and the user-facing prompt wording. It is a `mobpro`-own reference (not a transcription of any `dev-workflow` file). **Read it once**, at M6 loop entry (§ A is loop-invariant); M8 and M9 name a section of that same copy.
 
 The prompt wording is given as **paired bilingual samples** (a `language: ja` line and a `language: en` line) that demonstrate the runtime rendering; the surrounding meta-prose is the rule. Render each prompt in the run's resolved `language`.
 

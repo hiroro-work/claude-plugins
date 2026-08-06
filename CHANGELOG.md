@@ -1,5 +1,20 @@
 # Changelog
 
+## 2026-08-06
+
+### dev-workflow v1.109.0 / mobpro v1.19.0 / dev-workflow-bundle v1.125.0
+
+- feat(dev-workflow)!: promote the deferred post-fix verification into its own phase, `Step 8.5: Deferred Verification`
+  - The run's single post-fix cycle — check/test over both review layers' fixes, then a rules-review scoped to the files they touched — used to be a tail of Step 8. A run with `code_review_enabled: false` skips Step 8 entirely, so Step 7.5 kept an in-place escape hatch to re-verify its own fixes, and that hatch had to be named in roughly a dozen places. Step 8.5 is registered unconditionally, runs when `review_fix_files` is non-empty, and completes immediately when it is empty — so the hatch is gone and Step 7.5's initial pass now stops after applying fixes on **every** path. `mobpro`'s M9 sub-step 5 already had this shape; upstream and downstream now match.
+  - **Behavior change on `code_review: false`**: that path's rules re-verification now runs scoped to `Files: <review_fix_files>` with paired-change invariants suppressed, the same as every other path, instead of re-walking the full base-commit diff. The check/test gate still covers the whole tree, and the Step 10 commit gate remains the backstop for paired-change obligations.
+  - The `--fast` 1-pass cap's `<site>` ledger value set becomes `Step 8.5 Deferred Verification` / `Step 10 crit round`. The second value is new: a `crit` commit round's Step 7.5 re-entry could already reach the cap but had no token to name itself with, so its ledger line was unrenderable.
+- fix(dev-workflow): six defects in the tier-escalation procedure
+  - Escalation reversed a review-phase row that configuration had turned off, because the "left unmarked by the re-run" test cannot see that a config-`false` phase has nothing to mark. It now reverses those rows only when the re-derived flag is `true` — the condition `references/step4-finalize-plan.md`'s express-lane re-activation owns and this site mirrors.
+  - Escalation's resume step documented only the `plan_review_enabled == true` branch; the `false` branch (skip Step 3, resume at Step 4) was left to inference.
+  - The `--fast` Step 6.5-only skip's condition read ambiguously on an escalation re-run, where the row is still `completed` from the pre-escalation marking. Misread, it skipped both the re-mark and the ledger append, after which escalation reopened the row and ran Step 6.5 under `--fast`.
+  - Three smaller corrections: the escalation note now carries the re-derived review phases and supersedes the standing difficulty log line; the two Completion ledger reminders and Step 3's disabled-phase list no longer credit escalation's writes to Step 1.5; and escalation's row-reversal claim about `Step 8` / `Step 8-1` is scoped to the Trivial origin that is the only tier marking them.
+- chore(mobpro): follow the upstream phase split — M9's aggregate now cites Step 8.5, and an M11 `crit` round's rules re-run continues into `step7.5-rules-compliance.md`'s sub-steps (b)–(d) instead of stopping after (a), which nothing downstream would have verified.
+
 ## 2026-08-05
 
 ### dev-workflow v1.108.0 / mobpro v1.18.0 / dev-workflow-bundle v1.124.0

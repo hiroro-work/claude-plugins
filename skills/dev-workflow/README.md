@@ -32,7 +32,7 @@ An opt-in invocation flag for a faster, lower-thoroughness run — unrelated to 
 
 - **Step 3 (Plan Review)** is skipped entirely on any non-Trivial task — `--fast` forces `plan_review_enabled` to `false`. On a Trivial task Step 3 was already skipped by the tier itself, so fast mode changes nothing there. Step 8 (Code Review) is untouched: `--fast` reaches only the plan phase.
 - **Step 6 Tidy** and **Step 7.5 Rules Compliance Review** still run — `--fast` does not skip them, only **Step 6.5 Polish Prose** and the Step 4 plan-body prose-polish pass are skipped.
-- The run's **single post-fix verification cycle** (Step 8's deferred verification — see the Step 7.5 / Step 8 rows below) is capped to one pass under `--fast`: it re-runs Step 7 over both review layers' fixes but skips the 2nd-cycle re-verification and the persistent-violations gate (those fixes are trusted unverified; the Step 10 commit gate is the remaining backstop).
+- The run's **single post-fix verification cycle** (Step 8.5 Deferred Verification — see the Step 7.5 / Step 8.5 rows below) is capped to one pass under `--fast`: it re-runs Step 7 over both review layers' fixes but skips the 2nd-cycle re-verification and the persistent-violations gate (those fixes are trusted unverified; the Step 10 commit gate is the remaining backstop). Under `commit_review_gate: "crit"` a Step 10 review round's own Step 7.5 re-verification takes the same cap, so that round's fixes land verified by its check/test re-run alone — there the capped gate *is* inside the Step 10 backstop.
 - **`subagent_model`** is unaffected — it always resolves from the task's real assessed difficulty, never from `--fast`.
 - `hooks.on_complete` still runs in full (fast mode does not gate project hooks).
 
@@ -168,7 +168,7 @@ hooks:
 | `custom_instructions` | string | (none) | Free-form instructions applied across all phases |
 | `check_commands` | list&lt;string&gt; | (none) | Static checks (lint / format / typecheck, etc.) |
 | `test_commands` | list&lt;string&gt; | `["Skill(run-tests)"]` | Test execution (fixed) |
-| `hooks.on_complete` | list&lt;string&gt; | (none) | Hooks to run as Step 9 (immediately after Step 8 Code Review, before Step 10 Interactive Commits when `interactive_commits: true`, otherwise before Completion) |
+| `hooks.on_complete` | list&lt;string&gt; | (none) | Hooks to run as Step 9 (immediately after Step 8.5 Deferred Verification, before Step 10 Interactive Commits when `interactive_commits: true`, otherwise before Completion) |
 | `self_retrospective.feedback` | string | (none) | Destination for Step 11.5 self-retrospective output (GitHub `owner/repo` or a local directory path). Unset = Step 11.5 is fully skipped |
 | `workability_retrospective.enabled` | bool | `false` | Whether Step 11.6 (Workability Retrospective) detects skill / lint-rule candidates and opens the per-candidate disposition gate (experimental, opt-in) |
 | `workability_retrospective.backlog_dir` | string | `.claude/improvements` | Directory for the "save to backlog" disposition's markdown files |
@@ -317,7 +317,7 @@ To use a different test runner, re-run `--init` to regenerate `run-tests`.
 
 #### `hooks.on_complete`
 
-Hooks to run as Step 9 (immediately after Step 8 Code Review, before Step 10 Interactive Commits when `interactive_commits: true`, otherwise before Completion). Entry format:
+Hooks to run as Step 9 (immediately after Step 8.5 Deferred Verification, before Step 10 Interactive Commits when `interactive_commits: true`, otherwise before Completion). Entry format:
 
 - `Skill(<name>)` form → invokes the skill
 - Any other string → executed as a shell command
@@ -543,8 +543,9 @@ The workflow begins at Step 2 (Step 1 is settings load, Step 1.5 is task decompo
 | 6 | Tidy | Reduce complexity via the built-in `simplify` skill (falls back to the in-house `tidy` skill when `simplify` is unavailable); skipped for Trivial / Simple tasks per the difficulty-skip matrix |
 | 6.5 | Polish Prose | (Only when `polish_prose: true`) Refine resolved-language comments / descriptions in changed files via the `prose-polish` skill (file mode, `sonnet`); skipped for Trivial / Simple tasks per the difficulty-skip matrix, or under `--fast` (independent of tier) |
 | 7 | Check / Test | Run check_commands + run-tests |
-| 7.5 | Rules Compliance Review | Verify `.claude/rules/` compliance via `rules-review` skill, then apply the fixes and stop — re-verifying them belongs to Step 8's deferred verification, which runs one cycle over both review layers' fixes instead of one per layer. Skipped for Trivial / Simple tasks per the difficulty-skip matrix. When `code_review_enabled` is `false` there is no later aggregate pass, so this step re-verifies its own fixes in place. When the plan defers paired-change / bookkeeping edits (version bump, CHANGELOG) to the Step 10 commit gate, the dispatch says so, so the reviewer does not flag them as missing mid-run — a deterministic false positive that would otherwise need a hand-written exception every run. Step 8's deferred-verification gate injects the same scope note |
-| 8 | Code Review | A single review pass by the reviewer, plus one escalation pass taken only when that pass reported a Critical finding; skipped entirely when `code_review_enabled` is `false` — a Trivial task or a configured `code_review: false`. `--fast` does not touch it. Once the passes settle, its **deferred verification** runs the run's one post-fix cycle — check/test, then a rules-review scoped to every file Step 7.5 and Step 8 fixed |
+| 7.5 | Rules Compliance Review | Verify `.claude/rules/` compliance via `rules-review` skill, then apply the fixes and stop — re-verifying them belongs to Step 8.5, which runs one cycle over both review layers' fixes instead of one per layer. Skipped for Trivial / Simple tasks per the difficulty-skip matrix. When the plan defers paired-change / bookkeeping edits (version bump, CHANGELOG) to the Step 10 commit gate, the dispatch says so, so the reviewer does not flag them as missing mid-run — a deterministic false positive that would otherwise need a hand-written exception every run. Step 8.5's gate 2 injects the same scope note |
+| 8 | Code Review | A single review pass by the reviewer, plus one escalation pass taken only when that pass reported a Critical finding; skipped entirely when `code_review_enabled` is `false` — a Trivial task or a configured `code_review: false`. `--fast` does not touch it |
+| 8.5 | Deferred Verification | The run's one post-fix cycle, over the union of Step 7.5's and Step 8's fixes: check/test, then a rules-review scoped to every file those layers touched. A phase of its own rather than a tail of Step 8, so a run with `code_review_enabled: false` still verifies Step 7.5's fixes. Always registered and never tier-skipped; an empty fix set makes it a no-op, and the rules-review gate additionally stands down on Trivial / Simple, where no initial Step 7.5 walk ran for it to re-verify against |
 | 9 | Completion Hooks | Run `hooks.on_complete` (only if configured) |
 | 10 | Interactive Commits | (Only when `interactive_commits: true`) Propose one commit per approved Build order step — from the landing points Step 5 recorded — plus a final commit for the quality gates' changes, then iterate per-commit with the user (each commit's diff reviewed via chat text by default, or via the external `crit` CLI when `commit_review_gate: "crit"`). Falls back to grouping the working tree by cohesion when no step landing points were recorded. The workflow never pushes — that stays the user's responsibility |
 | 11 | Update Rules | Update rules via `extract-rules`, then (when `interactive_commits: true`) propose committing the resulting `.claude/rules/` changes as a single commit; skipped for Trivial / Simple tasks per the difficulty-skip matrix. A proceed/skip gate asks whether to run whichever rule-maintenance and retrospective steps remain, and does not fire when none do |
@@ -561,7 +562,7 @@ The code-review launch is a bet that Step 7.5 finds nothing: any fix Step 7.5 ap
 
 ### Where cross-step variables are initialized
 
-The cross-step variables Step 1 sub-step 6 tabulates are initialized there rather than nearer the step that writes each one. That sub-step precedes all of their writers, so each is well-defined on **every** path — including the paths that never reach the procedure that would otherwise have initialized it. A tier that qualifies for no skip leaves `difficulty_skipped_steps` / `fast_mode_skipped_steps` at `[]` (Completion omits their reminders) and `subagent_model` at `inherit` (downstream dispatches omit the model); a run where neither review layer applies a fix leaves `review_fix_files` at `[]` (Step 8's deferred verification is then a no-op); `interactive_commits: false` leaves `implementation_boundaries` at `[]` (Step 10 is unregistered, so Step 5's boundary chain does not run); and the shared session-scan state stays at its init when every participating step abstains or is unregistered.
+The cross-step variables Step 1 sub-step 6 tabulates are initialized there rather than nearer the step that writes each one. That sub-step precedes all of their writers, so each is well-defined on **every** path — including the paths that never reach the procedure that would otherwise have initialized it. A tier that qualifies for no skip leaves `difficulty_skipped_steps` / `fast_mode_skipped_steps` at `[]` (Completion omits their reminders) and `subagent_model` at `inherit` (downstream dispatches omit the model); a run where neither review layer applies a fix leaves `review_fix_files` at `[]` (Step 8.5 Deferred Verification is then a no-op); `interactive_commits: false` leaves `implementation_boundaries` at `[]` (Step 10 is unregistered, so Step 5's boundary chain does not run); and the shared session-scan state stays at its init when every participating step abstains or is unregistered.
 
 So do not relocate one of those inits into the procedure that writes it, expecting that procedure's own prose to cover it — several are read by steps that run whether or not the writing procedure fires.
 
@@ -638,7 +639,7 @@ To get the full benefit of dev-workflow, the following skills are recommended:
 | `hooks.on_complete` has invalid format | Warns and ignores |
 | `check_commands` failure | Fix and retry (up to 3 times); if still failing, reports to user and stops |
 | `run-tests` failure | Fix and retry (up to 3 times) |
-| Rule violations persist after 2 cycles of the deferred verification | Asks the user for a decision |
+| Rule violations persist after 2 cycles at Step 8.5 (Deferred Verification), or in a Step 10 `crit` round | Asks the user for a decision |
 | `hooks.on_complete` hook failure | Recorded as a warning; remaining hooks continue |
 | `--resume` target file not found | Reports the attempted path + lists `.claude/plans/dev-workflow.*.md` candidates and stops |
 | State file YAML parse error | Stops and instructs the user to back up and repair manually (no automatic recovery) |

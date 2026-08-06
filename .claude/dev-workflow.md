@@ -1,6 +1,5 @@
 ---
 reviewer: "ask-peer"
-review_iterations: 1
 custom_instructions: |
   自分で判断できない、難易度が高いと思った場合はask-peerをmodelにfableを指定して相談して
 check_commands:
@@ -18,10 +17,8 @@ hooks:
     - "Skill(work-complete)"
 self_retrospective:
   feedback: "SonicGarden/dev-workflow-issues"
-compact_rules: false
 workability_retrospective:
   enabled: true
 polish_prose: true
-confirm_remaining_steps: true
 commit_review_gate: "crit"
 ---

@@ -18,7 +18,7 @@ Deep reference for `SKILL.md` **§ Configuration**. `SKILL.md` keeps the Setting
 - **check_commands**: Static checks (lint, format, typecheck, etc.). Always run all in order
 - **test_commands**: Defaults to `["Skill(run-tests)"]`. Each entry must be a `Skill(<name>)` string (no shell commands). Entries run sequentially during Step 7. Run `--init` to generate or update `run-tests`; additional structural-check skills can be appended in project config (e.g. for bundle-sync drift detection, custom marketplace structure validators, or other repository-specific checks)
 - **hooks**: Execute skills/commands at specific workflow timing points
-  - **on_complete**: Runs as Step 9 (immediately after Step 8 Code Review). Entry format: `Skill(<name>)` or shell command string
+  - **on_complete**: Runs as Step 9 (immediately after Step 8.5 Deferred Verification). Entry format: `Skill(<name>)` or shell command string
   - Entries not covered by allowed-tools require user approval
 - **self_retrospective**: Optional. Emits sanitized improvement signal for the `dev-workflow-bundle` skills (`dev-workflow`, `ask-peer`, `extract-rules`, `rules-review`) at Step 11.5 (between Step 11 and Completion). Raw conversation stays in-session; only abstracted text leaves
   - **feedback**: Destination string. Auto-detected:

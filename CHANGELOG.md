@@ -2,6 +2,15 @@
 
 ## 2026-08-06
 
+### dev-workflow v1.109.1 / mobpro v1.19.1 / dev-workflow-bundle v1.125.1
+
+- refactor(dev-workflow): make `references/step7.5-rules-compliance.md`'s reused sub-steps name no exit target, and drop the three exit remap lists
+  - Sub-steps 2 / (c) / (d) and the `--fast` 1-pass cap no longer name a next step or a task row: a new **Caller-neutral exits** paragraph binds all four to one exit — "complete this pass and return control to the caller's continuation point" — and each caller states only where that point is. The three lists that translated the old Step 8 vocabulary go with them: Step 8.5's `Exit-target remap`, the Step 10 `crit` re-entry's inline reading, and `mobpro` M9 sub-step 5's `Exit remap`. Adding an exit no longer obliges a three-site sync.
+  - The initial pass is no longer a special case in the reference: like every other caller it states its own exit at its own site, so `SKILL.md` § Step 7.5 now names both of its paths (sub-step 2's nothing-actionable judgment and sub-step 3(a)'s applied fixes) and the reference carries no exit of its own.
+  - § Step 7.5's `Reuse note` is dropped — the sync obligation it existed to carry is what this change removed, and its remaining content was already stated twice in the same section.
+  - Runtime behavior is unchanged: each caller resolves to the same continuation point it did before.
+- chore(mobpro): follow the exit-vocabulary change — M9 sub-step 5 states its own continuation point, and M11's `crit`-round sentence drops its continuation clause, which `crit-commit-review.md` now states itself.
+
 ### dev-workflow v1.109.0 / mobpro v1.19.0 / dev-workflow-bundle v1.125.0
 
 - feat(dev-workflow)!: promote the deferred post-fix verification into its own phase, `Step 8.5: Deferred Verification`

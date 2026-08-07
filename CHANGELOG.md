@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-08-07
+
+### dev-workflow v1.110.0 / mobpro v1.20.0 / dev-workflow-bundle v1.126.0
+
+- feat(dev-workflow): protect the working tree across Step 10 (Interactive Commits)
+  - **Entry snapshot**: § Collect changes now records the whole working tree — tracked changes and untracked files alike — as a dangling commit, and § Propose commit plan reports its SHA together with the command that would restore from it. Step 10 keeps the un-landed commits' content unstaged while it lands one commit at a time, so a failure part-way through had no object to recover from.
+  - **Commit-failure survival check**: when a hook-running commit fails, Step 10 now compares the tree against the entry snapshot **before retrying**, reports paths that went missing separately from paths that merely diverged, and stops instead of retrying when anything changed. Previously the retry could succeed against the damaged tree and carry the run onward with the loss never reported.
+  - **Frozen-tree notice**: on the chain-present path with two or more commit groups, the commit-plan gate now states up front that a review comment on an earlier commit cannot be answered in place — that commit's tree was frozen when its Build order step landed.
+- fix(mobpro): M11 enters `interactive-commits.md` at § Collect changes instead of § Propose commit plan
+  - The previous pointer skipped the roster that § Propose commit plan reads, and would have skipped the new entry snapshot along with it.
+
 ## 2026-08-06
 
 ### dev-workflow v1.109.1 / mobpro v1.19.1 / dev-workflow-bundle v1.125.1

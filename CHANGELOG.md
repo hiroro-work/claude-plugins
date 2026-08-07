@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-08-08
+
+### mobpro v1.24.0 / dev-workflow-bundle v1.131.0
+
+- feat(mobpro): build the plan with the junior instead of handing them a finished one
+  - M3 now walks the junior through the code a plan touches in 2–5 installments, each closing with a partial approval, before the plan document is written. A junior who has not read the codebase cannot judge a finished plan, but can judge one piece at a time; M5 still approves the plan as a whole.
+  - Each installment explains what the code does today first and what follows from it second, then asks what is still unclear — a gap the junior reports, not a question they have to answer correctly. No setting changes that.
+  - That reading runs on the main thread, so the junior sees what was consulted.
+
 ## 2026-08-07
 
 ### prose-polish v1.8.0 / dev-workflow v1.113.0 / mobpro v1.23.0 / dev-workflow-bundle v1.130.0

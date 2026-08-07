@@ -2,6 +2,13 @@
 
 ## 2026-08-07
 
+### dev-workflow v1.112.0 / mobpro v1.22.0 / dev-workflow-bundle v1.129.0
+
+- feat(dev-workflow,mobpro): scale a `crit` round's re-verification to what the round's edits changed
+  - **Behavior change with no opt-out**: under `commit_review_gate: "crit"`, a round that applied `scope: "line"` edits re-ran the full check/test phase and the rules-compliance walk every time, however small the edit. It now classifies the round's edits first and takes one of two branches — `actual-code` keeps that full re-verification, `metadata-only` (comment rewording, documentation text, non-functional spacing) runs `check_commands` alone. A rename of an identifier or a path counts as `actual-code`, and an unclear classification takes that branch too.
+  - The `metadata-only` branch is a trade, not a deferral: those edits reach the commit without passing `test_commands` or the rules walk, and no later pass in the run picks them up.
+  - The classification and both branches live in `crit-commit-review.md` § Round re-verification weight; the sites that used to quote the old mandate now point at it.
+
 ### dev-workflow v1.111.0 / mobpro v1.21.0 / dev-workflow-bundle v1.128.0
 
 - feat(dev-workflow): print the visual plan-review gate's URL in chat

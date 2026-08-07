@@ -34,9 +34,9 @@ This skill's procedure dispatches subagents, so invoking the skill **is** the re
 
 ### 2. Collect Rules
 
-1. Find rule files: `Glob(".claude/rules/**/*.md")`
-2. Exclude `*.examples.md` from the check targets (they are reference material, not enforceable rules)
-3. If no rule files found, output `No rule files found in .claude/rules/` as the final prose result, then emit the verdict per `## Return contract` and end the processing flow
+1. Find rule files: `Glob(".claude/rules/**/*.md")`. Also `Glob(".claude/rules-extras/**/*.examples.md")` — § 5. Review resolves each rule file's examples out of these two path lists, so it needs no per-rule-file filesystem probe
+2. Exclude `*.examples.md` from the **check targets** (they are reference material, not enforceable rules). Keep them in step 1's path lists — § 5. Review's pre-split fallback reads the co-located ones from there
+3. If the check targets are empty after step 2's exclusion — the first glob may still have matched co-located `*.examples.md` — output `No rule files found in .claude/rules/` as the final prose result, then emit the verdict per `## Return contract` and end the processing flow
 
 ### 3. Match Rules to Changed Files
 
@@ -134,7 +134,7 @@ If no violations are found, respond with exactly: "No rule violations found"
 
 Before launching reviewers, **prepare the data to embed in each prompt** (do NOT rely on reviewers running git commands themselves):
 - For each group, run `git diff <base-commit> -- <matched-files>` using the **union of files matched by any rule in that group** (so each reviewer sees every file it is responsible for, and the same file may appear in diffs for multiple groups if multiple rules match it).
-- For each rule file, check if a corresponding `.examples.md` exists (same basename, e.g., `rails-controllers.md` → `rails-controllers.examples.md`) and read its content.
+- For each rule file, resolve its `.examples.md` out of the two path lists § 2. Collect Rules step 1 gathered — no new filesystem probe. Take the rule file's path relative to `.claude/rules/` and replace the trailing `.md` (and a `.local` before it, when present) with `.examples.md`: `languages/ruby.md` and `languages/ruby.local.md` both give `languages/ruby.examples.md`. Look for that sub-path under `.claude/rules-extras/`; when it is absent, fall back to it beside the rule file (pre-split layout). Read each resolved file once — a `.md` and its `.local.md` resolve to the same one. rules-review does not read extract-rules' `examples_output_dir`: its default and the `examples_output_dir: <output_dir>` opt-back-in both resolve here, the second through that fallback, but any other value leaves the examples unfound and the section below silently omitted. Source of truth for the `.claude/rules-extras/` literal is extract-rules' `examples_output_dir` default; keep in sync when that default changes — the two sites that hardcode it are this bullet and § 2. Collect Rules step 1's second glob.
 - If no `.examples.md` exists for any rule in the group, omit the `## Reference: Code Examples` section entirely from that reviewer prompt (do not write a placeholder line like `(no examples file)`).
 - **Resolve pointer rules before embedding**: if a matched rule file carries no inline enforceable rule text and instead defers its substance to a document outside the scanned tree via a reference link (an `@<path>` include, or a markdown link to a doc outside `.claude/rules/`), resolve that reference and `Read` the target so the embedded `## Rules to Check` content is the actual rule text — embedding the bare pointer would make the reviewer judge against empty rules and return `No rule violations found` even when the referenced rule is violated. If the reference cannot be resolved (target missing, or outside readable scope), do **not** embed an empty stub: drop the rule from the group and record it as an explicit coverage gap per § 6. Aggregate Results, so an unread rule is never silently reported as compliant.
 - When multiple rule files are embedded in one reviewer prompt, separate them with a `### <.claude/rules/... path>` sub-heading inside the `## Rules to Check` section.

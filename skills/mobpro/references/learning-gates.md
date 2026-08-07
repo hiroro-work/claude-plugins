@@ -1,10 +1,10 @@
 # mobpro Learning Gates
 
-Operational detail for `mobpro`'s learning gates — the M6 diff review, the M8 error narration, the M9 prediction narration, and the explanation-length discipline. `mobpro`'s SKILL.md holds each gate's firing condition and branch skeleton; this file holds the "how to run it" detail and the user-facing prompt wording. It is a `mobpro`-own reference (not a transcription of any `dev-workflow` file). **Read it once**, at M6 loop entry (§ A is loop-invariant); M8 and M9 name a section of that same copy.
+Operational detail for `mobpro`'s learning gates — the M6 diff review, the M8 error narration, the M9 prediction narration, the M3 plan-building checkpoints, and the explanation-length discipline. `mobpro`'s SKILL.md holds each gate's firing condition and branch skeleton; this file holds the "how to run it" detail and the user-facing prompt wording. It is a `mobpro`-own reference (not a transcription of any `dev-workflow` file). **Read it once**, at M3 — § E fires there, ahead of every other section; § A is then loop-invariant across M6, and M8 and M9 name a section of that same copy.
 
 The prompt wording is given as **paired bilingual samples** (a `language: ja` line and a `language: en` line) that demonstrate the runtime rendering; the surrounding meta-prose is the rule. Render each prompt in the run's resolved `language`.
 
-Nothing here asks the junior to answer a comprehension question (`SKILL.md` § Learning-Stop Principle's "Narration is not a stop" paragraph). The AI narrates; the junior learns by reading each diff and asking whatever the narration left open.
+Nothing here asks the junior to answer a comprehension question — § E stops for a reply, but only to ask what the junior still finds unclear (`SKILL.md` § Learning-Stop Principle's "Narration is not a stop" paragraph owns that rule). The AI narrates; the junior learns by reading each diff and asking whatever the narration left open.
 
 ## § A. M6 diff review
 
@@ -41,7 +41,31 @@ Narration is the session's main channel, so these caps are wide enough to carry 
 
 - **Preview** (M6 unit announcement): ≤ 6 lines.
 - **Per-file walkthrough** (M6): 1–3 lines per changed file, plus 1–2 lines for why it was done that way.
-- **Narration-class single explanations** — M3's design-approach narration, M5's plan explanation, the M8 error read (§ B), the M9 prediction and its cross-check (§ C), and each answer to a junior's question (§ A): 2–3 lines each.
+- **Existing-code explanation** (the first half of an M3 checkpoint, § E): 1–3 lines per file or component covered — the same shape as the M6 walkthrough above, since the junior is reading unfamiliar code in both cases. Its second half, what follows from that code, takes the narration-class cap below.
+- **Narration-class single explanations** — M3's design-approach narration, the second half of each M3 checkpoint and the answers given inside it (§ E), M5's plan explanation, the M8 error read (§ B), the M9 prediction and its cross-check (§ C), and each answer to a junior's question (§ A): 2–3 lines each.
 - **Applied-finding explanations** (M4 and M9, one per finding): 1–2 lines each — deliberately tighter than the narration class, because a findings list is read as a list.
 
 This section is the **single consolidated statement** (source of truth) of the length discipline. The inline caps at their application sites are kept inline as load-bearing local values and are not rewritten; they instantiate this discipline. The closed list, which a new inline cap must join in the same change that introduces it: M3's and M5's "2–3 lines" narration, M4 / M9's "1–2 lines" per applied finding, M6's "≤ 6 lines" preview, M7's "1–2 lines" cleanup explanation, M11's "1–2 line" point-of-this-diff note, and M13's "≤ 3 one-line points" learning summary.
+
+## § E. M3 plan-building checkpoints
+
+The code a plan rests on reaches the junior in installments, and each installment ends in a partial approval. `SKILL.md` M3 sub-step 2.5's **Plan-building checkpoints** gate owns the firing condition, the 2–5 segmentation, and the rule that the existing code comes before what was concluded from it; this section holds the wording and the reply handling.
+
+**Each checkpoint carries two halves in this order**: what the relevant code does today and how it is put together, then what follows from it for the plan.
+
+**Opening the first checkpoint**: name how many there will be, then give the first.
+
+- `language: ja`: `プランを書く前に、関係するコードを<総数>回に分けて説明する。1 回目: <今どうなっているか>。だから<そこから言えること>。`
+- `language: en`: `Before I write the plan, I'll walk you through the code it touches in <total> parts. Part 1: <how it works today>, which means <what follows for the plan>.`
+
+**Closing every checkpoint**, the first included: ask what is still unclear.
+
+- `language: ja`: `ここまでで分からないところはある？ 無ければ次に進む。`
+- `language: en`: `Anything still unclear here? I'll go on if not.`
+
+**Reply handling** — four buckets, judged semantically (the phrasings below are illustrative, not literal discriminators):
+
+- **go on** (`無い` / `大丈夫` / `進めて` / `nothing unclear` / `go ahead`, or any equivalent that nothing was left open): move to the next checkpoint, or — once the last one closes — to M3 sub-step 3's plan authoring.
+- **question** (anything naming a part that did not land, or asking about what was explained): answer within the § D length, then ask the closing question again. A question is never an approval, so do not advance on the answer alone.
+- **change** (a request to look somewhere else, or to take a different direction): do that reading or record that direction, share what came of it, and ask again. A request to drop the task outright is the far end of this bucket and takes M5's **withdraw** disposition — end the workflow without authoring the plan. Source of truth: `SKILL.md` M5 sub-step 3's **adjust** bucket; this bucket is that one a phase earlier, so keep it in sync when that bucket changes.
+- **not an answer** (interrogative or non-committal — `どう？` / `なるほど` / `how about it?` / `I see`): re-classify it with a confirming question, the way M5 sub-step 3 handles its own non-committal replies. Neither advance nor re-share on it.

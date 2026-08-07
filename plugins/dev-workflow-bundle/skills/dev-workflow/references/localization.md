@@ -23,6 +23,13 @@ Source of truth: `references/configuration.md`'s `language` bullet maintains the
 
 Intent: a native reader of the resolved `language` sees natural prose, while the verbatim-preserved identifiers stay machine-grep-able. This rule targets defensive over-preservation — sprinkling source-language vocabulary into connective prose, which reads as half-translated.
 
+**Sentence-construction rules**: the rules above govern which words to use; these four govern how the sentence is built. The lettering runs on from the three above — one series, so (g) can cite (a) directly. They cover the same output set this section opens with, and matter most in chat output, which no later polish pass reaches. `prose-polish`'s style guide deliberately carries counterparts to (d) and (g) only: (e) and (f) are governed here alone.
+
+- **(d) One claim per sentence, and per bullet**: split a sentence that chains three or more clauses. Split a bullet that packs an inline `(i)/(ii)/(iii)` enumeration behind a trailing verb — it holds the structure open to the end.
+- **(e) References belong at the end of an output sentence, not the front**: a sentence opening with `§ <Heading>'s "<label>" paragraph` makes the reader wait for the subject. State what is true, then name where it is defined. This governs output prose only — inside these skill files the same pair form is the required citation shape, wherever it sits in the sentence.
+- **(f) No nested parentheticals**: a parenthetical inside another means the sentence carries two asides. Promote one to its own sentence, or drop it.
+- **(g) No word that only decodes back through the source language**: a translated word the reader can only understand by reconstructing the original has failed, whether a transliteration or a word-for-word rendering of a figure of speech. This tests the result of sub-rule (a); `prose-polish`'s style guide carries the worked examples.
+
 **Paired bilingual samples** (runtime rendering demonstration, not meta-prose):
 
 - `language: ja`: `一次情報源（primary source）の確認を経てプランを策定済み`

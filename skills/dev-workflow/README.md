@@ -164,7 +164,7 @@ hooks:
 | `interactive_commits` | bool | `true` | Whether Step 10 (Interactive Commits) proposes one commit per approved Build order step (falling back to grouping working-tree changes by cohesion) and iterates per-commit with the user; also gates Step 11's rule-update commit proposal |
 | `commit_review_gate` | string | `diff` | Which surface a code-diff review renders on — `diff` (default; the existing chat-text presentation with the accept/adjust/cancel gate) or `crit` (opt-in; launches the external `crit` CLI scoped to just the reviewed files, falling back to `diff` when unavailable or unreachable). Step 10 applies it to each commit's diff, but is one consumer rather than the key's whole scope — see the `commit_review_gate` section below |
 | `implementation_executor` | string | `main` | Experimental, opt-in. Selects who executes Step 5 implementation work units — `main` (default), `subagent`, or one of `ask-claude` / `ask-codex` / `ask-gemini` / `ask-copilot` / `ask-agy`. Unsupported values fall back to `main`; see the `implementation_executor` section below |
-| `polish_prose` | bool | `true` | Whether the workflow's two `prose-polish` passes (Step 6.5 file-mode polish of changed files + Step 4 plan-body polish) run; Step 6.5 is still subject to the difficulty-skip matrix (default-on, opt-out) |
+| `polish_prose` | bool | `true` | Whether the workflow's two `prose-polish` passes (Step 6.5 file-mode polish of changed files + Step 4 plan-body polish, the latter also covering the decomposition state file on the run that created it) run; Step 6.5 is still subject to the difficulty-skip matrix (default-on, opt-out) |
 | `custom_instructions` | string | (none) | Free-form instructions applied across all phases |
 | `check_commands` | list&lt;string&gt; | (none) | Static checks (lint / format / typecheck, etc.) |
 | `test_commands` | list&lt;string&gt; | `["Skill(run-tests)"]` | Test execution (fixed) |
@@ -278,7 +278,9 @@ Invalid values are ignored with a warning and fall back to `main`. To opt in for
 Controls whether the workflow's two `prose-polish` passes — **Step 6.5 (Polish Prose)** and the **Step 4 plan-body polish** — run. Both passes run by default; set `polish_prose: false` to opt out.
 
 - `false`: both passes are skipped. Step 6.5 marks itself `completed` and proceeds to Step 7 (emitting a one-line note on Moderate / Complex; on Trivial / Simple the difficulty-skip matrix already owns the skip, so no `polish_prose` note fires); the Step 4 plan-body polish is skipped silently and the un-polished plan is presented
-- `true` (default): both passes run. Step 6.5 is still subject to the difficulty-skip matrix, so it runs only on Moderate / Complex tasks (Trivial / Simple skip it regardless); the Step 4 plan-body polish runs on every tier
+- `true` (default): both passes run. Step 6.5 is still subject to the difficulty-skip matrix, so it runs only on Moderate / Complex tasks (Trivial / Simple skip it regardless); the Step 4 plan-body polish runs on every tier, and covers the decomposition state file too on the run that created it
+
+The state file is in scope because the prose in it — the parent-task statement, each subtask's `title` / `description` / `verification_hint`, and the human-readable body — is written for you to read and no other pass polishes it. The whole file is passed, so all of that is in reach, not the two subtask fields alone. It is polished only on the run that creates it: that run already covers every subtask the decomposition produced, and those files reach tens of thousands of characters, so re-reading one on each `--resume` would buy nothing. Two things stay outside the pass as a result — a subtask promoted later by Completion's execution-time deferral/exclusion gate, and any edit made to the file after its creating run.
 
 ```yaml
 polish_prose: false

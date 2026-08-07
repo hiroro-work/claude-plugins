@@ -2,6 +2,21 @@
 
 ## Principles Examples
 
+### 呼び出し先への制約は呼び出し先の規則に置く
+**Good**: 「YAML のブロックスカラーの字下げを保つ」という制約を `prose-polish` の `references/prose-style-guide.md` § Preserve に 1 行足す。全呼び出し元・全対象・standalone 実行にも効く。**Bad**: 呼び出し元（`step4-finalize-plan.md` / `mobpro` M5）の散文に `instruct prose-polish to leave each line's leading indentation exactly as found` と書く。`## Invocation contract` の欄は `File:` / `Files:` / `Text:` / `Language:` / `Model:` の closed set で、この文を運ぶ欄が無いため Step 1 の parse で落ちる。CHANGELOG に「dispatch tells the callee to ...」と書くと、契約が果たせない約束を公開することになる。
+
+### 訳語は原語を知らなくても読めるかで判定する
+**Good**: 「元の語を知らない読者が、その語だけを見て意味を取れるか」を判定列の先頭に置く。`キャッシュ` / `レスポンス` は通り、`セマンティクス` / `タイブレーク` は訳す側へ落ちる。**Bad**: 「対象言語の文字で書かれている語は既に自然な文なので判定対象にしない」と免除する。定着の判定基準が無いまま免除するため、カタカナにしただけの語が全て素通りする。原語の比喩を字面訳した `着地する`（land）/ `〜に倒す`（fall back to）/ `走行`（run）/ `閉じたリスト`（closed list）も、語自体は日本語なので語彙検査を通ってしまう。
+
+### 散文は語彙だけでなく組み立ても規定する
+**Good**: 1 文 1 主張を箇条書きの項目にも適用し、参照は文末に置き、括弧の入れ子を避ける。**Bad**: 訳す / 原語で残すの語彙規則だけを置く。推敲後の文書にも `新設する節は (i) …、(ii) …、(iii) …、(iv) …、を持つ` のように 1 項目へ 4 主張を詰めて末尾動詞で閉じる形や、`§ Per-commit loop sub-step a の From a pathspec 段落は、…` のように参照が主語の位置を占める形が残る。
+
+### 手書きの散文にも文体規則を明示的に通す
+**Good**: ユーザーに見せる説明文を `Skill(prose-polish)` の text モードへ通してから提示する。**Bad**: 「style guide があるから自分の出力にも効いている」と考える。style guide は `prose-polish` のサブエージェントへ注入される入力であって、main thread が直接書く文章には適用されない。コスト感は 1 回 20〜60 秒（style guide 全文の読み込みとサブエージェント推論が支配的で、文章量には比例しない）。
+
+### 下流へ例外を足す修正は、同じ反復で上流の断定も掃く
+**Good**: 下流に「`--resume` でも planning-draft 復帰経路は対象」と例外を足すとき、上流の `never on a --resume run` も同時に例外付きへ書き換える。**Bad**: 下流だけ直す。レビュー指摘に応じた修正であっても、転記関係の片側だけを変えれば新しい矛盾になる。この食い違いは 2 巡目のルール確認で初めて検出された（1 巡目は修正前の状態を見ていた）。
+
 ### Release bookkeeping (paired bump + marketplace.json Edit + bookkeeping commit separation)
 **Paired bump**: `### dev-workflow v1.34.2 / dev-workflow-bundle v1.34.2` の対形式で CHANGELOG subsection 見出しを書く。dev-workflow-bundle の対が抜けると bundle 配布 version が静かに古いまま残る。 **`Edit` での marketplace.json version 書き換え**: `old_string` に name の閉じる `"` と trailing `,` まで含める（例: `"name": "dev-workflow",` + 周辺 + `"version": "1.34.2",`）→ `version` だけ書き換え。Edit 直後に `jq empty .claude-plugin/marketplace.json` で syntax 確認、`replace_all` は禁止。`old_string` が `"name": "dev-workflow"` だけだと `"dev-workflow-bundle"` prefix と被って not-unique error。 **bookkeeping commit 分離**: per-Finding fix と version bump が別コミット (`fix(dev-workflow): ...` と `chore(release): bump ... (auto-triage YYYY-MM-DD)`)。混ぜると「1 accepted Finding = 1 commit」「scope check」の意味が薄れる。 **Pathspec closed-set scoping**: bookkeeping コミットの `git commit -- <pathspec>` は `{.claude-plugin/marketplace.json, CHANGELOG.md}` の closed set のみに絞る。Step 10 collect が拾う無関係な working-tree drift（`.gitignore` の個人向け除外）や workflow artifact（`.claude/plans/*`）を巻き込まない。**Good**: collect 段で無関係 drift / artifact を識別し全コミット（bookkeeping 含む）から除外して commit-plan に「除外: …」と明示。混入後の修正は `git commit --amend -- <closed set のみ>`。**Bad**: `git add -A` で collect 全件を bookkeeping に grouping → 無関係 `.gitignore` 変更が release コミットに混入し user に指摘されて amend 手戻り。
 

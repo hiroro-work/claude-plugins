@@ -2,6 +2,20 @@
 
 ## 2026-08-07
 
+### prose-polish v1.8.0 / dev-workflow v1.113.0 / mobpro v1.23.0 / dev-workflow-bundle v1.130.0
+
+- feat(prose-polish): judge a target-language word by whether it decodes without the original
+  - Tokens already written in the target language's own script are no longer exempt from the litmus test. They are judged by one question: can a reader who does not know the source-language original recover the meaning from this word alone? `キャッシュ` and `レスポンス` still pass; `セマンティクス` and `タイブレーク` no longer do.
+  - General rule 6 now covers the mirror-image failure — a word-for-word rendering of an English figure of speech, which reads as the target language but only decodes back through the English (`着地する` for `land`, `〜に倒す` for `fall back to`, `走行` for a `run`, `閉じたリスト` for a `closed list`). Name what the thing does instead.
+  - "One idea per sentence" covers list items too: a bullet carrying three or more claims — typically an inline `(i)/(ii)/(iii)` enumeration closed by a trailing verb — gets split.
+  - Leading whitespace joins the Preserve list. Indentation carries structure in YAML block scalars, Python, and nested Markdown lists, so a rewrite that shifts it breaks the file even when every word is right.
+- feat(dev-workflow): polish the decomposition state file alongside the plan document
+  - Step 4's plan-body polish took the plan document alone, so a decomposed run's subtask `description` / `verification_hint` prose — written for the user to read — was polished by no pass at all. The state file now joins the plan document in that call, on the run that creates it. A `--resume` run does not repeat it: the creating run covers every subtask's prose at once, and those files reach tens of thousands of characters.
+- feat(dev-workflow): rule out sentence shapes that stay hard to read after the words are right
+  - `localization.md` governed vocabulary only. Four sub-rules now govern construction: one claim per sentence and per bullet, references at the end of an output sentence rather than the front, no nested parentheticals, and no word that only decodes back through the source language. They carry the most weight in chat output, which no later polish pass can reach.
+- feat(mobpro): polish the plan document before the approval gate
+  - **New behavior — set `polish_prose: false` to opt out.** mobpro polished implementation files at M7 but never the plan document, the artifact a junior reads most carefully. M5 now calls `prose-polish` before the approval surface, covering the plan document plus the state file when one is active. The same key turns off both call sites.
+
 ### dev-workflow v1.112.0 / mobpro v1.22.0 / dev-workflow-bundle v1.129.0
 
 - feat(dev-workflow,mobpro): scale a `crit` round's re-verification to what the round's edits changed

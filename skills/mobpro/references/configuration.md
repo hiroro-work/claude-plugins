@@ -18,7 +18,7 @@ These project-characteristic keys are read from `dev-workflow`'s three layers (`
 | `check_commands` | none (unset) | M8 |
 | `test_commands` | `["Skill(run-tests)"]` | M8 |
 | `language` | merged config → `~/.claude/settings.json` `language` → `ja` | every user-facing output |
-| `polish_prose` | `true` | M7 |
+| `polish_prose` | `true` | M5 plan-body polish, M7 |
 | `interactive_commits` | `true` | M11 registration, M12 rule-update commit gate |
 | `commit_review_gate` | `diff` | M6 diff-review surface, M11 diff surface |
 | `custom_instructions` | none (unset) | M3, M4, M6, M9 |

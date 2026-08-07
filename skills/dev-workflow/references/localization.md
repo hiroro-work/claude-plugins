@@ -23,6 +23,13 @@ Source of truth: `references/configuration.md`'s `language` bullet maintains the
 
 Intent: a native reader of the resolved `language` sees natural prose, while the verbatim-preserved identifiers stay machine-grep-able. This rule targets defensive over-preservation — sprinkling source-language vocabulary into connective prose, which reads as half-translated.
 
+**Sentence-construction rule (right words are not enough)**: everything above governs *which words* to use. These four govern *how the sentence is built* — the load a reader carries even when every word is correct. They cover the same output set this section opens with, and they carry the most weight in chat output, which no later polish pass can reach.
+
+- **(d) One claim per sentence, and per bullet**: a sentence chaining three or more clauses, or a bullet packing an inline `(i)/(ii)/(iii)` enumeration closed by a trailing verb, makes the reader hold the whole structure open to the end. Split it.
+- **(e) References belong at the end, not the front**: a sentence opening with `§ <Heading>'s "<label>" paragraph` makes the reader wait for the subject. State what is true, then name where it is defined — in parentheses when that reads better.
+- **(f) One parenthetical per sentence**: a second one nested inside the first means the sentence is carrying two asides. Promote one to its own sentence, or drop it.
+- **(g) No word that only decodes back through the source language**: sub-rule (a) says to translate concept words; this tests the *result*. A translated word the reader can only understand by reconstructing the original has failed, whether it is a transliteration (`セマンティクス` for `ja`) or a word-for-word rendering of a figure of speech (`着地する` for `land`). `prose-polish`'s style guide applies the same test and carries the worked examples.
+
 **Paired bilingual samples** (runtime rendering demonstration, not meta-prose):
 
 - `language: ja`: `一次情報源（primary source）の確認を経てプランを策定済み`

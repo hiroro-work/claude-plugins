@@ -2,6 +2,28 @@
 
 ## 2026-08-07
 
+### apply-rules v2.1.0
+
+- feat(apply-rules): read and write `.examples.md` under the sibling `-extras` directory
+  - extract-rules has written examples to a directory outside `.claude/rules/**` since it gained `examples_output_dir`, so apply-rules saw none of them in a project on that layout and wrote its merged examples back into the auto-load scope. Both sides now derive the examples directory as the rules directory path with `-extras` appended — `<source>-extras` for the source (fetched over `gh api` for a GitHub source, skipped silently on `404`) and `<output_dir>-extras` for the target. There is no configuration key; apply-rules resolves extract-rules' default and its `examples_output_dir: <output_dir>` opt-back-in, but not a directory set anywhere else.
+  - Reading falls back to the rule file's own directory, so a project still on the pre-split layout keeps working. Writing always targets the derived directory. Step 7 completes the migration: an `.examples.md` still under `output_dir` whose name already conforms becomes a relocation into `<output_dir>-extras`, since the merge step only covers rules that survived the tech-stack filter and never covers `project.examples.md`. One whose name does not conform keeps going through the existing migrate-then-delete flow.
+  - The `## Examples` reference line is now computed from the rule file's directory to the examples file (`.claude/rules/languages/typescript.md` → `../../rules-extras/languages/typescript.examples.md`) instead of the fixed `./<name>.examples.md`.
+  - The `output_dir` default in the config sample loses its trailing slash (`.claude/rules`, matching extract-rules), so appending `-extras` cannot produce `.claude/rules/-extras`.
+
+### merge-rules v2.1.0
+
+- feat(merge-rules): write merged `.examples.md` to `<output_dir>-extras` instead of alongside the rules
+  - **Behavior change with no opt-out**: examples previously landed under `output_dir` and now land in the sibling directory formed by appending `-extras` to it (the default `.claude/rules` gives `.claude/rules-extras`). No configuration key restores the old location, and files at the old path are left in place rather than removed. This matches where extract-rules and apply-rules now expect examples to be, so the org rule set merge-rules produces stays consumable by apply-rules without extra setup.
+  - Collection resolves examples per rule file rather than per directory — `{path}/{rules_dir}-extras` wins over the rule directory at the same relative sub-path — so a project part-way through migration contributes both its moved and its still-co-located examples, and a missing `-extras` directory is an empty listing rather than an error.
+  - The generated `## Examples` reference line is computed from the rule file's directory to the examples file rather than the fixed `./<name>.examples.md`.
+  - The `output_dir` and `rules_dir` defaults in the config sample lose their trailing slashes (`.claude/rules`, matching extract-rules), so appending `-extras` cannot produce `.claude/rules/-extras`.
+
+### rules-review v1.8.0 / dev-workflow-bundle v1.127.0
+
+- feat(rules-review): resolve `.examples.md` from `.claude/rules-extras/`
+  - The reviewer prompt's `## Reference: Code Examples` section looked for the examples file beside the rule file, which finds nothing once extract-rules writes them outside `.claude/rules/**`. Reviews on a project using that layout silently ran without their reference examples. The lookup now mirrors the rule file's sub-path under `.claude/rules-extras/` (`languages/ruby.md` and `languages/ruby.local.md` both resolving to `languages/ruby.examples.md`) and falls back to the co-located file for projects on the pre-split layout.
+  - § 2. Collect Rules gained a second glob over `.claude/rules-extras/`, so the lookup is an index over two up-front path lists rather than a filesystem probe per rule file.
+
 ### dev-workflow v1.110.0 / mobpro v1.20.0 / dev-workflow-bundle v1.126.0
 
 - feat(dev-workflow): protect the working tree across Step 10 (Interactive Commits)

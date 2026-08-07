@@ -4,7 +4,7 @@ The localization boundary for every user-facing output this skill (and `mobpro`)
 
 ## Localization granularity
 
-Applies to all user-facing prose produced by this skill — plan body content, user-gate preambles, violation/finding lists, the difficulty log line (`references/tier-assessment.md` § Difficulty log line), Step 10 commit-plan / per-commit gate framing prose and the Step 11 "Commit rule updates" gate output (verbatim git output and file paths remain English), Completion summary, and Step 11.5 `Description` / `Suggested fix direction` paragraphs. The resolved `language` (see `SKILL.md` § Configuration) controls the output language.
+Applies to all user-facing prose produced by this skill — plan body content, user-gate preambles, violation/finding lists, the difficulty log line (`references/tier-assessment.md` § Difficulty log line), the visual plan-review gate's URL line (`references/visual-plan-review.md` § Procedure's "Surface the gate URL in chat" paragraph — the URL itself stays verbatim), Step 10 commit-plan / per-commit gate framing prose and the Step 11 "Commit rule updates" gate output (verbatim git output and file paths remain English), Completion summary, and Step 11.5 `Description` / `Suggested fix direction` paragraphs. The resolved `language` (see `SKILL.md` § Configuration) controls the output language.
 
 Source of truth: `references/configuration.md`'s `language` bullet maintains the same enumeration — keep in sync when categories are added or removed.
 

@@ -35,6 +35,7 @@ These are the `dev-workflow` **inline** definitions that `mobpro` needs but that
 
 `Keep in sync with dev-workflow SKILL.md § Step 10.` `interactive-commits.md` depends on these definitions that live inline in dev-workflow's SKILL.md:
 
+- **`<base-commit>`** (`Keep in sync with dev-workflow SKILL.md § Step 2: Create Plan's first numbered item` — this bullet's upstream is **not** the § Step 10 the section header names): § Collect changes defines it as the value dev-workflow's Step 2 records at workflow start. In `mobpro` that value is `base_commit`, recorded at M3 (`SKILL.md` § Cross-step state variables) — read it wherever the Procedure says `<base-commit>`. The dev-workflow phase names the Procedure cites alongside it need no entry here: `SKILL.md` § M ↔ Step remap directive already maps them.
 - **Approval token closed list** (judge each reply semantically, not by exact phrase): **accept** (affirmative — "OK" / "approve" / "next" / "コミットして" / "進めて" or equivalent) / **adjust** (a specific revision demand — subject change, file regrouping, split) / **cancel** / **stop** (explicit halt) / **NOT approval** (interrogative or non-committal — "look good?" / "これでいい？"; treat as `adjust` and re-present, never silently advance). When presenting a gate, include at least one short accept token so brief replies are known valid.
 - **Localized summary tokens** (single source of truth; M13 references the same paired form):
   - `language: ja`: `M11（Commit）部分完了: <N>/<total> コミット適用済み`

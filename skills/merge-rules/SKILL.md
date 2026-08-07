@@ -6,7 +6,7 @@ allowed-tools: Read, Glob, Grep, Write, Bash(ls *), Bash(mkdir *), Bash(wc *)
 
 # Merge Rules
 
-Merges `.claude/rules/` from multiple projects into a unified portable rule set (.md + .examples.md). Promotes `.local.md` patterns that appear across a threshold of projects by converting them to Principles format. Merges `.examples.md` files alongside rule files.
+Merges `.claude/rules/` from multiple projects into a unified portable rule set (.md + .examples.md). Promotes `.local.md` patterns that appear across a threshold of projects by converting them to Principles format. Merged `.examples.md` files are written to the sibling `<output_dir>-extras`.
 
 ## Usage
 
@@ -33,12 +33,14 @@ projects:
   - ~/projects/backend-api
   - ~/projects/shared-lib
 
-# Output directory (default: .claude/rules/)
-output_dir: .claude/rules/
+# Output directory (default: .claude/rules)
+# Inside Claude Code's .claude/rules/** auto-load scope
+# Examples go to the sibling <output_dir>-extras (.claude/rules-extras), outside that scope
+output_dir: .claude/rules
 
-# Rules directory within each project (default: .claude/rules/)
-# Corresponds to extract-rules' output_dir setting
-rules_dir: .claude/rules/
+# Rules directory within each project (default: .claude/rules)
+# Corresponds to extract-rules' output_dir setting; its examples sibling is <rules_dir>-extras
+rules_dir: .claude/rules
 
 # Threshold for promoting .local.md patterns (default: 0.5 = majority)
 # Examples: 3 projects → 2/3 needed, 4 projects → 3/4, 5 projects → 3/5
@@ -48,6 +50,8 @@ promote_threshold: 0.5
 language: ja
 ---
 ```
+
+**Examples directories (no configuration key).** Examples live in a sibling of the rules directory: that path with any trailing `/` removed and `-extras` appended — `{path}/{rules_dir}-extras` for each source project, `<output_dir>-extras` for the output. Strip the trailing `/` before appending, or a configured `.claude/rules/` yields `.claude/rules/-extras`. The split is about auto-load scope: a rules directory sits inside Claude Code's `.claude/rules/**` recursive scope and is injected into context at session start, while the `-extras` sibling sits outside it so examples do not consume that context. Collection takes each rule file's examples from the derived directory first and from the rule directory itself only when that misses, so a **pre-split layout** — examples still beside the rule files — is still collected, including in a project whose tree is only part-way migrated; writing always targets the derived directory. merge-rules does not read extract-rules' `examples_output_dir`. Two of its values resolve here: the literal default `.claude/rules-extras` — but only while the project's rules directory is also its default, since extract-rules' examples default is a fixed path rather than one derived from `output_dir` — and the `examples_output_dir: <output_dir>` opt-back-in, through the co-located fallback. Any other value, a path nested under the rules directory included, puts examples where merge-rules does not look. Source of truth for the derived name is extract-rules' `examples_output_dir` default; keep in sync when that default changes.
 
 ## Processing Flow
 
@@ -66,7 +70,7 @@ language: ja
 
 For each project:
 
-1. Find all `.md`, `.local.md`, and `.examples.md` files under `{path}/{rules_dir}/` (recursive)
+1. Recursively list `{path}/{rules_dir}/` and `{path}/{rules_dir}-extras` (derived per § Configuration's "Examples directories (no configuration key)" paragraph) — two listings per project, never a third. A missing `-extras` directory is the normal pre-split case: treat it as an empty listing rather than an error. Rule files are the `.md` and `.local.md` entries of the first listing; examples are the union of the `*.examples.md` entries of both, with `-extras` winning when the same relative sub-path appears in each. A project part-way through migration therefore contributes both its moved and its still-co-located examples
 2. Categorize:
    - `languages/*.md` → portable principles (always merge). **If the file also contains `## Project-specific patterns`** (hybrid format from `split_output: false`), treat patterns as promotion candidates (same as `.local.md`)
    - `frameworks/*.md` → same as above
@@ -85,7 +89,7 @@ For each project:
 
 Before merging, group files that refer to the same concept but have different names. This applies to `.md`, `.local.md`, and `.examples.md` files — a `.md` and its corresponding `.local.md` and `.examples.md` share the same normalization (e.g., `rails-controller.md`, `rails-controller.local.md`, and `rails-controller.examples.md` are normalized together with their `rails-controllers.*` variants).
 
-1. Detect similar file names within the same directory (e.g., `rails-controller.md` vs `rails-controllers.md`, `rails-model.md` vs `rails-models.md`)
+1. Detect similar file names at the same relative sub-path (e.g., `rails-controller.md` vs `rails-controllers.md`, `rails-model.md` vs `rails-models.md`). The rule tree and the examples tree mirror each other, so `frameworks/` in either tree is the same position
    - Singular/plural variants (e.g., `controller` / `controllers`)
    - Minor naming differences for the same concept (use AI judgment based on file content and `paths:` frontmatter overlap)
 2. For each group of similar files, select a canonical name:
@@ -162,22 +166,22 @@ For each normalized `.examples.md` file group:
 ```
 
 - `###` titles must match the corresponding rule name in the merged output `.md` file. Do not rephrase
-- No `paths:` frontmatter (prevents auto-loading)
+- No `paths:` frontmatter (kept for consistency; the auto-load exemption comes from the `-extras` placement, not from frontmatter — see § Configuration's "Examples directories (no configuration key)" paragraph)
 - If no examples exist for any merged rule, skip generating the `.examples.md` file
 
 ### Step 6: Write Output
 
-1. Check output directory:
+1. Check the output directories `output_dir` and `<output_dir>-extras` (derived per § Configuration's "Examples directories (no configuration key)" paragraph):
    - If `--dry-run`: skip writing, show planned file list with contents summary, then go to Step 7
-   - If exists and has files: warn and ask for confirmation before overwriting
-   - If not exists: create with `mkdir -p`
+   - If either exists and has files: warn and ask for confirmation before overwriting
+   - For either that does not exist: create with `mkdir -p`
 2. Write merged files preserving directory structure:
-   - `languages/<lang>.md`
-   - `languages/<lang>.examples.md` (if examples exist)
-   - `frameworks/<framework>.md`
-   - `frameworks/<framework>.examples.md` (if examples exist)
-   - `integrations/<framework>-<integration>.md`
-   - `integrations/<framework>-<integration>.examples.md` (if examples exist)
+   - `<output_dir>/languages/<lang>.md`
+   - `<output_dir>-extras/languages/<lang>.examples.md` (if examples exist)
+   - `<output_dir>/frameworks/<framework>.md`
+   - `<output_dir>-extras/frameworks/<framework>.examples.md` (if examples exist)
+   - `<output_dir>/integrations/<framework>-<integration>.md`
+   - `<output_dir>-extras/integrations/<framework>-<integration>.examples.md` (if examples exist)
    - Only `.md` and `.examples.md` files (no `.local.md` in output)
 3. Output file format:
 
@@ -201,8 +205,9 @@ paths:
 - If a corresponding `.examples.md` was generated, append a reference section at the end:
   ```markdown
   ## Examples
-  When in doubt: ./<name>.examples.md
+  When in doubt: <relative-path-to-examples-file>
   ```
+  The path is that examples file — `<output_dir>-extras/<same relative sub-path>/<name>.examples.md` — expressed relative to the rule file's own directory. With the default `output_dir`, `languages/typescript.md` gets `../../rules-extras/languages/typescript.examples.md`.
 
 ### Step 7: Report Summary
 

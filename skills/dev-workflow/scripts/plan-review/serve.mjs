@@ -5,6 +5,8 @@
  * Transport only: serves the raw Markdown plan to a self-contained browser UI
  * on 127.0.0.1, then collects the browser's submit (block-level review comments
  * plus an approve/revise decision), writes it to <plan-basename>.comments.json,
+ * writes the viewer URL to <plan-basename>.url at listen time (the port is
+ * random, so a caller that backgrounded this process reads the URL from there),
  * and (in --wait mode) prints that same JSON to stdout and exits so the caller
  * can parse it as the gate's return value.
  *
@@ -104,6 +106,7 @@ const lang = opts.lang === "ja" ? "ja" : "en"; // only "ja" / "en"; default en
 // and the comments.json `plan` field both use this exact token.
 const planId = basename(planPath).replace(/\.md$/i, "");
 const commentsPath = join(dirname(planPath), `${planId}.comments.json`);
+const urlPath = join(dirname(planPath), `${planId}.url`);
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const publicDir = join(__dirname, "public");
@@ -243,6 +246,15 @@ server.on("error", (err) => {
 server.listen(port, "127.0.0.1", () => {
   const urlStr = `http://127.0.0.1:${server.address().port}/`;
   log(`plan-review viewer listening on ${urlStr} (plan: ${planId})`);
+  // Sidecar URL file: the port is random, so a caller that launched this in the
+  // background cannot know the URL. Written before the browser launch is even
+  // attempted, so the URL is readable whether or not the browser opens. Failing
+  // to write it is non-fatal — the server stays up.
+  try {
+    writeFileSync(urlPath, `${urlStr}\n`, "utf8");
+  } catch (err) {
+    log(`could not write ${urlPath}: ${err.message}`);
+  }
   log(opts.wait ? "waiting for submit… (Ctrl-C to cancel)" : "running without --wait; will not auto-exit on submit");
   if (opts["no-open"]) log(`open ${urlStr} in your browser`);
   else openBrowser(urlStr);

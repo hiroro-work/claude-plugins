@@ -2,6 +2,13 @@
 
 ## 2026-08-07
 
+### dev-workflow v1.111.0 / mobpro v1.21.0 / dev-workflow-bundle v1.128.0
+
+- feat(dev-workflow): print the visual plan-review gate's URL in chat
+  - The gate serves on a random port and opens the browser itself, so when that open fails — or the tab is closed — the plan is unreachable and the run looks stalled with nothing to click. `serve.mjs` now writes the viewer URL to a `<planId>.url` sidecar next to the plan file at listen time, before the browser launch is attempted, and the gate reads it in the turn after the background launch and emits the URL as a one-line chat message. Re-launches in the revise loop re-emit on their new port.
+  - The URL goes to a sidecar file rather than stdout because `--wait` mode's stdout contract is the submit JSON alone, and a caller that backgrounded the server cannot portably read its stderr mid-run.
+  - The sidecar joins the served / comments / prev files in the workflow-artifact exclusion list and in the Completion cleanup, so it is never committed and does not accumulate.
+
 ### apply-rules v2.1.0
 
 - feat(apply-rules): read and write `.examples.md` under the sibling `-extras` directory

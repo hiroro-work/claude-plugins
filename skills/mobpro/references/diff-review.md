@@ -10,7 +10,7 @@ Branch on the resolved `commit_review_gate` ([`configuration.md`](configuration.
 
   **Rendering mode.** Pick the mode per `../dev-workflow/references/diff-presentation.md` § Rendering ladder. Capture the diff once — the same output the render consumes — and use that capture as the measurement input, slicing it on `diff --git a/<path> b/<path>` boundaries wherever the chosen mode truncates per file. The full-diff command the skeleton trailer names is `git diff <m6_review_base>..<unit_obj> -- "<path>"`.
 
-- **`crit`**: launch crit on the same range (§ crit path), emitting the line [`learning-gates.md`](learning-gates.md) § A's "Opening the review" paragraph gives **in the same turn as the launch, before the junior opens the browser**, so it guides their reading (the same discipline `SKILL.md` M11 applies to its "point of this diff" note on its own crit path).
+- **`crit`**: launch crit on the same range (§ crit path), emitting the line [`learning-gates.md`](learning-gates.md) § A's "Opening the review" paragraph gives **in the same turn as the launch, before the junior opens the browser**, so it guides their reading (the same discipline `m11-commit.md` § **Diff surface (`commit_review_gate` branch)** applies to M11's "point of this diff" note on its own crit path).
 
 ## Per-unit review range
 

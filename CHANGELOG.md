@@ -2,6 +2,18 @@
 
 ## 2026-08-08
 
+### ask-peer v2.6.0 / dev-workflow v1.114.0 / mobpro v1.25.0 / dev-workflow-bundle v1.132.0
+
+- feat(dev-workflow): cut plan review to four categories and run them as three parallel reviewers
+  - **Behavior change**: Step 3 (and `mobpro`'s M4) now request categories (a)–(d) instead of (a)–(f), split across three independent groups the reviewer runs at once rather than one reviewer working through everything in sequence. There is no opt-out — the previous shape is not reachable by configuration.
+  - Dropped `Incrementality`: Step 1.5's split judgment and the Step 2 self-audit's **Plan-level incrementality** item ask the same question. That item moved from the full-lane audit file into the tier-independent core both lanes read, so a Simple task is still asked it. Folded `External library primary-source verification` into (a), which already ran two primary-source checks and cited it by name. Renumbered the surviving `Presentation & attention allocation` from (f) to (d).
+  - Dropped `Plan-vs-allowed-tools 1:1 alignment`, whose main clause was specific to authoring Claude Code skills (`allowed-tools` is a SKILL.md frontmatter field) rather than to plans in general. Merged the two closed-list sub-checks into one. No other sub-check was removed.
+  - Reviewers are now told to settle each sub-check's firing condition before reasoning about it: the rubric accumulates checks for every plan class, and any one plan trips a minority of them.
+  - The reviewer covering `.claude/rules/` now reads every file directly under it but only the subdirectories whose domain the plan touches — the same **project** / **{subdirectory}** split `rules-review` uses. Projects keeping all rules in one or two top-level files read the same as before.
+- feat(ask-peer): let a consultation request declare its own review units
+  - `Parallelism` spawned one reviewer per category, which would have re-split dev-workflow's new three groups back into four. It now spawns one per declared unit and takes the request's own grouping — a unit may be one category, several, or a slice of one — while a request that lists categories without grouping still gets one reviewer each.
+  - Reviewers receive the request whole, so `Process` step 2 now says a per-unit instruction reaches reviewers it was not addressed to, and each follows only its own. The merge rule gained the case where several units feed one category.
+
 ### mobpro v1.24.1 / dev-workflow v1.113.1 / dev-workflow-bundle v1.131.1
 
 - refactor(mobpro): move M5 / M9 / M11's procedure bodies into `references/`

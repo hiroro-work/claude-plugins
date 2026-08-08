@@ -2,6 +2,15 @@
 
 ## 2026-08-08
 
+### mobpro v1.24.1 / dev-workflow v1.113.1 / dev-workflow-bundle v1.131.1
+
+- refactor(mobpro): move M5 / M9 / M11's procedure bodies into `references/`
+  - `SKILL.md` carried all three procedures inline, and that file is loaded in full the moment the skill activates — well before any of the three steps is reached. Each body now lives in its own reference (`m5-plan-approval.md` / `m9-rules-code-review.md` / `m11-commit.md`), read at the step that owns it, and `SKILL.md` keeps each heading, its gate designation, and a delegation pointer. The moved text is verbatim apart from relative links and two cross-references that had to name their file once they left `SKILL.md`, so behavior is unchanged.
+  - This is a trade, not a pure saving: a run that reaches all three steps now reads slightly more in total than before. It is accepted because the file that shrinks is the one loaded unconditionally.
+  - What stays in `SKILL.md` is what other steps read there: M9's entry condition, and M11's entry condition together with its "point of this diff" note.
+- refactor(dev-workflow): repoint the two cross-references into mobpro that the move invalidated
+  - `visual-plan-review.md`'s keep-in-sync list and `interactive-commits.md`'s crit-probe membership list both named paragraphs of `mobpro`'s `SKILL.md` that now live in its `references/`.
+
 ### mobpro v1.24.0 / dev-workflow-bundle v1.131.0
 
 - feat(mobpro): build the plan with the junior instead of handing them a finished one

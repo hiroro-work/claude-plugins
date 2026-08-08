@@ -159,7 +159,7 @@ hooks:
 | Key | Type | Default | Description |
 | --- | --- | --- | --- |
 | `reviewer` | string | `ask-peer` | Reviewer skill name |
-| `plan_review` | bool | `true` | Whether Step 3 (Plan Review) runs at all — a single reviewer pass when `true` |
+| `plan_review` | bool | `true` | Whether Step 3 (Plan Review) runs at all — a single review pass when `true` |
 | `code_review` | bool | `true` | Whether Step 8 (Code Review) runs at all — a single review pass plus one Critical-only escalation pass when `true` |
 | `interactive_commits` | bool | `true` | Whether Step 10 (Interactive Commits) proposes one commit per approved Build order step (falling back to grouping working-tree changes by cohesion) and iterates per-commit with the user; also gates Step 11's rule-update commit proposal |
 | `commit_review_gate` | string | `diff` | Which surface a code-diff review renders on — `diff` (default; the existing chat-text presentation with the accept/adjust/cancel gate) or `crit` (opt-in; launches the external `crit` CLI scoped to just the reviewed files, falling back to `diff` when unavailable or unreachable). Step 10 applies it to each commit's diff, but is one consumer rather than the key's whole scope — see the `commit_review_gate` section below |
@@ -190,7 +190,7 @@ If unset or set to an unsupported value, falls back to `ask-peer`. If the specif
 
 #### `plan_review` / `code_review`
 
-Two booleans (default `true` each) deciding whether the review phases run at all. Each phase is a **single pass** — there is no iteration count to configure. Step 8 additionally takes **one** deterministic escalation pass, and only when its review pass reported at least one Critical finding.
+Two booleans (default `true` each) deciding whether the review phases run at all. Each phase is a **single pass** — there is no iteration count to configure. Step 3's single pass is served by three reviewers, one per review group, run in parallel where the resolved reviewer supports it and sequentially otherwise; their feedback is merged before it reaches you. Step 8 additionally takes **one** deterministic escalation pass, and only when its review pass reported at least one Critical finding.
 
 Set `plan_review: false` to run the workflow without Plan Review, or `code_review: false` to run it without Code Review. The phase is then skipped exactly the way the Trivial tier skips it: its task rows are registered `completed` and the step passes straight through. Because it is your own declaration rather than something the workflow decided for you, it raises no Completion-summary skip reminder (unlike the difficulty-skip and `--fast` skips, which are always named there). A present non-boolean warns and falls back to `true`.
 

@@ -52,7 +52,7 @@ The `> Review guide` block sits directly under `## Plan`, above Overview, so a r
 
 - **Must-review** = the sections that need the user's judgment: `Overview` (Goal / Approach / Scope / Difficulty, plus `Highlights` when present), `Decisions`, and `Build order`. `Highlights` is one Overview bullet, not a standalone must-review category — Overview always carries it. Rendering `Overview` in the must-review tier matches § Step 4 presentation order (which already shows Overview in full) and gives empty-`Decisions` plans a substantive review anchor (Goal / Approach). `Build order` is must-review because it is the sequence the work will actually land in — Step 5 executes it step by step — so approving the plan approves that sequence.
 - **Reference** = supporting detail the user can skim: `Test plan`, `Risks` (omit any that are absent).
-- Localization ([`localization.md`](localization.md) § Localization granularity): the connective words (`Review guide`, `must-review`, `reference`) are translated to the resolved `language`; the section-name tokens (`Overview` / `Highlights` / `Decisions` / `Build order` / `Test plan` / `Risks`) stay verbatim — they are file-internal identifiers, and translating them would break the Step 2 self-check / Step 3 (f) heading exact-match.
+- Localization ([`localization.md`](localization.md) § Localization granularity): the connective words (`Review guide`, `must-review`, `reference`) are translated to the resolved `language`; the section-name tokens (`Overview` / `Highlights` / `Decisions` / `Build order` / `Test plan` / `Risks`) stay verbatim — they are file-internal identifiers, and translating them would break the Step 2 self-check / Step 3 (d) heading exact-match.
 
 Paired bilingual sample (runtime rendering demonstration, not meta-prose):
 
@@ -93,7 +93,7 @@ Links between plan sections run **one direction only — the reference tier poin
 - **Empty-Decisions degradation**: when Decisions renders an empty-Decisions fixed sentence ([`plan-format.md`](plan-format.md) § Empty-Decisions fixed sentences), `Build order → Decision` is naturally absent (it is optional and has no target item); `Test → Build order step` still applies unchanged.
 - The must-review tier carries **no** downward back-references (no "this Decision drives steps 3–4" annotations) — that detail lives in the reference tier.
 
-This section is the single source of truth for the traceability convention; § Step 2 self-check and § Step 3 (f) content-quality rubric reference it rather than restating the rule. Traceability references are also exempt from § Sizing guidance's padding / cut-duplication rule (stated and explained there).
+This section is the single source of truth for the traceability convention; § Step 2 self-check and § Step 3 (d) content-quality rubric reference it rather than restating the rule. Traceability references are also exempt from § Sizing guidance's padding / cut-duplication rule (stated and explained there).
 
 ## Decisions criterion (AND condition)
 
@@ -143,11 +143,11 @@ After the Simplicity self-audit in Step 2, run this check on the plan. Fix any f
 - [ ] **Permission and capability assumption verification**: verify from a primary source (official documentation, actual permission-matcher behavior, or hands-on test) any assumption that a new external command, CLI flag, or permission grant will execute without a confirmation dialog or access barrier. If the assumption cannot be confirmed at planning time, add an explicit verification step to the plan or record it in Risks / Unknowns as unconfirmed.
 - [ ] **Numerical constant origin disambiguation**: for any concrete numerical constant introduced in the plan — upper limits, thresholds, buffer sizes, retry counts, timeout values — state explicitly whether the value is **derived** (determined by an external specification, a calculation from known constraints, or an empirical measurement — cite the source or formula) or **discretionary** (a design judgment call — an approximation, a round number, or a value selected from a reasonable range without an external fixed point). Do not frame a discretionary value as a derived one.
 
-This is the **author's first-pass judgment** on plan content; Step 3 category (f) re-checks content externally. The **Structural compliance** bullet above is the only structural property checked here; category (f) does not re-check it.
+This is the **author's first-pass judgment** on plan content; Step 3 category (d) re-checks content externally. The **Structural compliance** bullet above is the only structural property checked here; category (d) does not re-check it.
 
-## Step 3 (f) content-quality rubric
+## Step 3 (d) content-quality rubric
 
-Step 3 adds a sixth review category — **f. Presentation & attention allocation (content quality)** — on top of the five categories (a–e) whose rubric bodies live in `references/review-categories.md` § Plan review categories (labels enumerated in `SKILL.md` Step 3). Format compliance is already enforced by the Step 2 self-check, so (f) focuses on content.
+Step 3 adds a fourth review category — **d. Presentation & attention allocation (content quality)** — on top of the three categories (a–c) whose rubric bodies live in `references/review-categories.md` § Plan review categories. Format compliance is already enforced by the Step 2 self-check, so (d) focuses on content.
 
 Reviewer checks:
 

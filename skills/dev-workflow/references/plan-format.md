@@ -1,6 +1,6 @@
 # Plan Format — review, localization, and presentation
 
-How a finished plan is reviewed, localized, and presented. The companion file [`plan-authoring.md`](plan-authoring.md) covers the other half — § Template, § Sizing guidance, § Traceability, the Decisions criterion, § Step 2 self-check, and the Step 3 (f) rubric that re-checks them — and the two together are the specification for `/dev-workflow` plans. Unlike that file, this one is read on **every** lane, which is what decides the split: everything a plan-approval surface needs lives here, everything only an author or a reviewer needs lives there.
+How a finished plan is reviewed, localized, and presented. The companion file [`plan-authoring.md`](plan-authoring.md) covers the other half — § Template, § Sizing guidance, § Traceability, the Decisions criterion, § Step 2 self-check, and the Step 3 (d) rubric that re-checks them — and the two together are the specification for `/dev-workflow` plans. Unlike that file, this one is read on **every** lane, which is what decides the split: everything a plan-approval surface needs lives here, everything only an author or a reviewer needs lives there.
 
 Read this reference when executing any of the following:
 

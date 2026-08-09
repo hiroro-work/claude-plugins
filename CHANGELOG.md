@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-08-09
+
+### dev-workflow v1.114.1 / mobpro v1.25.1 / dev-workflow-bundle v1.132.1
+
+- refactor(dev-workflow): cut non-operative prose from `SKILL.md` and the six largest references
+  - `SKILL.md` and `references/interactive-commits.md` / `simplicity-self-audit.md` / `step5-implement.md` / `step7-check-test.md` / `crit-commit-review.md` / `self-retrospective.md` are the seven largest runtime-read files in the skill, and every character of them is a read cost on the runs that reach them. Removed the illustrative "for skill development this includes …" example lists and passages restating a point another passage already made, plus a few cost-of-skipping clauses where a neighbouring sentence already carried the weight. Together the seven files are 22,819 characters lighter (−6.7%).
+  - No heading and no referenced bold label was removed, so no cross-reference moved and behavior is unchanged. One prohibition sentence went, in `references/crit-commit-review.md`, where it restated a parenthetical two clauses earlier. The primary-source evidence for the crit `--range` requirement moved to `README.md` § Why the crit gate uses commit-range mode rather than being dropped.
+  - The duplicated callee enumerations in `§ No-Stall Principle` are now one list; the two paragraphs that repeated it name the callee set generically instead. The reminders that are deliberately repeated at decision moments were left alone.
+  - Files outside the seven — including `references/simplicity-self-audit-express.md`, which both lanes read — keep their example lists for now.
+- refactor(mobpro): match the upstream compression in the transcribed `§ (b) Workflow artifacts` block
+  - `references/inline-defs.md` carries a `Keep in sync with dev-workflow SKILL.md § Workflow artifacts.` directive, so its copy of that paragraph tracked the upstream edit.
+
 ## 2026-08-08
 
 ### ask-peer v2.6.0 / dev-workflow v1.114.0 / mobpro v1.25.0 / dev-workflow-bundle v1.132.0

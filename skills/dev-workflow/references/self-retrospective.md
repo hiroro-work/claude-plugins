@@ -212,7 +212,7 @@ ver=$(jq -r '(.plugins[] | select(.name == "dev-workflow") | .version) // "unkno
 [ -z "$ver" ] && ver=unknown
 ```
 
-Both fallbacks are required. The `// "unknown"` jq alternative covers `select` matching no entry (empty stream) and an entry lacking a `.version` key (`null`); the post-pipeline `[ -z "$ver" ] && ver=unknown` covers `jq` itself failing (missing or malformed `marketplace.json`). Plain `|| echo unknown` is **not** sufficient — `jq -r` exits 0 on no-match and on missing-key, so the `||` branch never fires and the body renders `dev-workflow v` or `dev-workflow vnull`. The consumer treats `unknown` as "older than everything" so the version-aware reject path engages safely.
+Both fallbacks are required, and plain `|| echo unknown` replaces neither: `jq -r` exits 0 on both no-match and missing-key, so the `||` branch never fires for the two cases that matter. The consumer treats `unknown` as "older than everything", so the version-aware reject path engages safely.
 
 The resolved `ver` is embedded in the assembled body as `**Producer version:** dev-workflow v<ver>`. It is **not** passed to the §2.1 subagent (whose return contract is Findings-only); main inserts the line during this assembly step, between the `# dev-workflow-bundle retrospective (auto-generated)` header and the first `### Finding 1` block.
 

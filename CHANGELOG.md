@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-08-10
+
+### dev-workflow v1.114.2 / mobpro v1.25.2 / dev-workflow-bundle v1.132.2
+
+- refactor(dev-workflow): cut non-operative prose from the `references/*.md` set
+  - The reference files are 16,270 characters lighter (−4.5%), so every run that reads them pays less. Removed the illustrative "for skill development this includes …" lists, the cost-of-skipping clauses a neighbouring sentence already implied, and the "previously X, now Y" framing around behavior that is simply current. Version-tagged History notes are untouched.
+  - No heading and no referenced bold label was removed, so every cross-reference still resolves and behavior is unchanged.
+  - Two placement rationales moved out of `references/simplicity-self-audit-express.md` into `README.md` § Why two Step 2 audit items sit in the express core, and `references/localization.md` now points at `references/configuration.md` for the exhaustive `language` category enumeration rather than carrying a second copy.
+  - `mobpro`: dropped the one clause in `references/m5-plan-approval.md` that its own keep-in-sync directive had left behind when the upstream paragraph lost it.
+
 ## 2026-08-09
 
 ### dev-workflow v1.114.1 / mobpro v1.25.1 / dev-workflow-bundle v1.132.1

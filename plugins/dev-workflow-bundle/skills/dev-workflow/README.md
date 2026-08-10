@@ -576,6 +576,14 @@ So do not relocate one of those inits into the procedure that writes it, expecti
 
 Three pieces of cross-step state sit outside that table on purpose, and the sub-step names them: `bundle_skills_unavailable` initializes at sub-step 3 (the earliest site that may append to it), the two review-phase flags at sub-step 4 (where they are resolved from config), and Step 7's launch / stale flags at **every** Step 7 entry — that repetition is what keeps the unavailable / skip / re-run paths from reading an uninitialized flag.
 
+### Why two Step 2 audit items sit in the express core
+
+`references/simplicity-self-audit-express.md` is read on both lanes; `references/simplicity-self-audit.md` only on the full lane. Two items sit in the express file for reach rather than by topic, and moving either into the full-lane file would silently drop the case it exists for.
+
+**Plan-level incrementality** needs the express lane most: Step 1.5 (Task Decomposition) skips its own decomposition judgment there, so a split this item does not propose is not proposed at all.
+
+**Deletion / no-duplication justified by an external reference — recipient-visibility check** has to survive `--fast`, which drops the Step 3 (Plan Review) pass but never the Step 2 audit. Recipient-visibility cannot be deferred to a review round fast mode skips.
+
 ## Plan format
 
 Plans produced in Step 2 and presented in Step 4 follow a fixed structure so you can scan them quickly and focus on the parts that actually need your judgment. Full specification in [`references/plan-format.md`](references/plan-format.md).

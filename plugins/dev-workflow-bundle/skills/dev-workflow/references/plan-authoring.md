@@ -81,7 +81,7 @@ A plan is the user's review surface, not a document — its purpose is fast, acc
 - Overview: at most 5 bullets (4 when Highlights is omitted), each at most one line.
 - Highlights: a **single** Overview bullet (it is one of the ≤5 Overview bullets above, not a separate list), holding at most 3 high-impact items on one line — only genuinely high-impact items. See § Template for the categories and the omit-when-none rule.
 - Decisions: up to 5 items. A single genuine (a)+(b) item is fine — surface it alone rather than padding.
-- Build order: an ordered, numbered list of actionable implementation steps, each written as `N. **<heading>** — <detail>` per § Template. Write a step as a bare heading only when the change is self-evident; otherwise keep the detail the reviewer needs to judge. Keep every heading to one line — it has to carry its step on every approval surface (§ Review guide line's **Must-review low-load rule** paragraph). As a concrete instance of the padding test above, avoid narrating what well-named files/functions already convey, and do not restate Decisions or Overview content. A mermaid diagram is exempt from the cut rule on the terms § Template sets.
+- Build order: an ordered, numbered list of actionable implementation steps, each written as `N. **<heading>** — <detail>` per § Template. Write a step as a bare heading only when the change is self-evident; otherwise keep the detail the reviewer needs to judge. Keep every heading to one line — it has to carry its step on every approval surface (§ Review guide line's **Must-review low-load rule** paragraph). As a concrete instance of the padding test above, avoid narrating what well-named files/functions already convey, and do not restate Decisions or Overview content. A mermaid diagram is exempt from the cut rule only where it replaces prose the reviewer would otherwise need, on the terms § Template sets.
 - Test plan: bullet-list the test files and the case each covers, one line per case; each case may reference the Build order step(s) it verifies (see § Traceability). Do not re-describe (duplicate) the implementation.
 
 ## Traceability
@@ -115,7 +115,7 @@ Preference-level choices that satisfy (a) but not (b) — e.g. putting a helper 
 
 When Step 2 runs inside a decomposed subtask (a state file from Step 1.5 is active), the subtask's **boundaries, order, and purpose were already user-approved** in the parent run's Step 1.5. Do not re-surface them in Decisions.
 
-Restrict Decisions to **judgment calls that arise inside the current subtask** — for a subtask adding authentication middleware, the token-verification scheme is in scope; its boundary against the neighbouring subtasks is not.
+Restrict Decisions to **judgment calls that arise inside the current subtask** — for a subtask adding authentication middleware, the token-verification scheme is in scope; where that subtask ends and the next begins is not.
 
 If the current subtask has no in-scope decisions, use the Resume-mode fixed sentence in [`plan-format.md`](plan-format.md) § Empty-Decisions fixed sentences.
 

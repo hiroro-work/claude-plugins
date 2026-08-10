@@ -47,7 +47,7 @@ Section B of [`task-decomposition.md`](task-decomposition.md), which keeps `## B
 
       When step 3.a's boundary analysis collapsed every unit into a **single** grouping, keep the same shape but head it `Proposed grouping — 1 subtask (units share a dominant base):` and give the exclusive / shared counts as that entry's rationale, so the user can judge the collapse before answering.
 
-      For the **incremental-depth axis**, subtask 1 is the skeleton — its title naming what it leaves hardcoded or stubbed — and each later subtask carries its own error- / edge-case verification.
+      For the **incremental-depth axis**, subtask 1 is the skeleton and each later subtask carries its own error- / edge-case verification.
 
       The `verification_hint` is shown as **advisory context** — it helps the user sanity-check the split, but a `yes` only locks in subtask boundaries, order, `depends_on`, and purposes. Verification hints remain AI-authored draft and may be refined in Step 2, consistent with Step 2's Simplicity self-audit which treats `verification_hint` as draft within otherwise-approved state files.
 

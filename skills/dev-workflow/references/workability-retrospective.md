@@ -99,7 +99,7 @@ If the subagent returns zero candidates, skip the §4 gate entirely — the §6 
 
 ## 3. Sanitization rules
 
-This step's output stays **project-internal** (a repo-local backlog file or a new project state file), so sanitization is deliberately **lighter** than `references/self-retrospective.md` §3: project identifiers are useful context here and are kept. Apply to every candidate's `evidence` and `proposed_action`:
+This step's output stays **project-internal** (a repo-local backlog file or a new project state file), so sanitization is deliberately **lighter** than `references/self-retrospective.md` §3 — project identifiers are useful context here and are kept. Apply to every candidate's `evidence` and `proposed_action`:
 
 - **Credential-like literals** (API keys, tokens, bearer/auth header fragments, `.env` values, passwords) → strip entirely. When unsure, strip.
 - **Personal identifiers** (email addresses, when not part of a public domain) and **absolute user paths** (`/Users/<name>/...`, `/home/<name>/...`) → replace with a generic shape (`<project>/path/to/file`).

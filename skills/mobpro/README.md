@@ -25,17 +25,23 @@ Both use the same reviewer, checks, tests, and rules. `mobpro` adds learning pau
 ## Usage
 
 ```text
-/mobpro <task>                     # Start a learning session
-/mobpro --resume <state-file>      # Resume a decomposed subtask
+/mobpro [--fast] <task>                  # Start a learning session
+/mobpro --resume <state-file> [--fast]   # Resume a decomposed subtask
 ```
 
-There is no `--init`, `--fast`, or `--executor`.
+There is no `--init` or `--executor`. `--fast` works the same way it does in `dev-workflow`: it drops the reviewer's pass over the plan and the two prose-polish passes, and shortens the rules re-check that follows the review fixes. Everything that makes the session a teaching session stays — the plan-building checkpoints and every per-unit diff review still fire — and the wrap-up lists what was skipped (source of truth: [`SKILL.md`](SKILL.md) § Fast mode).
 
 **The plan is written for the junior to read** — plain wording, a numbered build order up front, and the reasoning for that order stated rather than assumed, with each fork in the road shown as a recommendation next to the option it beat, so the junior can weigh the call rather than be handed an undecided choice. Each step of that build order becomes one implementation unit, so the plan doubles as the list of diffs the junior will review (source of truth: [`references/plan-format.md`](references/plan-format.md)). The plan is not handed over finished, either: the code behind it is walked through in installments beforehand — what each part does today, then what follows from it — and each installment closes with "anything still unclear?". That is where the junior can redirect the plan, while redirecting is still cheap.
 
 **The git index during the implementation loop**: so that each unit's diff review shows just that unit's delta rather than everything since the run started, `mobpro` stages the unit's changed paths with `git add` and leaves them staged until the loop ends, then unstages that set in one pass — nothing is committed until the commit gate. A path you had staged yourself is left alone unless a unit's review touched it — and then it loses only its staging, never its content (source of truth: [`references/diff-review.md`](references/diff-review.md) § Per-unit review range's **M6-exit unstage** paragraph).
 
 Those per-unit snapshots are also what the commit gate proposes from: the commit plan comes out as **one commit per unit the junior reviewed, in the order they reviewed them** — plus a last commit for whatever the cleanup and review gates changed afterwards — rather than regrouped from the finished tree. So the diffs they approved during the loop and the commits they approve at the end are the same slices — and a unit that revisited a file already touched by an earlier unit still gets its own commit, instead of the two being flattened together.
+
+## Why the checkpoint modal stops at M3
+
+Each plan-building checkpoint closes with a modal — three options plus free text — rather than a chat question, because a chat question there reads like more narration and gives the junior no signal that the run is waiting on them. The other two places the junior is asked something stay prose on purpose: the per-unit diff review is a multi-turn exchange that a modal after every answer would interrupt, and the plan approval's own surface is the browser review gate, with the chat question only its fallback. A checkpoint is the one learning stop that closes on a single reply, which is the shape a modal fits.
+
+`dev-workflow` carries its own rule for `AskUserQuestion` option design in `references/step5-implement.md` — enumerate the outcomes, and leave a branch for "the premise did not land". `mobpro` does not read that file, so the rule does not formally bind here, but the modal satisfies it in substance: the "I have a question" option and the tool's own free-text option both absorb that state.
 
 ## Interop with dev-workflow
 

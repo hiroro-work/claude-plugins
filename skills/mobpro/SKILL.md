@@ -183,7 +183,7 @@ This skill's procedure dispatches subagents, so invoking the skill **is** the re
 
 ## M4 — Plan review (quality gate)
 
-**Entry condition — skipped entirely when `plan_review_enabled` is `false`** (a configured `plan_review: false` — the only cause here, since `mobpro` has no difficulty assessment and no `--fast` mode). M1 sub-step 4's registration burst already registered this step's row `completed`, so do not re-mark it: go straight to M5, whose presentation carries no "open points" (sub-step 4's open-points hand-off below never ran to produce any). The plan then reaches the junior unreviewed by the reviewer; M5's approval gate is its only review.
+**Entry condition — skipped entirely when `plan_review_enabled` is `false`**. Two causes, and no others — `mobpro` has no difficulty assessment, so nothing else lowers the flag: a configured `plan_review: false`, or `--fast` forcing it off at M1 sub-step 3 (§ Fast mode). Both settle before M1 sub-step 4 registers the rows. M1 sub-step 4's registration burst already registered this step's row `completed`, so do not re-mark it: go straight to M5, whose presentation carries no "open points" (sub-step 4's open-points hand-off below never ran to produce any). The plan then reaches the junior unreviewed by the reviewer; M5's approval gate is its only review.
 
 Otherwise, run the single review pass:
 

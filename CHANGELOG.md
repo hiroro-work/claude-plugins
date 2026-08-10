@@ -4,15 +4,17 @@
 
 ### dev-workflow v1.114.3 / mobpro v1.26.0 / dev-workflow-bundle v1.133.0
 
-- feat(mobpro): add `--fast`, matching what `dev-workflow`'s `--fast` trades
+- feat(mobpro): add `--fast`, trading the same passes `dev-workflow`'s `--fast` trades
   - `/mobpro [--fast] <task>` and `/mobpro --resume <state-file> [--fast]`. It drops M4 (Plan review), M5's plan-body prose polish, and M7's `prose-polish` pass, and caps M9's rules re-verification at one cycle. An invocation modifier, not a config key — nothing in `dev-workflow`'s config layers turns it on.
-  - Every learning stop stays: the M3 plan-building checkpoints and each per-unit diff review fire exactly as before, so a fast session is still a teaching session.
-  - `SKILL.md` § Fast mode is the closed list of what is skipped and which site skips it. The skips land in a new `fast_mode_skipped_steps` ledger that M13 renders, so none of them is silent.
-  - The shared `--fast` 1-pass cap lives in `dev-workflow`'s `references/step7.5-rules-compliance.md` and writes its ledger record in `dev-workflow` phase names; `mobpro` substitutes the whole record string, since M13 renders the ledger verbatim.
+  - Every learning stop stays: the M3 plan-building checkpoints and each per-unit diff review fire exactly as before.
+  - `SKILL.md` § Fast mode is the closed list of what is skipped and which site skips it. The skips land in a new `fast_mode_skipped_steps` ledger that M13 renders, so the wrap-up says what was traded.
 - fix(mobpro): speak the Japanese prompts in polite form throughout
-  - The M3 checkpoint question, the M6 diff-review opener, the M8 error narration, the M9 prediction, the M3 design-approach narration, the M5 approval question, and the M13 resume guidance were written in plain form, so the voice changed at the moments the junior was addressed. `references/learning-gates.md` now states the register as a rule, scoped to every Japanese sample in the skill.
+  - The M3 design-approach narration and checkpoint question, the M6 diff-review opener, the M8 error narration, the M9 prediction, the M5 approval question, and the M13 resume guidance were written in plain form, so the voice changed at the moments the junior was addressed. `references/learning-gates.md` now carries the register as a rule covering every Japanese sample in the skill.
 - feat(mobpro): close each M3 plan-building checkpoint with an `AskUserQuestion` modal
-  - Asked as prose, "anything still unclear?" reads like more narration and gives no signal that the run is waiting. The modal offers one option per advancing bucket — go on / question / look elsewhere — and the tool's free-text option still carries anything else, so nothing the junior could previously say is lost. It is not a comprehension check: the options ask what was left open. Where `AskUserQuestion` is not exposed, the question falls back to chat prose.
+  - The modal offers one option per advancing bucket — go on / question / look elsewhere — and the tool's free-text option still carries anything else, so nothing the junior could previously say is lost. It is not a comprehension check. Where `AskUserQuestion` is not exposed, the question falls back to chat prose.
+  - The modal is confined to the M3 checkpoints; the per-unit diff review and the plan-approval question stay prose.
+- chore(dev-workflow): let the shared `--fast` 1-pass cap serve a caller from another workflow
+  - `references/step7.5-rules-compliance.md` now states its ledger record per caller instead of as one literal, since `mobpro` renders the same ledger under its own phase names. dev-workflow's own two records are unchanged. `references/completion.md` gained the matching sweep note, so a new `--fast` skip site here reaches `mobpro`'s mirrored table.
 
 ### dev-workflow v1.114.2 / mobpro v1.25.2 / dev-workflow-bundle v1.132.2
 

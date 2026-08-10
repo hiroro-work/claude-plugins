@@ -113,8 +113,8 @@ There is no `--init`, no `--executor`, and no difficulty assessment — `mobpro`
 | --- | --- | --- |
 | M4 (Plan review) | M1 sub-step 3 sets `plan_review_enabled = false` | `M4 Plan review skipped (fast mode)` — appended only when the phase was `true` beforehand |
 | M5's plan-body prose polish | [`references/m5-plan-approval.md`](references/m5-plan-approval.md)'s **Plan-body prose polish** paragraph | none — a silent skip, since the user gate follows immediately |
-| M7's `prose-polish` pass | M7 sub-step 3 | `M7 prose polish skipped (fast mode)` |
-| M9's rules re-verification (2nd cycle + persistent-violations gate) | [`references/m9-rules-code-review.md`](references/m9-rules-code-review.md) sub-step 5 | `M9 rules re-verification skipped (fast mode; <site>)` |
+| M7's `prose-polish` pass | M7 sub-step 3's `prose-polish` call | `M7 prose polish skipped (fast mode)` |
+| M9's rules re-verification (2nd cycle + persistent-violations gate) | [`references/m9-rules-code-review.md`](references/m9-rules-code-review.md) sub-step 5's **`--fast` 1-pass cap** paragraph | `M9 rules re-verification skipped (fast mode; <site>)` |
 
 Every record lands in `fast_mode_skipped_steps` (§ Cross-step state variables), which M13 renders through the Fast-mode-skip reminder, so no skip is silent. Append a row here when a new `--fast` skip site is introduced.
 

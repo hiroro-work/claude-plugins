@@ -564,6 +564,10 @@ That nesting bound is a constraint the caller imposes, not a claim that nested d
 
 The code-review launch is a bet that Step 7.5 finds nothing: any fix Step 7.5 applies sets `code_review_stale`, and Step 8 then discards the background result whole and dispatches fresh. On Simple that bet is safe — Step 7.5 is matrix-skipped, so only a `test_commands` fix can stale it. On Moderate / Complex the launch is discarded whenever rules-review reports one actionable violation. Kept anyway, because the wasted run costs tokens but **zero** wall clock (it runs concurrently with the tests), while gating it would cost wall clock on every clean run.
 
+### Why the crit gate uses commit-range mode
+
+`references/crit-commit-review.md` requires `crit --range <base>..<head>` and forbids the file/dir form (`crit <file-1> <file-2> …`). The evidence is crit's own runtime output, which says the file form is not for reviewing changes at all: *"file paths are intended for reviewing a small set of documents or plans. To review code changes, run `crit` with no arguments"*. File arguments never enter crit's git-diff-aware code path, so the browser renders the named files' current on-disk content and no diff — which is what the gate is there to show.
+
 ### Where cross-step variables are initialized
 
 The cross-step variables Step 1 sub-step 6 tabulates are initialized there rather than nearer the step that writes each one. That sub-step precedes all of their writers, so each is well-defined on **every** path — including the paths that never reach the procedure that would otherwise have initialized it. A tier that qualifies for no skip leaves `difficulty_skipped_steps` / `fast_mode_skipped_steps` at `[]` (Completion omits their reminders) and `subagent_model` at `inherit` (downstream dispatches omit the model); a run where neither review layer applies a fix leaves `review_fix_files` at `[]` (Step 8.5 Deferred Verification is then a no-op); `interactive_commits: false` leaves `implementation_boundaries` at `[]` (Step 10 is unregistered, so Step 5's boundary chain does not run); and the shared session-scan state stays at its init when every participating step abstains or is unregistered.
@@ -571,6 +575,14 @@ The cross-step variables Step 1 sub-step 6 tabulates are initialized there rathe
 So do not relocate one of those inits into the procedure that writes it, expecting that procedure's own prose to cover it — several are read by steps that run whether or not the writing procedure fires.
 
 Three pieces of cross-step state sit outside that table on purpose, and the sub-step names them: `bundle_skills_unavailable` initializes at sub-step 3 (the earliest site that may append to it), the two review-phase flags at sub-step 4 (where they are resolved from config), and Step 7's launch / stale flags at **every** Step 7 entry — that repetition is what keeps the unavailable / skip / re-run paths from reading an uninitialized flag.
+
+### Why two Step 2 audit items sit in the express core
+
+`references/simplicity-self-audit-express.md` is read on both lanes; `references/simplicity-self-audit.md` only on the full lane. Two items sit in the express file for reach rather than by topic, and moving either into the full-lane file would silently drop the case it exists for.
+
+**Plan-level incrementality** needs the express lane most: Step 1.5 (Task Decomposition) skips its own decomposition judgment there, so a split this item does not propose is not proposed at all.
+
+**Deletion / no-duplication justified by an external reference — recipient-visibility check** has to survive `--fast`, which drops the Step 3 (Plan Review) pass but never the Step 2 audit. Recipient-visibility cannot be deferred to a review round fast mode skips.
 
 ## Plan format
 

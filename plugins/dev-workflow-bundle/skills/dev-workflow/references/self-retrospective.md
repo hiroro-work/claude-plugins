@@ -38,21 +38,21 @@ This file is read whenever `self_retrospective.feedback` is set at Step 1, regar
 
    Emit the terminal summary (0 findings, skipped) and proceed to Completion.
 
-3. Path mode: expand any leading `~` in `<path>` to `$HOME` before any filesystem operation (the `Write` tool does not expand `~` on its own). Then, if the directory does not exist, ask the user for approval to create it via `mkdir -p <path>`. `mkdir` on arbitrary user-configured paths is intentionally **not** pre-allowed in `allowed-tools` — the user will see a one-time Bash approval prompt, which acts as a deliberate safety gate against typos or hostile config. On refusal, abort Step 11.5 with a warning and emit the terminal summary (0 findings, skipped). On mkdir failure, warn and abort the same way.
+3. Path mode: expand any leading `~` in `<path>` to `$HOME` before any filesystem operation (the `Write` tool does not expand `~` on its own). Then, if the directory does not exist, ask the user for approval to create it via `mkdir -p <path>`. `mkdir` on arbitrary user-configured paths is intentionally **not** pre-allowed in `allowed-tools`, so the one-time Bash approval prompt acts as a deliberate safety gate against typos or hostile config. On refusal, abort Step 11.5 with a warning and emit the terminal summary (0 findings, skipped). On mkdir failure, warn and abort the same way.
 
 4. **Session file identification** (required by §2):
    - Run `pwd` to get the current working directory.
    - Encode the path: replace `/` and `.` with `-` (leading `-` is kept). Example: `/Users/alice/projects/foo` → `-Users-alice-projects-foo`.
    - Expand `~` to the literal `$HOME` value before constructing the Glob pattern — `Glob` does not guarantee tilde expansion, so always pass an absolute path.
    - Use `Glob` with pattern `<$HOME>/.claude/projects/<encoded-path>/*.jsonl`. `Glob` returns results sorted by modification time (newest first), so pick the first entry.
-   - The "latest-modified" heuristic can pick the wrong file when multiple Claude Code instances are running against the same repo. Inform the user which file was selected so they can catch a mismatch at §4 preview time (user can `skip` if the session is wrong).
+   - The "latest-modified" heuristic can pick the wrong file when several Claude Code instances run against the same repo, so inform the user which file was selected — they can `skip` at the §4 preview if it is the wrong session.
    - If the glob returns no matches, abort Step 11.5 with a warning ("No session jsonl found for this repo — the self-retrospective requires conversation history to scan.") and emit the terminal summary (0 findings, skipped).
 
 Every abort in this section emits the terminal summary as `skipped` — pre-flight never produces a `failed` state, which is reserved for submission attempts that were actually made (section 5).
 
 ## 2. Observation A extraction (via subagent)
 
-Delegate jsonl parsing, signal extraction, and §3 sanitization to the shared session scan's subagent (`references/session-scan.md`). Main must not read the session jsonl directly in this step. Keeping the raw conversation out of main context protects both the context budget and the sanitization guarantee — if sanitization happens in main, a bug could leave unsanitized text in downstream prompts.
+Delegate jsonl parsing, signal extraction, and §3 sanitization to the shared session scan's subagent (`references/session-scan.md`). Main must not read the session jsonl directly in this step: keeping the raw conversation out of main context protects both the context budget and the sanitization guarantee.
 
 Scope: the bundle covers `dev-workflow`, `ask-peer`, `extract-rules`, `rules-review`, `mobpro`. Signals about other skills are out of scope.
 
@@ -166,9 +166,9 @@ Shape:
 > **Bad** (skill-dev vocabulary verbatim):
 > "Add a Step 2 self-audit item that checks whether the plan fixes a subagent dispatch shape, hook wiring, or state-file handling pattern and, when it does, expand scope to sibling skills sharing that structure."
 
-Why: the producer's signal is generated in skill-development context (where the agent runs), but the fix lands in a SKILL.md that general users read. Without this shape, vocabulary scoped to skill-development leaks into general-purpose prose. The triage applier (`dev-workflow-triage` § 3.4 Apply accepted Findings) writes Suggested fix direction text mostly verbatim into the target SKILL.md, so the producer is the only generalization layer in the loop.
+Why: the signal is generated in skill-development context but the fix lands in a SKILL.md that general users read, and the triage applier (`dev-workflow-triage` § 3.4 Apply accepted Findings) writes Suggested fix direction text mostly verbatim into that SKILL.md — so the producer is the only generalization layer in the loop.
 
-Scope: this sub-section applies to `Suggested fix direction` only. `Description` continues to follow the main §3 bullets — abstract behavior descriptions are kept as-is without the abstract-first / parens-example transformation. The triage applier transcribes `Suggested fix direction` into target SKILL.md prose, while `Description` is consumed as context during issue triage and does not land verbatim in distributed prose.
+Scope: this sub-section applies to `Suggested fix direction` only. `Description` continues to follow the main §3 bullets without the abstract-first / parens-example transformation, because it is consumed as triage context rather than transcribed into distributed prose.
 
 Source of truth: this sub-section is the operational expansion of `.claude/rules/project.rules.md` § SKILL.md の配布性. Update both files together when the rule changes.
 
@@ -176,23 +176,15 @@ Edge-case judgments (is "the CI pipeline" a project term? is a framework name to
 
 ### Before / after example
 
-Before (raw signal drawn from conversation):
-
 ```text
-ask-peer kept recommending we split foo.rs into auth.rs and session.rs
-even after I said we don't split by subsystem in acme-backend — peer didn't
-read /Users/me/repos/acme-backend/.claude/rules/ first like the SKILL.md says
-it should. I had to re-prompt 3 times. This happened on 2026-04-18 around 14:00.
-```
+Before: ask-peer kept recommending we split foo.rs into auth.rs and session.rs
+even after I said we don't split by subsystem in acme-backend — peer didn't read
+/Users/me/repos/acme-backend/.claude/rules/ first. I re-prompted 3 times, 2026-04-18.
 
-After (sanitized):
-
-```text
-ask-peer repeatedly proposed file splits inconsistent with the project's
-documented file-layout rule. The skill's SKILL.md instructs reviewers to
-read `.claude/rules/` before reviewing, but the rule files were not consulted
-in practice. The user had to re-prompt multiple times before the reviewer
-aligned with the project convention.
+After: ask-peer repeatedly proposed file splits inconsistent with the project's
+documented file-layout rule. Its SKILL.md instructs reviewers to read
+`.claude/rules/` before reviewing, but the rule files were not consulted in
+practice, and the user had to re-prompt several times before it aligned.
 ```
 
 ## 4. Output & submission
@@ -213,16 +205,16 @@ Header:
 **Producer version:** dev-workflow v<X.Y.Z>
 ```
 
-The `**Producer version:**` line lets a downstream consumer of these issues (e.g. an automated triage routine) tell whether the issue was generated by an older `dev-workflow` and apply a stale-issue handling path — typically: reject the issue when the underlying SKILL.md concern has already been fixed in a later release, otherwise proceed with the standard checklist. Resolve `<X.Y.Z>` once before assembly via:
+The `**Producer version:**` line lets a downstream consumer (e.g. an automated triage routine) tell whether the issue came from an older `dev-workflow` and take its stale-issue path — typically rejecting the issue when the underlying SKILL.md concern was already fixed in a later release. Resolve `<X.Y.Z>` once before assembly via:
 
 ```bash
 ver=$(jq -r '(.plugins[] | select(.name == "dev-workflow") | .version) // "unknown"' .claude-plugin/marketplace.json 2>/dev/null)
 [ -z "$ver" ] && ver=unknown
 ```
 
-The `// "unknown"` jq alternative covers `select` matching no entry (empty stream → fallback) and an entry that lacks a `.version` key (`null` → fallback). The post-pipeline `[ -z "$ver" ] && ver=unknown` covers `jq` itself failing (missing `marketplace.json`, malformed JSON — both leave `ver` empty after the redirected stderr). Plain `|| echo unknown` is **not** sufficient because `jq -r` exits 0 on no-match and on missing-key, so the `||` branch never fires for those two cases — instead of `unknown` the body would render `dev-workflow v` (empty) or `dev-workflow vnull` (literal `null`). The consumer treats `unknown` as "older than everything" so the version-aware reject path engages safely.
+Both fallbacks are required, and plain `|| echo unknown` replaces neither: `jq -r` exits 0 on both no-match and missing-key, so the `||` branch never fires for the two cases that matter. The consumer treats `unknown` as "older than everything", so the version-aware reject path engages safely.
 
-The resolved `ver` is embedded in the assembled body as `**Producer version:** dev-workflow v<ver>`. The version is **not** passed to the §2.1 subagent (the subagent's return contract is Findings-only); main inserts the line during this assembly step, between the `# dev-workflow-bundle retrospective (auto-generated)` header and the first `### Finding 1` block returned by the subagent.
+The resolved `ver` is embedded in the assembled body as `**Producer version:** dev-workflow v<ver>`. It is **not** passed to the §2.1 subagent (whose return contract is Findings-only); main inserts the line during this assembly step, between the `# dev-workflow-bundle retrospective (auto-generated)` header and the first `### Finding 1` block.
 
 Then one section per candidate, with a short summary line. Keep the body compact — reviewers scan quickly.
 
@@ -237,7 +229,7 @@ Source:      <which settings layer provided it — ~/.claude/dev-workflow.local.
              | .claude/dev-workflow.md | .claude/dev-workflow.local.md>
 ```
 
-The destination header protects against a settings-layer hijack: since `self_retrospective.feedback` can come from the git-tracked `.claude/dev-workflow.md` (team-shared), a malicious commit could silently redirect retrospectives. Surfacing the resolved value and its source layer in the preview lets the user catch this.
+The destination header guards against a settings-layer hijack: `self_retrospective.feedback` can come from the git-tracked, team-shared `.claude/dev-workflow.md`, so a malicious commit could silently redirect retrospectives — surfacing the resolved value and its source layer lets the user catch that.
 
 Then ask for one of three responses:
 

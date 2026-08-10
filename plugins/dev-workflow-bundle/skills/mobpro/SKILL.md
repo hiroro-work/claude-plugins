@@ -131,8 +131,6 @@ The parenthesized prose form takes the resolved language's own parentheses. Pair
 - `language: ja`: `M8（Check / test）`
 - `language: en`: `M8 (Check / test)`
 
-Japanese user-facing text anywhere in this skill — every localized sample here, in the M-steps, and in the `references/` — follows the polite-form register [`references/learning-gates.md`](references/learning-gates.md)'s **Register** paragraph sets.
-
 ## Direct Agent dispatch sites
 
 `mobpro` reaches for the `Agent` tool at exactly these sites — a closed list; everything else delegates through `Skill(<name>)` or launches a process via background Bash. `Counterpart of dev-workflow SKILL.md § Configuration's Agent tool usage bullet; the two lists differ by design and are kept in sync only in shape.`
@@ -169,9 +167,7 @@ This skill's procedure dispatches subagents, so invoking the skill **is** the re
 ## M3 — Design dialogue
 
 1. Record `base_commit`: `git rev-parse HEAD`.
-2. **Design-approach narration**: state in 2–3 lines how you intend to build it and why that shape was chosen over the obvious alternative. Ask the junior nothing — this is narration, so it does not pause the run (§ Learning-Stop Principle's "Narration is not a stop" paragraph).
-   - `language: ja`: `この機能は<作り方>で作ります。<別案>もありますが、<理由>でこちらにしました。`
-   - `language: en`: `I'll build this by <approach>. <Alternative> was an option too, but <reason> makes this the better shape.`
+2. **Design-approach narration**: state in 2–3 lines how you intend to build it, name the obvious alternative, and say why this shape beat it. Ask the junior nothing — this is narration, so it does not pause the run (§ Learning-Stop Principle's "Narration is not a stop" paragraph).
 
 2.5. **Plan-building checkpoints (USER GATES)**. Before the plan document is written, do the research the plan rests on and hand it to the junior in installments rather than all at once — a junior who has not read this codebase cannot judge a finished plan, but can judge one finding at a time. Run this **once per run**: M5's adjust bucket revises an already-shared plan through M4 and M5 and never re-enters M3, so the checkpoints do not repeat. Sub-step 2's approach narration was an opening position taken before any of this research existed, so when a checkpoint's findings undercut it, say so at that checkpoint and restate the approach.
    - **Explain the existing code before what you concluded from it.** The junior has not read this codebase, so a checkpoint carrying findings alone — this file matters, that constraint rules an approach out — hands them a conclusion they have no way to check. Walk the code each checkpoint rests on first: what the relevant part does today and how it is put together, then what follows from it for the plan.

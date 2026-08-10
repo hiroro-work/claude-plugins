@@ -26,7 +26,7 @@ The **dispatcher is the first step, in execution order Step 11 → Step 11.5 →
 - **`session_scan_dispatched == true`** → an earlier step already dispatched; **consume** this step's axis block from `session_scan_result` (§ Consuming a block). Do not dispatch again.
 - **`session_scan_dispatched == false`** → **dispatch** the shared scan for all **still-active axes** (below), set `session_scan_dispatched = true`, store the raw return in `session_scan_result`, then consume this step's axis block from it.
 
-**Step 11 dispatches only when it has the rule-extraction axis of its own; it never dispatches purely to serve Step 11.5 / Step 11.6.** When `rule-extraction-active` is false — or when Step 11 is matrix-skipped and so never determines it — Step 11 has no axis to consume, so it abstains (leaves `session_scan_dispatched == false`), and the first registered retrospective step (Step 11.5, else Step 11.6) becomes the dispatcher — the pre-existing two-axis behavior, unchanged.
+**Step 11 dispatches only when it has the rule-extraction axis of its own; it never dispatches purely to serve Step 11.5 / Step 11.6.** When `rule-extraction-active` is false — or when Step 11 is matrix-skipped and so never determines it — Step 11 has no axis to consume, so it abstains (leaves `session_scan_dispatched == false`), and the first registered retrospective step (Step 11.5, else Step 11.6) becomes the dispatcher.
 
 **Still-active axes** (computed at the dispatch point, when `session_scan_dispatched == false`):
 
@@ -93,7 +93,7 @@ When a step consumes its axis block from `session_scan_result`:
    - Step 11.5 (self-retrospective) → `references/self-retrospective.md` §5 subagent-failure → terminal summary `skipped`.
    - Step 11.6 (workability) → `references/workability-retrospective.md` §6 subagent failure → terminal summary `skipped`.
 
-   Do not retry (a subagent that returned non-conforming content is not trusted to re-run this session). Each axis's terminal disposition is emitted by **its own home step, exactly once**. The other active axes are **not** handled from here — each home step independently consumes the same `Status: ERROR` result and routes itself in turn. This is the deliberate **whole-scan failure-coupling**: because the `Status: ERROR` shape carries no per-axis block, every active axis's consume hits this same branch, so a fatal parse error skips every active axis at once — they were all going to parse the same jsonl, so a fatal parse failure would have failed every independent dispatch anyway.
+   Do not retry (a subagent that returned non-conforming content is not trusted to re-run this session). Each axis's terminal disposition is emitted by **its own home step, exactly once**. The other active axes are **not** handled from here — each home step independently consumes the same `Status: ERROR` result and routes itself in turn. This is the deliberate **whole-scan failure-coupling**: the `Status: ERROR` shape carries no per-axis block, so every active axis's consume hits this same branch and a fatal parse error skips them all at once.
 2. Otherwise, split `session_scan_result` on the axis delimiters and take this step's block (`--- RULE-CANDIDATES ---` … for Step 11, `--- SELF-RETROSPECTIVE ---` … for Step 11.5, `--- WORKABILITY ---` … for Step 11.6):
    - **Block missing or malformed** for this axis (the delimiter pair is absent, or the block fails this axis's own machine-checkable validation) → route **only this axis** to its per-axis-failure handling; the other axes are unaffected:
      - Step 11 (rule-extraction) → the jsonl parsed fine (other axes' blocks are present), so the per-axis malformed-block path falls back to standalone `Skill(extract-rules) --from-conversation` (see `SKILL.md` Step 11 sub-step 1) — re-extracting against the known-readable jsonl rather than skipping. This is the one axis whose per-axis failure is a fallback rather than a `skipped` (it has a standalone fallback worker).
@@ -104,4 +104,4 @@ When a step consumes its axis block from `session_scan_result`:
      - Step 11.5 (self-retrospective) → `references/self-retrospective.md` §4 Output & submission.
      - Step 11.6 (workability) → `references/workability-retrospective.md` §4 Disposition gate.
 
-The per-axis split + validation keeps the axes independent for non-fatal cases: a malformed block for one axis does not skip a healthy block for another. Only the whole-scan `Status: ERROR` (a genuine shared-parse failure) couples them.
+Only the whole-scan `Status: ERROR` couples the axes; for every non-fatal case the per-axis split keeps them independent.

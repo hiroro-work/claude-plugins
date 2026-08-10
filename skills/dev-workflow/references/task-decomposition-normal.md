@@ -4,13 +4,13 @@ Section B of [`task-decomposition.md`](task-decomposition.md), which keeps `## B
 
 ## B. Normal sub-mode (`<task>` provided, no `--resume`)
 
-1. Assess whether the task should be decomposed. Keep judgment lightweight and log a one-line rationale **as a chat message to the user** (not a task note or state-file field) that names **which primary signal** drove the decision (e.g. `decompose: 2 distinct verification paths — admin CRUD + chat insertion`, `no decompose: single verification path — bug fix affects one handler`). The chat line is the audit trail for the "do NOT decompose" path, which otherwise leaves no visible record — the yes/adjust/no dialogue below only fires on the "decompose" path.
+1. Assess whether the task should be decomposed. Keep judgment lightweight and log a one-line rationale **as a chat message to the user** (not a task note or state-file field) that names **which primary signal** drove the decision (e.g. `decompose: 2 distinct verification paths — admin CRUD + chat insertion`, `no decompose: single verification path — bug fix affects one handler`). The chat line is the audit trail for the "do NOT decompose" path, which the yes/adjust/no dialogue below never reaches.
 
-   When signals are mixed, err on the side of proposing decomposition — the cost of asking is low (a single yes/adjust/no dialogue), and smaller, independently shippable PRs cut review load and merge risk significantly. "Feature looks singular" is not sufficient grounds to skip decomposition; what matters is whether verification splits.
+   When signals are mixed, err on the side of proposing decomposition — asking costs one dialogue, and smaller independently shippable PRs cut review load and merge risk. "Feature looks singular" is not sufficient grounds to skip decomposition; what matters is whether verification splits.
 
    - **Decompose (proactively propose when any of these hold)**:
      - The task splits into 2+ units where **each unit has a distinct verification path** (separate E2E, separate manual check, or separate acceptance criterion — including the case where the same feature must be implemented as 2+ non-shared per-platform / per-screen implementations, e.g. independent PC-screen and mobile-screen controller/view code, each verified separately; this does **not** apply when the platforms share one implementation that merely adapts via responsive layout or styling, which is a single verification path). This is the strongest signal
-     - **Workproduct-independence axis**: the units can be reviewed / shipped / deployed as **independent PRs** even when they share a single verification surface. **Count first**: how many units in the request are **independently deployable or publishable** (cloud functions, plugins, packages, services, jobs, endpoints, CLI commands)? Treat a count of **2 or more** as a decompose signal. Migration and bulk-port tasks are where this is missed: the request reads as a single unit ("port package X") while holding N independently deployable artifacts — count those. Where the count is inconclusive the axis is a judgment call; examples: a new public skill paired with a caller-wiring change that switches the workflow to use it (each PR is independently reviewable and shippable, but the end-to-end verification of "the workflow uses the new skill" only fires once both have landed); a foundational refactor paired with a feature that consumes the refactor (independent reviewers can sign off on each)
+     - **Workproduct-independence axis**: the units can be reviewed / shipped / deployed as **independent PRs** even when they share a single verification surface. **Count first**: how many units in the request are **independently deployable or publishable** (cloud functions, plugins, packages, services, jobs, endpoints, CLI commands)? Treat a count of **2 or more** as a decompose signal. Migration and bulk-port tasks are where this is missed: the request reads as a single unit ("port package X") while holding N independently deployable artifacts — count those. Where the count is inconclusive the axis is a judgment call, and the case to watch is a pair whose PRs are each independently reviewable while their end-to-end verification only fires once both have landed
      - **Dead-on-arrival acceptability axis**: it is acceptable for one unit to land first as "implemented but not yet consumed" — i.e. a transient dead-on-arrival period until the second unit lands — and the user prefers this over the merged-PR alternative. Self-contained tools (newly published skills, library additions, infrastructure pieces that exist in isolation until callers switch over) carry this axis; tightly coupled changes that break callers / state mid-flight do not (those reduce to the atomicity veto below)
      - "and/plus"-style requests (`X and Y`, `X に加えて Y も`, `X と Y を実装`)
      - Cross-layer work where earlier layers are shippable standalone (e.g. data model → admin page → user-facing feature)
@@ -47,20 +47,7 @@ Section B of [`task-decomposition.md`](task-decomposition.md), which keeps `## B
 
       When step 3.a's boundary analysis collapsed every unit into a **single** grouping, keep the same shape but head it `Proposed grouping — 1 subtask (units share a dominant base):` and give the exclusive / shared counts as that entry's rationale, so the user can judge the collapse before answering.
 
-      For the **incremental-depth axis**, subtask 1 is the skeleton and each later subtask carries its own error- / edge-case verification, e.g.:
-
-      ```text
-      Proposed breakdown into 3 subtasks:
-
-      1. Skeleton: end-to-end happy path (hardcoded token, no validation)
-         Verification: login → dashboard works end-to-end in the browser
-      2. Real auth + input validation
-         Verification: invalid-credential and malformed-input cases rejected with the right errors
-         (depends_on: [1])
-      3. Session expiry + edge cases
-         Verification: expired-session redirect + concurrent-login edge cases pass
-         (depends_on: [2])
-      ```
+      For the **incremental-depth axis**, subtask 1 is the skeleton — its title naming what it leaves hardcoded or stubbed — and each later subtask carries its own error- / edge-case verification.
 
       The `verification_hint` is shown as **advisory context** — it helps the user sanity-check the split, but a `yes` only locks in subtask boundaries, order, `depends_on`, and purposes. Verification hints remain AI-authored draft and may be refined in Step 2, consistent with Step 2's Simplicity self-audit which treats `verification_hint` as draft within otherwise-approved state files.
 

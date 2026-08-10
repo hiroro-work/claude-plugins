@@ -2,6 +2,13 @@
 
 ## 2026-08-10
 
+### mobpro v1.26.1 / dev-workflow-bundle v1.133.1
+
+- refactor(mobpro): state what each learning-gate prompt must convey instead of fixing its wording
+  - The seven prompt samples that only demonstrated phrasing — the M3 design-approach narration and checkpoint opener, the M3 checkpoint modal, the M6 diff-review opener, the M8 error narration, the M9 prediction, and the M5 approval question — are gone. Each site's English prose now names what the prompt has to carry, and the wording is written per run in the resolved `language`.
+  - A fixed sample pins a register the surrounding conversation then has to fight, which is what made the checkpoint question read in a different voice from the rest of the session. Dropping it removes the cause; the register rule added alongside it in v1.26.0 is removed too, since there is no longer a sample to correct.
+  - The four samples that carry content rather than phrasing stay: the phase-name render, the missing-test-skill note, M13's two resume commands, and M11's partial-completion token.
+
 ### dev-workflow v1.114.3 / mobpro v1.26.0 / dev-workflow-bundle v1.133.0
 
 - feat(mobpro): add `--fast`, trading the same passes `dev-workflow`'s `--fast` trades

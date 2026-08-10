@@ -60,12 +60,12 @@ The code a plan rests on reaches the junior in installments, and each installmen
 - `language: ja`: `プランを書く前に、関係するコードを<総数>回に分けて説明します。1 回目: <今どうなっているか>。したがって<そこから言えること>。`
 - `language: en`: `Before I write the plan, I'll walk you through the code it touches in <total> parts. Part 1: <how it works today>, which means <what follows for the plan>.`
 
-**Closing every checkpoint**, the first included: ask what is still unclear.
+**Closing every checkpoint**, the first included: ask what is still unclear through `AskUserQuestion` — one question, `multiSelect` off. The modal is what makes the checkpoint read as a decision point; asked as prose it reads like more narration, and the junior has no signal that the run is waiting on them. Give it three options, one per advancing bucket below, and let the tool's own free-text option carry whatever they do not cover, so the modal never narrows what the junior can say. Write the question, the header, and every option label in the resolved `language`, keeping the header to one word — it renders as a short chip. **It is still not a comprehension question** (this file's opening paragraph): the options ask what was left open, never whether the junior got something right. When `AskUserQuestion` is not exposed on the current tool surface, ask the same question as chat prose and classify the reply identically — the modal is the surface, not the gate.
 
-- `language: ja`: `ここまでで分からないところはありますか？ 無ければ次に進みます。`
-- `language: en`: `Anything still unclear here? I'll go on if not.`
+- `language: ja` — question: `ここまでで分からないところはありますか？` / header: `理解の確認` / options: `このまま進めてください` (次の説明に進みます) / `質問があります` (分からなかったところを書いてください) / `別のところを見てほしい` (調べる場所や方針を変えます)
+- `language: en` — question: `Anything still unclear here?` / header: `Checkpoint` / options: `Go on` (move to the next part) / `I have a question` (say what did not land) / `Look somewhere else` (change what gets read, or the direction)
 
-**Reply handling** — four buckets, judged semantically (the phrasings below are illustrative, not literal discriminators):
+**Reply handling** — four buckets, judged semantically (the phrasings below are illustrative, not literal discriminators). The three options map onto **go on** / **question** / **change** in that order; a free-text reply is classified across all four, which is the only way **not an answer** arises:
 
 - **go on** (`無い` / `大丈夫` / `進めて` / `nothing unclear` / `go ahead`, or any equivalent that nothing was left open): move to the next checkpoint, or — once the last one closes — to M3 sub-step 3's plan authoring.
 - **question** (anything naming a part that did not land, or asking about what was explained): answer within the § D length, then ask the closing question again. A question is never an approval, so do not advance on the answer alone.

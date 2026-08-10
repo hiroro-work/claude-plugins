@@ -71,7 +71,7 @@ Each user-judgment gate that presents structured content (a plan body, a remaini
 - Step 8 unresolved-findings decision
 - Step 11.6 workability-candidate disposition gate
 
-The other user-gates listed in `SKILL.md` § No-Stall Principle (Step 1.5 dialogues, Step 7 scope-drift stop, Step 10 commit-plan approval / per-commit accept / fold-or-defer / ambiguous-adjust clarifier gates, the Step 11 confirm-remaining-steps entry gate, the Step 11 rule-update commit gate, Completion subtask PR URL prompt) do not emit a preamble — their structured content is either a single short prompt or already self-explanatory (Step 10's commit gates and the Step 11 rule-update commit gate render the commit data verbatim via `git`-shaped output), and a 3–5 item summary above them would be padding noise.
+The other user-gates listed in `SKILL.md` § No-Stall Principle (Step 1.5 dialogues, Step 7 scope-drift stop, Step 10 commit-plan approval / per-commit accept / fold-or-defer / ambiguous-adjust clarifier gates, the Step 11 confirm-remaining-steps entry gate, the Step 11 rule-update commit gate, Completion subtask PR URL prompt) do not emit a preamble — their structured content is either a single short prompt or already self-explanatory (Step 10's commit gates and the Step 11 rule-update commit gate render the commit data verbatim via `git`-shaped output).
 
 **Format constraints (closed list):**
 
@@ -101,7 +101,7 @@ Each gate's Optional slot conditions are independent — do not import Step 8's 
 
 **Omission condition:**
 
-When the structured content has only one item (a single remaining violation in Step 7.5, a single unresolved finding in Step 8, a single accepted-edits file in Step 11, or a single workability candidate in Step 11.6), the preamble SHOULD be omitted — a 3–5 item preamble above a single concrete item is padding noise that duplicates what the item itself states. The Step 4 preamble always has ≥ 3 items by construction, so this omission does not apply to Step 4. Do not announce the omission in the user-facing output (e.g. an "preamble omitted because only one item" line) — the announcement itself is padding noise; present the single concrete item directly.
+When the structured content has only one item (a single remaining violation in Step 7.5, a single unresolved finding in Step 8, a single accepted-edits file in Step 11, or a single workability candidate in Step 11.6), the preamble SHOULD be omitted — it would only duplicate what the item itself states. The Step 4 preamble always has ≥ 3 items by construction, so this omission does not apply to Step 4. Do not announce the omission in the user-facing output (e.g. an "preamble omitted because only one item" line); present the single concrete item directly.
 
 ## Step 4 presentation order
 
@@ -126,4 +126,4 @@ Step 4's **chat approval** — the surface the visual gate degrades to — uses 
 
 The user may approve, reject, or request refinement — through the visual gate's browser submit, or through the chat reply on this surface. If the user requests changes, the plan re-enters that same surface without repeating the full presentation sequence.
 
-**Candidate-list implementation boundary**: when the plan lists multiple candidate items (a roadmap, a staged rollout, or a set of options) but scopes only a subset for this run, include a one-sentence boundary statement in the full plan body before the guidance line: name which item(s) will be implemented this run and that the remaining candidates are deferred records only — no automatic execution queues them. Without this boundary statement, candidates listed but not scoped may be misread as implicitly queued for sequential auto-execution. Example: `This run implements [X]; [Y] and [Z] are recorded as future candidates and will not be executed automatically.`
+**Candidate-list implementation boundary**: when the plan lists multiple candidate items (a roadmap, a staged rollout, or a set of options) but scopes only a subset for this run, include a one-sentence boundary statement in the full plan body before the guidance line: name which item(s) will be implemented this run and that the remaining candidates are deferred records only — no automatic execution queues them. Example: `This run implements [X]; [Y] and [Z] are recorded as future candidates and will not be executed automatically.`

@@ -25,11 +25,11 @@ Both use the same reviewer, checks, tests, and rules. `mobpro` adds learning pau
 ## Usage
 
 ```text
-/mobpro <task>                     # Start a learning session
-/mobpro --resume <state-file>      # Resume a decomposed subtask
+/mobpro [--fast] <task>                  # Start a learning session
+/mobpro --resume <state-file> [--fast]   # Resume a decomposed subtask
 ```
 
-There is no `--init`, `--fast`, or `--executor`.
+There is no `--init` or `--executor`. `--fast` works the same way it does in `dev-workflow`: it drops the reviewer's pass over the plan and the two prose-polish passes, and shortens the rules re-check that follows the review fixes. Everything that makes the session a teaching session stays — the plan-building checkpoints and every per-unit diff review still fire — and the wrap-up lists what was skipped (source of truth: [`SKILL.md`](SKILL.md) § Fast mode).
 
 **The plan is written for the junior to read** — plain wording, a numbered build order up front, and the reasoning for that order stated rather than assumed, with each fork in the road shown as a recommendation next to the option it beat, so the junior can weigh the call rather than be handed an undecided choice. Each step of that build order becomes one implementation unit, so the plan doubles as the list of diffs the junior will review (source of truth: [`references/plan-format.md`](references/plan-format.md)). The plan is not handed over finished, either: the code behind it is walked through in installments beforehand — what each part does today, then what follows from it — and each installment closes with "anything still unclear?". That is where the junior can redirect the plan, while redirecting is still cheap.
 

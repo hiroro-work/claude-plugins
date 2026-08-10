@@ -211,8 +211,8 @@ The plan-body prose-polish pass, the approval surface (the visual gate degrading
 
 1. Call `Skill(simplify)`; if unavailable, `Skill(tidy)` (pass `Base ref: <base_commit>`). Resolution / both-unavailable skip / ledger append follow `../dev-workflow/references/prerequisites.md`'s Cleanup skill bullet.
 2. If cleanup changed anything, explain why in 1–2 lines (e.g. "this duplication was a future maintenance hazard, so it was pulled into one function").
-3. If `polish_prose` is true, call `Skill(prose-polish)` in file mode (`Language:` = resolved language, no `Model:`). On failure retry once, then skip and append `prose-polish unavailable (prose polish pass)` to `bundle_skills_unavailable`.
-4. **No difficulty skip** — M7 always runs.
+3. If `polish_prose` is true **and `fast_mode_active` is not** (§ Fast mode), call `Skill(prose-polish)` in file mode (`Language:` = resolved language, no `Model:`). On failure retry once, then skip and append `prose-polish unavailable (prose polish pass)` to `bundle_skills_unavailable`. When `fast_mode_active` is what skips it, append `M7 prose polish skipped (fast mode)` to `fast_mode_skipped_steps` — recorded rather than silent, unlike M5's plan-body polish, because no user gate follows to make the skip evident. A `polish_prose: false` skip records nothing: that is a standing project setting rather than something this run did.
+4. **No difficulty skip** — M7 always runs, and sub-step 1's cleanup pass runs on every invocation, `--fast` included; only sub-step 3's polish is skippable.
 
 ## M8 — Check / test (quality gate, max 3 retries)
 

@@ -44,7 +44,7 @@ Six classification rules (the C4 analysis `extract-rules --from-conversation` ap
 3. **Code-review feedback** → identify the underlying philosophy or the specific pattern.
 4. **Routine re-application of an existing pattern** → **skip** (mechanical extension / template expansion with no new decision or user correction). Extract only when a new design decision was made, an exceptional case was handled, or the user corrected / redirected the approach.
 5. **Ordering / sequencing rules observed in this run** → **self-check**: capture the underlying invariant ("shared dependency versions must stay aligned"), not the incidental direction ("always update X before Y"), unless the direction is confirmed intentional.
-6. **Abstraction normalization** → normalize phrasing to "abstract principle as the main sentence, incident-specific detail as a parenthetical suffix" so the rule can be re-matched in a later session (enabling staging → canonical promote). A rule whose main sentence is incident-specific will never re-match.
+6. **Abstraction normalization** → normalize phrasing so the main sentence generalizes and the rule can be re-matched in a later session (enabling staging → canonical promote). Incident-specific detail is **dropped**, not relocated into a parenthetical suffix; retain one such parenthetical only when the main sentence alone does not say where the rule applies. A rule whose main sentence is incident-specific will never re-match.
 
 The highest-value signal is a **user correction** — where the user rejected Claude's approach and redirected, modified Claude's code to reveal a convention, or explained why an approach is preferred in this project.
 
@@ -61,7 +61,7 @@ Emit one candidate per `### Candidate <N>` heading with labelled fields, then a 
 - Name:
 - Signature: `clean_bracket_params(:keyword)`
 - Context: WAF-added bracket stripping
-- Rule: <normalized rule text — abstract principle as main sentence, incident-specific detail as parenthetical suffix>
+- Rule: <normalized rule text>
 
 ### Candidate 2
 - Type: principle

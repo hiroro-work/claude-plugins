@@ -1,6 +1,6 @@
 # Transcribed dev-workflow inline definitions
 
-These are the `dev-workflow` **inline** definitions that `mobpro` needs but that do **not** live in any `dev-workflow` reference file — they sit inline in `dev-workflow/SKILL.md`, which `mobpro` does not read at runtime (SKILL.md § Runtime reads). Per the mobpro design, they are transcribed here so `mobpro` is self-contained, each with a `Keep in sync with dev-workflow SKILL.md § <section>` note. They are collected in this one reference (rather than scattered inline across SKILL.md) so the SKILL.md stays under its char budget and the sync discipline has a single maintenance locus. SKILL.md's M-steps point here by transcription id (a)–(g).
+These are the `dev-workflow` **inline** definitions that `mobpro` needs but that do **not** live in any `dev-workflow` reference file — they sit inline in `dev-workflow/SKILL.md`, which `mobpro` does not read at runtime (SKILL.md § Runtime reads). Per the mobpro design, they are transcribed here so `mobpro` is self-contained, each with a `Keep in sync with dev-workflow SKILL.md § <section>` note. SKILL.md's M-steps point here by transcription id (a)–(g).
 
 **Read this file once**, at the first point that needs a transcription (SKILL.md § Configuration's pointer to § (a), before M1 completes); the later pointers from M8 / M10 / M11 / M12 / M13 name a section of that same copy.
 

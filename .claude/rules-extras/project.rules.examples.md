@@ -57,7 +57,7 @@
 **Past commit reference**: `auto-triage #6` 形式で既存 entry スタイルと一貫させる。生の commit hash (`fcf70b2` 等) は reword / rebase で安定性低下 + 既存 entry スタイルから外れる。 **`Category:` token closed taxonomy**: closed list（`missing-branch` / `ambiguity` / `wrong-default`）から選択。新 failure mode は既存 3 種にマップ可能か再検討（例: 「default 値が skill-bundle internal だった」= `wrong-default`）。`distribution-leak` / `scope-leak` のような新規記述的 token 発明は taxonomy 一貫性が崩れる。
 
 ### bundle skill SKILL.md prose のメタ文脈語彙汎化
-**Good**: 主文には対象読者を限定しない抽象原理を書き、skill 開発文脈の具体例は括弧書きで後置する（`<抽象原理> — for skill development this includes <具体例>` の形）。**Bad**: 適用文脈固定の語彙を主文に直接埋めると、bundle skill を skill 開発以外で利用する読者に読み解きづらい。**この項目は形だけを示す**: 個別の括弧書きは per-run 読込量の削減で随時削除されるので、特定の bullet の文面を引き写さない。
+**Good**: 主文には対象読者を限定しない抽象原理を書く。具体例は既定では付けず、主文だけでは適用先が判断できない場合に限り 1 つを括弧書きで添える。**Bad**: 適用文脈固定の語彙を主文に直接埋めると、bundle skill を skill 開発以外で利用する読者に読み解きづらい。**この項目は形だけを示す**: 個別の括弧書きは per-run 読込量の削減で随時削除されるので、特定の bullet の文面を引き写さない。
 
 ### Pattern A iteration loop skill の `allowed-tools` baseline mirror
 **Good**: sibling Pattern A skill (`verify-diff`) の `allowed-tools` を mirror、`TodoWrite` 必須（`Read, Edit, Agent, TodoWrite, Bash(git diff *), Bash(git rev-parse *), Bash(git checkout HEAD -- *)`）。**Bad**: `TodoWrite` を declare し忘れると non-interactive routine から呼んだ時 permission dialog で停止。新規 Pattern A skill 追加時は sibling と 1 行 diff で照合する。

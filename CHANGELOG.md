@@ -5,11 +5,11 @@
 ### dev-workflow v1.115.0 / extract-rules v1.25.0 / dev-workflow-bundle v1.134.0
 
 - refactor(extract-rules): drop the incident detail during abstraction normalization instead of relocating it
-  - Step C4's normalization required the main sentence to generalize and the incident-specific identifiers — a filename, a UI element, a one-time symptom — to move into a parenthetical suffix. They are now dropped, and a parenthetical is retained only where the main sentence alone does not say where the rule applies. The rule-candidate contract's `Rule` sample line states the same form.
+  - Step C4's normalization required the main sentence to generalize and the incident-specific identifiers — a filename, a UI element, a one-time symptom — to move into a parenthetical suffix. They are now dropped, and a parenthetical is retained only where the main sentence alone does not say where the rule applies. The rule-candidate contract's `Rule` sample line drops its inline form description and defers to that rule.
   - Concrete code anchors for canonical entries are unaffected: `references/examples-format.md` still mines them into `.examples.md`, keyed on the candidate's signature.
-  - `references/compaction-mode.md`'s merged-principle guidance takes the same form, and `dev-workflow`'s `references/rule-extraction-axis.md` — the shared session scan's producer spec, which restates this rule — was synced in the same change.
+  - `references/compaction-mode.md`'s merged-principle guidance and schema sample take the same form, and `dev-workflow`'s `references/rule-extraction-axis.md` was synced in the same change.
 - refactor(dev-workflow): write a retrospective's suggested fix direction as an abstract principle with no example list
-  - `references/self-retrospective.md` § Distribution-aware fix direction asked for "abstract principle first, with skill-development examples in parens". The parenthesized list is the part an applier transcribes verbatim into a distributed SKILL.md, so it is now omitted by default and kept only where the abstract sentence does not identify the fix site. The Good / Bad contrast block carries the newly-excluded shape as a third case.
+  - `references/self-retrospective.md` § Distribution-aware fix direction asked for "abstract principle first, with skill-development examples in parens". The parenthesized list is the part an applier transcribes verbatim into a distributed SKILL.md, so it is now omitted by default and kept only where the abstract sentence does not identify the fix site. The Good / Bad contrast block demonstrates the example-free form.
 
 ### mobpro v1.26.2 / dev-workflow-bundle v1.133.2
 

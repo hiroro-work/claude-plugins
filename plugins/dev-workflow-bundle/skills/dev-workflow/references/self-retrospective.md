@@ -161,15 +161,12 @@ Trigger: target skill is one of the bundle skills listed in the Purpose header A
 Shape:
 
 > **Good** (abstract, no example list):
-> "Add a Step 2 self-audit item that checks whether the plan fixes a structural pattern shared across sibling components and, when it does, expand scope to those siblings or note the deferral in Risks."
+> "Add a Step 2 (Create Plan) self-audit item that checks whether the plan fixes a structural pattern shared across sibling components and, when it does, expand scope to those siblings or note the deferral in Risks."
 >
 > **Bad** (skill-development vocabulary verbatim):
-> "Add a Step 2 self-audit item that checks whether the plan fixes a subagent dispatch shape, hook wiring, or state-file handling pattern and, when it does, expand scope to sibling skills sharing that structure."
->
-> **Bad** (abstract, but trailing an example list the main sentence does not need):
-> "… fixes a structural pattern (shared base classes, cross-cutting middleware, mirrored services — for skill development these map to subagent dispatch shape, hook wiring, state-file handling) and, when it does, …"
+> "Add a Step 2 (Create Plan) self-audit item that checks whether the plan fixes a subagent dispatch shape, hook wiring, or state-file handling pattern and, when it does, expand scope to sibling skills sharing that structure."
 
-Why: the signal is generated in skill-development context but the fix lands in a SKILL.md that general users read, and the triage applier (`dev-workflow-triage` § 3.4 Apply accepted Findings) writes Suggested fix direction text mostly verbatim into that SKILL.md — so the producer is the layer that has to generalize the vocabulary. The applier trims what it transcribes but does not re-abstract it.
+Why: the signal is generated in skill-development context but the fix lands in a SKILL.md that general users read, and a downstream triage applier writes Suggested fix direction text mostly verbatim into that SKILL.md. The producer is therefore the only layer that re-abstracts the vocabulary; the layer that transcribes it only reshapes the form.
 
 Scope: this sub-section applies to `Suggested fix direction` only. `Description` continues to follow the main §3 bullets without the abstract-principle transformation, because it is consumed as triage context rather than transcribed into distributed prose.
 

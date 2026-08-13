@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-08-13
+
+### mobpro v1.26.2 / dev-workflow-bundle v1.133.2
+
+- refactor(mobpro): cut non-operative prose from `SKILL.md` and the reference files
+  - The skill tree is 4,588 characters lighter (−3.9%), so every `/mobpro` run reads less. Removed the "because …" clauses that restated the directive their own sentence had just given, and the illustrative asides beside a rule that already stated its own scope.
+  - No heading and no referenced bold label was removed, so every cross-reference still resolves and behaviour is unchanged.
+
 ## 2026-08-10
 
 ### mobpro v1.26.1 / dev-workflow-bundle v1.133.1

@@ -64,7 +64,7 @@ Look for user preferences and classify them:
    - If incidental (e.g., one file was updated before another as a side effect of task structure, not a deliberate convention), capture the underlying invariant ("shared dependency versions must stay aligned") instead of the directional rule ("always update X before Y")
    - When the direction cannot be confirmed as intentional, annotate the staged entry as needing direction confirmation rather than staging it as a prescriptive rule (e.g., prefix with `[NEEDS DIRECTION CONFIRMATION]` in the staged text)
 
-**6. Abstraction normalization** → Normalize before any write (canonical or staging): Before writing any extracted item, normalize its phrasing to "abstract principle as main sentence, incident-specific details as parenthetical suffix." The main sentence should generalize beyond the specific session so a re-observation of the same pattern can match it (enabling staging → canonical promote). Move concrete identifiers that anchor the rule to a single incident — specific filenames, specific UI elements, one-time symptoms — from the main sentence into a parenthetical suffix (e.g., "component re-render after auth state change may lose ephemeral key state (e.g., observed in `FooBar.tsx` post-login)" rather than "`FooBar.tsx` reports missing key after login"). A rule whose main sentence is incident-specific will not be re-matched in the next session regardless of how many similar observations accumulate.
+**6. Abstraction normalization** → Normalize before any write (canonical or staging): Before writing any extracted item, normalize its phrasing so the main sentence generalizes beyond the specific session and a re-observation of the same pattern can match it (enabling staging → canonical promote). Concrete identifiers that anchor the rule to a single incident — specific filenames, specific UI elements, one-time symptoms — are **dropped**, not relocated into a parenthetical suffix; retain one parenthetical only when the main sentence alone does not say where the rule applies (e.g., "component re-render after auth state change may lose ephemeral key state" rather than "`FooBar.tsx` reports missing key after login"). Concrete code anchors for canonical entries are mined separately by Step C5's **Update `.examples.md`** item, so the rule text does not carry them. A rule whose main sentence is incident-specific will not be re-matched in the next session regardless of how many similar observations accumulate.
 
 ## Rule-candidate contract (Step C4 output)
 
@@ -79,7 +79,7 @@ This section defines the **serializable contract** between Step C4 (which produc
 - Name:
 - Signature: `clean_bracket_params(:keyword)`
 - Context: WAF-added bracket stripping
-- Rule: <normalized rule text — abstract principle as main sentence, incident-specific detail as parenthetical suffix>
+- Rule: <normalized rule text — abstract principle as main sentence; incident-specific detail dropped>
 
 ### Candidate 2
 - Type: principle

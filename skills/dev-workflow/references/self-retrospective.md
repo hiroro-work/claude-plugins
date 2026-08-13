@@ -154,21 +154,24 @@ Apply these rules to every candidate's `description` and `suggested fix directio
 
 ### Distribution-aware fix direction (bundle skill targets)
 
-The bundle skills listed in this file's Purpose header (`dev-workflow`, `ask-peer`, `extract-rules`, `rules-review`, `mobpro`) are distributed for **general software development**, not for skill-development specifically. When a `Suggested fix direction` would land in one of those skills' SKILL.md prose or `references/*.md` prose, write the direction as **abstract principle first, with skill-development examples in parens** rather than skill-development vocabulary verbatim.
+The bundle skills listed in this file's Purpose header (`dev-workflow`, `ask-peer`, `extract-rules`, `rules-review`, `mobpro`) are distributed for **general software development**, not for skill-development specifically. When a `Suggested fix direction` would land in one of those skills' SKILL.md prose or `references/*.md` prose, write the direction as an **abstract principle in general-software-development vocabulary**, not in skill-development vocabulary. Do **not** append a parenthesized list of skill-development examples by default: add a single parenthetical only when the abstract sentence alone does not say where the fix applies.
 
 Trigger: target skill is one of the bundle skills listed in the Purpose header AND the suggested fix targets prose under `skills/<target>/SKILL.md` or `skills/<target>/references/*.md` (i.e. user-visible distribution surface). Internal-tooling fixes (allowed-tools tightening, frontmatter validation, hook wiring inside the skill itself) do not land in user-visible prose, so this rule does not apply to them — write them in skill-development vocabulary as needed.
 
 Shape:
 
-> **Good** (abstract first, skill-dev example in parens):
-> "Add a Step 2 self-audit item that checks whether the plan fixes a structural pattern (shared base classes, cross-cutting middleware, mirrored services — for skill development these map to subagent dispatch shape, hook wiring, state-file handling) and, when it does, expand scope to siblings sharing that structure or note the deferral in Risks."
+> **Good** (abstract, no example list):
+> "Add a Step 2 self-audit item that checks whether the plan fixes a structural pattern shared across sibling components and, when it does, expand scope to those siblings or note the deferral in Risks."
 >
-> **Bad** (skill-dev vocabulary verbatim):
+> **Bad** (skill-development vocabulary verbatim):
 > "Add a Step 2 self-audit item that checks whether the plan fixes a subagent dispatch shape, hook wiring, or state-file handling pattern and, when it does, expand scope to sibling skills sharing that structure."
+>
+> **Bad** (abstract, but trailing an example list the main sentence does not need):
+> "… fixes a structural pattern (shared base classes, cross-cutting middleware, mirrored services — for skill development these map to subagent dispatch shape, hook wiring, state-file handling) and, when it does, …"
 
-Why: the signal is generated in skill-development context but the fix lands in a SKILL.md that general users read, and the triage applier (`dev-workflow-triage` § 3.4 Apply accepted Findings) writes Suggested fix direction text mostly verbatim into that SKILL.md — so the producer is the only generalization layer in the loop.
+Why: the signal is generated in skill-development context but the fix lands in a SKILL.md that general users read, and the triage applier (`dev-workflow-triage` § 3.4 Apply accepted Findings) writes Suggested fix direction text mostly verbatim into that SKILL.md — so the producer is the layer that has to generalize the vocabulary. The applier trims what it transcribes but does not re-abstract it.
 
-Scope: this sub-section applies to `Suggested fix direction` only. `Description` continues to follow the main §3 bullets without the abstract-first / parens-example transformation, because it is consumed as triage context rather than transcribed into distributed prose.
+Scope: this sub-section applies to `Suggested fix direction` only. `Description` continues to follow the main §3 bullets without the abstract-principle transformation, because it is consumed as triage context rather than transcribed into distributed prose.
 
 Source of truth: this sub-section is the operational expansion of `.claude/rules/project.rules.md` § SKILL.md の配布性. Update both files together when the rule changes.
 

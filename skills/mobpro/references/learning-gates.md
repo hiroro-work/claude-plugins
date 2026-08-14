@@ -12,7 +12,7 @@ The junior reviews each implementation unit's diff. `SKILL.md` § Learning-Stop 
 
 **Opening the review**: state the point of this unit's diff, hand the diff over, and invite questions on anything that stands out.
 
-**Question handling**: the review **blocks on the junior's turn** — hand the diff over and wait. Answer each question within the § D length, then wait again. Once their turn arrives carrying no question, do **not** solicit a second one: move to the next unit. A junior's "understood, go ahead" (`進めて` / `go ahead`) ends the review at hand immediately.
+**Question handling**: the review **blocks on the junior's turn** — hand the diff over and wait. Answer each question within the § D length, then wait again, so the review runs as many rounds as the junior has questions. **One turn closes the review**: once theirs arrives carrying no question and no change request, do **not** solicit a second one — move to the next unit. A junior's "understood, go ahead" (`進めて` / `go ahead`) ends the review at hand immediately.
 
 **Change requests raised during the review**: a comment asking for a code change is applied like any other review finding — fix it, explain the fix within the § D length, and re-present the diff. A question that needs no code change is answered and does not re-open the unit.
 
@@ -48,9 +48,11 @@ The code a plan rests on reaches the junior in installments, and each installmen
 
 **Closing every checkpoint**, the first included: ask in chat what is still unclear, and put the question on the **turn's last line**. Keep that placement on every later turn this checkpoint asks it again. Anywhere else in the turn, the question reads as one more paragraph of narration rather than as the point the run stops at. **It is still not a comprehension question** (this file's opening paragraph): it asks what was left open, never whether the junior got something right. Then wait for the reply.
 
+**One reply closes a checkpoint**: only the **go on** bucket below advances past it, so a checkpoint runs as many rounds as the junior has questions and answering one is never a checkpoint's last act. What a non-**go on** reply does instead is its own bucket's business. This condition is restated in `SKILL.md` M3 sub-step 2.5's **Each checkpoint is a partial approval** bullet; keep the two in sync.
+
 **Reply handling** — four buckets, judged semantically (the phrasings below are illustrative, not literal discriminators):
 
 - **go on** (`無い` / `大丈夫` / `進めて` / `nothing unclear` / `go ahead`, or any equivalent that nothing was left open): move to the next checkpoint, or — once the last one closes — to M3 sub-step 3's plan authoring.
-- **question** (anything naming a part that did not land, asking about what was explained, or saying only that a question exists): answer within the § D length, then ask the closing question again. A question is never an approval, so do not advance on the answer alone. **When the reply says a question exists without naming it**, ask which part did not land and wait for that answer before answering it.
+- **question** (anything naming a part that did not land, asking about what was explained, or saying only that a question exists): answer within the § D length, then ask the closing question again. **When the reply says a question exists without naming it**, ask which part did not land and wait for that answer before answering it.
 - **change** (a request to look somewhere else, or to take a different direction): do that reading or record that direction, share what came of it, and ask again. **When the reply names no place or direction**, ask which and wait for that answer before doing either. A request to drop the task outright is the far end of this bucket and takes M5's **withdraw** disposition — end the workflow without authoring the plan. Source of truth: `m5-plan-approval.md` sub-step 3's **adjust** bucket; this bucket is that one a phase earlier, so keep it in sync when that bucket changes.
 - **not an answer** (interrogative or non-committal — `どう？` / `なるほど` / `how about it?` / `I see`): re-classify it with a confirming question, the way `m5-plan-approval.md` sub-step 3 handles its own non-committal replies. Neither advance nor re-share on it.

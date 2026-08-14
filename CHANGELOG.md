@@ -2,6 +2,12 @@
 
 ## 2026-08-14
 
+### mobpro v1.27.1 / dev-workflow-bundle v1.135.1
+
+- fix(mobpro): keep an M3 plan-building checkpoint open until the junior has no question left
+  - A checkpoint closed once a single question was answered, so a junior with more to ask had to raise the rest at a later gate. Only a reply saying nothing was left open closes one now.
+  - M6's per-unit diff review reads the same way, so neither learning gate caps how many questions it takes.
+
 ### mobpro v1.27.0 / dev-workflow-bundle v1.135.0
 
 - feat(mobpro): close each M3 plan-building checkpoint with a chat question instead of an `AskUserQuestion` modal

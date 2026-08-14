@@ -37,12 +37,6 @@ There is no `--init` or `--executor`. `--fast` works the same way it does in `de
 
 Those per-unit snapshots are also what the commit gate proposes from: the commit plan comes out as **one commit per unit the junior reviewed, in the order they reviewed them** — plus a last commit for whatever the cleanup and review gates changed afterwards — rather than regrouped from the finished tree. So the diffs they approved during the loop and the commits they approve at the end are the same slices — and a unit that revisited a file already touched by an earlier unit still gets its own commit, instead of the two being flattened together.
 
-## Why the checkpoint modal stops at M3
-
-Each plan-building checkpoint closes with a modal — three options plus free text — rather than a chat question, because a chat question there reads like more narration and gives the junior no signal that the run is waiting on them. The other two places the junior is asked something stay prose on purpose: the per-unit diff review is a multi-turn exchange that a modal after every answer would interrupt, and the plan approval's own surface is the browser review gate, with the chat question only its fallback. A checkpoint is the one learning stop that closes on a single reply, which is the shape a modal fits.
-
-`dev-workflow` carries its own rule for `AskUserQuestion` option design in `references/step5-implement.md` — enumerate the outcomes, and leave a branch for "the premise did not land". `mobpro` does not read that file, so the rule does not formally bind here, but the modal satisfies it in substance: the "I have a question" option and the tool's own free-text option both absorb that state.
-
 ## Interop with dev-workflow
 
 `mobpro` and `dev-workflow` share the same decomposition **state-file** schema and path (`.claude/plans/dev-workflow.<slug>.md`). So a parent task can be started under `mobpro` (learning through the first subtasks) and the rest handed off to a senior with `/dev-workflow --resume <slug>` — or the reverse.

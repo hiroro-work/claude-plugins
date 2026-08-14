@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-08-14
+
+### mobpro v1.27.0 / dev-workflow-bundle v1.135.0
+
+- feat(mobpro): close each M3 plan-building checkpoint with a chat question instead of an `AskUserQuestion` modal
+  - The modal covered enough of the editor panel to hide the checkpoint's own explanation — the text the junior has to read before answering. The closing question is now plain chat prose placed on the turn's last line, and `AskUserQuestion` is dropped from `allowed-tools` so the modal cannot come back by accident.
+  - Reply handling is unchanged: the same four buckets, and a question still never counts as approval.
+
 ## 2026-08-13
 
 ### dev-workflow v1.115.0 / extract-rules v1.25.0 / dev-workflow-bundle v1.134.0

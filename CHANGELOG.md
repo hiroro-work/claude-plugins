@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-08-17
+
+### dev-workflow v1.115.1 / mobpro v1.28.0 / dev-workflow-bundle v1.136.0
+
+- feat(mobpro): let the commit-plan approval skip crit for diffs the junior already reviewed
+  - Under `commit_review_gate: "crit"`, accepting the commit plan now offers a second form — approve, and skip the crit browser view for the commits that correspond to implementation units already reviewed at the per-unit diff review. Those commits render their diff in chat and take the ordinary accept gate instead.
+  - The final commit carrying the quality gates' changes, and any commit regrouped off the implementation chain, still open crit: nobody reviewed their content during implementation.
+  - No new stop point and no new approval bucket — the option is a variant of the existing accept, so the commit gates stay as they were.
+- docs(dev-workflow): admit a caller-supplied crit skip in the per-commit diff-review branch
+  - `references/interactive-commits.md`'s diff-review mode branch now admits a caller-supplied crit skip as a third cause routing a commit to the chat presentation.
+
 ## 2026-08-14
 
 ### mobpro v1.27.1 / dev-workflow-bundle v1.135.1

@@ -3,7 +3,7 @@ name: extract-rules
 description: Extract project-specific coding rules and domain knowledge from existing codebase, generating markdown documentation for AI agents. Use when onboarding a new project, after code review discussions about coding style, or when coding conventions need documenting. Also consider running after sessions where coding preferences were discussed or corrected (--from-conversation), or after PRs with significant review feedback (--from-pr).
 model: opus
 effort: high
-allowed-tools: Read, Glob, Grep, Write, Edit, Agent, TaskCreate, TaskUpdate, TodoWrite, Bash(ls *), Bash(mkdir *), Bash(git ls-files *), Bash(git checkout HEAD -- *), Bash(wc *), Bash(head *), Bash(tail *), Bash(sort *), Bash(uniq *), Bash(tree *), Bash(gh pr view *), Bash(gh pr diff *), Bash(gh api *), Bash(gh auth status *), Bash(gh repo view *), Bash(node *)
+allowed-tools: Read, Glob, Grep, Write, Edit, Agent, TaskCreate, TaskUpdate, TodoWrite, Bash(ls *), Bash(mkdir *), Bash(git ls-files *), Bash(git grep *), Bash(git checkout HEAD -- *), Bash(wc *), Bash(head *), Bash(tail *), Bash(sort *), Bash(uniq *), Bash(tree *), Bash(gh pr view *), Bash(gh pr diff *), Bash(gh api *), Bash(gh auth status *), Bash(gh repo view *), Bash(node *)
 ---
 
 # Extract Rules
@@ -24,6 +24,7 @@ Analyzes existing codebase to identify what Claude would get wrong without proje
 /extract-rules --from-pr owner/repo#100..110   # PR range (another repo)
 /extract-rules --compact                       # Compact all over-threshold rules files (output_dir/**/*.md)
 /extract-rules --compact path/to/file.md ...   # Compact specific files (caller passes explicit paths)
+/extract-rules --realign path/to/file.md ...   # Re-judge already-written rules against current criteria (explicit paths only)
 /extract-rules --apply-conversation-candidates <path>  # Apply pre-scanned rule candidates (Step C5 only; orchestrator sub-skill)
 # Multiple specs allowed (space-separated) → cross-analysis detects org-wide principles
 ```
@@ -178,6 +179,7 @@ Check arguments to determine mode:
 - `--restructure` → **Restructure Mode** (Step R1-R5)
 - `--from-conversation [session-id]` → **Conversation Extraction Mode** (Step C1-C5)
 - `--compact [<paths>]` → **Compaction Mode** (Step CP1-CP5)
+- `--realign <paths>` → **Realign Mode** (Step RA1-RA5)
 - `--from-pr <number|owner/repo#number|range> [...]` → **PR Review Extraction Mode** (Step P1-P5)
 - `--apply-conversation-candidates <path>` → **Conversation Candidate Apply Mode** (Step A1-A2)
 
@@ -335,6 +337,8 @@ For **Project-specific patterns** section:
 - Only include the minimal signature: type name, function signature with return type, or API combination
 - Example of minimal: `useAuth() → { user, login, logout }` (not full implementation)
 
+For a **prose rule** — a project-level rule stating a working convention rather than naming a symbol, the shape conversation extraction produces most often — see `references/extraction-criteria.md` § What a Rule Is Made Of, which defines it alongside the criteria that judge it and states how a shape mismatch is dispositioned.
+
 **For `.examples.md` files:** Read `references/examples-format.md` for file structure, Good/Bad contrast guidelines, and the reference section format. Each rule file with a corresponding `.examples.md` must end with a `## Examples` reference section (see the reference for format). `###` titles must match the corresponding rule name exactly — do not translate or rephrase.
 
 **paths patterns by category:**
@@ -356,7 +360,7 @@ After generating all rule files, verify no sensitive information was included:
    - Internal URLs: `(internal|staging|localhost:[0-9]+)`
 2. If found, redact with placeholders (e.g., `API_KEY_REDACTED`) and warn the user
 
-**Note:** This check applies to all modes that generate or update rule files (Full Extraction, Update, Restructure, Conversation Extraction, Conversation Candidate Apply). Also check `.examples.md` files — they contain actual code from the codebase and may include sensitive information.
+**Note:** This check applies to all modes that generate or update rule files (Full Extraction, Update, Restructure, Conversation Extraction, Conversation Candidate Apply, Realign). Also check `.examples.md` files — they contain actual code from the codebase and may include sensitive information.
 
 ### Step 7: Report Summary
 
@@ -442,7 +446,7 @@ Report what was added per file. Also report any stale rules found in Step U3. In
 
 ## Restructure Mode
 
-When `--restructure` is specified, re-analyze the codebase to determine the optimal file structure, then merge existing rule content into the new structure. Use this when the project has evolved (new frameworks, architectural changes), when `split_output` settings change, or after updating the extract-rules skill itself.
+When `--restructure` is specified, re-analyze the codebase to determine the optimal file structure, then merge existing rule content into the new structure. Use this when the project has evolved (new frameworks, architectural changes) or when `split_output` settings change. After updating the extract-rules skill itself, which mode you need depends on what changed: `--restructure` when the **file layout** should change, `--realign` when the **extraction criteria** did (§ Realign Mode).
 
 **Note**: Restructure Mode does NOT run the Step U3 staleness check — use `--update` first so stale symbols are flagged for manual review (see the Update Mode operational note for the post-major-version-bump workflow).
 
@@ -695,6 +699,20 @@ See § Sub-skill caller directive at the bottom of this SKILL.md.
 
 ---
 
+## Realign Mode
+
+When `--realign <path> [<path> ...]` is specified, re-judge the rules already written in the named files against the current extraction criteria, then drop, split, or trim the ones that no longer meet them (§ Restructure Mode's intro says which of the two modes a given change calls for).
+
+Read `references/realign-mode.md` for the full processing steps (RA1-RA5) — it is the single canonical home for this mode's procedure and for the subagent instructions RA2 dispatches. Key flow:
+
+1. Load settings; check `output_dir` exists (same as Step C1's output-directory-existence check); resolve the explicit paths — there is **no** no-argument discovery pass, so with no paths report the usage form and stop
+2. Dispatch one analysis subagent per target file, parse its fenced JSON verdict, and count each non-`keep` rule's referrers
+3. **USER APPROVAL GATE** — present the verdicts; nothing is written until it resolves
+4. Apply the accepted edits and follow through on the affected `.examples.md` entries
+5. Security Self-Check on every file written, then report per `references/report-templates.md` § Realign Mode
+
+---
+
 ## PR Review Extraction Mode
 
 When `--from-pr` is specified, extract rules from PR review comments (human comments only).
@@ -714,7 +732,7 @@ Read `references/pr-review-mode.md` for the full processing steps (P1-P5). Key f
 
 When invoked as a sub-skill (i.e. via `Skill(extract-rules)` from an orchestrator), the fenced JSON verdict block this skill emits in `--compact` mode is the **structured return value** of the skill's procedure — it is **not** a deliverable to the user, and emitting it does **not** terminate the orchestrator's turn. The same agent that ran this skill must immediately issue the next tool call dictated by the orchestrator's flow (an orchestrator that surfaces a per-callee guidance bullet names the specific next action there). Do not insert a prose summary, an acknowledgment, or a "shall I proceed?" sentence between the JSON verdict and the next tool call. Only one fenced JSON block — the verdict block — appears in the response, so callers can locate it unambiguously. The skill's own procedure is over; the orchestrator's procedure continues without pause.
 
-This directive applies specifically to `--compact` mode. Other modes (Full Extraction, Update, Restructure, Conversation, Conversation Candidate Apply, PR Review) produce prose reports rather than fenced JSON verdicts and are not subject to this contract.
+This directive applies specifically to `--compact` mode. Other modes (Full Extraction, Update, Restructure, Conversation, Conversation Candidate Apply, Realign, PR Review) produce prose reports rather than fenced JSON verdicts and are not subject to this contract.
 
 ---
 

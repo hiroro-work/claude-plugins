@@ -198,6 +198,38 @@ Compaction failed: <reason>
 
 Each per-file entry's `per_file_status` carries the loop outcome (`converged` / `partial` / `unresolved` / `error` / `skipped-below-threshold`); the caller uses this to surface follow-up actions to the user (e.g. via a user-gate that accepts/rejects per file). The `skipped-below-threshold` value appears only in explicit-paths mode for caller-passed paths whose char count was already at or below `compaction_threshold` (see SKILL.md § Step CP1 step 3).
 
+## Realign Mode (Step RA5)
+
+Realign Mode returns a prose report, one section per file judged.
+
+```markdown
+## Realigned .claude/rules/project.md
+
+Judged 38 rules — keep 24 / drop 7 / split 4 / reshape 3
+
+### Dropped (7)
+- **Batch job retry wiring** - records how one job was wired, not how the next should be (referrers: 0)
+- **Modal close-button placement** - restates a norm the file already carries under another name (referrers: 1)
+
+### Split (4)
+- **Migration ordering and backfill batching** → 2 rules: migration ordering; backfill batch sizing (referrers: 0)
+
+### Reshaped (3)
+- **Feature-flag rollout gate** - 1,120 → 340 chars; cut the account of the first rollout, kept the norm and its trigger (referrers: 2)
+
+### Not applied (1)
+- **Retry-budget accounting** (drop) - `old_string` no longer matched after an earlier edit rewrote the region
+
+### Examples updated
+- Removed 6 orphaned entries from `.claude/rules-extras/project.examples.md` — one per applied drop; the not-applied drop keeps its entry
+```
+
+Every non-`keep` rule appears in exactly one section, each entry carrying the referrer count Step RA3's gate presented. Omit a section whose count is 0. When every rule was kept, report the `keep` count and state that nothing changed.
+
+A rule the user excluded at the Step RA3 gate counts as `keep`, since nothing was written for it. Name the exclusions on one line below the counts, so an excluded rule is not read as one that passed the criteria.
+
+**Not applied** lists every accepted edit that did not land, naming the rule and the verdict it was accepted under. The rule still appears in its verdict's section — the counts are counts of judgements — so this section is the only place a `drop` that never reached the file is distinguishable from one that did (`references/realign-mode.md` § Step RA4's **What the counts mean** paragraph). Omit it when every accepted edit landed.
+
 ## PR Review Extraction Mode (Step P5)
 
 **Single PR:**

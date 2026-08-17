@@ -20,6 +20,8 @@ Always generate one `.examples.md` per rule category (regardless of `split_outpu
 - **Project-specific patterns**: Use the signature portion (backtick content)
   - Rule: `` - `useAuth() → { user, login, logout }` - auth hook interface `` → `` ### `useAuth() → { user, login, logout }` ``
   - Rule: `` - `clean_bracket_params(:keyword)` - WAF付加のブラケット除去 `` → `` ### `clean_bracket_params(:keyword)` ``
+- **Prose rules** (the shape `references/extraction-criteria.md` § What a Rule Is Made Of defines): use the bold label's text, without the `**` markers
+  - Rule: `- **Barrel exports required**: 各ディレクトリの index.ts から re-export する。…` → `### Barrel exports required`
 
 ```markdown
 # <Category> Rules - Examples
@@ -58,6 +60,12 @@ After apply-rules applies merged org rules, a project's `.examples.md` may conta
 - `## Project-specific Examples` — project-local patterns that were not promoted
 
 apply-rules automatically cleans up duplicates: when a `.local.md` pattern is removed because it matches a promoted Principle, the corresponding `## Project-specific Examples` entry is also removed.
+
+## Entry removal
+
+An entry lives as long as its rule does. A `###` title matches its rule's name exactly, so once the rule is gone the entry is unreachable — remove it in the same pass that removes the rule.
+
+Two paths remove a rule: apply-rules dropping a `.local.md` pattern a promoted Principle now covers (§ Relationship with merge-rules above), and Realign Mode applying a `drop` or a `split` (`references/realign-mode.md` § `.examples.md` follow-through). Neither generates examples or rewrites a rule file's `## Examples` reference section, so the mode enumerations below do not name them.
 
 ## Good/Bad Contrast Guidelines
 

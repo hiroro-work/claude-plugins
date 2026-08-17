@@ -2,6 +2,21 @@
 
 ## 2026-08-17
 
+### dev-workflow v1.116.0 / extract-rules v1.26.0 / dev-workflow-bundle v1.137.0
+
+- feat(extract-rules): raise the bar on what counts as an extractable rule
+  - Three criteria join `references/extraction-criteria.md`. **What a Rule Is Made Of** keeps the norm, its trigger, and its discriminator, and names what to leave out — the account of how the situation came up, a record that it recurred, names belonging to one piece of work. **Durability** asks whether the rule would change what gets written in a related but different task. **Reach** asks whether it earns permanent context: rule files load every session, so a norm firing in one narrow configuration is durable and still not worth carrying unless its absence breaks something quietly or expensively, and anything a linter, type checker, test, or verification step already catches is dropped.
+  - Reach rejects rules that are correct, so expect it to remove more than the other two combined.
+  - Step C4 gains rules 7, 8, and 9 for these. An uncertain durability call stages rather than skips only where a staging path exists (`Type: pattern` with `Category: project`); every other combination skips, which a later re-observation can still reverse.
+  - `Format guidelines` gains the prose-rule shape conversation extraction actually produces, with a ≤400-char soft target. All three shapes are a signal to split, not a gate that rejects a durable rule.
+- feat(extract-rules): add Realign Mode (`--realign <path> ...`)
+  - Re-judges already-written rules against the current criteria, then drops, splits, or trims them. Criteria change over time while the rules written under an older version do not; this closes that gap without the file-layout re-derivation `--restructure` performs.
+  - Explicit paths under `output_dir` only, with no discovery pass — an unbounded content judgement would otherwise put shared rule files in scope, including Principles that merge-rules promoted organization-wide.
+  - Nothing is written before an approval gate, and each non-`keep` rule is reported with the number of other files citing its label, since dropping or renaming a cited rule breaks those citations silently.
+  - An applied `drop` or `split` removes the rule's now-orphaned `.examples.md` entry.
+- refactor(dev-workflow): sync the shared session scan's extraction criteria
+  - `references/rule-extraction-axis.md` §2.2 carries the same three rules, so candidates produced through the shared scan are judged the same way as those from a standalone `--from-conversation` run.
+
 ### dev-workflow v1.115.1 / mobpro v1.28.0 / dev-workflow-bundle v1.136.0
 
 - feat(mobpro): let the commit-plan approval skip crit for diffs the junior already reviewed

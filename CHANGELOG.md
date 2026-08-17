@@ -8,6 +8,9 @@
   - `--realign` with no paths now judges every `*.md` under `output_dir` recursively, in lexicographic order, excluding `*.examples.md`. Naming paths still restricts the run to those files.
   - v1.26.0 required explicit paths on the grounds that naming a file was itself the safeguard. It is not: Step RA3's approval gate is, and it presents every non-`keep` verdict with its reason and referrer count before anything is written. Requiring the paths only made a project-wide re-judgement impractical, since a slash command performs no glob expansion.
   - Discovery does sweep in shared `.md` files the operator never named, and realign cannot see a Principle that merge-rules promoted to another project. The gate therefore names which targets are shared `.md`.
+- docs(extract-rules): restate how `--realign` and `--compact` divide
+  - The two were separated on where each starts from — a char count versus a criteria change — and on `--compact` being orchestrator-driven. Nothing invokes `--compact` programmatically, so in practice both are run by hand and that distinction predicted nothing.
+  - The invariant that does hold: `--compact` preserves the set of norms a file states, merging near-duplicates and dropping an entry only where another already subsumes it, while `--realign` can take a norm away outright. That is also what settles which mode needs an approval gate.
 
 ## 2026-08-17
 

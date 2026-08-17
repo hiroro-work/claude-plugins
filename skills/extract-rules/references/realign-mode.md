@@ -117,15 +117,17 @@ Evaluate in order, first match wins:
    - **Label correspondence, both directions**: every `mechanical_edits[].label` matches some `rules[].label`, and every non-`keep` rule has exactly one entry. Without the first, a rule the user excludes at the gate keeps its edit and lands a write the gate rejected; without the second, a missing entry is indistinguishable at Step RA5's not-applied line from one whose `Edit` did not apply.
 3. **Otherwise** → continue to the gate.
 
-A failure on any one target file stops the run before the gate — a partial gate would ask the approver to accept a set that is missing a file's judgements without saying so. Compaction Mode emits a machine-readable error JSON on these paths because an orchestrator reads its result; Realign Mode is operator-facing, so it reports in prose and stops.
+A failure on any one target file stops the run before the gate — a partial gate would ask the approver to accept a set that is missing a file's judgements without saying so. Compaction Mode emits a machine-readable error JSON on these paths because its whole return contract is built to be parsed; Realign Mode reports to a person, so it says what failed in prose and stops.
 
 ## Division of labour with `--compact`
 
-`--realign` judges content, is started by an operator, and edits destructively behind an approval gate. `--compact` starts from a char count, runs without prompting, and is called by orchestrators. Neither subsumes the other.
+One invariant separates them: **`--compact` preserves the set of norms a file states, while `--realign` reduces it.** Compaction merges near-duplicate entries, folding two norms into one sentence without losing either, and its `heuristic 4 (one-shot incident dropout)` removes an incident-specific entry only where another entry already subsumes it — and only as a note the caller must act on. Realign's `drop` takes a norm away outright, and its `reshape` cuts an entry back to what the criteria keep.
+
+That invariant is what settles the approval gate. Compaction removes nothing a reader could have been relying on, so it runs unattended; realign can take a rule away, so nothing is written until Step RA3's gate resolves. Choosing between them is really asking whether this run is allowed to lose a rule.
+
+They also judge at different scales. Compaction's consolidation reads a cluster of related entries at once (`min_cluster_size` sets how many make a cluster), while realign judges one rule at a time against the criteria — reach in particular, which no compaction heuristic applies. Their reach overlaps only where a restatement is concerned: consolidation merges it, `reshape` trims it.
 
 When both apply to the same file, run `--realign` first: dropping what does not belong leaves less to compact, and compacting first would spend effort merging rules that were about to go.
-
-Their judgements overlap in places. Compaction's `heuristic 4 (one-shot incident dropout)` removes an incident-specific entry, but only when another entry already subsumes it, and only as a note the caller must act on; its consolidation heuristics merge near-duplicate entries, which reaches some of what realign's `reshape` reaches for a restatement. What realign adds is a judgement against the current criteria — reach in particular — that no compaction heuristic makes.
 
 ## `mechanical_edits` schema
 

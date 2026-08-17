@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-08-18
+
+### extract-rules v1.27.0 / dev-workflow-bundle v1.138.0
+
+- feat(extract-rules): let Realign Mode discover its own targets
+  - `--realign` with no paths now judges every `*.md` under `output_dir` recursively, in lexicographic order, excluding `*.examples.md`. Naming paths still restricts the run to those files.
+  - v1.26.0 required explicit paths on the grounds that naming a file was itself the safeguard. It is not: Step RA3's approval gate is, and it presents every non-`keep` verdict with its reason and referrer count before anything is written. Requiring the paths only made a project-wide re-judgement impractical, since a slash command performs no glob expansion.
+  - Discovery does sweep in shared `.md` files the operator never named, and realign cannot see a Principle that merge-rules promoted to another project. The gate therefore names which targets are shared `.md`.
+
 ## 2026-08-17
 
 ### dev-workflow v1.116.0 / extract-rules v1.26.0 / dev-workflow-bundle v1.137.0

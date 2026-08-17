@@ -24,7 +24,8 @@ Analyzes existing codebase to identify what Claude would get wrong without proje
 /extract-rules --from-pr owner/repo#100..110   # PR range (another repo)
 /extract-rules --compact                       # Compact all over-threshold rules files (output_dir/**/*.md)
 /extract-rules --compact path/to/file.md ...   # Compact specific files (caller passes explicit paths)
-/extract-rules --realign path/to/file.md ...   # Re-judge already-written rules against current criteria (explicit paths only)
+/extract-rules --realign                       # Re-judge every rule file under output_dir against current criteria
+/extract-rules --realign path/to/file.md ...   # Re-judge only the named files
 /extract-rules --apply-conversation-candidates <path>  # Apply pre-scanned rule candidates (Step C5 only; orchestrator sub-skill)
 # Multiple specs allowed (space-separated) → cross-analysis detects org-wide principles
 ```
@@ -179,7 +180,7 @@ Check arguments to determine mode:
 - `--restructure` → **Restructure Mode** (Step R1-R5)
 - `--from-conversation [session-id]` → **Conversation Extraction Mode** (Step C1-C5)
 - `--compact [<paths>]` → **Compaction Mode** (Step CP1-CP5)
-- `--realign <paths>` → **Realign Mode** (Step RA1-RA5)
+- `--realign [<paths>]` → **Realign Mode** (Step RA1-RA5)
 - `--from-pr <number|owner/repo#number|range> [...]` → **PR Review Extraction Mode** (Step P1-P5)
 - `--apply-conversation-candidates <path>` → **Conversation Candidate Apply Mode** (Step A1-A2)
 
@@ -701,11 +702,13 @@ See § Sub-skill caller directive at the bottom of this SKILL.md.
 
 ## Realign Mode
 
-When `--realign <path> [<path> ...]` is specified, re-judge the rules already written in the named files against the current extraction criteria, then drop, split, or trim the ones that no longer meet them (§ Restructure Mode's intro says which of the two modes a given change calls for).
+When `--realign [<path> ...]` is specified, re-judge rules already written against the current extraction criteria, then drop, split, or trim the ones that no longer meet them (§ Restructure Mode's intro says which of the two modes a given change calls for). Named paths judge only those files; no paths judges every rule file under `output_dir`.
+
+**Against `--compact`**, which also shrinks a rule file: one invariant divides them — `--compact` preserves the set of norms a file states, merging near-duplicates and dropping an entry only where another already subsumes it, while `--realign` can take a norm away outright. That is also what settles the gate: a run that cannot lose a rule needs no approval. When both apply to one file, realign first, so compaction does not spend effort merging rules that were about to go.
 
 Read `references/realign-mode.md` for the full processing steps (RA1-RA5) — it is the single canonical home for this mode's procedure and for the subagent instructions RA2 dispatches. Key flow:
 
-1. Load settings; check `output_dir` exists (same as Step C1's output-directory-existence check); resolve the explicit paths — there is **no** no-argument discovery pass, so with no paths report the usage form and stop
+1. Load settings; check `output_dir` exists (same as Step C1's output-directory-existence check); resolve the targets from the named paths, or by discovery under `output_dir` when none were named
 2. Dispatch one analysis subagent per target file, parse its fenced JSON verdict, and count each non-`keep` rule's referrers
 3. **USER APPROVAL GATE** — present the verdicts; nothing is written until it resolves
 4. Apply the accepted edits and follow through on the affected `.examples.md` entries

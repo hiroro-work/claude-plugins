@@ -704,6 +704,8 @@ See § Sub-skill caller directive at the bottom of this SKILL.md.
 
 When `--realign [<path> ...]` is specified, re-judge rules already written against the current extraction criteria, then drop, split, or trim the ones that no longer meet them (§ Restructure Mode's intro says which of the two modes a given change calls for). Named paths judge only those files; no paths judges every rule file under `output_dir`.
 
+**Against `--compact`**, which also shrinks a rule file: one invariant divides them — `--compact` preserves the set of norms a file states, merging near-duplicates and dropping an entry only where another already subsumes it, while `--realign` can take a norm away outright. That is also what settles the gate: a run that cannot lose a rule needs no approval. When both apply to one file, realign first, so compaction does not spend effort merging rules that were about to go.
+
 Read `references/realign-mode.md` for the full processing steps (RA1-RA5) — it is the single canonical home for this mode's procedure and for the subagent instructions RA2 dispatches. Key flow:
 
 1. Load settings; check `output_dir` exists (same as Step C1's output-directory-existence check); resolve the targets from the named paths, or by discovery under `output_dir` when none were named

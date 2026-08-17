@@ -11,6 +11,7 @@
 - docs(extract-rules): restate how `--realign` and `--compact` divide
   - The two were separated on where each starts from — a char count versus a criteria change — and on `--compact` being orchestrator-driven. Nothing invokes `--compact` programmatically, so in practice both are run by hand and that distinction predicted nothing.
   - The invariant that does hold: `--compact` preserves the set of norms a file states, merging near-duplicates and dropping an entry only where another already subsumes it, while `--realign` can take a norm away outright. That is also what settles which mode needs an approval gate.
+  - It now sits in `SKILL.md` § Realign Mode, beside the realign-versus-restructure guidance it belongs with. `references/realign-mode.md` is read only once `--realign` is already running, so mode-choice guidance was costing every run a read it could not act on.
 
 ## 2026-08-17
 

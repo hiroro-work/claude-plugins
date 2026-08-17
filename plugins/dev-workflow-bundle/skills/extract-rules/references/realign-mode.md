@@ -24,12 +24,16 @@ This is a hard constraint of the two-layer Pattern A architecture (subagent anal
 
 Load settings from `extract-rules.local.md` (same as Step 1 in Full Extraction Mode), resolving `output_dir` and `examples_output_dir`. If `output_dir` does not exist, report `Run /extract-rules first to initialize rule files.` and stop — this mode reports in prose rather than the error JSON compaction returns, since an operator started it.
 
-**Explicit paths only.** `--realign <path> [<path> ...]` names the files to judge; there is no discovery pass. Naming the file is the operator's explicit act, which is what makes a destructive judgement safe to offer. Invoked with no paths, report the usage form and stop. Accept a path only when it resolves under `output_dir`; reject anything else with a fail-loud diagnostic naming the resolved path and `output_dir`, and stop.
+Two ways to arrive at the target list:
 
-Two cautions on which file to name:
+- **Named paths** — `--realign <path> [<path> ...]` judges exactly those files. Accept a path only when it resolves under `output_dir`; reject anything else with a fail-loud diagnostic naming the resolved path and `output_dir`, and stop.
+- **Discovery** — `--realign` with no paths judges every `*.md` under `output_dir`, recursively, in lexicographic order so repeated runs present the same sequence. Exclude `*.examples.md`: when `examples_output_dir` is configured under `output_dir` the two collapse into one tree, and an example is not a rule (§ `.examples.md` follow-through covers what happens to it). When the walk finds nothing, report that `output_dir` holds no rule files and stop.
 
-- A **shared `.md`** may carry Principles that merge-rules promoted organization-wide. Realign judges locally and its referrer count scans this repository only, so it cannot see that a Principle is load-bearing elsewhere. Prefer naming `.local.md` files; when a shared `.md` is named deliberately, say so at the gate.
-- `--compact` also accepts paths under `examples_output_dir`. Realign does not: it judges rules, and an example follows the rule it illustrates (§ `.examples.md` follow-through). Resolve `examples_output_dir` here anyway — the follow-through needs it.
+What keeps a destructive judgement safe is Step RA3's gate, not the shape of the invocation — nothing is written until the operator accepts a verdict set they have seen in full. Discovery therefore widens what is judged, not what is written without asking.
+
+`--compact` also accepts paths under `examples_output_dir`; realign accepts neither those paths nor, under discovery, those files, for the reason above. Resolve `examples_output_dir` here anyway — the follow-through needs it.
+
+**Shared `.md` files need a word at the gate.** A shared `.md` may carry Principles that merge-rules promoted organization-wide. Realign judges locally and its referrer count scans this repository only, so it cannot see that a Principle is load-bearing in another project. Discovery sweeps these files in without the operator having named them, so say which targets are shared `.md` when presenting the gate — under discovery always, and under named paths whenever one was named deliberately.
 
 ## Judgement criteria
 
@@ -78,7 +82,7 @@ A rule's label is an anchor other documents cite by name. Dropping a rule, or re
 
 ## Step RA3 — Present and confirm (main thread, USER APPROVAL GATE)
 
-One gate for the whole run. Present every non-`keep` rule with its verdict, its `reason`, and its referrer count, grouped by target file and then by verdict. State the per-file counts (`keep` / `drop` / `split` / `reshape`) above each list. Then ask the user to accept the set, or to name the rules to exclude from it.
+One gate for the whole run. Present every non-`keep` rule with its verdict, its `reason`, and its referrer count, grouped by target file and then by verdict. State the per-file counts (`keep` / `drop` / `split` / `reshape`) above each list, and name the shared `.md` targets per § Step RA1's **Shared `.md` files need a word at the gate** paragraph. Then ask the user to accept the set, or to name the rules to exclude from it.
 
 On acceptance, apply the accepted subset. On a request to exclude, drop the `mechanical_edits` entries whose `label` matches an excluded rule and apply the rest. On a refusal, write nothing and report that.
 

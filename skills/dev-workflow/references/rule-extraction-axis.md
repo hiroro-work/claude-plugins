@@ -27,7 +27,7 @@ Instruct the subagent to:
 
 1. Read §2.2 (extraction criteria) and §2.3 (candidate schema) of this reference file, and §3 (sanitization rules).
 2. Parse the session jsonl (line-delimited JSON, each line one message) — the shared scan performs this parse **once** for all active axes (see `references/session-scan.md` § Subagent instructions); this step names only the per-axis extraction that single parse feeds. Extract `user` and `assistant` **text** content (skip `tool_use`, `thinking`, and similar internal blocks). A short `jq` or inline node/python is fine.
-3. Scan for the rule signals in §2.2 and classify each candidate per its six classification rules.
+3. Scan for the rule signals in §2.2 and classify each candidate per its nine classification rules.
 4. Assemble candidates per §2.3, applying its discriminator-conditioned field rules so each candidate passes the consumer's Step A1 validation.
 5. Apply §3 sanitization to each candidate's prose fields (`Context` / `Rule`) **before** returning.
 6. **Language handling**: write the `Rule` prose in the provided language. All other tokens — `### Candidate <N>` headings, the `Type:` / `Category:` / `Name:` / `Signature:` / `Context:` / `Rule:` label names, the enum values (`principle` / `pattern` for `Type`; `language` / `framework` / `integration` / `project` for `Category`), and the trailing `Candidates: <N>` line — stay English exactly as shown. (`Signature` is a code signature and is never localized.)
@@ -37,7 +37,7 @@ Instruct the subagent to:
 
 Extract what Claude would get **wrong or produce differently** without seeing this project — the "Claude knowledge gap" (per `extract-rules` `references/extraction-criteria.md`). If Claude would produce correct, consistent code without the rule, it is general knowledge — do **not** extract it.
 
-Six classification rules (the C4 analysis `extract-rules --from-conversation` applies):
+Nine classification rules (the C4 analysis `extract-rules --from-conversation` applies):
 
 1. **General best-practice feedback** → **skip** (Claude already knows: "use const", "no magic numbers", "DRY", "early returns"). Extract only a team-specific paradigm choice beyond general best practice (e.g. "FP only, no classes").
 2. **Project-specific patterns** → **extract** with the concrete signature (e.g. `` `RefOrNull<T>` for nullable refs ``, `` `pathFor()` must be used with `url()` ``).
@@ -45,6 +45,9 @@ Six classification rules (the C4 analysis `extract-rules --from-conversation` ap
 4. **Routine re-application of an existing pattern** → **skip** (mechanical extension / template expansion with no new decision or user correction). Extract only when a new design decision was made, an exceptional case was handled, or the user corrected / redirected the approach.
 5. **Ordering / sequencing rules observed in this run** → **self-check**: capture the underlying invariant ("shared dependency versions must stay aligned"), not the incidental direction ("always update X before Y"), unless the direction is confirmed intentional.
 6. **Abstraction normalization** → normalize phrasing so the main sentence generalizes and the rule can be re-matched in a later session (enabling staging → canonical promote). Incident-specific detail is **dropped**, not relocated into a parenthetical suffix; retain one such parenthetical only when the main sentence alone does not say where the rule applies. A rule whose main sentence is incident-specific will never re-match.
+7. **Durability** → **skip** a candidate that only records this session — one that would not change what gets written in a related but different task. Signals of a record: it reads as a sequence of what was done; its subject is one artifact rather than a class of situation; removing it would make no future change wrong, only different. Where the judgement is genuinely uncertain, **emit it anyway only for a project-level pattern** (`Type: pattern` with `Category: project`) — the consumer stages those, so a second observation settles it. Every other combination lands directly in canonical, so an uncertain candidate there is not emitted.
+8. **One rule, one claim** → a candidate needing "and also", several bolded sub-clauses, or a numbered procedure to state is several rules, or an account rather than a rule. Split it and apply the other rules to each part separately.
+9. **Reach** → **skip** a candidate that does not earn permanent context. Rule files load at every session start, so a norm firing in one narrow configuration of one component is durable and still not worth carrying. Keep it when its reach is wide, **or** when a narrow reach pairs with a consequence that is silent, destructive, or expensive to recover from; skip it when a rerun or an ordinary review would absorb the consequence, and skip anything a linter, type checker, test, or verification step already catches. Expect this rule to reject the most candidates.
 
 The highest-value signal is a **user correction** — where the user rejected Claude's approach and redirected, modified Claude's code to reveal a convention, or explained why an approach is preferred in this project.
 

@@ -5,7 +5,7 @@ This file is the canonical home for two payload sections that `verify-diff` inje
 - `## Executor prompt` → `--- INFERENCE PROMPT ---` payload section
 - `## Response format` → `--- RESPONSE FORMAT ---` payload section
 
-`<skill-name>` is substituted by the dispatching main thread before injection so the executor sees the concrete skill name. The diff and the affected files are delivered in sibling payload sections (`--- DIFF ---`, `--- AFFECTED FILES ---`) and are not duplicated here.
+`<skill-name>` is substituted by the dispatching main thread before injection so the executor sees the concrete skill name.
 
 ---
 
@@ -47,74 +47,3 @@ Write your reasoning, scenario execution, and per-file findings in natural langu
 ````
 
 `file` must be one of the paths listed in `--- AFFECTED FILES ---`. `old_string` must match exactly one location in the current contents of that file. Include **1–3 lines of surrounding context** so the snippet is unique — short one-liners collide and cause the Edit to fail.
-
----
-
-## Caller note
-
-This section is **not** injected into the executor prompt — it documents how the verify-diff caller (a human or orchestrator) should interpret the executor's verdict.
-
-If the `inferred_intent` does not match what the author actually had in mind, the per-skill verdict is informative-only. The caller can re-invoke verify-diff with explicit `Description` / `Suggested fix direction` / `Target file` to override the inference.
-
----
-
-## Verdict samples
-
-This section records observed top-level and per-skill JSON shapes from manual smoke tests, kept as regression anchors. Update when the schema spec in `SKILL.md` § Auto-derive mode A3 changes.
-
-### Sample: A3 aggregate verdict (mixed converged + skipped → top-level `partial`)
-
-```json
-{
-  "mode": "auto-derive",
-  "status": "partial",
-  "iterations_used_total": 4,
-  "applied_edits_count_total": 2,
-  "non_skill_files": [".claude/rules/project.rules.md"],
-  "per_skill": {
-    "verify-diff": {
-      "primary_file": ".claude/skills/verify-diff/SKILL.md",
-      "files": [".claude/skills/verify-diff/SKILL.md", ".claude/skills/verify-diff/references/auto-derive-prompt.md"],
-      "inferred_intent": "Add an auto-derive mode that infers intent from diff alone and verifies on a per-skill basis, falling back when explicit args are absent.",
-      "status": "converged",
-      "iterations_used": 2,
-      "objective_met": "yes",
-      "applied_edits_count": 2,
-      "unresolved_gaps": [],
-      "reverted_paths": [],
-      "reason": null
-    },
-    "skill-review": {
-      "primary_file": ".claude/skills/skill-review/SKILL.md",
-      "files": [".claude/skills/skill-review/SKILL.md"],
-      "inferred_intent": "Tighten the reviewer prompt's gate-reachability wording so a no-op iteration cannot flag speculative edits.",
-      "status": "skipped",
-      "iterations_used": 2,
-      "objective_met": "unknown",
-      "applied_edits_count": 0,
-      "unresolved_gaps": [],
-      "reverted_paths": [],
-      "reason": "verdict parse failure"
-    }
-  },
-  "reason": null
-}
-```
-
-### Sample: A1 early-return on empty diff
-
-```json
-{"mode": "auto-derive", "status": "skipped", "reason": "empty diff", "iterations_used_total": 0, "applied_edits_count_total": 0, "non_skill_files": [], "per_skill": {}}
-```
-
-### Sample: A1 early-return on non-skill files only
-
-```json
-{"mode": "auto-derive", "status": "skipped", "reason": "no skill files in diff", "iterations_used_total": 0, "applied_edits_count_total": 0, "non_skill_files": [".claude/rules/project.rules.md", "CHANGELOG.md"], "per_skill": {}}
-```
-
-### Sample: incomplete-args early-return (NOT auto-derive shape — explicit-args Step 1 schema)
-
-```json
-{"status": "skipped", "reason": "incomplete args", "iterations_used": 0, "applied_edits_count": 0, "unresolved_gaps": [], "reverted_paths": [], "objective_met": "unknown"}
-```

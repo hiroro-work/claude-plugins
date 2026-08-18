@@ -6,9 +6,9 @@ allowed-tools: Read, Edit, Agent, TaskCreate, TaskUpdate, TodoWrite, Bash(git di
 
 # Verify Diff
 
-The convergence signal is the executor itself returning `suggested_edits: []` on a pass verdict — that is, the executor declares nothing more is left to fix. By default the skill runs a **single** pass; a caller that raises `Max iterations` loops until that signal, max iterations is reached, or a safety rail trips.
+The convergence signal is the executor itself returning `suggested_edits: []` on a pass verdict. By default the skill runs a **single** pass; a caller that raises `Max iterations` loops until that signal, max iterations is reached, or a safety rail trips.
 
-Designed to be called from non-interactive routines such as `dev-workflow-triage`. It never prompts the user; it either returns a structured summary or terminates early with a machine-readable reason code.
+It never prompts the user.
 
 ## Invocation contract
 
@@ -26,7 +26,7 @@ A field counts as **provided** iff the caller supplied a non-empty, non-whitespa
 
 - **All three of** `Description` / `Suggested fix direction` / `Target file` provided → **explicit-args mode** (run `## Workflow` § Step 1 – Step 5 unchanged).
 - **All three absent** → **auto-derive mode** (run `## Auto-derive mode` instead).
-- **1 or 2 of the three provided** (incomplete framing) → return early with the explicit-args mode Step 1 schema (does **not** enter auto-derive mode — `incomplete args` is an explicit-args bug signal, surfaced loudly rather than silently falling back):
+- **1 or 2 of the three provided** (incomplete framing) → return early with the explicit-args mode Step 1 schema (does **not** enter auto-derive mode):
 
   ```json
   {"status": "skipped", "reason": "incomplete args", "iterations_used": 0, "applied_edits_count": 0, "unresolved_gaps": [], "reverted_paths": [], "objective_met": "unknown"}
@@ -36,7 +36,7 @@ The caller must **not** stage changes while this skill is running. The skill rea
 
 ## Auto-derive mode
 
-Triggered when `Description`, `Suggested fix direction`, and `Target file` are **all** absent (see `## Invocation contract` § Mode determination). The mode infers intent from the diff itself and verifies on a per-skill basis, so the empirical check still runs when the caller (e.g. `dev-workflow` `hooks.on_complete`) has no per-Finding framing to pass through. The per-iteration loop semantics defined in `## Workflow` § Step 3 are reused verbatim per skill, with the auto-derive-specific overrides spelled out in `A2 § Per-iter loop semantics`.
+Triggered when `Description`, `Suggested fix direction`, and `Target file` are **all** absent (see `## Invocation contract` § Mode determination). The mode infers intent from the diff itself and verifies on a per-skill basis. The per-iteration loop semantics defined in `## Workflow` § Step 3 are reused verbatim per skill, with the auto-derive-specific overrides spelled out in `A2 § Per-iter loop semantics`.
 
 ### A1. Collect diff and group by skill
 
@@ -47,13 +47,13 @@ Triggered when `Description`, `Suggested fix direction`, and `Target file` are *
    {"mode": "auto-derive", "status": "skipped", "reason": "empty diff", "iterations_used_total": 0, "applied_edits_count_total": 0, "non_skill_files": [], "per_skill": {}}
    ```
 
-   Auto-derive treats an empty diff as `skipped` rather than `conflict` (the explicit-args mode policy) — without caller framing, an empty diff is informational, not a bug signal.
+   Auto-derive treats an empty diff as `skipped` rather than `conflict` (the explicit-args mode policy).
 3. Compute `affected_files` from the diff (`git diff --name-only <Base ref>`).
 4. Group each file by skill prefix:
    - `skills/<name>/...` → skill `<name>`
    - `.claude/skills/<name>/...` → skill `<name>`
    - paths outside both prefixes → `non_skill_files` bucket (not dispatched; reported in the aggregate verdict)
-   - **Dedup**: if the same skill `<name>` appears under both prefixes (a file under `skills/<name>/...` and another under `.claude/skills/<name>/...`), merge both into the same skill key so symlink-resolved or dev-test-symlink layouts do not register the same skill twice. `files` keeps every distinct path string that appeared in the diff (both prefixes if they were both listed). `primary_file` selection (A2 § Primary file selection) prefers the `skills/<name>/...` form when both are present.
+   - **Dedup**: if the same skill `<name>` appears under both prefixes (a file under `skills/<name>/...` and another under `.claude/skills/<name>/...`), merge both into the same skill key. `files` keeps every distinct path string that appeared in the diff (both prefixes if they were both listed). `primary_file` selection (A2 § Primary file selection) prefers the `skills/<name>/...` form when both are present.
 5. If `skill_groups` is empty (only non-skill files were changed), return early with `status=skipped`, `reason="no skill files in diff"`. The aggregate verdict still records the skipped paths so the caller can see what was bypassed:
 
    ```json
@@ -66,13 +66,13 @@ Auto-derive pre-registers `N skills × Max iterations` task rows total, namespac
 
 1. **Pre-register iteration tasks** — `TaskCreate` one task per iteration named `<skill> iter 1` … `<skill> iter <Max iterations>` following the same protocol as `## Workflow` § Step 3 pre-registration (mark `in_progress` via `TaskUpdate` before dispatch, `completed` after parse + apply, append `— skipped: <reason>` on early exit).
 2. **Primary file selection** — pick `primary_file` = `<skill-dir>/SKILL.md` if it appears in `files`; otherwise the first entry in `files` sorted lexicographically. This choice only labels the per-skill verdict's `primary_file` field for human-readable anchoring and influences the dispatch payload's framing — it does **not** affect per-skill verdict semantics (`status` / `applied_edits_count` / `objective_met` etc.), which are emitted for the whole `files` set.
-3. **Per-iter snapshot** — on iter 1, `Read` the full current contents of every entry in `files` (per-iter snapshot) and run `git diff <Base ref> -- <files>` to capture the per-skill diff. The A1 (1) full-tree diff is used **only for skill-prefix splitting in A1** and is not forwarded to the dispatch payload; the `--- DIFF ---` payload carries the per-skill diff only, keeping main-thread context bounded. On `i ≥ 2`, only re-`Read` the subset of `files` whose path appeared in a successfully-applied `suggested_edits` entry during iter `i-1` (untouched files keep their iter-1 snapshot — wasted work otherwise, same convention as `publicity-review` § Step 2 (a)) and re-run `git diff <Base ref> -- <files>` so the per-skill diff reflects edits that landed in prior iterations.
-4. **Dispatch payload assembly** — invoke the `Agent` tool to dispatch a fresh executor. Assemble the dispatch prompt from the four sections below, each framed with a clear `--- LABEL ---` fence (same convention as `## Workflow` § Step 3 (a) Dispatch bias-free executor and sibling Pattern A skills `publicity-review` / `skill-review`):
+3. **Per-iter snapshot** — on iter 1, `Read` the full current contents of every entry in `files` (per-iter snapshot) and run `git diff <Base ref> -- <files>` to capture the per-skill diff. The A1 (1) full-tree diff is used **only for skill-prefix splitting in A1** and is not forwarded to the dispatch payload; the `--- DIFF ---` payload carries the per-skill diff only. On `i ≥ 2`, only re-`Read` the subset of `files` whose path appeared in a successfully-applied `suggested_edits` entry during iter `i-1` (untouched files keep their iter-1 snapshot) and re-run `git diff <Base ref> -- <files>` so the per-skill diff reflects edits that landed in prior iterations.
+4. **Dispatch payload assembly** — invoke the `Agent` tool to dispatch a fresh executor. Assemble the dispatch prompt from the four sections below, each framed with a clear `--- LABEL ---` fence:
 
    - `--- DIFF ---`: the per-skill multi-file diff captured in `A2 § Per-iter snapshot`
    - `--- AFFECTED FILES ---`: each entry in `files` as a `### <path>` sub-heading followed by that file's full current contents (publicity-review pattern)
    - `--- INFERENCE PROMPT ---`: the body of `references/auto-derive-prompt.md` § Executor prompt injected verbatim, with `<skill-name>` substituted by the current skill's name. The reference holds the two-phase Phase 1 INFER INTENT (1–2 sentences) + Phase 2 VERIFY (scenarios + checklist) prompt
-   - `--- RESPONSE FORMAT ---`: `references/auto-derive-prompt.md` § Response format injected verbatim — output schema (including `inferred_intent` and per-entry `file` for `suggested_edits`) plus the "1–3 lines of surrounding context" convention. Single canonical home for the response format; do not duplicate the schema body in this SKILL.md
+   - `--- RESPONSE FORMAT ---`: `references/auto-derive-prompt.md` § Response format injected verbatim — output schema (including `inferred_intent` and per-entry `file` for `suggested_edits`) plus the "1–3 lines of surrounding context" convention
 
    **Agent unavailable fallback**: detect availability and fall back per the canonical write-up in `rules-review` SKILL.md `§ 5. Review` (the "Detecting Agent availability" / "Fallback when Agent is unavailable" paragraphs). Auto-derive specialization: when falling back, walk the executor prompt inline-sequentially against each per-skill group in the main thread and emit the same A3 aggregate JSON defined below so callers' parse path is identical.
 
@@ -83,18 +83,18 @@ Auto-derive pre-registers `N skills × Max iterations` task rows total, namespac
 
 6. **Per-iter loop semantics** — reuse `## Workflow` § Step 3 (b) Parse & apply and § Step 3 (c) safety rails verbatim, with these auto-derive-specific overrides:
 
-   - **(b) sub-case 2 schema violation** is extended: in addition to the existing checks, require non-empty string `inferred_intent` at the top level **and** non-empty string `file` on every `suggested_edits` entry. Per-entry shape failures here prevent a malformed entry from crashing a downstream `Edit` call.
+   - **(b) sub-case 2 schema violation** is extended: in addition to the existing checks, require non-empty string `inferred_intent` at the top level **and** non-empty string `file` on every `suggested_edits` entry.
    - **(b) sub-case 5 apply** edits the file named by `suggested_edits[i].file` (not the explicit-args `Target file`). **Before each `Edit`**, verify `suggested_edits[i].file ∈ F` (the per-skill `files` set); if not, record the path in an `out_of_scope` list and skip the entry without calling `Edit` (no working-tree write occurs, so no revert is needed for that entry — see (c) Scope rail). `old_string` mismatches on in-scope entries remain the no-op fallback. `applied_edits_count` increments only for `Edit` calls that succeeded; record the `file` path of each successfully-applied edit into the per-iter set `D` consumed by (c) Frontmatter rail.
-   - **(c) Scope rail (per-skill, judgment annotation)**: each per-skill dispatch is an independent executor, and (b) sub-case 5's pre-check already prevents writes outside `F`. After the apply phase, if `out_of_scope` is non-empty, the executor attempted to write paths the dispatch payload did not authorize — emit the per-skill verdict with `status: "conflict"`, `reason: "scope violation"`, `reverted_paths: out_of_scope`. No `git checkout HEAD --` runs because no offending write actually landed (the pre-check skipped them); `reverted_paths` reports the rejected paths for caller-visibility. Other per-skill loops continue. This design avoids the multi-skill collateral-damage failure mode where a global `git checkout HEAD -- <sibling-path>` would wipe a sibling skill's already-landed edits.
-   - **(c) Frontmatter rail**: applies per edited file in **this iter's apply phase** (the set `D` defined in (b) sub-case 5 — paths whose `Edit` call returned success this iter). For each such file with a `---`-delimited YAML frontmatter block, re-`Read` and parse it; on parse failure, run `git checkout HEAD -- <file>` and emit the per-skill verdict with `status: "conflict"`, `reason: "frontmatter broken"`, `reverted_paths=[<file>]`. Since `D ⊆ F` by construction (pre-check filtering), the `git checkout` only ever touches paths in this skill's `files` — no sibling-skill collateral damage. Files without frontmatter skip this rail (same as explicit-args mode).
-   - **(6.1) `inferred_intent` persistence**: capture `inferred_intent` from the **iter 1 verdict** into main-thread context and treat that value as fixed for the rest of the per-skill loop. iter 2+ verdicts may return a different `inferred_intent` because the executor reruns Phase 1 each dispatch — do **not** overwrite the iter-1 value. Auditability requires the per-skill verdict to report a single, stable intent across the loop; iter-2+ drift would make the verdict misleading to a human reader.
+   - **(c) Scope rail (per-skill, judgment annotation)**: after the apply phase, if `out_of_scope` is non-empty, the executor attempted to write paths the dispatch payload did not authorize — emit the per-skill verdict with `status: "conflict"`, `reason: "scope violation"`, `reverted_paths: out_of_scope`. No `git checkout HEAD --` runs — no offending write landed. `reverted_paths` reports the rejected paths. Other per-skill loops continue.
+   - **(c) Frontmatter rail**: applies per edited file in **this iter's apply phase** (the set `D` defined in (b) sub-case 5 — paths whose `Edit` call returned success this iter). For each such file with a `---`-delimited YAML frontmatter block, re-`Read` and parse it; on parse failure, run `git checkout HEAD -- <file>` and emit the per-skill verdict with `status: "conflict"`, `reason: "frontmatter broken"`, `reverted_paths=[<file>]`. Files without frontmatter skip this rail (same as explicit-args mode).
+   - **(6.1) `inferred_intent` persistence**: capture `inferred_intent` from the **iter 1 verdict** into main-thread context and treat that value as fixed for the rest of the per-skill loop. iter 2+ verdicts may return a different `inferred_intent` because the executor reruns Phase 1 each dispatch — do **not** overwrite the iter-1 value.
 
      `inferred_intent` write rules at per-skill loop exit (closed list, covers every termination path so the field is unambiguous regardless of `status`):
 
      - iter 1 produced no parseable verdict (sub-case 1 / 2 / dispatch error) and the per-skill loop terminates immediately with `status=skipped` → write `inferred_intent: null` (there is no iter-1 value to fix).
      - All other termination paths — `converged` at any iter, `conflict` from (c) Scope rail or Frontmatter rail at any iter, `skipped (divergent gaps)` at iter ≥ 2, max-iter `unresolved` — write the iter-1 captured value into `inferred_intent` regardless of `status`. The captured value is fixed at iter 1 and survives subsequent iter outcomes.
 
-     Divergence comparison (sub-case 4) uses the existing `(remaining_gaps, regressions)` multiset pair only; `inferred_intent` is excluded since the main thread fixes it.
+     Divergence comparison (sub-case 4) uses the existing `(remaining_gaps, regressions)` multiset pair only; `inferred_intent` is excluded.
 
 7. **Per-skill verdict** — assembled in main-thread context at per-skill loop exit (no JSON is emitted yet; A3 aggregates and emits a single block at the end):
 
@@ -144,15 +144,13 @@ After every per-skill loop has finished, emit a single fenced JSON block at the 
 4. else every per-skill `status == skipped` → `skipped`
 5. else (a mix of `converged` and `skipped` only — neither `conflict` nor `unresolved`) → `partial`
 
-`partial` is **auto-derive-only** and is never emitted by the explicit-args mode contract — existing callers wired to the explicit-args 4-value enum (e.g. `dev-workflow-triage`'s (d) verdict parser) will not see it.
+`partial` is **auto-derive-only** and is never emitted by the explicit-args mode contract.
 
 **Top-level `reason` rule**:
 
 - `status: "skipped"` from A1 early-return: enum string (`"empty diff"` or `"no skill files in diff"`).
-- `status: "skipped"` from A3 aggregation (every per-skill is `skipped`): JSON `null` at the top level. Each skill's individual `reason` survives in its per-skill verdict object — callers should `inspect per_skill[<skill>].reason` for the underlying cause.
+- `status: "skipped"` from A3 aggregation (every per-skill is `skipped`): JSON `null` at the top level. Each skill's individual `reason` survives in its per-skill verdict object.
 - All other top-level statuses (`converged` / `partial` / `unresolved` / `conflict`): JSON `null`.
-
-This split prevents a same-status / different-`reason`-shape ambiguity for the `skipped` case (A1 carries an enum string; A3 carries `null` and pushes per-skill `reason` deeper into the verdict).
 
 ## Workflow
 
@@ -163,7 +161,7 @@ This split prevents a same-status / different-`reason`-shape ambiguity for the `
    {"status": "skipped", "reason": "missing target", "iterations_used": 0, "applied_edits_count": 0, "unresolved_gaps": [], "reverted_paths": [], "objective_met": "unknown"}
    ```
 2. Run `git diff <Base ref> -- <Target file>`. This captures working-tree-vs-base; no staging is assumed.
-3. If the diff is empty, return early with `status=conflict` and `reason="empty diff"`. An empty diff means the caller's Edit did not actually change the file, which is a bug signal the parent should surface as a conflict, not a warning.
+3. If the diff is empty, return early with `status=conflict` and `reason="empty diff"`.
 
 ### Step 2 — Derive evaluation scenarios (inline, no dispatch)
 
@@ -172,8 +170,8 @@ Generate 1–2 evaluation scenarios plus a requirements checklist from the calle
 1. `Read` the first 100 lines of `Target file` to pick up the frontmatter, `description`, and opening intent prose.
 2. Produce **at least one** "median" scenario — the typical use case the `Description` and `Suggested fix direction` imply. If those two fields are too thin to anchor a median, fall back to the target file's own frontmatter `description`: "does the diff achieve what this file declares as its purpose?" This fallback always yields a scenario.
 3. Add **one** "edge" scenario only if the Finding text explicitly names a boundary condition, a failure mode, or an input class the median does not cover. Otherwise stop at one scenario — do not pad.
-4. For each scenario, write a requirements checklist of 3–7 items. Frame each item as an **intent / behavior / property** the diff must achieve, not as a reference to specific text fragments or line numbers — edits may legitimately rewrite a referenced fragment mid-run and invalidate text-anchored checks. When the Finding inherently involves a specific fragment (e.g. a rename), frame the item around the resulting behavior (e.g. "no occurrences of the old name remain in the specified scope") rather than requiring an exact substring match. **At least one item must be tagged `[critical]`** (minimum success bar; prevents vacuous-pass verdicts).
-5. Hold the scenarios and checklists in main-thread context for the duration of the run. **Do not regenerate mid-run** — cross-iteration reproducibility depends on fixing them once.
+4. For each scenario, write a requirements checklist of 3–7 items. Frame each item as an **intent / behavior / property** the diff must achieve, not as a reference to specific text fragments or line numbers. When the Finding inherently involves a specific fragment (e.g. a rename), frame the item around the resulting behavior (e.g. "no occurrences of the old name remain in the specified scope") rather than requiring an exact substring match. **At least one item must be tagged `[critical]`**.
+5. Hold the scenarios and checklists in main-thread context for the duration of the run. **Do not regenerate mid-run.**
 
 ### Step 3 — Iteration loop (i = 1 .. Max iterations)
 
@@ -224,11 +222,11 @@ Invoke the `Agent` tool to dispatch a fresh executor. Assemble the dispatch prom
 
 1. **Verdict missing or malformed** — no fenced JSON block found, or JSON parse fails → return `status=skipped`, `reason="verdict parse failure"`.
 2. **Schema violation** — `objective_met` is not one of `yes|partial|no`, or required keys are missing → return `status=skipped`, `reason="verdict schema violation"`.
-3. **Converged** — `objective_met == "yes"` AND `regressions` is empty → exit loop with `status=converged` and proceed directly to Step 5 — Emit structured summary. If `suggested_edits` is nonempty, discard the edits (do not apply them) — the gate-reachability rule told the executor to return `[]` on a pass verdict, so nonempty edits on a pass are treated as ignored observations consistent with that contract. Safety rails (c) do not run (no edit was applied this iteration).
-4. **Divergence** — only when `i >= 2`: if both `remaining_gaps` AND `regressions` contain the same elements as the previous iteration's values (compare as multisets — sort each array textually before comparison so a reordered-but-identical report still counts as divergence), the loop is not making progress → return `status=skipped`, `reason="divergent gaps"`. (Skip on `i = 1`. Comparing the `(remaining_gaps, regressions)` pair catches an executor that reports regressions-only with empty `suggested_edits`, which would otherwise loop on empty-equal `remaining_gaps` alone.)
+3. **Converged** — `objective_met == "yes"` AND `regressions` is empty → exit loop with `status=converged` and proceed directly to Step 5 — Emit structured summary. If `suggested_edits` is nonempty, discard the edits (do not apply them). Safety rails (c) do not run (no edit was applied this iteration).
+4. **Divergence** — only when `i >= 2`: if both `remaining_gaps` AND `regressions` contain the same elements as the previous iteration's values (compare as multisets — sort each array textually before comparison so a reordered-but-identical report still counts as divergence), the loop is not making progress → return `status=skipped`, `reason="divergent gaps"`.
 5. **Otherwise** — apply `suggested_edits` in order:
    - Re-Read the target file before each Edit so `old_string` matches current contents.
-   - If an `old_string` is not found, skip that edit and continue with the next. This is expected when the executor returned multiple edits from a single snapshot and a later edit overlaps a region an earlier edit already rewrote — the skip is a no-op fallback, not an error.
+   - If an `old_string` is not found, skip that edit and continue with the next. The skip is a no-op fallback, not an error.
    - After the edits (applied or skipped), run the safety rails in (c), then continue to iteration `i + 1`.
 
 #### (c) Per-iteration safety rails — run only if at least one edit was applied
@@ -237,7 +235,7 @@ Invoke the `Agent` tool to dispatch a fresh executor. Assemble the dispatch prom
   ```
   git checkout HEAD -- <Target file>
   ```
-  Return `status=conflict`, `reason="frontmatter broken"`, `reverted_paths=[<Target file>]`. If the file has no frontmatter block at all (e.g., a plain source file), skip this rail — there is nothing to corrupt.
+  Return `status=conflict`, `reason="frontmatter broken"`, `reverted_paths=[<Target file>]`. If the file has no frontmatter block at all (e.g., a plain source file), skip this rail.
 - **Scope** — Run `git diff --name-only`. If any returned path is not `<Target file>`:
   ```
   git checkout HEAD -- <each offending path>
@@ -247,8 +245,6 @@ Invoke the `Agent` tool to dispatch a fresh executor. Assemble the dispatch prom
 ### Step 4 — Max iterations reached without convergence
 
 Set `status=unresolved`, `unresolved_gaps = <last remaining_gaps>`. `applied_edits_count` reflects edits that actually landed (not skipped).
-
-`remaining_gaps` is the executor's **pre-apply** judgment, so `unresolved` alongside `applied_edits_count > 0` is the ordinary outcome of a productive pass at the default `Max iterations` of `1`, not an anomaly; raise `Max iterations` to make `converged` reachable after a fix.
 
 ### Step 5 — Emit structured summary
 
@@ -287,11 +283,11 @@ If the `Agent` tool call itself errors, times out, or returns an empty response,
 
 ## No structure-only mode
 
-This skill does not have a static-review fallback. Callers that want best-practices checking (prose quality, naming, description rigor) should chain `Skill(skill-review)` after `verify-diff`; the two skills are complementary, not substitutes.
+This skill does not have a static-review fallback.
 
 ## Scope check boundary
 
-`verify-diff` runs its scope check per iteration (inside (c)) to catch leaks the moment they appear. A caller running its own final scope check per Finding provides a last-resort backstop — two independent gates, different granularities. In auto-derive mode the scope check is per-skill — the baseline is the per-skill `files` set rather than a single `Target file` — see `## Auto-derive mode` `A2 § Per-iter loop semantics` (c).
+`verify-diff` runs its scope check per iteration (inside (c)). In auto-derive mode the scope check is per-skill — the baseline is the per-skill `files` set rather than a single `Target file` — see `## Auto-derive mode` `A2 § Per-iter loop semantics` (c).
 
 ## Sub-skill caller directive
 
@@ -299,17 +295,4 @@ When invoked as a sub-skill (i.e. via `Skill(verify-diff)` from an orchestrator)
 
 ## Stop hook structural conflict (caller-side note)
 
-This skill operates on an uncommitted working tree throughout: main thread `Edit` applies executor-suggested edits, the Step 3 iteration loop dispatches further `Agent` executors, and the caller is the one that eventually decides whether to commit. On Claude Code on the Web the auto-installed `~/.claude/stop-hook-git-check.sh` fires on every Stop event between dispatches and feeds back `Please commit and push…`. **Treat each fire as a spurious fire** — record it, ignore the prose, and keep going until Step 5 emits the structured summary. Do **not** commit from inside this skill (and `allowed-tools` omits `git commit` so an attempt would fail anyway); commit policy lives with the caller (e.g. `dev-workflow-triage`'s per-Finding flow). See `dev-workflow-triage` SKILL.md `§ Stop hook structural conflict` for the canonical write-up.
-
-In auto-derive mode the per-skill loop dispatches an `Agent` for each skill (and again per iteration), so the multiplier on hook-fire count is `N skills × iter` rather than the single dispatch loop of explicit-args mode. Same disposition (record and continue), but the higher fire count is normal for this mode.
-
-## Outer review loop interaction (caller-side note)
-
-When invoked from `dev-workflow-triage`'s § Apply accepted Findings (d-loop) per-Finding review subagent's outer loop at outer iter ≥ 2, the cumulative diff against `Base ref = HEAD` may include sibling-review polish edits (from `Skill(skill-review)` / `Skill(publicity-review)`) unrelated to the original Finding's `Description` / `Suggested fix direction`. The bias-free executor may judge those polish lines as "regression" and emit `unresolved` — this is the expected disposition under outer-loop wrapping, not a `verify-diff` bug. At the default `Max iterations` of `1` every pass that applies edits already ends in `unresolved` (§ Step 4 — Max iterations reached without convergence), so outer-loop wrapping raises the rate of an ordinary disposition rather than introducing an outer-iter-only one.
-
-Caller-side handling: under the (d-loop) design `verify-diff` is invoked via `Skill(verify-diff)` from inside the dispatched per-Finding subagent, not directly from the orchestrator main thread. The subagent treats `unresolved` as a non-fatal warning and proceeds to skill-review; the outer loop's early-exit may absorb the noise once all three callees stop applying edits. The rationale for `Base ref = HEAD` across outer iters: no commit happens until (g), so each callee sees the cumulative working-tree state including prior outer iter's edits. See `dev-workflow-triage` SKILL.md `§ Apply accepted Findings` (d-loop) for the canonical outer-loop write-up.
-
-## Related
-
-- Why the three Pattern A siblings report a final-iteration fix differently: `publicity-review` drops a fixed entry from its residual list because each of its `suggested_edits` names the `finding_index` it resolves, and `skill-review` returns `applied-edits` off its cumulative count. A `remaining_gaps` phrase carries no equivalent link to an individual edit, so `verify-diff` reports the gaps as-is and leaves the reading to the caller (§ Step 4 — Max iterations reached without convergence).
-- `prompt-tuning` — iterative empirical evaluation of a whole prompt against multi-scenario requirement checklists. Shares the anti-self-review philosophy (dispatch a fresh executor; never self-review) but operates at prompt-quality granularity, while `verify-diff` operates on a single diff with a single objective. `verify-diff` automates prompt-tuning's human-in-the-loop by having the executor emit `suggested_edits` from its unclear-points report. The auto-derive mode reuses the same intent-inference pattern from prompt-tuning and re-specializes it for diff-verification granularity.
+This skill operates on an uncommitted working tree throughout: main thread `Edit` applies executor-suggested edits, the Step 3 iteration loop dispatches further `Agent` executors, and the caller is the one that eventually decides whether to commit. On Claude Code on the Web the auto-installed `~/.claude/stop-hook-git-check.sh` fires on every Stop event between dispatches and feeds back `Please commit and push…`. **Treat each fire as a spurious fire** — record it, ignore the prose, and keep going until Step 5 emits the structured summary. Do **not** commit from inside this skill; commit policy lives with the caller (e.g. `dev-workflow-triage`'s per-Finding flow). See `dev-workflow-triage` SKILL.md `§ Stop hook structural conflict` for the canonical write-up.

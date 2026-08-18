@@ -1,6 +1,6 @@
 # Transcribed dev-workflow inline definitions
 
-These are the `dev-workflow` **inline** definitions that `mobpro` needs but that do **not** live in any `dev-workflow` reference file — they sit inline in `dev-workflow/SKILL.md`, which `mobpro` does not read at runtime (SKILL.md § Runtime reads). Per the mobpro design, they are transcribed here so `mobpro` is self-contained, each with a `Keep in sync with dev-workflow SKILL.md § <section>` note. SKILL.md's M-steps point here by transcription id (a)–(g).
+These are the `dev-workflow` definitions that `mobpro` needs but that it does not read at runtime (SKILL.md § Runtime reads). Their upstream differs by transcription id: (b)–(f) come from `dev-workflow`'s `references/finish-phase.md`, which holds the finish phase — § Step 9 through § Completion — that `dev-workflow`'s SKILL.md reduces to section labels and one delegation pointer; the rest come from definitions still inline in `dev-workflow/SKILL.md`. Per the mobpro design, they are transcribed here so `mobpro` is self-contained, each with a `Keep in sync with ...` note naming its own upstream. SKILL.md's M-steps point here by transcription id (a)–(g).
 
 **Read this file once**, at the first point that needs a transcription (SKILL.md § Configuration's pointer to § (a), before M1 completes); the later pointers from M8 / M10 / M11 / M12 / M13 name a section of that same copy.
 
@@ -29,11 +29,11 @@ These are the `dev-workflow` **inline** definitions that `mobpro` needs but that
 
 ## (d) Task-derived-change gate (M10)
 
-`Keep in sync with dev-workflow SKILL.md § Step 9's task-derived-change gate paragraph.` Before executing any `hooks.on_complete` entry, check whether the tracked diff since `<base_commit>` contains task-produced changes. When it does not — the tracked diff is empty or every changed path is pre-existing work unrelated to this task, **and** `git status --porcelain=v1 --untracked-files=all` shows no task-derived untracked files (gitignored paths never appear there) — skip the whole `hooks.on_complete` list, mark M10 `completed`, and emit one line naming the skip reason. When an unrelated pre-existing diff exists, also add a warning line surfacing those paths. On any doubt about whether a changed path is task-derived, run the hooks as usual (the gate skips only when the absence of task-derived changes is clear).
+`Keep in sync with dev-workflow references/finish-phase.md § Step 9's task-derived-change gate paragraph.` Before executing any `hooks.on_complete` entry, check whether the tracked diff since `<base_commit>` contains task-produced changes. When it does not — the tracked diff is empty or every changed path is pre-existing work unrelated to this task, **and** `git status --porcelain=v1 --untracked-files=all` shows no task-derived untracked files (gitignored paths never appear there) — skip the whole `hooks.on_complete` list, mark M10 `completed`, and emit one line naming the skip reason. When an unrelated pre-existing diff exists, also add a warning line surfacing those paths. On any doubt about whether a changed path is task-derived, run the hooks as usual (the gate skips only when the absence of task-derived changes is clear).
 
 ## (e) Step 10 inline definitions (M11)
 
-`Keep in sync with dev-workflow SKILL.md § Step 10.` `interactive-commits.md` depends on these definitions that live inline in dev-workflow's SKILL.md:
+`Keep in sync with dev-workflow references/finish-phase.md § Step 10.` `interactive-commits.md` depends on these definitions that live inline in dev-workflow's SKILL.md:
 
 - **`<base-commit>`** (`Keep in sync with dev-workflow SKILL.md § Step 2: Create Plan's first numbered item` — this bullet's upstream is **not** the § Step 10 the section header names): § Collect changes defines it as the value dev-workflow's Step 2 records at workflow start. In `mobpro` that value is `base_commit`, recorded at M3 (`SKILL.md` § Cross-step state variables) — read it wherever the Procedure says `<base-commit>`. The dev-workflow phase names the Procedure cites alongside it need no entry here: `SKILL.md` § M ↔ Step remap directive already maps them.
 - **Approval token closed list** (judge each reply semantically, not by exact phrase): **accept** (affirmative — "OK" / "approve" / "next" / "コミットして" / "進めて" or equivalent) / **adjust** (a specific revision demand — subject change, file regrouping, split) / **cancel** / **stop** (explicit halt) / **NOT approval** (interrogative or non-committal — "look good?" / "これでいい？"; treat as `adjust` and re-present, never silently advance). When presenting a gate, include at least one short accept token so brief replies are known valid.
@@ -47,7 +47,7 @@ These are the `dev-workflow` **inline** definitions that `mobpro` needs but that
 
 ## (f) Step 11 skeleton (M12)
 
-`Keep in sync with dev-workflow SKILL.md § Step 11.`
+`Keep in sync with dev-workflow references/finish-phase.md § Step 11.`
 
 - **`rule-extraction-active` gate** (double-count defense): rule extraction is **inactive** if (a) any `hooks.on_complete` entry contains the string `extract-rules`, OR (b) M10 ran a hook whose output shows `extract-rules --from-conversation` ran this session (signal: output contains `staged_count` or `promoted_count`). When inactive, skip all conversation-derived extraction (do not dispatch the shared scan on rule-extraction's behalf, do not call `extract-rules`) — this preserves the staged-promotion 1st→2nd-observation escalation from miscounting one session as two.
 - **Session-scan wiring**: when rule-extraction is active, M12 dispatches the shared scan (or consumes an already-dispatched result) per `../dev-workflow/references/session-scan.md`.
@@ -56,7 +56,7 @@ These are the `dev-workflow` **inline** definitions that `mobpro` needs but that
 
 ## (g) Completion inline definitions (M13)
 
-`Keep in sync with dev-workflow SKILL.md § Completion.`
+`Keep in sync with dev-workflow references/finish-phase.md § Completion.`
 
 - **State-file lifecycle**: sub-task `status` `completed` write-back + optional PR-URL record; **commit-before-resume guidance** — the next run takes a fresh base-commit from HEAD, so uncommitted changes leak into the next subtask's diff; when `landed_count == 0`, instruct the user to commit + open a PR before resuming (dropping this is the core mobpro↔dev-workflow interop bug); all-done state-file deletion + progress-row removal + canonical state-file-path discipline (never re-derive from `slug`); **single-writer constraint** (no concurrent sessions against one state file); **extract-rules residue warning** (uncommitted residue in the three output dirs must be committed before resuming); **execution-time deferral/exclusion gate** (items excluded, deferred, or discovered as unassigned during implementation must be promoted to tracked subtask entries before declaring completion — items recorded only in prose are invisible to `--resume`; learning sessions hit this more often, since "let's not go deep here today" is common). Get user approval per uncovered item on one of this closed 3-option set: (a) add as a new `pending` subtask, with a `depends_on` link when sequencing matters, (b) fold into an existing `pending` subtask's scope, or (c) explicitly accept as permanently out of parent-task scope. The M13 report must confirm that no goal-required item remains in untracked prose form.
 - **`uncommitted_*` 3-set partition scan**: resolve the three extract-rules output directories once and run a single `git status --porcelain=v1 --untracked-files=all -z`, partitioning output into `uncommitted_rule_changes` / `uncommitted_examples_changes` / `uncommitted_staging_changes` (each path lands in exactly one set via directory membership, then a filename-class tie-break). The three rule-update / examples-dir / staging-dir reminders read these sets; none re-scans.

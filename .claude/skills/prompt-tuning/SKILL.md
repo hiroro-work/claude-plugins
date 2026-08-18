@@ -34,22 +34,22 @@ When not to use:
    - If you skip this, the subagent will "reinterpret" the body to match the description, and accuracy will come out high even though the skill does not actually meet the requirements (false positive)
 
 1. **Baseline preparation**: **Freeze** the target prompt (= pin the version under test; do not edit it during this iter's evaluation — "freeze for this round", not "remediate". Remediation happens at Workflow step 5 below). Then prepare the following two things.
-   - **Evaluation scenarios**, 2 to 3 kinds. **Composition is hard**: always include at least 1 median (realistic typical use of the target prompt) AND at least 1 edge (atypical / failure-prone case — environment constraint, malformed input, ambiguous request, partial workflow, etc.). **Count is soft**: prefer 3, accept 2 when **executor token cost** is tight (dispatch budget — the main bound; one subagent run ≈ tens of thousands of tokens); never fewer than 2 (one scenario overfits). Note: in non-empirical modes such as baseline-only previews and `## Environment constraints` Alt 3 / structural review where no dispatch occurs, executor cost is zero — count can stay at 3 (or rise if the operator wants broader coverage), bounded only by the operator's own design time. Realistic tasks that assume actual situations where the target prompt would apply.
-   - **Designed vs executed scenarios**: the count above fixes the *designed* set at baseline and is reused across iters (trend comparisons need a stable design set). The *executed* set per iter defaults to the whole designed set (dispatch all in parallel per step 2). Under resource bounds, executed may shrink to a strict subset — but the median scenario must execute every iter, and iters with `|executed| < |designed|` are **partial iters**: results inform fixes but do not count toward consecutive-clear judgment in `## Iteration stopping criteria`.
+   - **Evaluation scenarios**, 2 to 3 kinds. Always include at least 1 median (realistic typical use of the target prompt) AND at least 1 edge (atypical / failure-prone case — environment constraint, malformed input, ambiguous request, partial workflow, etc.). **Count is soft**: prefer 3, accept 2 when **executor token cost** is tight (dispatch budget — the main bound; one subagent run ≈ tens of thousands of tokens); never fewer than 2. Note: in non-empirical modes such as baseline-only previews and `## Environment constraints` Alt 3 / structural review where no dispatch occurs, executor cost is zero — count can stay at 3. Realistic tasks that assume actual situations where the target prompt would apply.
+   - **Designed vs executed scenarios**: the count above fixes the *designed* set at baseline and is reused across iters. The *executed* set per iter defaults to the whole designed set (dispatch all in parallel per step 2). Under resource bounds, executed may shrink to a strict subset — but the median scenario must execute every iter, and iters with `|executed| < |designed|` are **partial iters**: results inform fixes but do not count toward consecutive-clear judgment in `## Iteration stopping criteria`.
    - **Requirements checklist** (for computing accuracy). For each scenario, enumerate 3 to 7 items the deliverable must satisfy. Accuracy % = items satisfied / total items. Fix this in advance (do not move it afterward).
    - **Mechanism vs outcome — checklist items judge the deliverable, not the runtime**: each item, especially `[critical]` items, must describe a property of the **deliverable** (output quality, coverage of required viewpoints, expected format, scope adherence) — not the **runtime mechanism** the executor uses to produce it (e.g. "spawned a subagent via the `Agent` tool", "called a specific helper skill", "issued exactly N tool calls"). Mechanism-focused `[critical]` items conflate "the target prompt is well-designed" with "the executor's environment can run the prompt's preferred path", so an executor that produces the right deliverable via an environment-forced fallback (recursive `Agent` blocked, a tool absent, etc.) gets scored × on the target's quality. Phrase checks in terms of what the user would see in the deliverable; if a mechanism check is genuinely load-bearing for the target, put it in a non-`[critical]` item so it surfaces without dominating the success / failure judgment.
-   - **Target-size scaling** (relaxation of the floors above for tiny targets): the "≥2 scenarios" and "≥3 items per checklist" floors are calibrated for skill-sized targets (~100+ lines, multiple distinct usage paths). For micro-targets they force contrived over-decomposition. Apply this scaling rule when **both** sub-conditions hold:
+   - **Target-size scaling** (relaxation of the floors above for tiny targets): the "≥2 scenarios" and "≥3 items per checklist" floors are calibrated for skill-sized targets (~100+ lines, multiple distinct usage paths). Apply this scaling rule when **both** sub-conditions hold:
      - target body ≤ ~50 lines (excluding frontmatter), AND
      - target has ≤ ~3 distinct usage paths / branches (e.g., a 3-command CLI wrapper, a short CLAUDE.md fragment).
      When both hold, the floors relax to **2 scenarios** (still 1 median + 1 edge — composition floor is invariant) and **2 items per checklist** (still ≥1 `[critical]` — success-judgment floor is invariant). When only one sub-condition holds (e.g., short body but many branches), keep the standard floors. When **neither** sub-condition holds (target is large enough AND has rich path-space), keep the standard floors. If the target is even smaller than the relaxation point — body ≤ ~20 lines and ≤ 2 paths — prefer `§ When to use`'s "When not to use" sub-list's "One-off throwaway prompts" branch over applying the methodology at all. Record which regime was applied as a one-line note in the iter-1 baseline-preparation output (e.g., `scaling: tiny-target (relaxed floors to 2 scenarios × 2 items)` or `scaling: standard floors`).
 2. **Bias-free read**: Have a "blank-slate" executor read the instruction. **Dispatch a new subagent** via the Agent tool. Do not substitute with a self-reread (it is structurally impossible to view text you just wrote objectively). When running multiple scenarios in parallel, place multiple Agent invocations within a single message.
-   - **Pre-flight callability check** (do this once, the first time iter 1 is entered for this run): `allowed-tools: Agent` declares intent but does not guarantee the host actually surfaces the tool (recursive dispatch from a subagent is commonly disabled). Verify Agent callability by checking the **cheapest detection signal first** — do not spend a tool call if registry inspection already answers the question:
+   - **Pre-flight callability check** (do this once, the first time iter 1 is entered for this run): verify Agent callability by checking the **cheapest detection signal first** — do not spend a tool call if registry inspection already answers the question:
      1. **Tool registry inspection** (cheapest, no tool call): inspect the tool surface visible to you, distinguishing two sub-surfaces — the **active surface** (tools enumerated as top-level function definitions, directly invocable without a load step) and any **deferred surface** (lazy-loaded enumeration listing tool names that require a schema-fetch step like `ToolSearch` before invocation). Three sub-states resolve directly:
-        - **Absent from both surfaces**: treat as `not callable`, skip steps 2–3 — issuing a dispatch with an absent tool would error without yielding any additional information.
-        - **Present only in the deferred surface** (presence-without-load): treat as `not callable` for this run. Hydrating a tool via `ToolSearch` (or equivalent) purely to satisfy a callability probe is a discretionary cost outside this cheapest-first sequence; if the operator wants to actually use `Agent`, they can hydrate it in a run where dispatch is the planned action.
+        - **Absent from both surfaces**: treat as `not callable`, skip steps 2–3.
+        - **Present only in the deferred surface** (presence-without-load): treat as `not callable` for this run. Do not hydrate the tool via `ToolSearch` (or equivalent) merely to satisfy this probe.
         - **Present in the active surface**: proceed to step 2 (trial dispatch).
      2. **Trial dispatch** (only if step 1 says present): issue the first scenario's dispatch normally. If the call returns a permission-denied / recursion-blocked error rather than a normal subagent reply, treat as `not callable`.
-     3. **Silently-empty subagent** (only if step 2 returned): if the dispatch returned but the subagent's body is empty or the `<usage>` block is missing entirely, treat as `not callable` and do not retry — this signals the host accepted the call but did not actually run a subagent.
+     3. **Silently-empty subagent** (only if step 2 returned): if the dispatch returned but the subagent's body is empty or the `<usage>` block is missing entirely, treat as `not callable` and do not retry.
      If `not callable` by any of (1) / (2) / (3), immediately route to the `## Environment constraints` section and emit the skip return contract defined there — do **not** retry with self-reread.
 3. **Execution**: Hand the subagent a prompt that follows the **subagent invocation contract** described below, and have it execute the scenario. The executor produces an implementation or output and returns a self-report at the end.
 4. **Two-sided evaluation**: Record the following from the returned results.
@@ -82,27 +82,26 @@ When not to use:
 | Unclear points (self-report) | Executor enumerates as bullets | Qualitative improvement material |
 | Discretionary fill-ins (self-report) | Decisions not fixed by the instruction | Surfaces implicit specification |
 
-**Weighting**: Qualitative (unclear points / discretionary fill-ins) is primary, quantitative (time / step count) is auxiliary. Chasing only time reduction makes the prompt too thin.
+**Weighting**: Qualitative (unclear points / discretionary fill-ins) is primary, quantitative (time / step count) is auxiliary.
 
 ### Qualitative interpretation of `tool_uses`
 
-Looking only at accuracy hides skill problems. Using `tool_uses` as a **relative value across scenarios** reveals structural defects:
+Use `tool_uses` as a **relative value across scenarios** to reveal structural defects:
 
 - If one scenario is **3-5x or more** vs the others, that skill is a sign of being **decision-tree-index-leaning with low self-containment**. The executor is being forced into references descent.
-- Typical example: all scenarios have `tool_uses` of 1-3 but one scenario alone has 15+ → there is no recipe for that scenario in the skill itself, so it is cross-searching references/
 - Countermeasure: adding an "inline minimum complete example" or "guidance on when to read references" at the top of SKILL.md in iter 2 significantly drops `tool_uses`
 
-Even at 100% accuracy, a skew in `tool_uses` is grounds for triggering iter 2. "Cut off based on accuracy alone" tends to miss structural defects.
+Even at 100% accuracy, a skew in `tool_uses` is grounds for triggering iter 2.
 
 ### Fix propagation patterns (conservative / overshoot / zero-shoot)
 
-Fix → effect is not linear. Pre-estimation can play out in the following 3 patterns:
+Pre-estimation can play out in the following 3 patterns:
 
 - **Conservative swing** (estimate > actual): one fix aimed at multiple axes but only moved one. "Aiming at multiple axes tends to miss."
 - **Overshoot** (estimate < actual): one structural piece of information (e.g., a combination of command + config + expected output) satisfied judgment wording across multiple axes at once. "Combinations of information structurally hit multiple axes."
 - **Zero-shoot** (estimate > 0, actual = 0): a fix inferred from the axis name did not reach any of the judgment wording. "Axis names and judgment wording are different things."
 
-To stabilize this, **before applying the diff, have the subagent verbalize "which judgment wording this fix satisfies"**. Estimation accuracy does not come out unless you tie things at the threshold-wording level. When adding a new evaluation axis, also concretize the judgment criteria for each point down to the threshold-wording level (at a granularity the subagent can judge, such as "all explicit" or "full text of a minimum working configuration" — so it knows what constitutes 2 points).
+To stabilize this, **before applying the diff, have the subagent verbalize "which judgment wording this fix satisfies"**. When adding a new evaluation axis, also concretize the judgment criteria for each point down to the threshold-wording level (at a granularity the subagent can judge, such as "all explicit" or "full text of a minimum working configuration" — so it knows what constitutes 2 points).
 
 ## Subagent invocation contract
 
@@ -112,7 +111,7 @@ The prompt given to the executor takes the following structure. This is the inpu
 You are an executor reading <target prompt name> with a blank slate.
 
 ## Target prompt
-<Default: specify an absolute file path the executor will `Read` (path-by-Read is preferred — it avoids context bloat and keeps the executor reading the same source-of-truth the author edits). Paste the full body inline only when the target has no canonical file location (ephemeral / not-yet-saved prompt) AND is short enough that inlining is cheaper than a Read (rule of thumb: < ~30 lines).>
+<Default: specify an absolute file path the executor will `Read`. Paste the full body inline only when the target has no canonical file location (ephemeral / not-yet-saved prompt) AND is short enough that inlining is cheaper than a Read (rule of thumb: < ~30 lines).>
 
 ## Scenario
 <One paragraph setting the scenario context>
@@ -137,7 +136,7 @@ You are an executor reading <target prompt name> with a blank slate.
   - Planning (deciding the approach / ordering)
   - Execution (actually doing the work)
   - Formatting (shaping the deliverable to the expected form)
-  - *Collapsed form allowed*: when all four phases are OK, a single line `Trace: all OK` is sufficient. Emit phase-by-phase only when any phase is stuck or skipped. (This avoids happy-path boilerplate; the trace structure only earns its cost when something actually goes wrong.)
+  - *Collapsed form allowed*: when all four phases are OK, a single line `Trace: all OK` is sufficient. Emit phase-by-phase only when any phase is stuck or skipped.
 - **Unclear points (structured)**: for each issue, three lines:
   - Issue: <what observably happened>
   - Cause: <why, diagnosed at the instruction level>
@@ -150,14 +149,14 @@ The caller extracts the self-report portion from the report, then parses the `<u
 
 ## Environment constraints
 
-In environments where dispatching a new subagent is not possible (already running as a subagent, Agent tool is disabled, etc.), **do not run the empirical loop** (Workflow steps 2–6 require fresh subagent dispatch; without it, "two-sided" collapses into self-reread and the evaluation cannot be trusted). The empirical-loop ban does **not** mean the whole skill is off-limits — the following static-only modes remain available:
+In environments where dispatching a new subagent is not possible (already running as a subagent, Agent tool is disabled, etc.), **do not run the empirical loop** (Workflow steps 2–6 require fresh subagent dispatch). The empirical-loop ban does **not** mean the whole skill is off-limits — the following static-only modes remain available:
 
 - **Alternative 1 — Delegate**: ask the parent session's user to start a separate Claude Code session and delegate the evaluation there.
 - **Alternative 2 — Skip with explicit report**: report to the user "empirical evaluation skipped: dispatch unavailable" and stop.
 - **Alternative 3 — Structural review mode** (see below): a sanctioned static review that does *not* claim to be empirical.
 - **NG**: substitute with a self-reread inside the same agent (bias enters; the result must not be trusted).
 
-**Skip return contract** (machine-parseable, so callers / orchestrators can route deterministically when prompt-tuning is invoked as a sub-skill):
+**Skip return contract**:
 
 ```json
 {
@@ -170,19 +169,19 @@ In environments where dispatching a new subagent is not possible (already runnin
 }
 ```
 
-Emit this fenced JSON block as the final element of the response whenever the empirical loop is skipped. Iter 0 may still have run and contributed its verdict into the `iter_0` field. The caller branches on `status == "skipped"` and `alternative_taken` to retry in a different environment, escalate, or absorb the skip. **Caller-mandate conflict**: even if the caller demands an empirical iter, the `Agent`-dependent branch cannot honor it under dispatch-unavailable — emit the skip contract above. Do **not** invent simulated dispatch results to satisfy the caller; that silently violates the bias-free-executor premise. The caller may *request* an empirical iter but cannot override the bias-free-executor requirement.
+Emit this fenced JSON block as the final element of the response whenever the empirical loop is skipped. **Caller-mandate conflict**: even if the caller demands an empirical iter, the `Agent`-dependent branch cannot honor it under dispatch-unavailable — emit the skip contract above. Do **not** invent simulated dispatch results to satisfy the caller; that silently violates the bias-free-executor premise.
 
 **Selection criteria** (when to pick which):
 - **Step 0 — scope filter** (apply before the preferences below): drop any alternative made vacuous by the caller's task framing. Example: when the caller explicitly asked you to "apply the prompt-tuning methodology to <target>", Alt 2 (skip-and-stop) is vacuous — picking it would fail the request by definition. Apply the preferences below only to surviving alternatives.
-- Prefer **Alt 1** when the target prompt is high-importance AND the user can readily start a separate session — empirical signal is worth the round-trip.
+- Prefer **Alt 1** when the target prompt is high-importance AND the user can readily start a separate session.
 - Prefer **Alt 2** when (a) the target is large / opaque so even structural review yields little signal, OR (b) the user explicitly wants a "no eval, just ship" answer.
 - Prefer **Alt 3** when the target is short enough that static consistency / clarity review yields meaningful textual findings on its own (rule of thumb: fits on one screen, ≤ ~80 lines) AND empirical evaluation will not happen soon. Alt 3 can also chain with Alt 1 as "do structural review now, then run empirical later in a separate session".
-- **Threshold tolerance band for the `≤ ~80 lines` rule** (resolve borderline cases without inventing a tiebreaker): the `~80` figure is a rule of thumb, not a hard cutoff. Apply the following bands:
+- **Threshold tolerance band for the `≤ ~80 lines` rule** — apply the following bands:
   - **≤ 80 lines**: clear Alt 3 preference (subject to other criteria above).
   - **81 – 120 lines (tolerance band)**: still take Alt 3 if **any one** of these holds — (a) the caller's task framing makes Alt 2 vacuous (i.e., Alt 3 is the only surviving alternative after Step 0 scope filter), (b) the body is well-sectioned (clear `##`-level structure rather than dense reference prose), or (c) the target's iter-0 verdict suggests the description/body gap is the primary axis of interest (which a static review handles well). Otherwise Alt 2.
-  - **> 120 lines**: clear Alt 2 preference (static review of a large body yields too little signal).
+  - **> 120 lines**: clear Alt 2 preference.
   - Count *content lines only* (exclude frontmatter and blank lines) when applying these bands. Record the line count and band decision in a **preamble paragraph immediately above the `## Iteration N` heading** (same location as the `Mode: <empirical|Structural review>` declaration per `## Environment constraints` § Report shape under structural review mode); the contract JSON schema is fixed and does not carry these values.
-- **Non-interactive default** (no user is available to consult, e.g., single-shot routine execution): default to **Alt 3** when the target ≤ ~80 lines; otherwise default to **Alt 2** with an explicit "skipped: dispatch unavailable, target too large for static review" report. Do not default to Alt 1 in non-interactive runs (it requires user action that cannot be solicited).
+- **Non-interactive default** (no user is available to consult, e.g., single-shot routine execution): default to **Alt 3** when the target ≤ ~80 lines; otherwise default to **Alt 2** with an explicit "skipped: dispatch unavailable, target too large for static review" report. Do not default to Alt 1 in non-interactive runs.
 - **Detecting "non-interactive" in observable terms** (do not rely on executor introspection — use these signals): treat the run as non-interactive when **any one** of the following holds:
   1. you were invoked as a subagent (via `Agent` / `Task` dispatch) by a parent skill or routine, with no `<user_message>`-style turn possible in your own context;
   2. your runtime context lacks a foregrounded human conversation (no slash-command-from-user, no chat thread you are responding into);
@@ -204,7 +203,7 @@ Emit this fenced JSON block as the final element of the response whenever the em
 
 Empirical-only metrics (success/failure on execution scenarios, `tool_uses`, `duration_ms`) are **N/A** under structural review and should be omitted from the Presentation-format execution table, not faked.
 
-**Precedence when a caller-supplied report template conflicts with this remap**: the caller's invocation prompt often re-states the Subagent-invocation-contract Report structure verbatim, including empirical-mode fields (Trace phases, Retries, etc.). When the resolved mode is Structural review, this remap table takes precedence over the caller's inlined template — collapse / N/A / omit per the table above, regardless of what the caller's template shows. State once at the top of the report which mode is resolved (e.g. "Mode: Structural review — empirical fields remapped per § Environment constraints"); the caller can then read the rest unambiguously.
+**Precedence when a caller-supplied report template conflicts with this remap**: when the resolved mode is Structural review, this remap table takes precedence over the caller's inlined template — collapse / N/A / omit per the table above, regardless of what the caller's template shows. State once at the top of the report which mode is resolved (e.g. "Mode: Structural review — empirical fields remapped per § Environment constraints").
 
 **Domain discipline** (applies in both modes): `Unclear points` and `Discretionary fill-ins` always report ambiguities / unfixed choices in the **prompt-tuning skill itself** (the methodology being applied), never findings about the target prompt being evaluated. Target findings flow into `Deliverable` (in empirical mode as part of the execution artifact; in structural review mode as the primary output). Mixing the two domains makes it impossible to tell "is the prompt-tuning skill unclear?" from "is the target prompt unclear?", which defeats the methodology's improvement loop.
 
@@ -248,24 +247,24 @@ When iterations approach a plateau but convergence criteria (2 consecutive clear
 Dispatch fresh subagents on the same scenarios in parallel (one message with multiple Agent tool calls). Keep the variant with higher accuracy; on tie, prefer fewer unclear points; on further tie, prefer lower `tool_uses`.
 
 Pairwise-comparison caveats:
-- Do **not** ask a subagent to rate "A vs B" directly. LLM position bias and self-preference bias make such judgments noisy at small n.
-- Compare on the objective axes only (accuracy, step count, unclear-points count, phase-weakness counts). Those are reproducible; "which prompt felt better" is not.
+- Do **not** ask a subagent to rate "A vs B" directly.
+- Compare on the objective axes only (accuracy, step count, unclear-points count, phase-weakness counts).
 - If qualitative comparison is genuinely needed, counterbalance: run both orderings (A,B) and (B,A) and accept a verdict only if both orderings agree.
 
-Cost: variant exploration doubles dispatch count per iteration. Use when plateau is suspected, not by default.
+Use when plateau is suspected, not by default.
 
 ## Presentation format
 
-**出力言語**: ユーザーへの提示は日本語で行う。ただし以下のトークン / キーは triage-review 等の caller がパース時に検出するため verbatim で残す:
+**出力言語**: ユーザーへの提示は日本語で行う。ただし以下のトークン / キーは verbatim で残す:
 
 - `Convergence check`、`Iteration N` / `iter-N`、`Max iterations`
 - `iter-0: PASS` / `iter-0: PASS-with-note` / `iter-0: BLOCK-consistency`
 - `Issue` / `Cause` / `General Fix Rule`（subagent invocation contract のキー）
 - `[critical]` 等のタグ、設定値（`tool_uses` / `duration_ms` 等）、ファイルパス、識別子
 
-**ベースライン / プレビューのみのレンダリング規律**: イテレーションブロックがベースライン提示のみ（今ラウンドで実行なし — 例: 想定状況の準備を複数走行に分けて行うため Step 1 で意図的に止める、または dispatch コストを払う前に iter-1 のプランをレビューに出したい）の場合、実行結果テーブルは保持するがすべてのセルを `(pending — not dispatched)` でマークする。テーブルを暗黙に省略しない。「構造化された反省 / 裁量補完 / 台帳の更新 / 次回の修正案」の各節は通常通り埋めるが、**内容の出所が読み替えられる**: 「構造化された反省」は iter-0 の静的検出 + ベースライン設計の所見から（executor のセルフレポートはまだ存在しない）、「裁量補完」はベースライン設計時の選択（想定状況の数、エッジの種類、下書きプロンプトの選定など）から、「台帳の更新」は通常空（記録すべき empirical な所見がない — 台帳は empirical 専用）。後の iter で dispatch が走ったら、これらの節は本来の出所に戻る。これは「Structural review モード」（`## Environment constraints` 参照）とは別: 後者は dispatch が **不可能**、こちらは dispatch を **意図的に後回し** にしているケース。
+**ベースライン / プレビューのみのレンダリング規律**: イテレーションブロックがベースライン提示のみ（今ラウンドで実行なし）の場合、実行結果テーブルは保持するがすべてのセルを `(pending — not dispatched)` でマークする。テーブルを暗黙に省略しない。「構造化された反省 / 裁量補完 / 台帳の更新 / 次回の修正案」の各節は通常通り埋めるが、**内容の出所が読み替えられる**: 「構造化された反省」は iter-0 の静的検出 + ベースライン設計の所見から、「裁量補完」はベースライン設計時の選択（想定状況の数、エッジの種類、下書きプロンプトの選定など）から、「台帳の更新」は通常空（台帳は empirical 専用）。後の iter で dispatch が走ったら、これらの節は本来の出所に戻る。これは「Structural review モード」（`## Environment constraints` 参照）とは別: 後者は dispatch が **不可能**、こちらは dispatch を **意図的に後回し** にしているケース。
 
-**部分イテレーション行のセル単位センチネル**: 今 iter で dispatch を試みたが一部の想定状況の指標が取れなかった場合（例: 1 想定状況がタイムアウト、Workflow Step 1 の `|executed| < |designed|` ルールでリソース上の理由から除外、または `<usage>` ブロックがパースできない応答）、該当セルに `—`（em-dash）を入れる。これは iter 全体の `(pending — not dispatched)` 形式とは区別される: `—` は dispatch 済み iter 内のセル単位扱い。`手順数` または `所要時間` の列に `—` を含む行は、`## Iteration stopping criteria` の「手順数の変動 ±10%」「所要時間の変動 ±15%」の計算から **除外** される（行単位の除外。中央値の想定状況の行に実測値が残っていれば iter は連続クリア判定に算入される）。`0` / `N/A` / 空白 / 推測値で代用しないこと — `—` のみが「このセルは意図的に未計測」とパース可能。
+**部分イテレーション行のセル単位センチネル**: 今 iter で dispatch を試みたが一部の想定状況の指標が取れなかった場合（例: 1 想定状況がタイムアウト、Workflow Step 1 の `|executed| < |designed|` ルールでリソース上の理由から除外、または `<usage>` ブロックがパースできない応答）、該当セルに `—`（em-dash）を入れる。これは iter 全体の `(pending — not dispatched)` 形式とは区別される: `—` は dispatch 済み iter 内のセル単位扱い。`手順数` または `所要時間` の列に `—` を含む行は、`## Iteration stopping criteria` の「手順数の変動 ±10%」「所要時間の変動 ±15%」の計算から **除外** される（行単位の除外。中央値の想定状況の行に実測値が残っていれば iter は連続クリア判定に算入される）。`0` / `N/A` / 空白 / 推測値で代用しないこと。
 
 各イテレーションで、ユーザーには以下の形式で記録・提示する:
 
@@ -302,7 +301,7 @@ Cost: variant exploration doubles dispatch count per iteration. Use when plateau
 (Convergence check: X consecutive clears / Y rounds remaining to stop condition)
 ```
 
-**Skipped-iteration form**（iter 全体が `## Environment constraints` に従ってスキップされたケース。上で説明したセル単位のケースとは別）: `## Iteration N` の見出しを出し、すべての指標セルを `—` で埋め、iter 0 の判定をテーブル直上に書く（iter 0 自体がスキップなら `not-run`）。この判定行は `Workflow` Step 0 で要求される iter-0 出力を **置き換える**（追加でなく置換）。1 か所のみに判定を出す。さらに、iter-0 判定行とテーブルの間に `> **Iter skipped** — see the skip return contract at the end of the response for `alternative_taken` and `reason`.` をブロック引用で挿入する（これによって、すべてのセルがたまたま `—` の部分 iter ケースと区別できる）。応答の **最後の要素** として、`## Environment constraints` の fenced な skip return contract を付ける。スキップ iter は `## Iteration stopping criteria` の連続クリア判定に算入されない。
+**Skipped-iteration form**（iter 全体が `## Environment constraints` に従ってスキップされたケース。上で説明したセル単位のケースとは別）: `## Iteration N` の見出しを出し、すべての指標セルを `—` で埋め、iter 0 の判定をテーブル直上に書く（iter 0 自体がスキップなら `not-run`）。この判定行は `Workflow` Step 0 で要求される iter-0 出力を **置き換える**（追加でなく置換）。1 か所のみに判定を出す。さらに、iter-0 判定行とテーブルの間に `> **Iter skipped** — see the skip return contract at the end of the response for `alternative_taken` and `reason`.` をブロック引用で挿入する。応答の **最後の要素** として、`## Environment constraints` の fenced な skip return contract を付ける。スキップ iter は `## Iteration stopping criteria` の連続クリア判定に算入されない。
 
 **スキップ iter 形式での他セクションの扱い**（上のテンプレートに出てくる各セクションの扱い）:
 
@@ -312,8 +311,8 @@ Cost: variant exploration doubles dispatch count per iteration. Use when plateau
 - `裁量補完（今回新たに surface したもの）`: 構造化された反省と同じ出所ルール — 静的レビューが供給した場合のみ載せる。それ以外はセクション見出しごと省略
 - `失敗パターン台帳の更新`: 常に空（`(更新なし — 台帳は empirical 専用、§ Failure pattern ledger 参照)`）
 - `次回の修正案`: 静的レビュー（Alt 3）が `prompt-tuning` スキル自体または対象プロンプトに対して具体的な改善候補を出した場合 **のみ** 載せる。それ以外は省略。スキップ iter 形式は、empirical 評価でない内省から得た修正案を入れる場所ではない。空欄を埋めるための捏造はしない
-- **スキップ前のベースライン準備の成果物**（想定状況の設計 + 各々の評価項目チェックリスト。Workflow Step 1 でスキップ判断より前に作られたもの）: スキップ時に失われない。標準の扱い — 実行結果テーブルの直前に、サブ見出し `### 設計済み想定状況（次イテレーションに繰越）` の下にインラインで出す。これによって、設計内容を JSON contract までスクロールせずに確認できる。Alt 3 では、想定状況が `Deliverable` からも参照される場合がある（対象の静的レビューが想定状況の枠組みを使う時）— これは参照の重複であって内容の重複ではない。標準のレンダリングは `設計済み想定状況` ブロックに残す。Alt 1 / Alt 2 で静的レビューなしの場合でもこのブロックは出す（dispatch が可能だったら何が走っていたかを記録するため）。**退化ケース — ベースライン準備が走らなかった**（Step 0 のスコープフィルタ / Pre-flight callability check が Workflow Step 1 に入る前にスキップを決定し、`designed_scenarios_count = 0` となった場合）: `### 設計済み想定状況（次イテレーションに繰越）` の見出しを残し、中身を `(なし — ベースライン準備未実行; Step 1 前にスキップ判断が確定)` の 1 行で置き換える。見出しを暗黙に省略しないこと — 不在が意図的（描画バグでない）と記録するため
-- 末尾の収束チェック行: `(Convergence check: <X> consecutive clears / iter skipped, does not advance)` を出す。これで連続クリア台帳の追跡可能性が保たれる
+- **スキップ前のベースライン準備の成果物**（想定状況の設計 + 各々の評価項目チェックリスト。Workflow Step 1 でスキップ判断より前に作られたもの）: スキップ時に失われない。標準の扱い — 実行結果テーブルの直前に、サブ見出し `### 設計済み想定状況（次イテレーションに繰越）` の下にインラインで出す。Alt 3 では、想定状況が `Deliverable` からも参照される場合がある（対象の静的レビューが想定状況の枠組みを使う時）。標準のレンダリングは `設計済み想定状況` ブロックに残す。Alt 1 / Alt 2 で静的レビューなしの場合でもこのブロックは出す。**退化ケース — ベースライン準備が走らなかった**（Step 0 のスコープフィルタ / Pre-flight callability check が Workflow Step 1 に入る前にスキップを決定し、`designed_scenarios_count = 0` となった場合）: `### 設計済み想定状況（次イテレーションに繰越）` の見出しを残し、中身を `(なし — ベースライン準備未実行; Step 1 前にスキップ判断が確定)` の 1 行で置き換える。見出しを暗黙に省略しないこと
+- 末尾の収束チェック行: `(Convergence check: <X> consecutive clears / iter skipped, does not advance)` を出す。
 
 ## Red flags (beware of rationalization)
 
@@ -334,12 +333,5 @@ Cost: variant exploration doubles dispatch count per iteration. Use when plateau
 - **Only looking at metrics**: chasing only time reduction strips important explanations and makes it fragile
 - **Too many changes per iteration**: you can no longer trace "which fix back then worked". One theme per iteration (2-3 related micro-fixes can be bundled — see Workflow's "Apply the diff" step and the Red flags table)
 - **Tuning scenarios to match the fix**: making the scenario side easier just to make unclear points look eliminated → putting the cart before the horse
-- **Mechanism-focused `[critical]` items**: putting a runtime-mechanism check (e.g., "the executor spawned a subagent via `Agent`") into `[critical]` instead of an outcome property of the deliverable. An executor that produces the right deliverable via an environment-forced fallback gets scored × on the target prompt's quality. See Workflow Step 1's "Mechanism vs outcome — checklist items judge the deliverable, not the runtime" bullet.
+- **Mechanism-focused `[critical]` items**: putting a runtime-mechanism check into `[critical]` instead of an outcome property of the deliverable. See Workflow Step 1's "Mechanism vs outcome — checklist items judge the deliverable, not the runtime" bullet.
 
-## Related (external, optional)
-
-The following are external skills / patterns — they are **not bundled** with this skill. Install separately if available in your marketplace; otherwise treat them as prior art for context, not as required dependencies.
-
-- `superpowers:writing-skills` — the TDD approach for skill creation. Essentially the same as this skill's "baseline → fix → rerun with a subagent"
-- `retrospective-codify` — fixating learnings after a task. This skill is during prompt development, retrospective-codify is after a task ends; use them differently
-- `superpowers:dispatching-parallel-agents` — conventions for running multiple scenarios in parallel

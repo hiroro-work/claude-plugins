@@ -2,6 +2,16 @@
 
 ## 2026-08-18
 
+### dev-workflow v1.117.0 / extract-rules v1.28.0 / dev-workflow-bundle v1.139.0
+
+- fix(extract-rules): keep the conventions a project has actually settled on
+  - **Behavior change** — the next `--realign` run, and every new extraction, judges convention rules differently. A rule carrying a convention the project has settled on now survives Durability; it previously read as "only different" and was dropped.
+  - § Durability's fourth record signal is restated: removing the rule leaves a future change *equally consistent with what the project already does* — different, not wrong. Departing from a settled convention is therefore wrong here, and a convention counts as settled on either of two grounds — conformance visible across existing artifacts, or an explicit user decision establishing it — never on the candidate's own assertion. § Reach's question half gains one clause — reach is the class's, not each artifact's.
+  - The bar v1.26.0 raised is otherwise intact: an account of one piece of work still fails Durability, and a general best practice still fails the knowledge-gap test.
+- fix(dev-workflow): restore the narrow-reach qualifier the shared session scan's Reach rule had lost
+  - `references/rule-extraction-axis.md` rule 9 read "skip it when a rerun or an ordinary review would absorb the consequence", dropping the canonical "a narrow reach pairs with". Taken literally that let a wide-reach convention be skipped — the same defect as above, on the new-extraction path rather than the realign one.
+  - Rule 9 also regains canonical's carve-out for a convention a linter *could* enforce but this project does not, along with canonical's "reach is the class's, not each artifact's" clause; rule 7 takes the matching Durability wording and routes an unverifiable settledness call into the staging path it already carries. Other long-standing gaps between the axis summary and `extract-rules` `references/extraction-criteria.md` are untouched.
+
 ### extract-rules v1.27.0 / dev-workflow-bundle v1.138.0
 
 - feat(extract-rules): let Realign Mode discover its own targets

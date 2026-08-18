@@ -25,7 +25,7 @@ To let the viewer show what changed across a revise round — so the user does n
 - **(i)** in the **Decision mapping** step's `decision: "revise"` case, immediately before applying the block comments to the served file (the in-place `Edit`);
 - **(ii)** in the **Write the served plan file** step, immediately before the `Write`, when the served file already exists — i.e. any non-first launch, including a `rewrite-approach` re-entry.
 
-On the **first** launch the served file does not yet exist, so no prev is created and the launch omits `--prev` (no diff — there is nothing to diff against). The diff is a **guide to what changed**, not an authoritative diff: block moves and whitespace-only changes are not tracked precisely, and sections are matched by their title slug — a retitled section reads as one removed + one new, and reordering duplicate-titled sections can swap their match. `.plan-review.prev.md` is a workflow artifact covered by `SKILL.md` § Workflow artifacts (cross-step fixed exclusion) and removed in `SKILL.md` § Completion's cleanup.
+On the **first** launch the served file does not yet exist, so no prev is created and the launch omits `--prev` (no diff — there is nothing to diff against). The diff is a **guide to what changed**, not an authoritative diff: block moves and whitespace-only changes are not tracked precisely, and sections are matched by their title slug — a retitled section reads as one removed + one new, and reordering duplicate-titled sections can swap their match. `.plan-review.prev.md` is a workflow artifact covered by `SKILL.md` § Workflow artifacts (cross-step fixed exclusion) and removed in [`finish-phase.md`](finish-phase.md) § Completion's cleanup.
 
 ## Procedure
 

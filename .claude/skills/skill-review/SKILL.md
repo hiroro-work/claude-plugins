@@ -14,6 +14,7 @@ The caller passes these fields in natural language (the skill extracts them from
 
 - `Base ref` *(optional, default `<working-tree-vs-HEAD>`)* — git ref to diff against. When omitted, the skill looks at the working tree's uncommitted + staged changes (the default scope for `dev-workflow` post-implementation review). When specified (e.g. `Base ref: main`), the skill switches to `git diff <Base ref>` semantics — useful for callers like `dev-workflow-triage` that want to review a stack of already-committed changes between a base branch and HEAD.
 - `Max iterations` *(optional, default `1`)* — upper bound on the refinement loop. Default `1` is a single detect-and-apply pass — a caller that wants the applied fixes re-verified raises it explicitly.
+- `Model` *(optional, default `sonnet`)* — model for the reviewer `Agent` dispatch, or `inherit` to use the session model. Accepted values are whichever model ids the current `Agent` tool's `model` parameter allows, plus the sentinel `inherit` — see `rules-review` SKILL.md's `Model:` paragraph (`§ Usage`) for the live-schema validity check this shares; a full `claude-*` id (e.g. `claude-sonnet-5`) is outside that parameter's accepted aliases and is therefore invalid too. An **independent optional field** — adding it does not turn the contract into a fixed-arity mode gate (the other fields keep their own defaults). **Default `sonnet`**: skill-review's review task is a checklist walk over the changed skill files, so it runs on `sonnet` by default — a deliberate skill-side cost choice that applies to **every** caller (e.g. `dev-workflow`'s `hooks.on_complete`, `dev-workflow-triage`). A caller-supplied `Model:` value **wins over** this default (arg-wins); an invalid value falls back to the default. Because this skill runs a **per-iteration dispatch loop**, the resolved value is applied to **every** iteration's reviewer dispatch. The model applies **only on the Claude Code `Agent`-dispatch path**; on the inline fallback path no `Agent` is spawned, so it is moot (the executing agent's own model governs).
 
 The caller must **not** stage changes while this skill is running. The skill reads the working tree; staged content would mix into the diff and corrupt the verdict. (The `Base ref` mode reads committed history vs the ref, so staging interference applies only to the default working-tree mode.)
 
@@ -21,7 +22,7 @@ The caller must **not** stage changes while this skill is running. The skill rea
 
 ### Step 1 — Detect changed skill files (main thread)
 
-1. Parse `Base ref` and `Max iterations` from the invocation text per `§ Invocation contract`.
+1. Parse the fields from the invocation text (`Base ref`, `Max iterations`, and the optional `Model:`) per `§ Invocation contract`. Resolve the reviewer model: the caller-supplied `Model:` when present and valid, else the skill-side default `sonnet`. Hold it for Step 3 (a) Dispatch reviewer Agent.
 2. Compute the changed-file set based on `Base ref`:
    - Default mode (no `Base ref` provided): run `git diff --name-only` and `git diff --name-only --cached` to find uncommitted + staged changes.
    - Explicit mode (e.g. `Base ref: main`): run `git diff --name-only <Base ref>` — captures the cumulative diff from `<Base ref>` to HEAD (committed history, not working-tree).
@@ -45,7 +46,7 @@ For each changed skill, in the main thread:
 
 On `i == 1`, use the snapshot from Step 2. On `i ≥ 2`, only re-`Read` the subset of `changed_files` whose path appeared in a successfully-applied `mechanical_edits` entry during iter `i - 1` (untouched files keep their iter-1 snapshot — re-reading them is wasted work and balloons main-thread context — same convention as `publicity-review` Step 2 (a)). On `i ≥ 2`, also re-run the per-file `git diff` so the diff payload reflects edits that landed in prior iterations.
 
-Invoke the `Agent` tool to dispatch a fresh reviewer. Assemble the dispatch prompt from the four sections below, each framed with a clear `--- LABEL ---` fence (same convention as `verify-diff` § Step 3 (a) Dispatch bias-free executor and `publicity-review` § Step 2 (a) Dispatch reviewer Agent) so the reviewer can parse each payload unambiguously:
+Invoke the `Agent` tool to dispatch a fresh reviewer, passing the model from Step 1's `Model:` resolution as the `Agent` `model` parameter (the default `sonnet` when the caller supplied none); pass no `model` only when the resolved value is `inherit`. Assemble the dispatch prompt from the four sections below, each framed with a clear `--- LABEL ---` fence (same convention as `verify-diff` § Step 3 (a) Dispatch bias-free executor and `publicity-review` § Step 2 (a) Dispatch reviewer Agent) so the reviewer can parse each payload unambiguously:
 
 - `--- BEST PRACTICES CHECKLIST ---`: the full content of `references/best-practices.md`
 - `--- CHANGED FILES ---`: each changed skill file's path, full content, and unified diff (one block per file, separated by `### <path>` sub-headings)
@@ -57,6 +58,10 @@ Invoke the `Agent` tool to dispatch a fresh reviewer. Assemble the dispatch prom
 > You are a fresh reviewer of skill files. You have **not** seen prior conversation context — only the checklist and changed files below. Walk the BEST PRACTICES CHECKLIST against each CHANGED FILE.
 >
 > Only the modified sections of changed files are in-scope (frontmatter fields the diff touched, paragraphs replaced, lines added). Do not audit sibling sections or files the diff did not touch. Project conventions under `.claude/rules/` and `CLAUDE.md` override the checklist where they conflict.
+>
+> **Prose-weight pass — run this before the checklist walk, and report it even when you find nothing.** For every line the diff added or modified, test each sentence with one question: would an agent executing this skill do anything differently if the sentence were deleted? A sentence that fails is a deletion candidate. Scope is the diff, exactly as the paragraph above sets it — do not widen the pass to untouched content.
+> Sentences that reliably fail: why an edit was made, which alternative was rejected, how a convention split between files was resolved, what a sibling file does or does not say, and any note addressed to a future editor rather than to the executing agent. A sentence stating a constraint the agent must honor passes; a sentence explaining how the constraint came to be written does not.
+> Two reporting rules. State the touched regions' net line change (lines added minus deleted) in your reasoning, so growth is visible even on a pass. And because deleting a sentence is a textual replacement, report every deletion candidate as a `mechanical_edit` — never as a `structural_note`, which the caller does not apply.
 >
 > Also flag "hallucination gaps" — points in the changed content where an executing agent would have to guess (ambiguous filenames, unstated success criteria, missing decision rules between branches). These are not on the checklist but are a common failure mode.
 >

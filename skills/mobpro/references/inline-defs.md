@@ -1,6 +1,6 @@
 # Transcribed dev-workflow inline definitions
 
-These are the `dev-workflow` definitions that `mobpro` needs but that it does not read at runtime (SKILL.md § Runtime reads). Their upstream differs by transcription id: (b)–(f) come from `dev-workflow`'s `references/finish-phase.md`, which holds the finish phase — § Step 9 through § Completion — that `dev-workflow`'s SKILL.md reduces to section labels and one delegation pointer; the rest come from definitions still inline in `dev-workflow/SKILL.md`. Per the mobpro design, they are transcribed here so `mobpro` is self-contained, each with a `Keep in sync with ...` note naming its own upstream. SKILL.md's M-steps point here by transcription id (a)–(g).
+These are the `dev-workflow` definitions that `mobpro` needs but that it does not read at runtime (SKILL.md § Runtime reads). Per the mobpro design, they are transcribed here so `mobpro` is self-contained, each with a `Keep in sync with ...` note naming its own upstream — some in `dev-workflow`'s `SKILL.md`, some in its `references/finish-phase.md`, which holds the finish phase that `SKILL.md` reduces to section labels and one delegation pointer. SKILL.md's M-steps point here by transcription id (a)–(g).
 
 **Read this file once**, at the first point that needs a transcription (SKILL.md § Configuration's pointer to § (a), before M1 completes); the later pointers from M8 / M10 / M11 / M12 / M13 name a section of that same copy.
 
@@ -33,7 +33,7 @@ These are the `dev-workflow` definitions that `mobpro` needs but that it does no
 
 ## (e) Step 10 inline definitions (M11)
 
-`Keep in sync with dev-workflow references/finish-phase.md § Step 10.` `interactive-commits.md` depends on these definitions that live inline in dev-workflow's SKILL.md:
+`Keep in sync with dev-workflow references/finish-phase.md § Step 10.` `interactive-commits.md` depends on these definitions that live in dev-workflow's `references/finish-phase.md` § Step 10 (or, where noted, elsewhere in dev-workflow):
 
 - **`<base-commit>`** (`Keep in sync with dev-workflow SKILL.md § Step 2: Create Plan's first numbered item` — this bullet's upstream is **not** the § Step 10 the section header names): § Collect changes defines it as the value dev-workflow's Step 2 records at workflow start. In `mobpro` that value is `base_commit`, recorded at M3 (`SKILL.md` § Cross-step state variables) — read it wherever the Procedure says `<base-commit>`. The dev-workflow phase names the Procedure cites alongside it need no entry here: `SKILL.md` § M ↔ Step remap directive already maps them.
 - **Approval token closed list** (judge each reply semantically, not by exact phrase): **accept** (affirmative — "OK" / "approve" / "next" / "コミットして" / "進めて" or equivalent) / **adjust** (a specific revision demand — subject change, file regrouping, split) / **cancel** / **stop** (explicit halt) / **NOT approval** (interrogative or non-committal — "look good?" / "これでいい？"; treat as `adjust` and re-present, never silently advance). When presenting a gate, include at least one short accept token so brief replies are known valid.

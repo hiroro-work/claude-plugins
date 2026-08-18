@@ -71,7 +71,7 @@ Each user-judgment gate that presents structured content (a plan body, a remaini
 - Step 8 unresolved-findings decision
 - Step 11.6 workability-candidate disposition gate
 
-The other user-gates listed in `SKILL.md` § No-Stall Principle (Step 1.5 dialogues, Step 7 scope-drift stop, Step 10 commit-plan approval / per-commit accept / fold-or-defer / ambiguous-adjust clarifier gates, the Step 11 confirm-remaining-steps entry gate, the Step 11 rule-update commit gate, Completion subtask PR URL prompt) do not emit a preamble — their structured content is either a single short prompt or already self-explanatory (Step 10's commit gates and the Step 11 rule-update commit gate render the commit data verbatim via `git`-shaped output).
+The other user-gates listed in `SKILL.md` § No-Stall Principle and its tail-scoped continuation in [`finish-phase.md`](finish-phase.md) § Gates (Step 1.5 dialogues, Step 7 scope-drift stop, Step 10 commit-plan approval / per-commit accept / fold-or-defer / ambiguous-adjust clarifier gates, the Step 11 confirm-remaining-steps entry gate, the Step 11 rule-update commit gate, Completion subtask PR URL prompt) do not emit a preamble — their structured content is either a single short prompt or already self-explanatory (Step 10's commit gates and the Step 11 rule-update commit gate render the commit data verbatim via `git`-shaped output).
 
 **Format constraints (closed list):**
 

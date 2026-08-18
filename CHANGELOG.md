@@ -5,12 +5,14 @@
 ### dev-workflow v1.118.0 / mobpro v1.28.1 / dev-workflow-bundle v1.140.0
 
 - refactor(dev-workflow): move the finish phase into `references/finish-phase.md`
-  - `SKILL.md` drops from 124,292 to 96530 chars, so a review subagent can now read the orchestrator whole in one pass — previously it could not, and neither could a single main-thread `Read` until v1.x's earlier extractions.
-  - Step 9 through Completion — the completion hooks, interactive commits, rule update, both retrospectives, and Completion itself — move verbatim into the new reference. `SKILL.md` keeps all six section labels, so every `§ Step 9`–`§ Completion` cross-reference in the repo still resolves; § Step 9 additionally carries the unconditional `Read` that loads the file and an input contract naming the cross-step state the phase consumes. The load happens at the Step 8.5 → Step 9 boundary, before any of the phase's conditions are evaluated, so nothing is decided on a file that has not been read.
+  - `SKILL.md` drops from 124,292 to 96,836 chars, so a review subagent can now read the orchestrator whole in one pass — it could not before.
+  - Step 9 through Completion — the completion hooks, interactive commits, rule update, both retrospectives, and Completion itself — move verbatim into the new reference. `SKILL.md` keeps all six section labels, so every `§ Step 9`–`§ Completion` cross-reference in the repo still resolves. The `Read` that loads the file sits at **Step 8.5 (Deferred Verification)'s exit**, not inside § Step 9 — Step 8.5 is arrived at on every path, whereas the `Step 9: Completion Hooks` task row is registered only when `hooks.on_complete` is configured. § Step 9 carries the input contract naming the cross-step state the phase consumes.
   - The nine user-gate bullets that can only fire after that boundary move with it, into the reference's § Gates. § No-Stall Principle keeps the other nine plus one aggregate bullet naming where the rest live; the two halves remain one closed list.
-  - No behavior change. The bodies are byte-identical to what they replaced.
+  - **Per-run reads go up, not down**: a run now loads `SKILL.md` plus the new reference — 130,167 chars against 124,292 before, +5,875. That increase is accepted deliberately: the goal was one-pass reviewability, which only the split delivers, and the finish phase is loaded once at a boundary every run crosses.
+  - **Residual risk**: the phase is loaded once, so a context compaction landing mid-phase can drop its definitions — the nine USER APPROVAL GATE declarations and its half of the pause-point closed list included. There is no automatic re-read; the reference says to re-read it on resuming a compacted run.
+  - No behavior change — the bodies are byte-identical to what they replaced, except that 16 markdown-link URLs were rebased from `references/<file>.md` to `<file>.md` so they still resolve from inside `references/`.
 - refactor(mobpro): re-target the transcription pointers at `finish-phase.md`
-  - `references/inline-defs.md` transcriptions (b)–(f) and `references/m11-commit.md`'s Step 10 note named `dev-workflow`'s `SKILL.md` as their upstream. The transcribed content is unchanged; only the `Keep in sync with ...` targets move.
+  - The `Keep in sync with ...` notes on `references/inline-defs.md`'s Task-derived-change gate, Step 10, Step 11, and Completion transcriptions, plus `references/m11-commit.md`'s Step 10 note, named `dev-workflow`'s `SKILL.md` as their upstream. The transcribed content is unchanged; only the `Keep in sync with ...` targets move.
 
 ### dev-workflow v1.117.0 / extract-rules v1.28.0 / dev-workflow-bundle v1.139.0
 

@@ -46,7 +46,9 @@ Signals that a candidate is a record rather than a rule:
 - It reads as a sequence of what was done, in the order it was done.
 - Its subject is one artifact rather than a class of situation.
 - Its justification is that this is what was done, with no statement of what goes wrong otherwise.
-- Removing it would make no future change wrong — only different.
+- Removing it would leave a future change equally consistent with what this project already does — different, not wrong.
+
+A settled convention is not caught by that removal signal: departing from it is wrong here, not merely different. "Settled" is shown by conformance visible across existing artifacts, or by an explicit user decision establishing the convention — never by the candidate's own assertion that it exists.
 
 Whether a candidate carries a code signature is **not** a signal either way. A durable convention about how to work often has no signature at all, and a one-off note can carry one.
 
@@ -58,7 +60,7 @@ Rule files are loaded at the start of every session, whether or not the situatio
 
 Apply this third test to every candidate that survives the two above. It has two halves, and a candidate needs only one of them.
 
-> **Reach** — how wide is the class of situations this fires in? A recurring shape of work, or one configuration of one component?
+> **Reach** — how wide is the class of situations this fires in? A recurring shape of work, or one configuration of one component? Judge reach by the class of situations the rule fires in, not by the single artifact it was observed on.
 > **Consequence** — what happens if the rule is absent when the situation does come up? Something breaks quietly and is expensive to find, or the work is simply redone once?
 
 Keep the candidate when its reach is wide, **or** when a narrow reach pairs with a consequence that is silent, destructive, or expensive to recover from. Skip it when a narrow reach pairs with a consequence an ordinary rerun or review would absorb.

@@ -6,11 +6,11 @@ allowed-tools: Read, Edit, Agent, TaskCreate, TaskUpdate, TodoWrite, Bash(git di
 
 # Publicity Review
 
-The convergence signal is the executor itself returning `findings: []` AND `suggested_edits: []` on a pass verdict — that is, the subagent declares nothing more is left to flag. By default the skill runs a **single** pass; a caller that raises `Max iterations` loops until that signal, max iterations is reached, a divergence is detected, or a safety rail trips.
+The convergence signal is the executor itself returning `findings: []` AND `suggested_edits: []` on a pass verdict. By default the skill runs a **single** pass; a caller that raises `Max iterations` loops until that signal, max iterations is reached, a divergence is detected, or a safety rail trips.
 
 The detection scope is narrow on purpose: secrets, user-specific absolute paths (e.g. `/Users/<name>/...`), internal-only URLs / hostnames, personal identifiers, and obvious proprietary internal info. It is **not** a generic linter — license, brand, or stylistic content is out of scope.
 
-Designed to be called from non-interactive routines such as `dev-workflow-triage` or `dev-workflow`'s `hooks.on_complete`. It never prompts the user; it either returns a structured summary or terminates early with a machine-readable reason code.
+It never prompts the user.
 
 ## Invocation contract
 
@@ -18,7 +18,7 @@ The caller passes these fields in natural language (the skill extracts them from
 
 - `Base ref` *(optional, default `HEAD`)* — git ref to diff against
 - `Max iterations` *(optional, default `1`)* — upper bound on the refinement loop. Default `1` is a single detect-and-apply pass — a caller that wants the applied fixes re-verified raises it explicitly
-- `Model` *(optional, default `sonnet`)* — model for the reviewer `Agent` dispatch, or `inherit` to use the session model. Accepted values are whichever model ids the current `Agent` tool's `model` parameter allows — see `rules-review` SKILL.md's `Model:` paragraph (`§ Usage`) for the live-schema validity check this shares. An **independent optional field** — adding it does not turn the contract into a fixed-arity mode gate (the other fields keep their own defaults). **Default `sonnet`**: publicity-review's detection task is mechanical pattern-matching (secrets / paths / URLs), so it runs on `sonnet` by default — a deliberate skill-side cost choice that applies to **every** caller (e.g. `dev-workflow-triage`, `dev-workflow`'s `hooks.on_complete`). A caller-supplied `Model:` value **wins over** this default (arg-wins). The model applies **only on the Claude Code `Agent`-dispatch path**; on the inline fallback path no `Agent` is spawned, so it is moot (the executing agent's own model governs).
+- `Model` *(optional, default `sonnet`)* — model for the reviewer `Agent` dispatch, or `inherit` to use the session model. Accepted values are whichever model ids the current `Agent` tool's `model` parameter allows — see `rules-review` SKILL.md's `Model:` paragraph (`§ Usage`) for the live-schema validity check this shares. An **independent optional field** — adding it does not turn the contract into a fixed-arity mode gate (the other fields keep their own defaults). **Default `sonnet`** applies to **every** caller. A caller-supplied `Model:` value **wins over** this default (arg-wins). The model applies **only on the Claude Code `Agent`-dispatch path**; on the inline fallback path no `Agent` is spawned, so it is moot (the executing agent's own model governs).
 
 The caller must **not** stage changes while this skill is running. The skill reads the working tree vs `Base ref`; staged content would mix into the diff and corrupt the verdict.
 
@@ -34,17 +34,15 @@ The caller must **not** stage changes while this skill is running. The skill rea
    ```
 4. Compute `affected_files` — the set of file paths in the diff. Hold this set in main-thread context as the scope-check baseline for Step 2 (c).
 
-There is no explicit pre-flight diff-size cap — sibling review skills (`ask-peer`, `verify-diff`, `skill-review`, `rules-review`) all dispatch without one, and `publicity-review`'s detection task (local pattern matching for secret / path / URL signatures) is less context-sensitive than cross-file semantic review. If the dispatch is too large for the subagent runtime, the `Agent` tool returns an error / timeout / empty response, which falls through to `## Dispatch failure` (`status=skipped, reason="dispatch error"`). That path captures the only real-world failure mode an absolute byte cap was protecting against.
-
 ### Step 2 — Iteration loop (i = 1 .. Max iterations)
 
 **Pre-register iteration tasks** — before entering the loop, `TaskCreate` one task per iteration named `iteration 1`, ..., `iteration <Max iterations>`. Mark `in_progress` (via `TaskUpdate`) before each dispatch, `completed` after parse + apply (a `converged` verdict marks `completed` immediately after parsing). On early convergence or safety-rail exit, mark remaining tasks `completed` with note appended to the task's `description` field (the `content` field under the `TodoWrite` fallback) as `— skipped: <reason>`. Where the Task tools are unavailable (e.g. the VSCode extension, or Claude Code before v2.1.142), use the equivalent `TodoWrite` operations instead — the status values and pre-register semantics are identical; `allowed-tools` grants both.
 
 #### (a) Dispatch reviewer Agent
 
-On iter 1, `Read` the full current contents of each `affected_files` entry. On `i ≥ 2`, only re-`Read` the subset of `affected_files` whose path appeared in a successfully-applied `suggested_edits` entry during iter `i-1` (untouched files keep their iter-1 snapshot — re-reading them is wasted work and balloons main-thread context). On `i ≥ 2`, also re-run `git diff <Base ref>` so the diff reflects edits that landed in prior iterations.
+On iter 1, `Read` the full current contents of each `affected_files` entry. On `i ≥ 2`, only re-`Read` the subset of `affected_files` whose path appeared in a successfully-applied `suggested_edits` entry during iter `i-1` (untouched files keep their iter-1 snapshot). On `i ≥ 2`, also re-run `git diff <Base ref>` so the diff reflects edits that landed in prior iterations.
 
-Invoke the `Agent` tool to dispatch a fresh reviewer, passing the resolved model (Step 1) as the `Agent` `model` parameter — the caller-supplied `Model:` if present, else the skill-side default `sonnet`; pass no `model` only when the resolved value is `inherit`. Assemble the dispatch prompt from the four sections below, each framed with a clear `--- LABEL ---` fence (same convention as `verify-diff` § Step 3 (a) Dispatch bias-free executor and `skill-review` § Step 3 (a) Dispatch reviewer Agent) so the reviewer can parse each payload unambiguously:
+Invoke the `Agent` tool to dispatch a fresh reviewer, passing the resolved model (Step 1) as the `Agent` `model` parameter — the caller-supplied `Model:` if present, else the skill-side default `sonnet`; pass no `model` only when the resolved value is `inherit`. Assemble the dispatch prompt from the four sections below, each framed with a clear `--- LABEL ---` fence:
 
 - `--- DIFF ---`: the unified diff (current `git diff <Base ref>` output)
 - `--- AFFECTED FILES ---`: each `affected_files` entry's path + full current contents (one block per file, separated by `### <path>` sub-headings)
@@ -57,7 +55,7 @@ Invoke the `Agent` tool to dispatch a fresh reviewer, passing the resolved model
 >
 > Detection categories (`category` enum):
 >
-> - `secret`: API keys, OAuth tokens, bearer tokens, passwords, private keys (`-----BEGIN .*PRIVATE KEY-----` blocks), `.env` literal values, AWS / GCP / Azure credentials, JWT secrets. Recognizable prefixes include `sk-`, `ghp_`, `gho_`, `AKIA`, `xox[bp]-`, `eyJ` (JWT-like). Any value matching one of these formats is treated as a credential for severity purposes — `severity: high` is load-bearing for the Step 3 secret-bypass rule and applies regardless of whether the value looks like a placeholder, dummy, or canonical docs example. Use `confidence` to express how likely the value is to be functionally exploitable: `high` for real-looking values (random-looking entropy); `medium` for plausible fixtures (looks real but variable name suggests test); `low` for obvious placeholders (sequential digits like `12345-67890`, alphabet runs like `abcdef`, or known canonical docs placeholders — AWS / GCP / Azure documentation values whose tail spells out `EXAMPLE` or `PLACEHOLDER`).
+> - `secret`: API keys, OAuth tokens, bearer tokens, passwords, private keys (`-----BEGIN .*PRIVATE KEY-----` blocks), `.env` literal values, AWS / GCP / Azure credentials, JWT secrets. Recognizable prefixes include `sk-`, `ghp_`, `gho_`, `AKIA`, `xox[bp]-`, `eyJ` (JWT-like). Any value matching one of these formats is treated as a credential for severity purposes — set `severity: high` regardless of whether the value looks like a placeholder, dummy, or canonical docs example. Use `confidence` to express how likely the value is to be functionally exploitable: `high` for real-looking values (random-looking entropy); `medium` for plausible fixtures (looks real but variable name suggests test); `low` for obvious placeholders (sequential digits like `12345-67890`, alphabet runs like `abcdef`, or known canonical docs placeholders — AWS / GCP / Azure documentation values whose tail spells out `EXAMPLE` or `PLACEHOLDER`).
 > - `user-specific-path`: absolute paths into a user's home directory like `/Users/<name>/...`, `/home/<name>/...`, or hardcoded references to a single contributor's local checkout. Default `severity: medium` (leaks contributor identity / breaks portability, but not exploitable as a credential). Exception — see exclusions below.
 > - `internal-url`: hostnames or URLs that are clearly internal, such as `*.internal`, `*.corp`, `*.local`, internal Slack workspace URLs (`<workspace>.slack.com` references that name a private workspace), private Notion / Confluence pages.
 > - `personal-identifier`: real names, personal email addresses, phone numbers, physical addresses of individuals — beyond what would normally appear in a git commit author signature (which is by definition already public).
@@ -85,7 +83,7 @@ Invoke the `Agent` tool to dispatch a fresh reviewer, passing the resolved model
 >
 > Do **not** emit `suggested_edits` for `internal-url`, `personal-identifier`, `proprietary-info`, or `other` — those need project context to fix correctly. Record them in `findings[]` only.
 >
-> `old_string` for each `suggested_edit` must match exactly one location in the current file. Include **1–3 lines of surrounding context** so the snippet is unique — short one-liners collide and cause the Edit to fail. Default to one line of context above and one below the offending line; expand only if uniqueness still fails. Emit one `suggested_edits` entry per offending line — do not merge multiple offending lines into a single Edit, since a later iter's apply phase may need to skip individual entries when an `old_string` no longer matches.
+> `old_string` for each `suggested_edit` must match exactly one location in the current file. Include **1–3 lines of surrounding context** so the snippet is unique — short one-liners collide and cause the Edit to fail. Default to one line of context above and one below the offending line; expand only if uniqueness still fails. Emit one `suggested_edits` entry per offending line — do not merge multiple offending lines into a single Edit.
 >
 > Every `suggested_edits` entry also carries **`finding_index`** — the 0-based index into your own `findings[]` array of the one finding that edit fixes. The orchestrator treats a finding whose edit lands as resolved, so the index has to be right: a missing or non-integer one fails schema validation and the whole pass is discarded with nothing applied, while one pointing at the wrong finding drops that finding from the residual list — reporting a leak that is still on disk as fixed. One edit fixes exactly one finding; two offending lines produce two findings, two edits, and two distinct indices.
 >
@@ -123,13 +121,13 @@ Invoke the `Agent` tool to dispatch a fresh reviewer, passing the resolved model
 Same evaluate-in-order discipline as `verify-diff` § (b) Parse & apply.
 
 1. **Verdict missing or malformed** — no fenced JSON block found, or JSON parse fails → return `status=skipped`, `reason="verdict parse failure"`.
-2. **Schema violation** — required keys (`findings`, `suggested_edits`) missing, values not arrays, or any entry fails its expected per-entry shape (`findings` entries must have `category` ∈ enum, `severity` ∈ `high|medium|low`, `confidence` ∈ `high|medium|low`, non-empty `file` / `snippet` / `rationale`; `suggested_edits` entries must have non-empty `file` / `old_string` / `new_string` plus an integer `finding_index` that is a valid index into `findings`, with no two entries sharing the same index) → return `status=skipped`, `reason="verdict schema violation"`. Validating per-entry shape here prevents a malformed entry from crashing a downstream `Edit` call; the uniqueness leg closes the silent variant — two edits naming one finding, only one of which lands, would still drop that finding from the residual list. **Exception** — when `findings == []`, skip the `finding_index` range and uniqueness checks only (every other per-entry check still applies): no index can be valid against an empty array, and that combination is the gate-reachability violation sub-case 3 handles by discarding the edits and converging.
+2. **Schema violation** — required keys (`findings`, `suggested_edits`) missing, values not arrays, or any entry fails its expected per-entry shape (`findings` entries must have `category` ∈ enum, `severity` ∈ `high|medium|low`, `confidence` ∈ `high|medium|low`, non-empty `file` / `snippet` / `rationale`; `suggested_edits` entries must have non-empty `file` / `old_string` / `new_string` plus an integer `finding_index` that is a valid index into `findings`, with no two entries sharing the same index) → return `status=skipped`, `reason="verdict schema violation"`. **Exception** — when `findings == []`, skip the `finding_index` range and uniqueness checks only (every other per-entry check still applies).
 3. **Converged** — `findings == []` AND `suggested_edits == []` → exit loop with `status=converged` and proceed directly to Step 4. If `suggested_edits` is non-empty while `findings == []`, the gate-reachability rule was violated by the subagent — discard the edits (do not apply them) and treat this iteration as `converged`. Safety rails (c) do not run (no edit applied).
 4. **Divergence** — only when `i >= 2`: if `findings` from this iter is the same multiset as the previous iter (sort each by `(category, file, snippet)` textually before comparison), the loop is not making progress → return `status=skipped`, `reason="divergent findings"`.
 5. **Otherwise** — apply `suggested_edits` in order. The severity / confidence gate in Step 3 (`unresolved` judgment) applies to **iter-end residual findings**, not to apply-phase decisions, so every entry is applied unconditionally:
    - Reset `resolved_finding_indices` to the empty set at the start of this apply phase — it indexes **this** iteration's `findings[]`, which is the array Step 3's `unresolved` judgment rule reads.
    - Re-Read the target file before each Edit so `old_string` matches current contents.
-   - If an `old_string` is not found, skip that entry and continue with the next. This is expected when the subagent emits multiple edits from a single snapshot and a later edit overlaps a region an earlier one already rewrote — the skip is a no-op fallback, not an error.
+   - If an `old_string` is not found, skip that entry and continue with the next. The skip is a no-op fallback, not an error.
    - Increment `applied_edits_count` only for entries whose `Edit` call succeeded, and add each such entry's `finding_index` to `resolved_finding_indices`. A skipped entry contributes neither.
    - After the edits, if at least one Edit succeeded, run the safety rails in (c), then continue to iteration `i + 1`.
 
@@ -150,18 +148,18 @@ Same evaluate-in-order discipline as `verify-diff` § (b) Parse & apply.
 
 Reached when the loop runs out of iterations without (b) sub-case 3 firing. At the default `Max iterations` of `1` this is the ordinary path for any pass that flagged something.
 
-Start from the **last verdict's `findings[]`** and first drop every finding whose index is in `resolved_finding_indices` — the final iteration applied that finding's mechanical fix, so it is resolved rather than outstanding. This rule is about the **last** iteration, not about the default: every earlier iteration's fixes are already accounted for, because the next iteration's fresh verdict is computed against the edited tree. The last one has no successor to do that, so its landed edit is itself the resolution signal. A caller that wants a re-verification round after the final fix raises `Max iterations`.
+Start from the **last verdict's `findings[]`** and first drop every finding whose index is in `resolved_finding_indices` — the final iteration applied that finding's mechanical fix, so it is resolved rather than outstanding.
 
 Sort the survivors into `remaining_findings` and `warnings_findings` using this judgment rule:
 
 A finding triggers `unresolved` (i.e., goes into `remaining_findings`) if either:
 
-- **(secret bypass rule)** `category == "secret"` AND `severity` ∈ `medium|high`, regardless of `confidence` — the secret category is the highest-stakes one and a low-confidence true positive must not be silently dropped.
+- **(secret bypass rule)** `category == "secret"` AND `severity` ∈ `medium|high`, regardless of `confidence`.
 - **(general rule)** `severity` ∈ `medium|high` AND `confidence` ∈ `medium|high`.
 
-Findings that match neither condition (e.g., `severity: low` only, or non-secret with `confidence: low`) go into `warnings_findings`. They are surfaced in the verdict but do not trigger a fail-closed disposition in callers.
+Findings that match neither condition (e.g., `severity: low` only, or non-secret with `confidence: low`) go into `warnings_findings`.
 
-If `remaining_findings` is empty — every flagged leak was either mechanically fixed by this pass or fell through to warnings-only — set `status=converged` (the leaks worth blocking on are gone). Otherwise set `status=unresolved`, which now means what a caller's fail-closed branch assumes: a leak worth blocking on is still on disk because nothing fixed it.
+If `remaining_findings` is empty, set `status=converged`. Otherwise set `status=unresolved`.
 
 `applied_edits_count` reflects edits that actually landed (not skipped) cumulatively across all iterations.
 
@@ -203,12 +201,6 @@ If the `Agent` tool call itself errors, times out, or returns an empty response,
 
 When invoked as a sub-skill (i.e. via `Skill(publicity-review)` from an orchestrator), the fenced JSON verdict block this skill emits is the **structured return value** of the skill's procedure — it is **not** a deliverable to the user, and emitting it does **not** terminate the orchestrator's turn. The same agent that ran this skill must immediately issue the next tool call dictated by the orchestrator's flow (see `dev-workflow-triage` SKILL.md `§ No-Stall Principle`; orchestrators that surface a per-callee guidance bullet — e.g. `dev-workflow-triage`'s `**Pre-invocation reminder**` — name the specific next action there). Do not insert a prose summary, an acknowledgment, or a "shall I proceed?" sentence between the JSON verdict and the next tool call. The JSON verdict block and the next tool call MUST be emitted in the same assistant turn. Closing the turn after emitting the JSON block — even with no prose between them — is the same violation as inserting prose. Only one fenced JSON block — the verdict block — appears in the response, so callers can locate it unambiguously. The skill's own procedure is over; the orchestrator's procedure continues without pause.
 
-When invoked from `dev-workflow-triage`'s `§ 3.4 Apply accepted Findings` (d3) bullet, the orchestrator parses the JSON and continues with sub-step (f) Scope check + stage. See `dev-workflow-triage` SKILL.md `§ No-Stall Principle` for the canonical no-stall write-up.
-
-When invoked from `dev-workflow`'s `hooks.on_complete` mechanism, the JSON block becomes part of the hook's stdout and is shown to the user. The case that warrants explicit caller-side handling beyond raw JSON visibility:
-
-- `status=unresolved` indicates the workflow's diff still contains content unsuitable for publication. `dev-workflow` does not commit, so no auto-revert runs, but the caller should treat this as a high-stakes signal and surface `remaining_findings` prominently.
-
 ## Agent unavailable fallback
 
 Detect availability and fall back per the canonical write-up in `rules-review` SKILL.md `§ 5. Review` (the "Detecting Agent availability" / "Fallback when Agent is unavailable" paragraphs). The publicity-review specialization: when falling back, walk the embedded reviewer prompt over each affected file inline-sequentially in the main thread and emit the same fenced JSON return contract defined above so callers' parsers handle both paths identically.
@@ -221,10 +213,3 @@ On Claude Code on the Web the auto-installed `~/.claude/stop-hook-git-check.sh` 
 
 - Only the **`+` lines of the diff** are in scope. Existing content (context lines) is out of scope — judging the existing repo state is not this skill's job.
 - This skill targets **distribution safety**, not generic code quality. Lint, naming, design, prose quality belong to `skill-review` / `rules-review` / reviewer skills.
-- Heuristic detection has inherent false-positive risk; the `severity: low` / `confidence: low` warnings-only path exists to avoid blocking the caller on weak signals while still surfacing the observation.
-
-## Related
-
-- `verify-diff` — empirical diff verification with subagent-driven iteration; same Pattern A iteration shape, different objective (does the diff achieve its stated goal vs. does the diff contain leak material).
-- `skill-review` — Pattern A iteration loop best-practices review for skill files; same fenced JSON return contract pattern, different scope (skill files only, applies mechanical edits autonomously).
-- `rules-review` — diff-scoped check against `.claude/rules/`; canonical site for the "Agent unavailable fallback" write-up this skill references.

@@ -1,16 +1,16 @@
 # Rule-Extraction Axis
 
-Deep reference for the **rule-extraction axis** of the shared session scan (`references/session-scan.md`). Read this when the rule-extraction axis is active — i.e. `SKILL.md` Step 11 sub-step 1 determined `rule-extraction-active` is true and the shared scan was dispatched with this axis in its still-active set.
+Deep reference for the **rule-extraction axis** of the shared session scan (`references/session-scan.md`). Read this when the rule-extraction axis is active — i.e. [`finish-phase.md`](finish-phase.md) Step 11 sub-step 1 determined `rule-extraction-active` is true and the shared scan was dispatched with this axis in its still-active set.
 
-Purpose: scan the current conversation for **project-specific coding-rule candidates** — the same signal `extract-rules --from-conversation` looks for in its C4 analysis — and emit them as the shared scan's `--- RULE-CANDIDATES ---` block. The block is the **producer** half of a scan/apply split: the **consumer** is `extract-rules` **Conversation Candidate Apply Mode** (`--apply-conversation-candidates <path>`), which `SKILL.md` Step 11 invokes with the consumed block. extract-rules runs **only Step C5** on it (dedup / route / write / promote / `.examples.md` / Security Self-Check) — no re-parse of the jsonl.
+Purpose: scan the current conversation for **project-specific coding-rule candidates** — the same signal `extract-rules --from-conversation` looks for in its C4 analysis — and emit them as the shared scan's `--- RULE-CANDIDATES ---` block. The block is the **producer** half of a scan/apply split: the **consumer** is `extract-rules` **Conversation Candidate Apply Mode** (`--apply-conversation-candidates <path>`), which [`finish-phase.md`](finish-phase.md) § Step 11 invokes with the consumed block. extract-rules runs **only Step C5** on it (dedup / route / write / promote / `.examples.md` / Security Self-Check) — no re-parse of the jsonl.
 
-This file is the **rule-extraction-axis spec** the shared scan's subagent reads and applies — a **producer spec only**: the consume + failure routing live in `references/session-scan.md` § Consuming a block and `SKILL.md` Step 11. This axis carries project-internal candidates that stay inside the project (written to `.claude/rules/` by extract-rules), distinct from the self-retrospective axis whose output leaves the project and is sanitized project-agnostic.
+This file is the **rule-extraction-axis spec** the shared scan's subagent reads and applies — a **producer spec only**: the consume + failure routing live in `references/session-scan.md` § Consuming a block and [`finish-phase.md`](finish-phase.md) § Step 11. This axis carries project-internal candidates that stay inside the project (written to `.claude/rules/` by extract-rules), distinct from the self-retrospective axis whose output leaves the project and is sanitized project-agnostic.
 
 ## 1. Activation & session handling
 
 Unlike the self-retrospective (`references/self-retrospective.md` §1) and workability (`references/workability-retrospective.md` §1) axes, this axis has **no pre-flight of its own**:
 
-- **Activation** is decided in `SKILL.md` Step 11 sub-step 1 (`rule-extraction-active` = NOT the existing `--from-conversation` skip conditions). When inactive, the axis is simply absent from the shared scan's still-active set.
+- **Activation** is decided in [`finish-phase.md`](finish-phase.md) Step 11 sub-step 1 (`rule-extraction-active` = NOT the existing `--from-conversation` skip conditions). When inactive, the axis is simply absent from the shared scan's still-active set.
 - **Session file resolution + dispatch** are performed by the dispatching step (Step 11 when this axis is active) via the shared `references/session-scan.md` § Inputs procedure — the same `pwd` → encode → `Glob` newest-`.jsonl` resolution the other axes' §1.4 / §1.3 use. The subagent receives the resolved session file path; it does not resolve it.
 
 ## 2. Detection

@@ -8,7 +8,7 @@ Read this file whenever a participating step reaches its dispatch point (Step 11
 
 Gated on at least one axis being active:
 
-- **rule-extraction** — `SKILL.md` Step 11 sub-step 1 determined `rule-extraction-active` is true (the existing `--from-conversation` skip conditions did not fire). Step 11 is always registered, so this axis is active on most runs.
+- **rule-extraction** — [`finish-phase.md`](finish-phase.md) Step 11 sub-step 1 determined `rule-extraction-active` is true (the existing `--from-conversation` skip conditions did not fire). Step 11 is always registered, so this axis is active on most runs.
 - **self-retrospective** — `self_retrospective.feedback` is set and valid (Step 11.5 registered).
 - **workability** — `workability_retrospective.enabled` is `true` (Step 11.6 registered).
 
@@ -89,17 +89,17 @@ Instruct the single spawned subagent to:
 When a step consumes its axis block from `session_scan_result`:
 
 1. If `session_scan_result` is the whole-scan **`Status: ERROR`** shape (no delimiters) — or no parseable result was obtained at all — route **this step's own axis** to its whole-scan-failure handling:
-   - Step 11 (rule-extraction) → the jsonl is unreadable, so a standalone re-scan would fail too; treat rule-extraction as **skipped** (no `--from-conversation` fallback — see `SKILL.md` Step 11 sub-step 1's failure routing, which distinguishes whole-scan ERROR from a per-axis malformed block).
+   - Step 11 (rule-extraction) → the jsonl is unreadable, so a standalone re-scan would fail too; treat rule-extraction as **skipped** (no `--from-conversation` fallback — see [`finish-phase.md`](finish-phase.md) Step 11 sub-step 1's failure routing, which distinguishes whole-scan ERROR from a per-axis malformed block).
    - Step 11.5 (self-retrospective) → `references/self-retrospective.md` §5 subagent-failure → terminal summary `skipped`.
    - Step 11.6 (workability) → `references/workability-retrospective.md` §6 subagent failure → terminal summary `skipped`.
 
    Do not retry (a subagent that returned non-conforming content is not trusted to re-run this session). Each axis's terminal disposition is emitted by **its own home step, exactly once**. The other active axes are **not** handled from here — each home step independently consumes the same `Status: ERROR` result and routes itself in turn. This is the deliberate **whole-scan failure-coupling**: the `Status: ERROR` shape carries no per-axis block, so every active axis's consume hits this same branch and a fatal parse error skips them all at once.
 2. Otherwise, split `session_scan_result` on the axis delimiters and take this step's block (`--- RULE-CANDIDATES ---` … for Step 11, `--- SELF-RETROSPECTIVE ---` … for Step 11.5, `--- WORKABILITY ---` … for Step 11.6):
    - **Block missing or malformed** for this axis (the delimiter pair is absent, or the block fails this axis's own machine-checkable validation) → route **only this axis** to its per-axis-failure handling; the other axes are unaffected:
-     - Step 11 (rule-extraction) → the jsonl parsed fine (other axes' blocks are present), so the per-axis malformed-block path falls back to standalone `Skill(extract-rules) --from-conversation` (see `SKILL.md` Step 11 sub-step 1) — re-extracting against the known-readable jsonl rather than skipping. This is the one axis whose per-axis failure is a fallback rather than a `skipped` (it has a standalone fallback worker).
+     - Step 11 (rule-extraction) → the jsonl parsed fine (other axes' blocks are present), so the per-axis malformed-block path falls back to standalone `Skill(extract-rules) --from-conversation` (see [`finish-phase.md`](finish-phase.md) Step 11 sub-step 1) — re-extracting against the known-readable jsonl rather than skipping. This is the one axis whose per-axis failure is a fallback rather than a `skipped` (it has a standalone fallback worker).
      - Step 11.5 (self-retrospective) → `references/self-retrospective.md` §5 machine-checkable rejections → `skipped`.
      - Step 11.6 (workability) → `references/workability-retrospective.md` §6 subagent-failure checks → `skipped`.
    - **Block well-formed** → hand it to this axis's disposition exactly as if the axis's own subagent had returned it:
-     - Step 11 (rule-extraction) → `SKILL.md` Step 11 sub-step 1 (write the block to the candidate file → `Skill(extract-rules) --apply-conversation-candidates <path>`).
+     - Step 11 (rule-extraction) → [`finish-phase.md`](finish-phase.md) Step 11 sub-step 1 (write the block to the candidate file → `Skill(extract-rules) --apply-conversation-candidates <path>`).
      - Step 11.5 (self-retrospective) → `references/self-retrospective.md` §4 Output & submission.
      - Step 11.6 (workability) → `references/workability-retrospective.md` §4 Disposition gate.

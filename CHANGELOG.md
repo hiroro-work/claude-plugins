@@ -2,6 +2,16 @@
 
 ## 2026-08-18
 
+### dev-workflow v1.118.0 / mobpro v1.28.1 / dev-workflow-bundle v1.140.0
+
+- refactor(dev-workflow): move the finish phase into `references/finish-phase.md`
+  - `SKILL.md` drops from 124,292 to 96530 chars, so a review subagent can now read the orchestrator whole in one pass — previously it could not, and neither could a single main-thread `Read` until v1.x's earlier extractions.
+  - Step 9 through Completion — the completion hooks, interactive commits, rule update, both retrospectives, and Completion itself — move verbatim into the new reference. `SKILL.md` keeps all six section labels, so every `§ Step 9`–`§ Completion` cross-reference in the repo still resolves; § Step 9 additionally carries the unconditional `Read` that loads the file and an input contract naming the cross-step state the phase consumes. The load happens at the Step 8.5 → Step 9 boundary, before any of the phase's conditions are evaluated, so nothing is decided on a file that has not been read.
+  - The nine user-gate bullets that can only fire after that boundary move with it, into the reference's § Gates. § No-Stall Principle keeps the other nine plus one aggregate bullet naming where the rest live; the two halves remain one closed list.
+  - No behavior change. The bodies are byte-identical to what they replaced.
+- refactor(mobpro): re-target the transcription pointers at `finish-phase.md`
+  - `references/inline-defs.md` transcriptions (b)–(f) and `references/m11-commit.md`'s Step 10 note named `dev-workflow`'s `SKILL.md` as their upstream. The transcribed content is unchanged; only the `Keep in sync with ...` targets move.
+
 ### dev-workflow v1.117.0 / extract-rules v1.28.0 / dev-workflow-bundle v1.139.0
 
 - fix(extract-rules): keep the conventions a project has actually settled on

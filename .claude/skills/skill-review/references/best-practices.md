@@ -57,6 +57,7 @@ Project conventions under `.claude/rules/` and `CLAUDE.md` override these generi
 - [ ] The skill body does not contain instructions that aren't pulling their weight — every paragraph has a clear role in producing the documented outcome.
 - [ ] Speculative guidance ("in case X happens in the future", "you might want to also ...") is absent unless it's genuinely load-bearing for correctness.
 - [ ] Repeated long explanations / multiple paraphrases of the same rule are consolidated.
+- [ ] The skill body carries no **change rationale or design-decision record** — why an edit was made, which alternative was rejected, how a split convention was resolved, or what a sibling file does or does not say. A skill file is re-read on every invocation, and none of that content changes what the agent does; it belongs in the commit message, the PR body, or a tracked doc outside the skill. Flag it **even when a project rule appears to ask for the record**: such a rule requires the record to exist somewhere, not to sit in the skill body. This item is the concrete failure mode the two above are too abstract to catch.
 - [ ] The skill does not bundle unrelated workflows under one name — if it did, it should be two skills.
 
 ## Safety & trust

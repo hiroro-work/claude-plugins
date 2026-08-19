@@ -2,6 +2,13 @@
 
 ## 2026-08-19
 
+### extract-rules v1.28.3 / dev-workflow-bundle v1.140.7
+
+- refactor(extract-rules): drop prose that does not change agent behavior (chunk 2 of 5)
+  - Scope is `SKILL.md` from `## Compaction Mode` to the end, plus `references/integration-criteria.md` and `references/resolve-references.md`: 33,044 to 29,748 chars (-10.0%). `references/security.md` was in scope and left as is. Three chunks remain.
+  - Removed: six sibling-equivalence attributions to `verify-diff` / `publicity-review` / `skill-review`, which were also dangling references in the distributed copy since none of the three is a marketplace plugin; the rationale attached to rules already stated unconditionally (the `max_iterations = 2` justification, the entry-shape validation motive, the forward-compat lead-in, the `(d)` status derivation, the realign-first efficiency clause, the `--compact` gate-asymmetry explanation); the "widened" / "it now means" history framing on `skipped-below-threshold`; four restatements of neighbouring text; the "This asymmetry is intentional" / Trade-off / Rationale framing in Step CP1; and the 40k anchor duplicated from the `compaction_threshold` row of the Configuration table.
+  - Unchanged: every enum token, field label, and output literal of the `--compact` return contract, so callers parsing the verdict are unaffected. Also kept are the `Bash(wc -m)` prohibition, the no-op fallback for an unmatched `old_string`, the bullet-extraction tie-breaker, the missing-key-to-empty-array rule, the Task-tools-unavailable fallback, `## Sub-skill caller directive`, and `## Stop hook structural conflict`.
+
 ### extract-rules v1.28.2 / dev-workflow-bundle v1.140.6
 
 - fix(extract-rules): replace the maintainer's own path in the Step C1 session-path example

@@ -2,6 +2,13 @@
 
 ## 2026-08-19
 
+### ask-peer v2.6.1 / dev-workflow-bundle v1.140.1
+
+- refactor(ask-peer): drop prose that is never consulted at runtime
+  - `SKILL.md` goes from 30,605 to 27,095 chars (-11%). The whole file is hot path — the Peer Agent Personality block is injected verbatim into every reviewer this skill dispatches — so the reclaim lands on each dispatch as well as each invocation.
+  - Most of it is one shape: the "why this audit matters / what happens if you skip it" tail on thirteen Review Focus Areas bullets. Each bullet's instruction is an unconditional imperative, so the tail explained the rule rather than deciding anything. No audit trigger, severity rule or output requirement changed.
+  - Retained: the three "This is distinct from <sibling clause>" paragraphs that stop a reviewer collapsing two similar audits into one, the negative trigger condition on the high cost-of-change audit, the informational-only constraint on the self-audit tag, and the unrecoverable-state warning under Verification safety. `## Dispatch authorization` is untouched.
+
 ### merge-rules v2.1.1
 
 - refactor(merge-rules): drop prose that is never consulted at runtime

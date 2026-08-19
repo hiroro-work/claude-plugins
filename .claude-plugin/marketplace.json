@@ -162,7 +162,7 @@
       "description": "Apply organization-wide rules to projects (filter by tech stack, merge with existing rules)",
       "source": "./skills/apply-rules",
       "skills": ["./"],
-      "version": "2.1.0",
+      "version": "2.1.1",
       "author": {
         "name": "hiropon"
       },

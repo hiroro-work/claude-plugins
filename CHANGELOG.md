@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-08-19
+
+### apply-rules v2.1.1
+
+- refactor(apply-rules): drop prose that is never consulted at runtime
+  - `SKILL.md` and `references/detection-heuristics.md` go from 26,363 to 21,327 chars (-19%), so every invocation loads that much less. No behavior change: each removed sentence was a rationale for a rule stated imperatively beside it, a re-render of the frontmatter `description` or of a sibling step, a cross-file consistency note, or a note addressed to a future editor.
+  - `## Conflict Handling` is gone. All twelve of its rows are stated as concrete actions in Steps 4, 5.5, 6a, 6b, 6c and 7 — where the procedure actually reads them — so the table only re-rendered decisions defined elsewhere.
+  - Retained: the `-extras` derivation rule and its `Source of truth` directive, every prohibition and scope boundary, the guard against hardcoding the three valid categories, and the glosses telling the agent that a `**/*.md` glob picks up co-located `.examples.md`.
+
 ## 2026-08-18
 
 ### dev-workflow v1.118.0 / mobpro v1.28.1 / dev-workflow-bundle v1.140.0

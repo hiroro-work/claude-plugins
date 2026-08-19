@@ -2,6 +2,13 @@
 
 ## 2026-08-19
 
+### merge-rules v2.1.1
+
+- refactor(merge-rules): drop prose that is never consulted at runtime
+  - `SKILL.md` goes from 15,122 to 13,263 chars (-12%). No behavior change: each removed sentence was a rationale for a rule stated imperatively beside it, a re-render of the frontmatter `description` or of a sibling step, or a cross-file consistency note.
+  - `## Conflict Handling` keeps only **Contradicting principles**. The other three rows — union hints, same name with different meaning, union paths — are stated as concrete actions in Step 4, which is where the procedure reads them.
+  - Retained: the `-extras` derivation rule with its trailing-slash warning and `Source of truth` directive, the worked promotion-threshold examples, and every prohibition and scope boundary — including that demoting a promoted Principle is a manual edit rather than something a run performs.
+
 ### apply-rules v2.1.1
 
 - refactor(apply-rules): drop prose that is never consulted at runtime

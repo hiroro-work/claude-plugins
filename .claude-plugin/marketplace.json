@@ -87,7 +87,7 @@
       "description": "Merge portable coding rules from multiple projects into a unified rule set",
       "source": "./skills/merge-rules",
       "skills": ["./"],
-      "version": "2.1.0",
+      "version": "2.1.1",
       "author": {
         "name": "hiropon"
       },

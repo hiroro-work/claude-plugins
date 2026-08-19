@@ -2,6 +2,14 @@
 
 ## 2026-08-19
 
+### extract-rules v1.28.5 / dev-workflow-bundle v1.140.9
+
+- refactor(extract-rules): drop prose that does not change agent behavior (chunk 4 of 5)
+  - Scope is `references/compaction-mode.md` and `references/realign-mode.md`: 46,816 to 36,330 chars (-22.4%). Compaction mode accounts for most of it, since `SKILL.md` Step CP2 (a) injects that file's whole body as the compactor prompt and every sentence in it is therefore paid twice per iteration. One chunk remains.
+  - Removed: the layer narration that restated "the subagent emits detection-only output, the main thread synthesizes the `Edit` calls" in five places and defended it against itself in two more; main-thread enforcement descriptions `SKILL.md` Step CP2 already carries (the two scope-rail narrations, the divergence-multiset mechanics, the iter-2 cluster-drift reason); both `Per-iter vs aggregated shape asymmetry` blockquotes, whose aggregated shape the Step CP4 schema defines; editor- and sibling-facing notes (the class-wide cross-reference invitation in `§ Forbidden tool calls`, realign's account of why it restates that section, six sibling-equivalence asides, the two compaction-vs-realign report-format comparisons); and the derivations behind the soft wording targets in `§ Compact cross_ref wording guidance`, including the whole "Why these targets are not strict" bullet -- the numbers and their soft status stay, and that section itself exempts them from the threshold-anchor rule.
+  - Also drops a reference that did not resolve for installers: `§ Compact cross_ref wording guidance` named a rule that lives in this repository's `.claude/rules/`, which the plugin does not distribute. Deletion is the fix on both grounds, so it lands in the same commit.
+  - Unchanged: every enum token, field label, and output literal both files' contracts expose, including the `See pattern:` literal anchor and the `per_file_status` / `reason` sets. Also kept are the `§ Forbidden tool calls` self-recognition paragraphs in both files, the Heuristic 2 / consolidation-gate boundary with its no-workaround-channel clause, the one-shot-dropout "highest-risk operation" line, the overlap-tolerance sentence that licenses emitting several edits from one snapshot, the silent-normalization warning on `old_string`, and realign's silent-failure consequences (duplicate labels, label correspondence both directions, the examples path resolved from the target's relative path, `git grep -F`, an untracked `output_dir` reading 0).
+
 ### extract-rules v1.28.4 / dev-workflow-bundle v1.140.8
 
 - refactor(extract-rules): drop prose that does not change agent behavior (chunk 3 of 5)

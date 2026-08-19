@@ -76,7 +76,7 @@
       "description": "Extract project-specific coding rules from codebase for AI agents",
       "source": "./skills/extract-rules",
       "skills": ["./"],
-      "version": "1.28.4",
+      "version": "1.28.5",
       "author": {
         "name": "hiropon"
       },
@@ -140,7 +140,7 @@
       "description": "Development workflow bundle (includes peer + extract-rules + dev-workflow + rules-review + tidy + prose-polish + mobpro)",
       "source": "./plugins/dev-workflow-bundle",
       "skills": ["./skills/ask-peer", "./skills/dev-workflow", "./skills/extract-rules", "./skills/rules-review", "./skills/tidy", "./skills/prose-polish", "./skills/mobpro"],
-      "version": "1.140.8",
+      "version": "1.140.9",
       "author": {
         "name": "hiropon"
       },

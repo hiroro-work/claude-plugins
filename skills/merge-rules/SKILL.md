@@ -6,8 +6,6 @@ allowed-tools: Read, Glob, Grep, Write, Bash(ls *), Bash(mkdir *), Bash(wc *)
 
 # Merge Rules
 
-Merges `.claude/rules/` from multiple projects into a unified portable rule set (.md + .examples.md). Promotes `.local.md` patterns that appear across a threshold of projects by converting them to Principles format. Merged `.examples.md` files are written to the sibling `<output_dir>-extras`.
-
 ## Usage
 
 ```text
@@ -23,7 +21,7 @@ Config file search order:
 2. `.claude/merge-rules.local.md` (project-level)
 3. `~/.claude/merge-rules.local.md` (user-level)
 
-**File format:** YAML frontmatter only (no markdown body), same convention as `extract-rules.local.md`.
+**File format:** YAML frontmatter only (no markdown body).
 
 ```yaml
 ---
@@ -34,12 +32,10 @@ projects:
   - ~/projects/shared-lib
 
 # Output directory (default: .claude/rules)
-# Inside Claude Code's .claude/rules/** auto-load scope
-# Examples go to the sibling <output_dir>-extras (.claude/rules-extras), outside that scope
+# Examples go to the sibling <output_dir>-extras (.claude/rules-extras)
 output_dir: .claude/rules
 
 # Rules directory within each project (default: .claude/rules)
-# Corresponds to extract-rules' output_dir setting; its examples sibling is <rules_dir>-extras
 rules_dir: .claude/rules
 
 # Threshold for promoting .local.md patterns (default: 0.5 = majority)
@@ -51,7 +47,7 @@ language: ja
 ---
 ```
 
-**Examples directories (no configuration key).** Examples live in a sibling of the rules directory: that path with any trailing `/` removed and `-extras` appended — `{path}/{rules_dir}-extras` for each source project, `<output_dir>-extras` for the output. Strip the trailing `/` before appending, or a configured `.claude/rules/` yields `.claude/rules/-extras`. The split is about auto-load scope: a rules directory sits inside Claude Code's `.claude/rules/**` recursive scope and is injected into context at session start, while the `-extras` sibling sits outside it so examples do not consume that context. Collection takes each rule file's examples from the derived directory first and from the rule directory itself only when that misses, so a **pre-split layout** — examples still beside the rule files — is still collected, including in a project whose tree is only part-way migrated; writing always targets the derived directory. merge-rules does not read extract-rules' `examples_output_dir`. Two of its values resolve here: the literal default `.claude/rules-extras` — but only while the project's rules directory is also its default, since extract-rules' examples default is a fixed path rather than one derived from `output_dir` — and the `examples_output_dir: <output_dir>` opt-back-in, through the co-located fallback. Any other value, a path nested under the rules directory included, puts examples where merge-rules does not look. Source of truth for the derived name is extract-rules' `examples_output_dir` default; keep in sync when that default changes.
+**Examples directories (no configuration key).** Examples live in a sibling of the rules directory: that path with any trailing `/` removed and `-extras` appended — `{path}/{rules_dir}-extras` for each source project, `<output_dir>-extras` for the output. Strip the trailing `/` before appending, or a configured `.claude/rules/` yields `.claude/rules/-extras`. Collection takes each rule file's examples from the derived directory first and from the rule directory itself only when that misses, so a **pre-split layout** — examples still beside the rule files — is still collected; writing always targets the derived directory. merge-rules does not read extract-rules' `examples_output_dir`. Source of truth for the derived name is extract-rules' `examples_output_dir` default; keep in sync when that default changes.
 
 ## Processing Flow
 
@@ -100,7 +96,7 @@ Before merging, group files that refer to the same concept but have different na
 
 ### Step 4: Merge Portable Rules (.md)
 
-**Design note:** Once a pattern is promoted to a Principle (via Step 5), it becomes a permanent org-level rule. Subsequent merge-rules runs will preserve it through Step 4's principle deduplication, regardless of whether the original `.local.md` pattern still meets the promotion threshold. To demote or remove a promoted Principle, manually edit the org rules output.
+Once a pattern is promoted to a Principle (via Step 5), subsequent merge-rules runs preserve it through Step 4's principle deduplication, regardless of whether the original `.local.md` pattern still meets the promotion threshold. To demote or remove a promoted Principle, manually edit the org rules output.
 
 For each unique (normalized) file name across projects (e.g., `languages/typescript.md`, `integrations/rails-inertia.md`):
 
@@ -108,7 +104,7 @@ For each unique (normalized) file name across projects (e.g., `languages/typescr
 2. Merge `## Principles` sections:
    - Deduplicate by principle name (text before parenthetical hints)
    - Union hints from all projects for the same principle
-   - If same principle name but clearly different meaning → keep both, flag in report (see Conflict Handling)
+   - If same principle name but clearly different meaning → keep both, flag in report
    - Preserve unique principles from any project
 3. Merge `paths:` frontmatter: union of all path patterns, deduplicate
 4. If file exists in only 1 project, include as-is
@@ -118,7 +114,7 @@ For each unique (normalized) file name across projects (e.g., `languages/typescr
 For each normalized category (e.g., `languages/typescript`, `frameworks/rails-controllers`, `integrations/rails-inertia`):
 
 1. Collect `## Project-specific patterns` from all projects — from `.local.md` files and from hybrid `.md` files that contain this section (see Step 2)
-2. **Deduplicate against existing Principles**: Exclude patterns whose description (text after ` - `) semantically matches an existing principle name in the corresponding `.md` output (from Step 4). Use AI judgment for semantic equivalence (case-insensitive, synonyms). This prevents self-amplification when `.local.md` contains patterns previously promoted by older versions
+2. **Deduplicate against existing Principles**: Exclude patterns whose description (text after ` - `) semantically matches an existing principle name in the corresponding `.md` output (from Step 4). Use AI judgment for semantic equivalence (case-insensitive, synonyms).
 3. Match remaining patterns by inline code signature (backtick portion before ` - `)
    - Use AI judgment to determine semantic equivalence (e.g., `useAuth()` and `useAuth() → { user, login, logout }` refer to the same pattern)
 4. Count occurrences per pattern across projects
@@ -166,7 +162,7 @@ For each normalized `.examples.md` file group:
 ```
 
 - `###` titles must match the corresponding rule name in the merged output `.md` file. Do not rephrase
-- No `paths:` frontmatter (kept for consistency; the auto-load exemption comes from the `-extras` placement, not from frontmatter — see § Configuration's "Examples directories (no configuration key)" paragraph)
+- No `paths:` frontmatter
 - If no examples exist for any merged rule, skip generating the `.examples.md` file
 
 ### Step 6: Write Output
@@ -248,7 +244,4 @@ Display report using the project's directory name (last path component) as label
 
 ## Conflict Handling
 
-- **Same principle, different hints**: Union all hints, deduplicate
-- **Same principle name, different meaning**: Keep both, flag in report for human review
-- **Same category, different paths**: Union all path patterns
 - **Contradicting principles**: Keep both, report as conflict for human review

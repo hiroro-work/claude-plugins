@@ -4,7 +4,7 @@ Reference guide for generating and updating `.examples.md` files.
 
 ## Purpose
 
-`.examples.md` files provide Good/Bad code examples that help Claude apply rules correctly. By default they are written to `examples_output_dir` (default: `.claude/rules-extras/`), which sits outside Claude Code's `.claude/rules/**` recursive auto-load scope, so they are NOT auto-loaded into context — Claude reads them only when needed for clarification. When `examples_output_dir` is set to a path under `output_dir`, the resulting `.examples.md` files are auto-loaded along with the rule files. Auto-load behavior is determined by directory placement; the absence of `paths:` frontmatter does not by itself prevent auto-loading.
+`.examples.md` files provide Good/Bad code examples that help Claude apply rules correctly. They are written to `examples_output_dir` (default: `.claude/rules-extras/`).
 
 ## File Structure
 
@@ -12,7 +12,7 @@ Always generate one `.examples.md` per rule category (regardless of `split_outpu
 
 **Section headings (`#`, `##`) are always in English regardless of the `language` setting.** Only the rule content (Good/Bad examples, descriptions) follows the `language` setting.
 
-**Example title (`###`) must match the corresponding rule name in the rule file.** Do not translate or rephrase the extracted title. This ensures a clear 1:1 mapping between rules and their examples.
+**Example title (`###`) must match the corresponding rule name in the rule file.** Do not translate or rephrase the extracted title.
 
 - **Principles**: Use the principle name (text before parenthetical hints)
   - Rule: `- FP only (no classes, pure functions, composition over inheritance)` → `### FP only`
@@ -46,7 +46,7 @@ Always generate one `.examples.md` per rule category (regardless of `split_outpu
 ```
 ```
 
-- No `paths:` frontmatter (kept consistent across modes; auto-load behavior is controlled by `.examples.md`'s placement under `examples_output_dir`, not by frontmatter)
+- No `paths:` frontmatter
 - Skip generating the file if no examples exist for any rule in the category
 
 ## Relationship with merge-rules
@@ -65,7 +65,7 @@ apply-rules automatically cleans up duplicates: when a `.local.md` pattern is re
 
 An entry lives as long as its rule does. A `###` title matches its rule's name exactly, so once the rule is gone the entry is unreachable — remove it in the same pass that removes the rule.
 
-Two paths remove a rule: apply-rules dropping a `.local.md` pattern a promoted Principle now covers (§ Relationship with merge-rules above), and Realign Mode applying a `drop` or a `split` (`references/realign-mode.md` § `.examples.md` follow-through). Neither generates examples or rewrites a rule file's `## Examples` reference section, so the mode enumerations below do not name them.
+Two paths remove a rule: apply-rules dropping a `.local.md` pattern a promoted Principle now covers (§ Relationship with merge-rules above), and Realign Mode applying a `drop` or a `split` (`references/realign-mode.md` § `.examples.md` follow-through). Neither generates examples nor rewrites a rule file's `## Examples` reference section.
 
 ## Good/Bad Contrast Guidelines
 
@@ -92,9 +92,9 @@ Concrete cases:
   - Rule file `.claude/rules/languages/typescript.md` references `./typescript.examples.md`
   - Rule file `.claude/rules/project.md` references `./project.examples.md`
 
-When `examples_output_dir` is changed and `--restructure` regenerates the rule layout, this reference section is rewritten with the new relative path so the link continues to point at the live examples file location. Modes that emit or maintain this reference section (Full Extraction Step 6, Update Step U5, Restructure Step R4, Conversation Step C5, Conversation Candidate Apply Step A2, PR Review Step P5) must use the same relative-path calculation so the format stays consistent across rebuilds.
+When `examples_output_dir` is changed and `--restructure` regenerates the rule layout, this reference section is rewritten with the new relative path. Modes that emit or maintain this reference section (Full Extraction Step 6, Update Step U5, Restructure Step R4, Conversation Step C5, Conversation Candidate Apply Step A2, PR Review Step P5) must use the same relative-path calculation.
 
-**Note**: In incremental modes (Conversation Step C5, Conversation Candidate Apply Step A2, PR Review Step P5), staging-only project-level entries (1st-observation candidates written to `<staging_output_dir>/project.staging.local.md` rather than `<output_dir>/project.md`) **skip** the `.examples.md` generation step — the 1st observation's code site is intentionally not anchored to keep `.examples.md` free of 1-shot samples. Examples are generated on promote (2nd observation lands in canonical). See `conversation-mode.md` § Step C5's **"Update `.examples.md`"** step for the canonical statement.
+**Note**: In incremental modes (Conversation Step C5, Conversation Candidate Apply Step A2, PR Review Step P5), staging-only project-level entries (1st-observation candidates written to `<staging_output_dir>/project.staging.local.md` rather than `<output_dir>/project.md`) **skip** the `.examples.md` generation step. Examples are generated on promote (2nd observation lands in canonical). See `conversation-mode.md` § Step C5's **"Update `.examples.md`"** step for the canonical statement.
 
 **Direction is one-way: rule file → examples file only.** `.examples.md` files themselves never carry a `## Examples` reference section — no self-reference (link to themselves), no link to a sibling `.examples.md`. When generating or updating an examples file, do not append a reference section. Templates and subagent prompts that scaffold examples files must omit this section.
 
@@ -104,7 +104,7 @@ This procedure applies to all modes (Full Extraction, Update, Restructure, Conve
 
 ### For Full Extraction / Restructure
 
-Examples are generated alongside rule files. Since the codebase has already been analyzed in earlier steps, use the code patterns already collected to create examples.
+Examples are generated alongside rule files. Use the code patterns already collected in earlier steps to create examples.
 
 ### For Update / Conversation / Conversation Candidate Apply / PR Review (incremental modes)
 
@@ -125,4 +125,3 @@ Common leaks:
 - **Test-file origin**: unit-test samples often describe the pattern in test-isolation terms. Either rewrite the description in production-contract terms with a production Good example, or add a `test-only` qualifier to the rule title
 - **Specific-site framing**: description references local variables / fixture names. Rewrite in terms of the pattern's contract
 
-Applies to all modes (Full Extraction, Update, Restructure, Conversation, Conversation Candidate Apply, PR Review).

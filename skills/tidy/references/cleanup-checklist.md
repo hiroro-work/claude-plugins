@@ -1,7 +1,5 @@
 # Cleanup Checklist
 
-The reviewer walks each CHANGED FILE against the items below. Classify each finding as `mechanical_edit` (textual replacement) or `structural_note` (needs human moving / deleting / large rewrite).
-
 Each item is **judgment-style**, not a regex — describe the cleanup opportunity in your own words on the way to producing a fix.
 
 ## Preserve functionality (hard constraint, applies before every item)
@@ -39,14 +37,14 @@ Apply these as **negative space**: a candidate `mechanical_edit` that would viol
 - **Don't combine unrelated concerns into one function / component** to collapse line count. Cohesion matters more than line count. (This rail constrains the **code shape**, not how edits are packaged: when several independent improvements apply to one region, emit them as separate `mechanical_edits` rather than bundling them into one — splitting does not trip this rail.)
 - **Don't replace explicit code with overly clever idioms** — clever shortcuts that require the reader to mentally simulate the language semantics to understand are net negative.
 - **Don't make the code harder to debug or extend** — if the cleanup removes a useful stepping stone (a named intermediate value, a deliberately verbose error path), keep it.
-- **Don't change observable behavior** — see § Preserve functionality. This rail is reproduced here because over-simplification is the most common path to silent behavior change.
+- **Don't change observable behavior** — see § Preserve functionality.
 
 ## Behavior-preserving structural improvements (positive gate)
 
-A finding reaches this gate **only after** passing § Preserve functionality and § Balance rails (the negative gates) — those decide what must *not* be a `mechanical_edit`. This gate then names the structural improvements that **are** eligible for a `mechanical_edit` once behavior preservation is clear from the diff, so safe structural fixes stop being over-downgraded to `structural_note`. Each is mechanical only when its closed conditions hold; otherwise it stays a `structural_note`.
+A finding reaches this gate **only after** passing § Preserve functionality and § Balance rails (the negative gates) — those decide what must *not* be a `mechanical_edit`. This gate then names the structural improvements that **are** eligible for a `mechanical_edit` once behavior preservation is clear from the diff. Each is mechanical only when its closed conditions hold; otherwise it stays a `structural_note`.
 
 1. **Reuse an existing helper** — replace a re-implementation of logic an existing helper already provides (in this file or an imported module) with a call to that helper. Mechanical only when the helper's observable behavior — return value, exceptions, side effects — is identical and that identity is clear from the diff.
-2. **Imperative-to-declarative loop rewrite** — rewrite an index / accumulator loop as a declarative transform (`map` / `filter` / `reduce` / `for...of`). Mechanical only when the loop body has no early exit (`break` / `continue` / early `return`), no `throw`, and no external side effect (logging, outer-state mutation, I/O); otherwise the rewrite can change short-circuit behavior, evaluation order, or error propagation — leave it a `structural_note`.
+2. **Imperative-to-declarative loop rewrite** — rewrite an index / accumulator loop as a declarative transform (`map` / `filter` / `reduce` / `for...of`). Mechanical only when the loop body has no early exit (`break` / `continue` / early `return`), no `throw`, and no external side effect (logging, outer-state mutation, I/O) — otherwise leave it a `structural_note`.
 3. **Generalize a special case** — replace special-cased branches layered on shared infrastructure with a generalized form (e.g. a lookup set or table the shared path consults). Mechanical only when the generalization preserves behavior **and** is expressible as a textual replacement; a generalization that requires redesigning the mechanism stays a `structural_note`.
 
 When several of these apply to one region, emit them as **separate** `mechanical_edits` (per § Balance rails' "don't combine concerns" parenthetical).
@@ -70,4 +68,4 @@ When a finding could match more than one item, apply these rules and emit only t
 - The checklist is a starting frame, not a constraint. If a real cleanup opportunity does not fit any item cleanly, surface it as a `structural_note` with the reason — the caller can route it to a human.
 - Project conventions under `.claude/rules/` and `CLAUDE.md` override this checklist where they conflict. Language-specific or framework-specific standards (import style, function-declaration form, return-type annotation conventions, component / module structure, error-handling patterns) live in those project files — defer to them rather than inferring a standard from the diff.
 - Don't chase aesthetic preferences — fix concrete cleanup wins, leave style-only edits to the formatter.
-- Default to `structural_note` only when a fix carries genuine risk of behavior change or over-simplification. When § Preserve functionality and § Balance rails (the negative gates) are satisfied and the fix matches § Behavior-preserving structural improvements (the positive gate), a `mechanical_edit` is the right call — the negative gates decide what must not be mechanical, the positive gate decides what may be.
+- Default to `structural_note` only when a fix carries genuine risk of behavior change or over-simplification. When § Preserve functionality and § Balance rails (the negative gates) are satisfied and the fix matches § Behavior-preserving structural improvements (the positive gate), a `mechanical_edit` is the right call.

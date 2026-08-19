@@ -2,6 +2,13 @@
 
 ## 2026-08-19
 
+### rules-review v1.8.1 / dev-workflow-bundle v1.140.2
+
+- refactor(rules-review): drop prose that is never consulted at runtime
+  - `SKILL.md` goes from 30,673 to 28,996 chars (-5.5%). The embedded reviewer prompt is injected verbatim into every reviewer this skill dispatches, so the trimmed clauses inside it come off each dispatch too.
+  - Removed: the body intro re-rendering the `description`, the caller-usage examples and backward-compatibility labels around the optional `Model:` / `Files:` fields, two of the four narrations of the silent-clean risk, the `examples_output_dir` interop clause, and several rationale tails on rules that are stated imperatively.
+  - Unchanged: every output literal and enum token callers parse — `No rule violations found`, the `status` / `reason` enums, `violations_count`, `(review failed)`, `(rule not evaluated — ...)` — plus both optional fields' semantics and defaults, their "not part of a fixed-arity mode gate" marker, the `Source of truth ... keep in sync` sentence naming the two `.claude/rules-extras/` hardcode sites, and the pointer-resolution bullet's warning that embedding a bare pointer returns a false clean.
+
 ### ask-peer v2.6.1 / dev-workflow-bundle v1.140.1
 
 - refactor(ask-peer): drop prose that is never consulted at runtime

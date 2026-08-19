@@ -472,7 +472,7 @@ When `--from-conversation` is specified, extract rules from the full conversatio
 
    1. Get the current working directory (`pwd`)
    2. Encode the path: replace `/` and `.` with `-` (leading `-` is kept)
-      - Example: `/Users/hiropon/Sources/github.com/myproject` → `-Users-hiropon-Sources-github-com-myproject`
+      - Example: `/Users/alice/src/github.com/acme/widget` → `-Users-alice-src-github-com-acme-widget`
    3. Session files are stored at: `~/.claude/projects/<encoded-path>/<session-id>.jsonl`
 
 4. **Select the target session:**

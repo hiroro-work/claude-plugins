@@ -2,6 +2,14 @@
 
 ## 2026-08-19
 
+### extract-rules v1.28.1 / dev-workflow-bundle v1.140.5
+
+- refactor(extract-rules): drop prose that does not change agent behavior (chunk 1 of 5)
+  - `SKILL.md` from the top through the section before `## Compaction Mode` goes from 40,446 to 35,781 chars (-11.5%); the whole file from 68,423 to 63,758. The remaining four chunks (the rest of `SKILL.md` and the ten `references/*.md`) are separate passes.
+  - Removed: six restatements of the same `.claude/rules/**` auto-load fact, two descriptions of what `dev-workflow` does on its own side, the prior `compaction_threshold: 32000` default (the opt-out instruction lives in this file's v1.18.0 entry), the 26-line "Example output with integrations" tree whose every naming rule is already specified in prose, and the trailing `because` / `so` clauses on instructions stated unconditionally.
+  - Unchanged: the `**Change-origin flags**` contract, the Update Mode operational note that `dev-workflow` references by name, the `examples_output_dir` / `staging_output_dir` opt-in instructions and the `paths:` auto-load guard, and every counter name in the mode reports.
+  - Two sentences were restored during review: the Restructure-intro sentence saying which of `--restructure` / `--realign` a given change calls for, which `## Realign Mode` cross-references by phrase; and the rule that staging promotes in Step U5 item 8 also get an `.examples.md` entry.
+
 ### tidy v1.5.1 / dev-workflow-bundle v1.140.4
 
 - refactor(tidy): drop prose that is never consulted at runtime

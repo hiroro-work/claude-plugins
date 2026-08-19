@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-08-20
+
+### dev-workflow v1.118.1 / dev-workflow-bundle v1.140.11
+
+- refactor(dev-workflow): drop prose that does not change agent behavior (chunk 1 of 16)
+  - Scope is `SKILL.md` lines 1-205 -- the preamble, `§ Usage`, `§ Prerequisites`, `§ Configuration`, `§ Phase naming in user-facing output`, `§ Mode Detection`, `§ Init Mode`, `§ No-Stall Principle`, `§ Progress Visibility`, `§ Workflow artifacts`, and `Step 1: Load Settings`: 44,008 to 41,642 chars (-5.4%). Lines 206 onward and every `references/*.md` file are untouched and are covered by the remaining chunks.
+  - Removed: the table-of-contents parentheticals listing what each reference file holds (`§ Prerequisites`, `§ Configuration`, Step 1 sub-steps 4 and 8), the pointer to the design rationale in `README.md` for where cross-step variables are initialized, and the duplicate `single source of truth` assertion on the Cleanup-skill bullet that `references/prerequisites.md` already carries. Also removed are rationale clauses attached to instructions stated unconditionally: the reason the phase registration list is the single authority, the reason a `bundle_skills_unavailable` record's `<context>` never carries a step number, the reason the `<context>` stays English, the reason external-CLI reviewers take no propagated model, the placement rationale and sibling-mechanism attribution on the ledger initialization, the reason for the upfront `TaskCreate` burst, the reason a `check_commands`-era fix needs no re-verification, the reason the space form is used inside a parenthetical, the reason the pre-call status line exists, and the coverage-gap preamble to the mid-chain visibility rule. Dropped restatements: the sentence re-bounding the No-Stall Principle to successful outcomes, the sentence relating the callee-verdict-transcription rule to the no-summary-turn rule, the analogy between the pre-completed row guard and the Trivial-tier skips, the `Agent`-over-`Skill()` rationale pointer, the `hooks.on_complete` carve-out citation, and the Task-tools version provenance the fallback condition already states.
+  - Unchanged: every gate in `§ No-Stall Principle`'s closed enumeration and the fatal-error carve-out list; the `## Dispatch authorization` section, held byte-identical across bundle members; every task-row subject literal, `bundle_skills_unavailable` record format, and configuration key name, so Step 1's registration burst and every later string-matched `TaskUpdate` still agree; the three fixed `Agent` dispatch sites and their boundaries; and the `Workflow artifacts` exclusion list with its append instruction. Kept as load-bearing are the reviewer-availability probe's independently-installable-sibling clause, the task-row-subject string-matching consequence, and the phase-boundary self-audit's silent-skip consequence.
+
 ## 2026-08-19
 
 ### extract-rules v1.28.6 / dev-workflow-bundle v1.140.10

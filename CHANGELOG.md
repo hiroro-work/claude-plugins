@@ -2,6 +2,12 @@
 
 ## 2026-08-19
 
+### extract-rules v1.28.2 / dev-workflow-bundle v1.140.6
+
+- fix(extract-rules): replace the maintainer's own path in the Step C1 session-path example
+  - The encoding example in Conversation Extraction Mode used the maintainer's own home-directory path, putting a personal identifier into a distributed skill. It now reads `/Users/alice/src/github.com/acme/widget`, following the generic-user convention `dev-workflow`'s `references/self-retrospective.md` already uses for the same encoding step.
+  - The example is kept rather than dropped: it is the only demonstration of the rule stated one line above it, and the replacement keeps a dot in the path because that rule replaces `/` **and** `.`.
+
 ### extract-rules v1.28.1 / dev-workflow-bundle v1.140.5
 
 - refactor(extract-rules): drop prose that does not change agent behavior (chunk 1 of 5)

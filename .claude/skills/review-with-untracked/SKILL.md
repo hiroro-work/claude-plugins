@@ -109,7 +109,7 @@ Field semantics:
 - `base`: the concrete `<sha>` resolved in step (a), or JSON `null` when a fatal abort fired before base resolution (unknown callee, or base ref unresolved).
 - `visualized_paths`: the exact set `git add -N` ran on (empty when visualization was skipped).
 - `corrupted_paths`: a subset of `visualized_paths` flagged by step (f) (empty when step (f) did not run or found nothing).
-- `callees`: one entry per dispatched callee, in dispatch order, carrying the callee's own verdict `status` verbatim (or `dispatch-error` / `unparsed` for a non-fatal dispatch / parse failure). Each callee defines its own status vocabulary — this is a pass-through value.
+- `callees`: one entry per dispatched callee, in dispatch order, carrying the callee's own verdict `status` verbatim (or `dispatch-error` / `unparsed` for a non-fatal dispatch / parse failure). Each callee defines its own status vocabulary (they are **not** a single unified enum across callees) — this is a pass-through value; a consumer must read it per-callee, not switch on it as one enum.
 - `reason`: a short string on `status: "error"`, else JSON `null`.
 
 ## Sub-skill caller directive

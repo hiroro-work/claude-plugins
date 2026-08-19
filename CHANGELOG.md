@@ -2,6 +2,14 @@
 
 ## 2026-08-19
 
+### extract-rules v1.28.4 / dev-workflow-bundle v1.140.8
+
+- refactor(extract-rules): drop prose that does not change agent behavior (chunk 3 of 5)
+  - Scope is `references/extraction-criteria.md`, `references/examples-format.md`, and `references/report-templates.md`: 33,264 to 29,377 chars (-11.7%). Two chunks remain.
+  - Removed: the auto-load mechanics in `examples-format.md`, which the `examples_output_dir` row of the Configuration table and the Output Structure paragraph both carry and which `SKILL.md` is always read ahead of; purpose clauses on instructions already stated unconditionally (the 1:1-mapping justification, the two relative-path "so that" clauses, the staging-skip rationale, the Gray-zone `Rationale:` bullet, the two rationale clauses on the Realign report's exclusion line); provenance and sibling-file comparison (the "shape conversation extraction produces most often" attribution, the compaction-mode figure cited for the 400-char target, the Compaction heuristic-4 counterpart paragraph); motivational preambles in front of self-contained tests (the Durability and Reach openers); and restatements of neighbouring text (the `### Example classification` table, the `Rule of thumb` line, the code-signature elaboration, the per-section-invariant parenthetical in the PR Review template, and the duplicated all-modes list on the Portability check).
+  - Two rewrites rather than deletions: the already-enforced-elsewhere signal in `§ Reach` now states its disposition directly ("skip the candidate"), and that section's closing sentence names "this test" now that its antecedent paragraph is gone.
+  - Unchanged: every section heading, so the judge dispatch in `references/realign-mode.md` and the pointers from `SKILL.md`, `references/pr-review-mode.md`, and `references/conversation-mode.md` all still resolve. Also kept are the Compaction Mode rendering examples and the `per_file_status` caller sentence (nothing invokes `--compact` programmatically, so these decide user-facing output), the bold-label stability rule (renaming a label orphans its `.examples.md` entry silently), `§ Relationship with merge-rules`, the Good/Bad contrast table that `examples-format.md` cites by name, and the "settled convention" and "a linter could but this project does not" carve-outs.
+
 ### extract-rules v1.28.3 / dev-workflow-bundle v1.140.7
 
 - refactor(extract-rules): drop prose that does not change agent behavior (chunk 2 of 5)

@@ -2,6 +2,13 @@
 
 ## 2026-08-19
 
+### tidy v1.5.1 / dev-workflow-bundle v1.140.4
+
+- refactor(tidy): drop prose that is never consulted at runtime
+  - `SKILL.md` goes from 31,627 to 29,122 chars and `references/cleanup-checklist.md` from 12,180 to 11,618 (-7% together). The checklist is injected verbatim into every reviewer dispatch, so its share comes off each dispatch too.
+  - Removed: `## Keeping the checklist fresh` whole (an editor-facing maintenance note), the "No divergence detection" paragraph that justified an absent feature by comparison with a sibling skill, the duplicate pointer to `§ Sub-skill caller directive`, the checklist preamble restated in the reviewer prompt, and the rationale tails on rules stated imperatively.
+  - Unchanged: all four optional fields' semantics, defaults and validity rules including the `Model` field's "not part of a fixed-arity mode gate" marker; the whole return contract; the `Source of truth ... keep this enumeration in sync` sentence on `reverted_paths`; and two rationales whose breakage is silent — the untracked-file scope asymmetry under `Base ref`, and why iteration tasks are pre-registered.
+
 ### prose-polish v1.8.1 / dev-workflow-bundle v1.140.3
 
 - refactor(prose-polish): drop prose that is never consulted at runtime

@@ -59,8 +59,18 @@ Invoke the `Agent` tool to dispatch a fresh reviewer, passing the model from Ste
 >
 > Only the modified sections of changed files are in-scope (frontmatter fields the diff touched, paragraphs replaced, lines added). Do not audit sibling sections or files the diff did not touch. Project conventions under `.claude/rules/` and `CLAUDE.md` override the checklist where they conflict.
 >
-> **Prose-weight pass — run this before the checklist walk, and report it even when you find nothing.** For every line the diff added or modified, test each sentence with one question: would an agent executing this skill do anything differently if the sentence were deleted? A sentence that fails is a deletion candidate. Scope is the diff, exactly as the paragraph above sets it — do not widen the pass to untouched content.
-> Sentences that reliably fail: why an edit was made, which alternative was rejected, how a convention split between files was resolved, what a sibling file does or does not say, and any note addressed to a future editor rather than to the executing agent. A sentence stating a constraint the agent must honor passes; a sentence explaining how the constraint came to be written does not.
+> **Two classifications, used by both passes below.** *Inert*: why an edit was made, which alternative was rejected, how a convention split between files was resolved, what a sibling file does or does not say, any note addressed to a future editor rather than to the executing agent, and any clause explaining how a constraint came to be written. *Load-bearing*: a prohibition, a scope boundary, or a guard against a plausible wrong generalization; a statement of what goes wrong when a rule is broken **where the breakage would pass undetected rather than raise an error**; an override of a default set elsewhere; wording a project rule requires to be present verbatim.
+>
+> **Removal-trace pass — run this first, before the checklist walk, over the diff's removed (`-`) lines. Report it even when every removal is sound.** The prose-weight pass below reads only added and modified lines, so without this pass a deletion-only diff gets no scrutiny at all. Give **every** removed sentence one of three verdicts — none may go unjudged, and grouping by hunk is fine on a large diff:
+>
+> - `covered-elsewhere` — name where the content still lives: elsewhere in the file, in another file, or closed structurally by a tool grant.
+> - `load-bearing-lost` — the removal took a constraint, a branch criterion, a decision rule, or a contract with something outside the file. Return it as a `mechanical_edit` restoring the minimum text that carries the constraint.
+> - `inert` — matches the inert classification above.
+>
+> Two rules for the hard cases. Before ruling a removed flag, mode, field, or contract token `inert`, **grep the repo for that token** — a generator, a template-conformance check, or a sibling skill may depend on it. And **that no caller currently exercises a documented input mode or contract is not grounds to accept its removal**.
+>
+> **Prose-weight pass — run this second, and report it even when you find nothing.** For every line the diff added or modified, test each sentence with one question: would an agent executing this skill do anything differently if the sentence were deleted? A sentence that fails is a deletion candidate. Scope is the diff, exactly as the paragraph above sets it — do not widen either pass to untouched content.
+>
 > Two reporting rules. State the touched regions' net line change (lines added minus deleted) in your reasoning. And report every deletion candidate as a `mechanical_edit` — never as a `structural_note`, which the caller does not apply.
 >
 > Also flag "hallucination gaps" — points in the changed content where an executing agent would have to guess (ambiguous filenames, unstated success criteria, missing decision rules between branches).

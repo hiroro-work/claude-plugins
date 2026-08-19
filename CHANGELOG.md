@@ -2,6 +2,13 @@
 
 ## 2026-08-19
 
+### prose-polish v1.8.1 / dev-workflow-bundle v1.140.3
+
+- refactor(prose-polish): drop prose that is never consulted at runtime
+  - `SKILL.md` goes from 23,293 to 20,679 chars and `references/prose-style-guide.md` from 12,523 to 11,520 (-10% together). The style guide is injected verbatim into every refactor dispatch, so its share comes off each dispatch too.
+  - Removed: `## Keeping the style guide fresh` whole (an editor-facing maintenance note), the opening paragraph's re-render of the `description`, the mode-gate summary that re-rendered the four determination bullets, the style guide's "canonical home" ownership declaration, and the rationale tails on rules stated imperatively.
+  - Unchanged: the `## Invocation contract` field set, the style guide's `§ Preserve` section and every qualification criterion in `## Cross-file duplicate comments`, the whole return contract, and two rationales whose breakage is silent — why a shifted indent breaks an indentation-sensitive file, and why numbered list items are exempt from splitting.
+
 ### rules-review v1.8.1 / dev-workflow-bundle v1.140.2
 
 - refactor(rules-review): drop prose that is never consulted at runtime

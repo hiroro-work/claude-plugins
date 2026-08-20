@@ -36,6 +36,10 @@ An opt-in invocation flag for a faster, lower-thoroughness run — unrelated to 
 - **`subagent_model`** is unaffected — it always resolves from the task's real assessed difficulty, never from `--fast`.
 - `hooks.on_complete` still runs in full (fast mode does not gate project hooks).
 
+### Adding or dropping a `--fast` skip site
+
+`mobpro` mirrors this skill's `--fast` skip set at its own `SKILL.md` § Fast mode, which claims parity with it. Adding or dropping a skip site here therefore sweeps that table in the same commit.
+
 ## Setup (`--init`)
 
 `--init` auto-detects and configures the following interactively:

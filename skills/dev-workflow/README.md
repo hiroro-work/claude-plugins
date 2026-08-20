@@ -584,6 +584,14 @@ Three pieces of cross-step state sit outside that table on purpose, and the sub-
 
 **Deletion / no-duplication justified by an external reference — recipient-visibility check** has to survive `--fast`, which drops the Step 3 (Plan Review) pass but never the Step 2 audit. Recipient-visibility cannot be deferred to a review round fast mode skips.
 
+### Renaming a review-category label
+
+`references/review-categories.md` is the single canonical home for the Step 3 and Step 8 review rubrics; the two dispatch sites keep a label-only enumeration — Step 3's in `references/step3-plan-review.md`'s group table, Step 8's in `references/code-review-payload.md` — and point the reviewer at the matching section rather than restating it.
+
+Several bold sub-check labels inside the categories (for example `Runtime/language major version upgrades`, `Internal convention citation verification`, `Cross-component sibling coverage`) are cited verbatim by `references/simplicity-self-audit.md` and `references/simplicity-self-audit-express.md`, and — for every category (a) sub-check — by `references/step3-plan-review.md`'s group table, which partitions them across its groups. The category labels themselves are cited by `references/plan-authoring.md` (§ Step 3 (d) content-quality rubric) and by `references/plan-format.md`, whose § User-gate summary preamble paraphrases the three code-review categories in its Step 8 slot.
+
+So when renaming any of those labels, sweep every citation site across the repository, the bundle copies included.
+
 ## Plan format
 
 Plans produced in Step 2 and presented in Step 4 follow a fixed structure so you can scan them quickly and focus on the parts that actually need your judgment. Full specification in [`references/plan-format.md`](references/plan-format.md).

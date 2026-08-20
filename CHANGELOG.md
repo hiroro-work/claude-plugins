@@ -2,6 +2,18 @@
 
 ## 2026-08-20
 
+### dev-workflow v1.118.12 / dev-workflow-bundle v1.140.22
+
+- refactor(dev-workflow): drop prose that does not change agent behavior (chunk 12 of 16)
+  - Scope is `references/interactive-commits.md`, the Step 10 procedure body: 45,640 to 40,157 chars (-12.0%). `SKILL.md` and the remaining `references/*.md` files are untouched and are covered by the other chunks.
+  - Removed the preamble's canonical-home sentence and its list of what `references/finish-phase.md` § Step 10 keeps inline. That file's own delegation pointer already declares the canonical home, and each listed element -- the entry conditions, the `landed_count` contract, the **Approval token closed list**, the **Localized summary tokens** -- is declared at its own site there. The reference-resolution sentence naming the four `§` pointers that resolve outside this file stays, since that is the rule by which they resolve.
+  - Removed justifying subordinate clauses attached to rules stated unconditionally, across every Procedure: why the rename field pair matters (`git add` fails loudly on a rename's old path), why the entry snapshot is recorded, why release bookkeeping takes its own group, why an empty group is omitted, why boundary groups are not merged by default, why the default-branch guard resolves locally first, why the frozen-tree notice needs no extra test, why both crit probes run, why per-commit staging is reset on each early exit, and why the failure tokens and rendering blocks take the shape they do.
+  - Removed statements describing what sibling files and other steps do internally: how `diff-presentation.md` § Detached review object scopes its own snapshot, what obligation Step 5's exit unstage carries, what `crit-commit-review.md` § Procedure step 1 re-runs for a caller that ran none, and the "same shape as `step4-finalize-plan.md`'s **Browser-reachability probe**" comparison. The `Source of truth` / `Membership` directives on the probe pair and the crit-suppression carve-out stay -- `mobpro` `references/m11-commit.md` and `references/diff-review.md` both point at them for the owning sections.
+  - Removed the editor-facing note that the sites reaching the **Stale boundary -> pathspec derivation** conditions point there rather than restating them, and the note that no cross-step variable is declared for `<step10_entry_snapshot>`.
+  - Removed the duplicate roster prohibition in § Collect changes; the same prohibition sits on § Post-commit auto-modify cycle bound's own comparison rule, where the decision is made.
+  - Kept the statements a removal would silently break: the porcelain flag guards (`=v1`, `--untracked-files=all`, `-z`) and `--no-renames`, every consequence clause naming a silently-wrong tree (a cumulative boundary tree dropping later steps, `git write-tree` reading the whole index, `git diff --name-only` never listing an untracked path, a bare `git diff` reading the index on its right-hand side), the prohibitions on `git checkout HEAD --` for exclusion and on `git switch` to the candidate, the reconciliation between the entry snapshot and the no-per-file-diff rule, the "not auto-recovery" carve-out, and the closed failure-token set.
+  - Category: `ambiguity`
+
 ### dev-workflow v1.118.11 / dev-workflow-bundle v1.140.21
 
 - refactor(dev-workflow): drop prose that does not change agent behavior (chunk 11 of 16)

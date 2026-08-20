@@ -2,6 +2,18 @@
 
 ## 2026-08-20
 
+### dev-workflow v1.118.4 / dev-workflow-bundle v1.140.14
+
+- refactor(dev-workflow): drop prose that does not change agent behavior (chunk 4 of 16)
+  - Scope is the settings layer -- `references/configuration.md`, `references/step1-load-settings.md`, `references/prerequisites.md`, and `references/localization.md`: 44,455 to 36,859 chars (-17.1%). `SKILL.md` and the remaining `references/*.md` files are untouched and are covered by the other chunks.
+  - Removed the extracted-reference preambles' table of contents -- each file's enumeration of what stayed inline in `SKILL.md` and of what the file itself holds, plus the `Content is verbatim-extracted` provenance sentence. `SKILL.md` carries a delegation pointer per sub-step that already names each section. `references/configuration.md` keeps the substantive half of its preamble: that the `Agent` tool usage bullet stays inline in `SKILL.md` and is therefore not detailed there.
+  - Removed the authority-side sweep directives -- `references/configuration.md`'s `this file is the source of truth -- keep the two in sync` and `references/prerequisites.md`'s `single source of truth` declaration for the `simplify` to `tidy` resolution. Both reference sides carry the directive already (`SKILL.md` § Prerequisites and § Configuration; `references/step6-tidy.md`'s pointer at the Cleanup skill bullet).
+  - Removed rationale clauses attached to rules stated unconditionally: why a configured `plan_review: false` lands in neither skip ledger, why the concurrent code-review launch is suppressed when `code_review` is off, why `--fast` leaves `code_review_enabled` alone, why `prose-polish` keeps its own model default, why the resolved reviewer is probed even when it is the default, why the registration burst is a single batch, and why the value-shape overlay rules are evaluated before the type-class rules.
+  - Removed version history that the CHANGELOG and `README.md` hold: `polish_prose`'s `Behavior change from v1.78.0` note and its history trailer (`README.md` keeps the same paragraph), the removal release of the three diff-threshold tombstone keys, and the release that made the Task tools the default (the same sentence's fallback condition keeps the version number).
+  - Removed `allowed-tools`-explaining prose and sibling-equivalence restatements, including the two clauses restating what the difficulty tier gates when explaining that it does not gate the retrospective steps.
+  - Removed `test_commands`' illustrative list of appendable structural checks. It named this repository's own checks inside a distributed skill, so the deletion also settles the distribution rule against application-context-fixed vocabulary in shipped skill prose.
+  - Unchanged: every section heading and bold label, the `language` bullet's exhaustive enumeration of localized outputs, the `subagent_model` governance enumeration with its declared exclusions, the per-class overlay merge semantics, and `workability_retrospective`'s `Like self_retrospective` classification phrase -- `verify-skill-refs` manifest pairs and `mobpro` anchor on those. Kept as load-bearing are the experimental markers on `implementation_executor`, `commit_review_gate: crit`, and `workability_retrospective.enabled` (`references/simplicity-self-audit.md` reads them to pick a new sibling flag's default, and their removal would read as the feature having graduated), the over-preservation failure mode in the localization Negative-direction rule, and the note that `prose-polish`'s style guide covers only two of the four sentence-construction sub-rules.
+
 ### dev-workflow v1.118.3 / dev-workflow-bundle v1.140.13
 
 - refactor(dev-workflow): drop prose that does not change agent behavior (chunk 3 of 16)

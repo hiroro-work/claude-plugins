@@ -596,6 +596,12 @@ Several bold sub-check labels inside the categories (for example `Runtime/langua
 
 So when renaming any of those labels, sweep every citation site across the repository, the bundle copies included.
 
+### Renaming the Simplicity self-audit label
+
+`references/simplicity-self-audit-express.md` and `references/simplicity-self-audit.md` are the single canonical home for the Step 2 audit checklist; `SKILL.md` Step 2 points at them rather than restating the items. The stable phrase anchor `Step 2 § Simplicity self-audit` resolves to the **Simplicity self-audit** label kept in `SKILL.md` Step 2's delegation pointer, while the sub-step body itself lives in `references/step2-create-plan.md` — so keep that label in the pointer when either file is edited.
+
+Four sites cite the anchor: `references/review-categories.md` (Step 3 reviewer category (a)), `references/step5-implement.md` (the late-stage scaffolding self-audit), `references/plan-authoring.md` § Step 2 self-check, and `references/task-decomposition-normal.md`. Renaming the label means sweeping all four, the bundle copies included.
+
 ## Plan format
 
 Plans produced in Step 2 and presented in Step 4 follow a fixed structure so you can scan them quickly and focus on the parts that actually need your judgment. Full specification in [`references/plan-format.md`](references/plan-format.md).

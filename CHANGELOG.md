@@ -2,6 +2,18 @@
 
 ## 2026-08-20
 
+### dev-workflow v1.118.11 / dev-workflow-bundle v1.140.21
+
+- refactor(dev-workflow): drop prose that does not change agent behavior (chunk 11 of 16)
+  - Scope is the Step 7 / Step 7.5 verification layer -- `references/step7-check-test.md` and `references/step7.5-rules-compliance.md`: 43,581 to 33,358 chars (-23.5%). `SKILL.md` and the remaining `references/*.md` files are untouched and are covered by the other chunks.
+  - Removed both files' preambles. Each enumerated what stays inline in `SKILL.md` and what the file holds, which `SKILL.md` Step 7 sub-steps 1 / 2, its **Flag lifecycle contract** paragraph, and its Step 7.5 delegation pointer already name in full. `step7.5-rules-compliance.md` keeps its reference-resolution sentence, which is the rule by which unqualified `§` pointers resolve. This clears the last `Content is verbatim-extracted, retaining its original numbering and indentation.` instance from the dev-workflow tree.
+  - Removed `step7-check-test.md`'s "Cross-boundary positional note", which existed to tell the reader that one bullet's "the bullet above" pointed outside the file. That bullet now names `SKILL.md` Step 7 sub-step 1's "On failure, fix and retry" action directly, so the pointer resolves without the note.
+  - Removed the duplicate No-Stall reconciliation in § check_commands scope-narrowing / scope-drift stops. The same declaration sits on the scope-drift stop directive itself, where the temptation to exit lives; the section intro's copy restated it.
+  - Removed justifying subordinate clauses attached to rules stated unconditionally, across the `test_commands` self-check suite and both concurrent-launch paragraphs: why a diagnostic pass exists, why scoped test invocation is preferred, why `git stash` is the last resort, why re-initializing the launch flags on a non-pass entry is harmless, why "default to parallel" is the common case, why the nesting bound must not be phrased as an availability claim, and why a stale set on a no-launch path is safe. `SKILL.md`'s **Flag lifecycle contract** is the source of truth for the flag lifecycle, so the two set-site index sentences and the two no-op safety notes were restating it.
+  - Removed descriptions of what other steps and callee skills do internally: `rules-review`'s per-category `Agent` dispatch, `ask-peer`'s and `rules-review`'s fallback triggers, `run-tests` lacking an inline fallback, Step 8 sub-step 1's discard-and-re-dispatch, and Step 6.5's retry-once handling. Also removed the "General principle:" summary closing the pre-existing-vs-regression bullet, the "second safety net" reassurance pointing at the scope-drift guard, and the sibling-mechanics summary opening the code-review launch paragraph.
+  - Kept the statements a removal would silently break: every consequence clause naming a green-but-wrong test outcome (representative-suite coverage, downstream artifacts, headless automation bypassing real input layers, stale build artifacts, workflow-self-contaminated failures), the **Responsibility scope** purpose clause and the Step 7.5 / Step 6 / Step 8 / Step 11 boundaries, the "Who continues into (b)-(d)" dispositions with their unverified-fix consequences, the `mobpro` routing parenthetical that skill's M9 sub-step 2 relies on, the `<site>`-slot clause `SKILL.md` quotes verbatim, and the No-Stall reconciliation on the pre-declared degraded procedure.
+  - Category: `ambiguity`
+
 ### dev-workflow v1.118.10 / dev-workflow-bundle v1.140.20
 
 - refactor(dev-workflow): drop prose that does not change agent behavior (chunk 10 of 16)

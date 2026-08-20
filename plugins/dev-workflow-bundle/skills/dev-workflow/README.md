@@ -584,6 +584,10 @@ Three pieces of cross-step state sit outside that table on purpose, and the sub-
 
 **Deletion / no-duplication justified by an external reference — recipient-visibility check** has to survive `--fast`, which drops the Step 3 (Plan Review) pass but never the Step 2 audit. Recipient-visibility cannot be deferred to a review round fast mode skips.
 
+### Changing the express / full lane difference set
+
+`references/tier-assessment.md` § Lanes is the source of truth for what the two lanes differ in; keep every restating site in sync with it. Membership = every site that branches on the lane **or restates its difference set**, including this file's § Express lane and the tier table under its § Configuration section. A branch site says only which lane it is on and points at § Lanes — the set of differences lives in that table, not at the branch sites.
+
 ### Renaming a review-category label
 
 `references/review-categories.md` is the single canonical home for the Step 3 and Step 8 review rubrics; the two dispatch sites keep a label-only enumeration — Step 3's in `references/step3-plan-review.md`'s group table, Step 8's in `references/code-review-payload.md` — and point the reviewer at the matching section rather than restating it.
@@ -630,6 +634,14 @@ Step 4's approval runs in your browser. The gate serves the plan on a local `127
 - **mermaid diagrams** rendered as SVG (flowcharts / sequence diagrams)
 
 The gate needs a local browser — the agent and you on the same machine (local CLI / Remote Control). Where that does not hold, the approval degrades to **chat**: Step 4 probes `CLAUDE_CODE_REMOTE` before it even reads the gate procedure, so on Claude Code on the Web the browser gate is skipped outright; a launch failure or a timeout after the gate has started falls through to the same chat approval. A **Trivial** task takes the chat approval directly as well, with the gate never launched — a browser round-trip to approve a handful of lines costs more attention than the plan does (§ Express lane). The canonical plan document is always `.claude/plans/<slug>.md`.
+
+### Changing the plan-approval gate's return contract
+
+`references/visual-plan-review.md` is the single canonical home for the visual gate's **procedure**; the callers that read it — `references/step4-finalize-plan.md`'s **Run the approval gate** bullets and `mobpro`'s `references/m5-plan-approval.md` **Approval surface** sub-step — each probe browser reachability first and describe the surface for their own audience.
+
+A change to **the three-value return contract (`approve` / `rewrite-approach` / `fallback`) or the routing around it** — deliberately narrower than "anything that mentions the gate", so this list can stay complete — sweeps a closed list of sites: the whole of `references/step4-finalize-plan.md` (its **Run the approval gate** bullets and its § Sub-step 3 — rewrite-approach bucket runtime); `SKILL.md`'s Step 4 sub-step 2 and its § No-Stall Principle Step 4 bullet; `mobpro`'s `references/m5-plan-approval.md` **Approval surface** sub-step and its outcome-mapping sub-step. Keep those in sync with the gate procedure.
+
+Everything else — the two READMEs, `references/plan-format.md`, `references/step1-load-settings.md`'s state-variable table, and `SKILL.md` outside those two sites — *describes* the surface or tracks downstream state rather than stating the contract, so it is carved out of this directive and swept by the ordinary rename / behavior-change rules instead.
 
 ### How to review a plan quickly
 

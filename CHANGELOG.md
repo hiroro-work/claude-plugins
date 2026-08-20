@@ -2,6 +2,16 @@
 
 ## 2026-08-20
 
+### dev-workflow v1.118.2 / dev-workflow-bundle v1.140.12
+
+- refactor(dev-workflow): drop prose that does not change agent behavior (chunk 2 of 16)
+  - Scope is `SKILL.md` `Step 1.5: Task Decomposition` through `Step 7.5: Rules Compliance Review` plus `references/executor-prompt.md`: 40,328 to 36,929 chars (-8.4%). `Step 8` onward and the remaining `references/*.md` files are untouched and are covered by the later chunks.
+  - Removed rationale clauses attached to instructions stated unconditionally: why the two Step 1.5 sub-modes resolve the tier in different orders, why the express lane skips decomposition, why an unreviewed plan must not reach the user, why Step 3 is an internal review, why Step 6 exists as a dedicated pass, why Step 6.5 sits between Step 6 and Step 7, why Step 7.5 is kept separate from Step 8, why a stale background result is discarded whole, why the read-back sub-step catches partial-coverage instructions, and why `test_commands` is never backgrounded.
+  - Removed provenance and history framing: where and when `plan_review_enabled` was resolved for each of its three causes, which site marked the row `completed`, the derivation that both Step 7 launches are initial-pass-only, the `no longer` framing on the Step 7.5 re-verification pointer, and the naming history of the Step 6 cleanup phase.
+  - Removed editor-facing text: `append here when another is introduced` on the Step 3 closed list, `because other steps read them` on the Step 5 inline-retention note, the `Single canonical home; do not duplicate this prompt body` note in `references/executor-prompt.md`, and the pointer to the design rationale in `README.md` for the Step 7 background launches. Also dropped are the table-of-contents restatements of what `references/tier-escalation.md` does and of the `Post-hook attribution check` consumer.
+  - Swept across the tree in the same commit: the `intentionally duplicated here so the rule fires at the decision moment` tail on all four **Return-point no-stall reminder** sites (three in `SKILL.md`, one in `references/step3-plan-review.md`), so the sibling reminders stay structurally aligned. Each reminder's instruction and its closed list of non-fatal outcomes are unchanged.
+  - Unchanged: every gate declaration, closed list of causes, cross-step variable contract, and flag-lifecycle rule in the touched range; the `Cross-layer review handoff ledger`, `Flag lifecycle contract`, `Build-order boundary chain`, and `Where the re-verification went` labels that other files and `skills/mobpro` cite; and the sanctioned-`Agent`-exception enumeration. Kept as load-bearing are the nested-dispatch synchronicity constraint in `references/executor-prompt.md`, the `it leaves code_review_enabled alone` carve-out on the `--fast` cause, the prohibition on salvaging a subset of a stale report, and the tier-never-falls rule.
+
 ### dev-workflow v1.118.1 / dev-workflow-bundle v1.140.11
 
 - refactor(dev-workflow): drop prose that does not change agent behavior (chunk 1 of 16)

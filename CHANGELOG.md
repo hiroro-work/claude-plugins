@@ -2,6 +2,19 @@
 
 ## 2026-08-21
 
+### dev-workflow v1.118.14 / dev-workflow-bundle v1.140.24
+
+- refactor(dev-workflow): drop prose that does not change agent behavior (chunk 14 of 16)
+  - Scope is `references/finish-phase.md` (33,652 to 28,956 chars, -14.0%) and `references/completion.md` (13,191 to 7,973 chars, -39.6%) -- the finish phase, § Step 9 through § Completion. `SKILL.md` and the remaining `references/*.md` files are untouched and are covered by the other chunks.
+  - Removed both files' preambles. `SKILL.md`'s Step 8.5 exit already states that the whole finish phase is defined in `references/finish-phase.md`, its five following section labels each carry a `Defined in references/finish-phase.md` pointer, and it holds the finish phase's **Input contract** inline at its own § Step 9; `references/finish-phase.md` § Completion names all three of `references/completion.md`'s sections at their points of use. Each file's H1 carries its identity.
+  - Kept, from `references/finish-phase.md`'s opening paragraph, the load-once fact, the `no step re-reads this file automatically` clause, and the post-compaction re-read imperative, and kept the reference-resolution rules in full (unqualified `§` resolving to `SKILL.md`, the bold-label carve-out, `sub-step N`, and the § No-Stall Principle named-bullet narrowing). Removed that paragraph's verbatim-extraction provenance, its link-rebase-on-add directive, and the **Residual risk** enumeration of what a compaction can drop.
+  - Removed § Gates' restatement that the two halves form one closed list and that the per-bullet convention governs its bullets: `SKILL.md` § No-Stall Principle's aggregate bullet carries the membership criterion and its "Each bullet names the gate" paragraph carries the convention. All nine gate bullets, their definition-site pointers, and every `USER APPROVAL GATE` marker are unchanged.
+  - Removed justifying clauses attached to rules stated unconditionally: the **Task-derived-change gate**'s whole-list-skip justification and warning-line rationale, sub-step 3's silent-loss clause, sub-step 4's workflow-artifact subtraction rationale and skip-is-covered note, the apply-half-of-a-scan/apply-split aside, and Step 11.6's `mirrors Step 11.5` sibling-equivalence note. Where `mobpro`'s `references/inline-defs.md` already transcribes the same definition, this skill now matches its leaner form.
+  - Removed the Step 10 delegation pointer's canonical-home clause (`README.md`'s hooks section holds that record) and § Step 10's restatement of the **Step 10 partial-state line**'s fire/omit condition, which `references/completion.md` § Completion reminders owns.
+  - `references/completion.md`: removed the ledger-provenance parentheticals on the difficulty-skip and fast-mode-skip reminders, their omission-cause enumerations, the § Partition role declaration and tie-break rationale, and the paragraph addressing a caller from another workflow -- `mobpro` `SKILL.md` M13 names which six of the seven reminders it renders and which ledgers it reads. That paragraph's dev-workflow-to-`mobpro` sweep trigger moved to `README.md` § Adding or dropping a `--fast` skip site.
+  - `references/completion.md`: kept the zsh `nomatch` mechanism as an imperative, since a combined `rm -f` silently skips the fixed-name deletions on the no-match path, and kept the `.staging.local.md`-before-`.md` suffix ordering with its reason. Removed the `is load-bearing` label, the `-f`-semantics aside, the `|| true` gloss, and the allowed-tools-coverage sentence.
+  - No heading, bold label, or gate bullet changed in either file.
+
 ### dev-workflow v1.118.13 / dev-workflow-bundle v1.140.23
 
 - refactor(dev-workflow): drop prose that does not change agent behavior (chunk 13 of 16)

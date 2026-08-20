@@ -1,6 +1,6 @@
 # Implementation Executor Prompt (Step 5)
 
-Canonical home for the Step 5 executor dispatch payload used when `implementation_executor` does not resolve to `main`. Single canonical home; do not duplicate this prompt body in `SKILL.md`. The main thread remains the orchestrator before and after every dispatch.
+Canonical home for the Step 5 executor dispatch payload used when `implementation_executor` does not resolve to `main`. The main thread remains the orchestrator before and after every dispatch.
 
 ## Work-Unit Spec Template
 

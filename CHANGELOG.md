@@ -2,6 +2,16 @@
 
 ## 2026-08-20
 
+### dev-workflow v1.118.7 / dev-workflow-bundle v1.140.17
+
+- refactor(dev-workflow): drop prose that does not change agent behavior (chunk 7 of 16)
+  - Scope is the tier / plan-approval-gate layer -- `references/visual-plan-review.md`, `references/tier-assessment.md`, and `references/tier-escalation.md`: 42,752 to 33,030 chars (-22.7%). `SKILL.md` and the remaining `references/*.md` files are untouched and are covered by the other chunks.
+  - Removed both reference preambles' reader map -- which step reads the file and which section it runs. Every caller already names the section it reads: `SKILL.md` Step 1.5 names `references/tier-assessment.md` § Resolution procedure, and that file's § Escalation names `references/tier-escalation.md` with its read condition.
+  - Removed the rationale clauses attached to rules stated unconditionally: why the escalation re-runs § Resolution procedure steps 2-5 in full and leaves step 6 out, why the unmarked-row test is the clean one, why a subtask keeps its parent's tier, why the express lane skips its four steps while the three config-driven ones are never skipped, why the fast-mode ledger append is conditional, why the escalation note names the tier, why the served plan file needs no block markers, why the URL file exists and the stale one is cleared, why background dispatch is required, and why the revise loop needs no iteration cap.
+  - Removed viewer-side description that an executing agent never acts on: the review surface's UI affordances, the transport-only split between `serve.mjs` and `public/index.html` (§ serve.mjs contract's `GET /api/plan` bullet already states the server does not segment the plan or enumerate block ids), the browser's diff rendering, and the caveat that the rendered diff is a guide rather than an authoritative one.
+  - Removed reassurances that state no rule: that judging on thin evidence is bounded by the one-way invariant, that a `fallback` never stalls the workflow, that the plan-approval gate and `check_commands` / `test_commands` remain the safety net (§ Difficulty-skip matrix states this already), and that block ids need not stay stable across renders.
+  - Relocated two editor-facing closed lists to `README.md`, which is not read at runtime: the visual gate's return-contract coordinated-sweep list to § Changing the plan-approval gate's return contract, and § Lanes' lane-difference membership sentence to § Changing the express / full lane difference set. Both moved rather than being dropped, because neither had another home.
+
 ### dev-workflow v1.118.6 / dev-workflow-bundle v1.140.16
 
 - refactor(dev-workflow): drop prose that does not change agent behavior (chunk 6 of 16)

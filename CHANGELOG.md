@@ -2,6 +2,18 @@
 
 ## 2026-08-20
 
+### dev-workflow v1.118.6 / dev-workflow-bundle v1.140.16
+
+- refactor(dev-workflow): drop prose that does not change agent behavior (chunk 6 of 16)
+  - Scope is the Step 3 / Step 4 review-and-approval layer -- `references/step3-plan-review.md`, `references/review-categories.md`, and `references/step4-finalize-plan.md`: 46,557 to 37,505 chars (-19.4%). `SKILL.md` and the remaining `references/*.md` files are untouched and are covered by the other chunks.
+  - Removed the two extracted-reference preambles' enumeration of what `SKILL.md` keeps inline and what the file itself holds. `SKILL.md`'s Step 3 and Step 4 delegation pointers already name every sub-step and section. `references/step4-finalize-plan.md` keeps a one-clause orienting sentence in its place, because its leading body is sub-step 2 while sub-steps 1 and 1.5 follow it in the file.
+  - Removed rationale clauses attached to rules stated unconditionally: why the per-group Reads / Covers instruction is needed, how the three review groups were drawn, why the reference links are resolved to concrete paths, why the express lane hands `references/simplicity-self-audit-express.md` alone, what a wrongly-skipped sub-check costs, why the reviewer's verdict is judged semantically, why the plan-body polish skip emits no note, why the polish runs after the prose-language self-audit, why a Trivial plan skips the browser gate, why the Step 3-completion check matters, why the prose-language audit re-runs on re-entry, why the lane rather than the tier keys the express-lane re-activation, and why the whole tier-resolution procedure is re-run rather than just the two review flags.
+  - Removed the four `General principle:` restatements in `references/review-categories.md`, each of which generalized a sub-check whose own text already enumerates the full procedure, plus the symmetric-lifecycle restatement and three consequence clauses.
+  - Removed negative safety claims about the design: that the two `prose-polish` call sites never overlap, that Step 3 has no background-launch path to double-apply against, and the `Why the exception is safe` bullet. These are design-time conclusions the executing reviewer never consults. That bullet's one behavioral sentence -- when the `--fast` Step 6.5-only skip is re-evaluated -- moved into the Exception bullet it qualifies.
+  - Removed the authority-side `source of truth ... edit the two together` declaration for the review-phase row-clearing condition. `references/tier-escalation.md` step 2 already carries the reference-side `Source of truth: ...; keep this condition in sync with it`.
+  - Moved `references/review-categories.md`'s rename-sweep enumeration -- which files cite the bold sub-check labels verbatim -- to `README.md` as `Renaming a review-category label`. It is an editor-facing sweep record with no other home, and `README.md` is tracked but never read at runtime.
+  - Kept: both Anti-skip guards; the `Key this on the assessed tier` prohibitions; `Simple stays on the visual gate -- only Trivial takes this route`; the two code-review self-checks that close a plausible shortcut (green-before-the-fix consumer suites, apparent group co-location); the Tidy-revival consequence clause, whose breakage passes undetected; the non-boolean fall-back-to-`true` clause on `polish_prose`; and the rule that an `error` verdict appends nothing to `bundle_skills_unavailable`.
+
 ### dev-workflow v1.118.5 / dev-workflow-bundle v1.140.15
 
 - refactor(dev-workflow): drop prose that does not change agent behavior (chunk 5 of 16)

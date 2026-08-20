@@ -2,6 +2,17 @@
 
 ## 2026-08-20
 
+### dev-workflow v1.118.3 / dev-workflow-bundle v1.140.13
+
+- refactor(dev-workflow): drop prose that does not change agent behavior (chunk 3 of 16)
+  - Scope is `SKILL.md` from `Step 8: Code Review` to the end of the file plus `references/step8-code-review.md`, `references/code-review-payload.md`, `references/step9-completion-hooks.md`, `references/step6-tidy.md`, and `references/step6.5-polish-prose.md`: 44,146 to 34,727 chars (-21.3%). The rest of `SKILL.md` and the remaining `references/*.md` files are untouched and are covered by the later chunks.
+  - Removed the extracted-reference preambles' provenance text -- `Content is verbatim-extracted, retaining its original numbering and indentation` and each file's enumeration of what stayed inline in `SKILL.md`. `SKILL.md`'s delegation pointer for each of those files already enumerates its sub-steps. `references/step6-tidy.md` keeps its enumeration sentence, because `verify-skill-refs` anchors a manifest example on that file carrying `Cross-layer review handoff ledger` as a bold span.
+  - Removed rationale clauses attached to instructions stated unconditionally: why the escalation pass exists, why the finish phase loads at the `Step 8.5: Deferred Verification` exit, why gate 2 carries a tier leg, why `Step 6.5: Polish Prose` computes its own changed-file set, and why re-executing an inspection-class cleanup skill is safe.
+  - Removed editor-facing text: `append here when another is introduced` on the disabled-phase cause list, the `Source of truth` note on `## Sub-step 1 -- reviewer report payload`, `this contract deliberately does not re-list them` on the finish-phase input contract, and the note scoping the `Base ref` asymmetry rationale to the `tidy` path.
+  - Removed table-of-contents restatements of a pointed-at file: sub-step 1's inline summary of the reviewer payload's items, which `references/step7-check-test.md` already names the single parametric source and instructs not to restate, and the gate-2 detail enumeration.
+  - Removed the `Coverage tradeoff` bullet from `references/step8-code-review.md` and its citations in `SKILL.md` and that file's preamble. It carried no imperative, and the scope note in the gate-2 invocation bullet is what suppresses paired-change flags.
+  - Unchanged: every section heading, the `Step 8` unresolved-findings gate declaration, both `Return-point no-stall reminder` blocks, the `## Dispatch authorization` section held byte-identical across bundle members, and every task-row subject literal and cross-step variable name. Kept as load-bearing are the silent-failure consequences (passing `Base ref` to `tidy` drops untracked files from the cleanup scope; skipping `Step 8.5: Deferred Verification` leaves `review_fix_files` unverified), the sibling-consistency guard on that same asymmetry, the `mobpro`-facing omission rule in `references/code-review-payload.md`, and the reason the rubric link must be resolved to a concrete path before the reviewer sees it.
+
 ### dev-workflow v1.118.2 / dev-workflow-bundle v1.140.12
 
 - refactor(dev-workflow): drop prose that does not change agent behavior (chunk 2 of 16)

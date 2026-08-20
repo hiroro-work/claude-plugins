@@ -2,6 +2,17 @@
 
 ## 2026-08-20
 
+### dev-workflow v1.118.10 / dev-workflow-bundle v1.140.20
+
+- refactor(dev-workflow): drop prose that does not change agent behavior (chunk 10 of 16)
+  - Scope is Step 5's implementation layer -- `references/step5-implement.md` and `references/diff-presentation.md`: 35,425 to 28,125 chars (-20.6%). `SKILL.md` and the remaining `references/*.md` files are untouched and are covered by the other chunks.
+  - Removed both files' preambles. `diff-presentation.md`'s restated what each section already says its caller supplies, plus a "single canonical home ... a caller points here rather than restating the steps" note addressed to future editors. `step5-implement.md`'s enumerated which sub-steps stay inline in `SKILL.md`, which `SKILL.md` Step 5 already lists in full -- including sub-step 9 and sub-step 2.5's placement between 2 and 3.
+  - Removed `diff-presentation.md`'s two "use only part of the five-step shape" bullets. The `interactive-commits.md` step subset and its no-unstage-on-landing rule live in the § Caller endpoints table and in `interactive-commits.md`'s own § Per-commit loop sub-step `a`; the `step5-implement.md` subset folded into its table row; "Step 10's `crit` path is not a caller here" is stated by `crit-commit-review.md`'s **Scoping mechanism** bullet. The table cell that read "see the note below" now names that closed list directly.
+  - Removed justifying subordinate clauses attached to rules stated unconditionally, across sub-steps 2-8, 10, 11 and § Sub-step 2.5: why the main thread is the default executor, why secondary descriptions of a cross-reference target are not trusted, why a missing blank line between Markdown blocks matters, why narrative prose escapes an enumerated sweep list, why an alias sweep is needed, why the index must not be reset between boundary builds, and what an unchanged tier assessment leaves untouched.
+  - Removed descriptions of what sibling files hold: what `tier-escalation.md` does on escalation, the other two sanctioned `Agent` exceptions (`SKILL.md` § Configuration's `Agent` tool usage bullet holds that closed list), `mobpro`'s matching `step5_staged_paths` append placement, and the `interactive-commits.md` `git read-tree HEAD` guard comparison. Also removed the "General principle:" summary closing the `AskUserQuestion` option-design item and the "permissive guidance (no config flag)" meta-note.
+  - Kept the statements a removal would silently break: that the rendering-ladder thresholds are fixed internal constants and not configurable, sub-step 7's three probe-trigger examples (they decide whether the gate fires), and five sentences naming a breakage that raises no error -- leftover staged paths with no record for the exit unstage, a partial boundary chain folding steps into the wrong Step 10 group, grep prefix/anchor errors dropping matches, the `allowed-tools` grant not preventing parent-directory landing, and a probe artifact overwritten before observation.
+  - Category: `ambiguity`
+
 ### dev-workflow v1.118.9 / dev-workflow-bundle v1.140.19
 
 - refactor(dev-workflow): drop prose that does not change agent behavior (chunk 9 of 16)

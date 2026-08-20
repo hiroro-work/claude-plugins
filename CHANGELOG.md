@@ -1,5 +1,20 @@
 # Changelog
 
+## 2026-08-21
+
+### dev-workflow v1.118.13 / dev-workflow-bundle v1.140.23
+
+- refactor(dev-workflow): drop prose that does not change agent behavior (chunk 13 of 16)
+  - Scope is `references/crit-commit-review.md`, the `commit_review_gate: "crit"` gate: 31,024 to 22,095 chars (-28.8%). `SKILL.md` and the remaining `references/*.md` files are untouched and are covered by the other chunks.
+  - Removed the four verification-provenance paragraphs -- the two **Empirically verified** blocks, **Not verified in a completed live round**, and **Verification provenance** -- together with the three in-text pointers into them. Every fact they carried that an executing agent acts on is stated imperatively where it is acted on: the dangling-object range in the **Scoping mechanism** bullet, the read-both-streams rule in **Decision output**, the optional `quote` field in **Comment JSON shape**, the coverage threshold and the `auto_repaired` carve-out in § Story prologue, and the two story commands returning immediately in that section's own lead-in.
+  - Removed the preamble's entry-condition restatement and canonical-home declaration, and the **Two callers, not one.** paragraph. `references/interactive-commits.md`'s **Diff-review mode branch** owns the entry condition and the per-commit crit-suppression carve-out; `mobpro` `references/crit-diff-review.md` § Reused parts and `references/m11-commit.md`'s **Diff surface (`commit_review_gate` branch)** paragraph each enumerate the sections that caller reuses and carry their own `Keep ... in sync` directive.
+  - Removed the **Browser-side scope-toggle caveat** paragraph: it describes what a human reviewer may switch inside crit's browser UI, which changes nothing the agent does or passes.
+  - Removed justifying subordinate clauses attached to rules stated unconditionally: why both probes run unconditionally, why the crit probe is independent of Step 4's, why the install URL wins when both probes fail, why `HEAD` is not re-resolved per round, why the story ingest repeats each round, why the metadata-only branch appends no `fast_mode_skipped_steps` string, why the chat presentation is the floor, and the `Agent`-dispatch-site accounting for the background launch, which `SKILL.md` § Configuration's `Agent` tool usage bullet states.
+  - Removed the restatements that another passage already carried: the candidate-build failure routing in § Procedure step 3 (§ Fallback contract owns it), the story ingest's read-both-streams and `--no-open` carve-out clauses (§ crit CLI contract states both), and the dirty-working-tree sentence duplicated between the **Scoping mechanism** and **Scope** bullets.
+  - Kept the statements a removal would silently break: the file/dir-mode prohibition with its no-diff consequence, the `command -v crit` grant guard, "This gate synthesizes no object of its own" with its no-unstage consequence, the heredoc terminator rule, the `scope: "line"` re-verification ordering, the `cancel` > `adjust` > `accept` priority resolution, the branch **c**/**d** normal-completion carve-out, the re-enter-`a`-only instruction, and the actual-code tie-break.
+  - No heading, bold label, or § Procedure step number changed, so every inbound reference from `SKILL.md`, `references/interactive-commits.md`, `references/step7.5-rules-compliance.md`, `references/finish-phase.md`, and the three `mobpro` reference files still resolves.
+  - Category: `ambiguity`
+
 ## 2026-08-20
 
 ### dev-workflow v1.118.12 / dev-workflow-bundle v1.140.22

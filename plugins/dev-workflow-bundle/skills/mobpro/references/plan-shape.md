@@ -1,4 +1,4 @@
-# mobpro Plan Format
+# mobpro Plan Shape
 
 **Read this file once**, at M3; M4's substitution and M5's swap-dependent sweep name § Template and § Review lens of that same copy.
 

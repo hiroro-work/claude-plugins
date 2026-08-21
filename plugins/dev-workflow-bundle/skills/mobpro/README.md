@@ -41,6 +41,10 @@ Those per-unit snapshots are also what the commit gate proposes from: the commit
 
 `SKILL.md` § Fast mode's table is the closed list of what `--fast` skips, one row per skip site with the `fast_mode_skipped_steps` record it appends. Adding or dropping a row there sweeps the skip-set summary in § Usage above in the same commit.
 
+### Adding an inline explanation-length cap
+
+[`references/learning-gates.md`](references/learning-gates.md) § D is the single consolidated statement of the explanation-length discipline. The caps quoted inline at their application sites instantiate it and stay inline rather than being rewritten into pointers to it. Adding one sweeps § D in the same commit. The inline sites: M3's and M5's "2–3 lines" narration, M4 / M9's "1–2 lines" per applied finding, M6's "≤ 6 lines" preview, M7's "1–2 lines" cleanup explanation, M11's "1–2 line" point-of-this-diff note, and M13's "≤ 3 one-line points" learning summary.
+
 ## Interop with dev-workflow
 
 `mobpro` and `dev-workflow` share the same decomposition **state-file** schema and path (`.claude/plans/dev-workflow.<slug>.md`). So a parent task can be started under `mobpro` (learning through the first subtasks) and the rest handed off to a senior with `/dev-workflow --resume <slug>` — or the reverse.

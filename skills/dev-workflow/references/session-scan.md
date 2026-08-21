@@ -1,24 +1,20 @@
 # Shared Session Scan
 
-Single canonical home for the dev-workflow-owned conversation-scan subagent dispatch shared by **Step 11** (rule-extraction — the prose coding-rule axis), **Step 11.5** (self-retrospective), and **Step 11.6** (workability retrospective). All three steps need the same session jsonl parsed for signal extraction; this shared scan parses it **once** and returns each active axis's block in a single subagent return, so the raw conversation never reaches the main thread.
-
-Read this file whenever a participating step reaches its dispatch point (Step 11 / Step 11.5 / Step 11.6). It defines the **dispatch**; the per-axis detection / sanitization / output-shape specs live in each axis's own reference (`references/rule-extraction-axis.md` §2 / §3, `references/self-retrospective.md` §2 / §3, `references/workability-retrospective.md` §2.2 / §2.3 / §3), which the shared subagent reads.
+Read this file whenever a participating step reaches its dispatch point (Step 11 / Step 11.5 / Step 11.6).
 
 ## When it runs
 
 Gated on at least one axis being active:
 
-- **rule-extraction** — [`finish-phase.md`](finish-phase.md) Step 11 sub-step 1 determined `rule-extraction-active` is true (the existing `--from-conversation` skip conditions did not fire). Step 11 is always registered, so this axis is active on most runs.
+- **rule-extraction** — [`finish-phase.md`](finish-phase.md) Step 11 sub-step 1 determined `rule-extraction-active` is true (the existing `--from-conversation` skip conditions did not fire).
 - **self-retrospective** — `self_retrospective.feedback` is set and valid (Step 11.5 registered).
 - **workability** — `workability_retrospective.enabled` is `true` (Step 11.6 registered).
 
-When no axis is active, no participating step dispatches and this file is never read.
-
 ## Dispatch-once contract
 
-The scan is dispatched **once per run**. Its run-scoped state lives in `SKILL.md` Step 1 sub-step 6's cross-step variable init table (`session_scan_dispatched` / `session_scan_result`), not here, so the state is well-defined on every path:
+The scan is dispatched **once per run**. Its run-scoped state lives in `SKILL.md` Step 1 sub-step 6's cross-step variable init table (`session_scan_dispatched` / `session_scan_result`):
 
-- `session_scan_dispatched` — `false` at `SKILL.md` Step 1 sub-step 6's cross-step variable init table; set `true` **only by the step that actually performs the dispatch**. A step that reaches its dispatch point with **no active axis of its own to consume** — or that never reaches it at all — never executes that set. Three causes (closed list): Step 11 when `rule-extraction-active` is false; Step 11 when its row was pre-completed by the difficulty-skip matrix, so sub-step 1 is never entered and `rule-extraction-active` is never determined (`references/tier-assessment.md` § Difficulty-skip matrix); and a retrospective step that aborts in its own §1 pre-flight before reaching the dispatch point, so it leaves `session_scan_dispatched` at `false` — this is exactly what routes a later step to the dispatch branch when an earlier step abstained or aborted.
+- `session_scan_dispatched` — `false` at `SKILL.md` Step 1 sub-step 6's cross-step variable init table; set `true` **only by the step that actually performs the dispatch**. A step that reaches its dispatch point with **no active axis of its own to consume** — or that never reaches it at all — never executes that set. Three causes (closed list): Step 11 when `rule-extraction-active` is false; Step 11 when its row was pre-completed by the difficulty-skip matrix, so sub-step 1 is never entered and `rule-extraction-active` is never determined (`references/tier-assessment.md` § Difficulty-skip matrix); and a retrospective step that aborts in its own §1 pre-flight before reaching the dispatch point, so it leaves `session_scan_dispatched` at `false`.
 - `session_scan_result` — `null` at `SKILL.md` Step 1 sub-step 6's cross-step variable init table; set to the subagent's raw return by the dispatching step.
 
 The **dispatcher is the first step, in execution order Step 11 → Step 11.5 → Step 11.6, that reaches its dispatch point with an active axis of its own to consume.** When a participating step reaches its dispatch point:
@@ -26,13 +22,13 @@ The **dispatcher is the first step, in execution order Step 11 → Step 11.5 →
 - **`session_scan_dispatched == true`** → an earlier step already dispatched; **consume** this step's axis block from `session_scan_result` (§ Consuming a block). Do not dispatch again.
 - **`session_scan_dispatched == false`** → **dispatch** the shared scan for all **still-active axes** (below), set `session_scan_dispatched = true`, store the raw return in `session_scan_result`, then consume this step's axis block from it.
 
-**Step 11 dispatches only when it has the rule-extraction axis of its own; it never dispatches purely to serve Step 11.5 / Step 11.6.** When `rule-extraction-active` is false — or when Step 11 is matrix-skipped and so never determines it — Step 11 has no axis to consume, so it abstains (leaves `session_scan_dispatched == false`), and the first registered retrospective step (Step 11.5, else Step 11.6) becomes the dispatcher.
+**Step 11 dispatches only when it has the rule-extraction axis of its own; it never dispatches purely to serve Step 11.5 / Step 11.6.**
 
 **Still-active axes** (computed at the dispatch point, when `session_scan_dispatched == false`):
 
-- Current step is **Step 11** (reached here ⇒ `rule-extraction-active` is true) → active = `{rule-extraction}` ∪ `{self-retrospective}` when Step 11.5 is registered (`self_retrospective.feedback` set and valid at Step 1) ∪ `{workability}` when Step 11.6 is registered (`workability_retrospective.enabled`). The self-retrospective axis is included **speculatively** here — Step 11 runs **before** Step 11.5's own §1 pre-flight (gh-auth / repo accessibility), so its liveness is gated on Step-1 *registration* only, not on that pre-flight. The speculative block is validated at **consume** time: Step 11.5's §1 pre-flight runs as usual; if it fails, Step 11.5 aborts / skips and the block is discarded (a marginal wasted-block cost); if it passes, Step 11.5 consumes the block. Step 11 resolves the session jsonl **once** (§ Inputs), and every axis's block derives from that single resolution — so the axes cannot describe different sessions. The multi-instance latest-modified ambiguity the per-axis §1.4 / §1.3 resolution warns about therefore collapses to a single pick here; the dispatching step still informs the user which file was selected, so a wrong-session pick remains catchable at the Step 11.5 / Step 11.6 preview.
-- Current step is **Step 11.5** (reached here with `session_scan_dispatched == false` ⇒ Step 11 abstained — `rule-extraction-active` false, or the row matrix-skipped) → active = `{self-retrospective}` ∪ `{workability}` when `workability_retrospective.enabled`. Reaching Step 11.5's dispatch point means its §1 pre-flight passed, so the self-retrospective axis is live; the workability axis is included whenever it is enabled, because the shared scan covers it now rather than waiting for Step 11.6 to dispatch separately. (rule-extraction is **not** in this set — Step 11 already declined to dispatch it.)
-- Current step is **Step 11.6** (reached here with `session_scan_dispatched == false` ⇒ neither Step 11 nor Step 11.5 dispatched) → active = `{workability}`. Step 11 abstained (`rule-extraction-active` false, or the row matrix-skipped) and Step 11.5 did **not** dispatch — it was either unregistered (`self_retrospective.feedback` unset / invalid) or registered-but-pre-flight-aborted (e.g. a `gh auth` failure, per `references/self-retrospective.md` §1) — so only workability is live. This is the path that keeps the workability axis from being orphaned when Step 11 abstains and Step 11.5 aborts in pre-flight.
+- Current step is **Step 11** (reached here ⇒ `rule-extraction-active` is true) → active = `{rule-extraction}` ∪ `{self-retrospective}` when Step 11.5 is registered (`self_retrospective.feedback` set and valid at Step 1) ∪ `{workability}` when Step 11.6 is registered (`workability_retrospective.enabled`). The self-retrospective axis is included **speculatively**: its liveness is gated on Step-1 *registration* only, not on Step 11.5's §1 pre-flight. The speculative block is validated at **consume** time: Step 11.5's §1 pre-flight runs as usual; if it fails, Step 11.5 aborts / skips and the block is discarded; if it passes, Step 11.5 consumes the block. Step 11 resolves the session jsonl **once** (§ Inputs), and every axis's block derives from that single resolution.
+- Current step is **Step 11.5** (reached here with `session_scan_dispatched == false` ⇒ Step 11 abstained — `rule-extraction-active` false, or the row matrix-skipped) → active = `{self-retrospective}` ∪ `{workability}` when `workability_retrospective.enabled`. (rule-extraction is **not** in this set — Step 11 already declined to dispatch it.)
+- Current step is **Step 11.6** (reached here with `session_scan_dispatched == false` ⇒ neither Step 11 nor Step 11.5 dispatched) → active = `{workability}`.
 
 ## Inputs (dispatch model and subagent-prompt fields)
 
@@ -58,7 +54,7 @@ Instruct the single spawned subagent to:
    - self-retrospective → interval computation, bundle-signal scan (§2.2), **heavy / project-agnostic** sanitization (§3), then the `### Finding <N>` … `Findings: <N>` shape from §2.1's return-shape step.
    - workability → linter-config detection, workability-signal scan (§2.2), **light / project-internal** sanitization (§3), then the `### Candidate <N>` … `Candidates: <N>` shape from §2.1's return-shape step (with the workability `Type` enum `skill-candidate | lint-rule-candidate`).
 
-   Apply each axis's own §3 **strictly**, and **do not mix sanitization rules across the blocks** — keeping a single subagent does not collapse the three sanitization regimes; each block follows only its own axis's §3 (light / project-internal + secret-redaction for rule-extraction, heavy / project-agnostic for self-retrospective, light / project-internal for workability, as tagged in step 4). Note that the rule-extraction and workability blocks **share the `### Candidate <N>` envelope but carry different field sets** (different `Type` enums) — assemble each from its own axis's schema and never copy fields between them; the delimiters in step 6 are what disambiguate them downstream.
+   Apply each axis's own §3 **strictly**, and **do not mix sanitization rules across the blocks** — keeping a single subagent does not collapse the three sanitization regimes; each block follows only its own axis's §3, as tagged in step 4. Note that the rule-extraction and workability blocks **share the `### Candidate <N>` envelope but carry different field sets** (different `Type` enums) — assemble each from its own axis's schema and never copy fields between them.
 5. **Language handling**: each axis follows its own Language-handling step (localize the prose fields, keep the English schema tokens exactly as that step pins them).
 6. **Return the active axes' blocks in a single response**, each wrapped in its axis delimiter so main can split unambiguously. Emit a delimiter pair **only for each active axis** (omit the pair for an inactive axis entirely):
 
@@ -74,7 +70,7 @@ Instruct the single spawned subagent to:
    --- END WORKABILITY ---
    ```
 
-   Inside each delimiter pair the block is **byte-for-byte** the shape that axis's spec defines (including the per-axis zero shape — `Candidates: 0` for rule-extraction / workability, `Findings: 0` for self-retrospective), so each step consumes its block exactly as if its own subagent had returned it.
+   Inside each delimiter pair the block is **byte-for-byte** the shape that axis's spec defines (including the per-axis zero shape — `Candidates: 0` for rule-extraction / workability, `Findings: 0` for self-retrospective).
 7. **Error return contract (whole-scan fatal).** If a fatal error prevents producing any block — the session jsonl is unreadable / unparseable, a reference file cannot be read, or an unexpected tool error occurs — return this exact shape and nothing else (no delimiters):
 
    ```text
@@ -89,17 +85,17 @@ Instruct the single spawned subagent to:
 When a step consumes its axis block from `session_scan_result`:
 
 1. If `session_scan_result` is the whole-scan **`Status: ERROR`** shape (no delimiters) — or no parseable result was obtained at all — route **this step's own axis** to its whole-scan-failure handling:
-   - Step 11 (rule-extraction) → the jsonl is unreadable, so a standalone re-scan would fail too; treat rule-extraction as **skipped** (no `--from-conversation` fallback — see [`finish-phase.md`](finish-phase.md) Step 11 sub-step 1's failure routing, which distinguishes whole-scan ERROR from a per-axis malformed block).
+   - Step 11 (rule-extraction) → treat rule-extraction as **skipped** (no `--from-conversation` fallback — see [`finish-phase.md`](finish-phase.md) Step 11 sub-step 1's failure routing).
    - Step 11.5 (self-retrospective) → `references/self-retrospective.md` §5 subagent-failure → terminal summary `skipped`.
    - Step 11.6 (workability) → `references/workability-retrospective.md` §6 subagent failure → terminal summary `skipped`.
 
-   Do not retry (a subagent that returned non-conforming content is not trusted to re-run this session). Each axis's terminal disposition is emitted by **its own home step, exactly once**. The other active axes are **not** handled from here — each home step independently consumes the same `Status: ERROR` result and routes itself in turn. This is the deliberate **whole-scan failure-coupling**: the `Status: ERROR` shape carries no per-axis block, so every active axis's consume hits this same branch and a fatal parse error skips them all at once.
+   Do not retry. Each axis's terminal disposition is emitted by **its own home step, exactly once**. The other active axes are **not** handled from here — each home step independently consumes the same `Status: ERROR` result and routes itself in turn.
 2. Otherwise, split `session_scan_result` on the axis delimiters and take this step's block (`--- RULE-CANDIDATES ---` … for Step 11, `--- SELF-RETROSPECTIVE ---` … for Step 11.5, `--- WORKABILITY ---` … for Step 11.6):
-   - **Block missing or malformed** for this axis (the delimiter pair is absent, or the block fails this axis's own machine-checkable validation) → route **only this axis** to its per-axis-failure handling; the other axes are unaffected:
-     - Step 11 (rule-extraction) → the jsonl parsed fine (other axes' blocks are present), so the per-axis malformed-block path falls back to standalone `Skill(extract-rules) --from-conversation` (see [`finish-phase.md`](finish-phase.md) Step 11 sub-step 1) — re-extracting against the known-readable jsonl rather than skipping. This is the one axis whose per-axis failure is a fallback rather than a `skipped` (it has a standalone fallback worker).
+   - **Block missing or malformed** for this axis (the delimiter pair is absent, or the block fails this axis's own machine-checkable validation) → route **only this axis** to its per-axis-failure handling:
+     - Step 11 (rule-extraction) → fall back to standalone `Skill(extract-rules) --from-conversation` (see [`finish-phase.md`](finish-phase.md) Step 11 sub-step 1).
      - Step 11.5 (self-retrospective) → `references/self-retrospective.md` §5 machine-checkable rejections → `skipped`.
      - Step 11.6 (workability) → `references/workability-retrospective.md` §6 subagent-failure checks → `skipped`.
-   - **Block well-formed** → hand it to this axis's disposition exactly as if the axis's own subagent had returned it:
+   - **Block well-formed** → hand it to this axis's disposition:
      - Step 11 (rule-extraction) → [`finish-phase.md`](finish-phase.md) Step 11 sub-step 1 (write the block to the candidate file → `Skill(extract-rules) --apply-conversation-candidates <path>`).
      - Step 11.5 (self-retrospective) → `references/self-retrospective.md` §4 Output & submission.
      - Step 11.6 (workability) → `references/workability-retrospective.md` §4 Disposition gate.

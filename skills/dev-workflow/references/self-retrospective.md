@@ -4,8 +4,6 @@ Deep reference for Step 11.5. Read this when `self_retrospective.feedback` is se
 
 Purpose: scan the current conversation for signals about how the bundled skills (`dev-workflow`, `ask-peer`, `extract-rules`, `rules-review`, `mobpro`) performed, produce **sanitized**, project-agnostic improvement candidates, and submit them to the configured destination — either a GitHub issue (`owner/repo` feedback) or a local markdown file (path feedback). Raw conversation stays in-session.
 
-This file is read whenever `self_retrospective.feedback` is set at Step 1, regardless of the assessed tier; unset / invalid `feedback` still blocks reading this file.
-
 ## 1. Pre-flight checks
 
 1. Re-validate `self_retrospective.feedback` auto-detect:
@@ -38,21 +36,21 @@ This file is read whenever `self_retrospective.feedback` is set at Step 1, regar
 
    Emit the terminal summary (0 findings, skipped) and proceed to Completion.
 
-3. Path mode: expand any leading `~` in `<path>` to `$HOME` before any filesystem operation (the `Write` tool does not expand `~` on its own). Then, if the directory does not exist, ask the user for approval to create it via `mkdir -p <path>`. `mkdir` on arbitrary user-configured paths is intentionally **not** pre-allowed in `allowed-tools`, so the one-time Bash approval prompt acts as a deliberate safety gate against typos or hostile config. On refusal, abort Step 11.5 with a warning and emit the terminal summary (0 findings, skipped). On mkdir failure, warn and abort the same way.
+3. Path mode: expand any leading `~` in `<path>` to `$HOME` before any filesystem operation (the `Write` tool does not expand `~` on its own). Then, if the directory does not exist, ask the user for approval to create it via `mkdir -p <path>`. On refusal, abort Step 11.5 with a warning and emit the terminal summary (0 findings, skipped). On mkdir failure, warn and abort the same way.
 
 4. **Session file identification** (required by §2):
    - Run `pwd` to get the current working directory.
    - Encode the path: replace `/` and `.` with `-` (leading `-` is kept). Example: `/Users/alice/projects/foo` → `-Users-alice-projects-foo`.
    - Expand `~` to the literal `$HOME` value before constructing the Glob pattern — `Glob` does not guarantee tilde expansion, so always pass an absolute path.
    - Use `Glob` with pattern `<$HOME>/.claude/projects/<encoded-path>/*.jsonl`. `Glob` returns results sorted by modification time (newest first), so pick the first entry.
-   - The "latest-modified" heuristic can pick the wrong file when several Claude Code instances run against the same repo, so inform the user which file was selected — they can `skip` at the §4 preview if it is the wrong session.
+   - Inform the user which file was selected.
    - If the glob returns no matches, abort Step 11.5 with a warning ("No session jsonl found for this repo — the self-retrospective requires conversation history to scan.") and emit the terminal summary (0 findings, skipped).
 
-Every abort in this section emits the terminal summary as `skipped` — pre-flight never produces a `failed` state, which is reserved for submission attempts that were actually made (section 5).
+Every abort in this section emits the terminal summary as `skipped`.
 
 ## 2. Observation A extraction (via subagent)
 
-Delegate jsonl parsing, signal extraction, and §3 sanitization to the shared session scan's subagent (`references/session-scan.md`). Main must not read the session jsonl directly in this step: keeping the raw conversation out of main context protects both the context budget and the sanitization guarantee.
+Delegate jsonl parsing, signal extraction, and §3 sanitization to the shared session scan's subagent (`references/session-scan.md`). Main must not read the session jsonl directly in this step.
 
 Scope: the bundle covers `dev-workflow`, `ask-peer`, `extract-rules`, `rules-review`, `mobpro`. Signals about other skills are out of scope.
 
@@ -66,12 +64,12 @@ Concrete operational rules for main when handling the subagent's return:
 
 ### 2.1 Spawn the subagent
 
-The actual `Agent` dispatch is performed **once per run by the shared session scan** (`references/session-scan.md`), which parses the session jsonl a single time and serves this axis alongside the other active axes (rule-extraction at Step 11 and / or workability at Step 11.6). This section is the **self-retrospective-axis spec** the shared scan's subagent reads and applies; `references/session-scan.md` § Inputs lists the prompt inputs (the session file resolved in §1.4, this file's path, repo root, language, and the `subagent_model`-derived model). Do not spawn a separate subagent here.
+The actual `Agent` dispatch is performed **once per run by the shared session scan** (`references/session-scan.md`). This section is the **self-retrospective-axis spec** the shared scan's subagent reads and applies; `references/session-scan.md` § Inputs lists the prompt inputs. Do not spawn a separate subagent here.
 
 Instruct the subagent to:
 
 1. Read §2 (signal types, candidate schema) and §3 (sanitization rules) of the reference file.
-2. Parse the session jsonl (line-delimited JSON — each line one message) — the shared scan performs this parse **once** for all active axes (see `references/session-scan.md` § Subagent instructions); this step names only the per-axis extraction that single parse feeds. Extract:
+2. Parse the session jsonl (line-delimited JSON — each line one message). Extract:
    - `user` and `assistant` **text** content (skip `tool_use`, `thinking`, and similar internal blocks)
    - Each entry's `timestamp` field (ISO 8601 string at the top level of the JSON line)
    - Each `assistant` entry's `message.usage` object (`input_tokens`, `output_tokens`, `cache_creation_input_tokens`, `cache_read_input_tokens`)
@@ -79,12 +77,12 @@ Instruct the subagent to:
    A short `jq` or inline node/python is fine. Entries missing `timestamp` or `message.usage` are skipped for interval computation — use the gap between the nearest surrounding valid entries instead.
 
 2a. **Interval computation.** From the extracted timestamps and usage data, compute two kinds of interval metrics:
-   - **Wall-clock intervals**: timestamp differences between consecutive `assistant` entries (in seconds). The gap immediately before a `user` entry (from the last `assistant` entry's timestamp to the next `user` entry's timestamp) represents user idle time and is excluded from step-duration estimates. When a `user` entry sits between two `assistant` entries, do not treat the whole assistant-to-assistant span as one work interval — split it into the (assistant → user) idle leg, which is excluded, and the (user → next assistant) resume leg, which counts; only the resume leg contributes to step duration.
+   - **Wall-clock intervals**: timestamp differences between consecutive `assistant` entries (in seconds). The gap immediately before a `user` entry (from the last `assistant` entry's timestamp to the next `user` entry's timestamp) represents user idle time and is excluded from step-duration estimates. When a `user` entry sits between two `assistant` entries, do not treat the whole assistant-to-assistant span as one work interval — split it into the (assistant → user) idle leg, which is excluded, and the (user → next assistant) resume leg, which counts.
    - **Token consumption per phase**: cumulative `output_tokens` between consecutive `user` messages as the unit of measurement.
 
    **Minimum data requirement**: if fewer than 2 `assistant` entries carry a valid `timestamp`, skip interval computation entirely and proceed with signal detection (§2.2 Signal types) based on text content alone — do not report an error.
 
-   Step attribution is inherently coarse — the subagent infers rough phase boundaries from text content (step-number mentions, skill names in prose). Precise per-step attribution is not required; identifying the dominant time/token sinks (e.g. Step 3 ≈130s, Step 7 ≈120s magnitude) is sufficient.
+   The subagent infers rough phase boundaries from text content (step-number mentions, skill names in prose). Precise per-step attribution is not required; identifying the dominant time/token sinks (e.g. Step 3 ≈130s, Step 7 ≈120s magnitude) is sufficient.
 
    When generating findings for Token-consumption inefficiency or Development-speed friction signals (§2.2), cite the approximate interval duration or token count directly in the finding's `description` paragraph as grounding evidence (e.g. "approximately 130 seconds", "roughly 25k output tokens").
 
@@ -95,7 +93,7 @@ Instruct the subagent to:
 
    ```markdown
    ### Finding 1
-   **Target skill:** <one of the four bundle skills>
+   **Target skill:** <one of the bundle skills>
    **Category:** <ambiguity | missing-branch | wrong-default | rules-conflict | other>
    **Description:** <one-paragraph sanitized description>
    **Suggested fix direction:** <one-paragraph sanitized direction>
@@ -115,7 +113,7 @@ Instruct the subagent to:
    Error: <one-line description of what failed>
    ```
 
-   Main will detect this shape and route to §5 subagent-failure handling. Never mix ERROR with partial findings.
+   Never mix ERROR with partial findings.
 
    **Boundary note** (parseable-but-empty is NOT an error): if the jsonl parsed fine but contained no user/assistant text worth scanning (aborted session, tool-use-only session), that is **zero findings**, not an error — return the normal success shape with `Findings: 0` per §2.4.
 
@@ -131,25 +129,25 @@ Instruct the subagent to:
 
 ### 2.3 Candidate schema (one per signal)
 
-- **target skill** — one of the four bundle skills
+- **target skill** — one of the bundle skills
 - **category** — `ambiguity` / `missing-branch` / `wrong-default` / `rules-conflict` / `other`. For efficiency-class findings (token-consumption / development-speed), take `wrong-default` when the inefficiency stems from a default-behavior choice, otherwise `other`
 - **description** — one-paragraph abstract description of what went wrong (sanitized per §3). When interval measurements are available (§2.1's **Interval computation** step), embed approximate values (interval seconds, output token counts) directly in this paragraph as grounding evidence — do not add a separate field
 - **suggested fix direction** — one-paragraph high-level direction, not a full patch (sanitized per §3)
 
 ### 2.4 Zero findings
 
-If the subagent returns zero candidates, skip the submission — §4 terminal summary still emits with `0 bundle findings`. This also covers the edge case where the jsonl parsed fine but contained no user/assistant text worth scanning (e.g. aborted session, tool-use-only session); both paths emit the same terminal summary.
+If the subagent returns zero candidates, skip the submission — §4 terminal summary still emits with `0 bundle findings`.
 
 ## 3. Sanitization rules
 
-Apply these rules to every candidate's `description` and `suggested fix direction` before assembling the output. (`target skill` and `category` use fixed vocabularies — 4 skill names, 5 categories — so they need no sanitization.) The goal is to leave only project-agnostic signal — someone outside the project must be able to read the issue and understand the skill problem without learning anything about the project.
+Apply these rules to every candidate's `description` and `suggested fix direction` before assembling the output. (`target skill` and `category` use fixed vocabularies, so they need no sanitization.) The goal is to leave only project-agnostic signal — someone outside the project must be able to read the issue and understand the skill problem without learning anything about the project.
 
 - **Absolute paths** → replace with a generic shape (e.g. `<project>/path/to/file`)
 - **Project / repo / product / service / user / org names** → strip or replace with a role-based placeholder (e.g. `<project>`, `<internal-service>`)
 - **Project-specific code identifiers** (types, functions, classes, domain terms) → strip, replace with structural description ("a validator function", "a message model"). Keep only the structural shape, not the names
 - **Dates, session IDs, ticket IDs, internal URLs** → strip entirely
-- **Credential-like literals** (API keys, tokens, bearer/auth header fragments, email addresses, IP addresses, hostnames beyond public domains, `.env` values) → strip entirely. When unsure, strip. This catches project-agnostic secrets that the identifier rules above would miss
-- **Absolute timestamps** → convert to relative intervals (seconds between events). Never include absolute clock times (ISO 8601 timestamps, Unix epoch values) — they reveal session timing. Relative intervals and aggregate token counts are project-agnostic numerics that need no further sanitization
+- **Credential-like literals** (API keys, tokens, bearer/auth header fragments, email addresses, IP addresses, hostnames beyond public domains, `.env` values) → strip entirely. When unsure, strip
+- **Absolute timestamps** → convert to relative intervals (seconds between events). Never include absolute clock times (ISO 8601 timestamps, Unix epoch values). Relative intervals and aggregate token counts are project-agnostic numerics that need no further sanitization
 - **Keep as-is**: skill names (`dev-workflow`, `ask-peer`, `extract-rules`, `rules-review`, `mobpro`), workflow step / phase labels (e.g. "Step 3", "Plan Review"), abstract behavior descriptions, suggested fix directions expressed in skill-level vocabulary — but see § Distribution-aware fix direction (bundle skill targets) below for the bundle-skill-prose exception
 
 ### Distribution-aware fix direction (bundle skill targets)
@@ -166,13 +164,11 @@ Shape:
 > **Bad** (skill-development vocabulary verbatim):
 > "Add a Step 2 (Create Plan) self-audit item that checks whether the plan fixes a subagent dispatch shape, hook wiring, or state-file handling pattern and, when it does, expand scope to sibling skills sharing that structure."
 
-Why: the signal is generated in skill-development context but the fix lands in a SKILL.md that general users read, and a downstream triage applier writes Suggested fix direction text mostly verbatim into that SKILL.md. The producer is therefore the only layer that re-abstracts the vocabulary; the layer that transcribes it only reshapes the form.
-
-Scope: this sub-section applies to `Suggested fix direction` only. `Description` continues to follow the main §3 bullets without the abstract-principle transformation, because it is consumed as triage context rather than transcribed into distributed prose.
+Scope: this sub-section applies to `Suggested fix direction` only. `Description` continues to follow the main §3 bullets without the abstract-principle transformation.
 
 Source of truth: this sub-section is the operational expansion of `.claude/rules/project.rules.md` § SKILL.md の配布性. Update both files together when the rule changes.
 
-Edge-case judgments (is "the CI pipeline" a project term? is a framework name too specific?) are left to the model — trust the user-preview step to catch misses.
+Edge-case judgments (is "the CI pipeline" a project term? is a framework name too specific?) are left to the model.
 
 ### Before / after example
 
@@ -205,18 +201,18 @@ Header:
 **Producer version:** dev-workflow v<X.Y.Z>
 ```
 
-The `**Producer version:**` line lets a downstream consumer (e.g. an automated triage routine) tell whether the issue came from an older `dev-workflow` and take its stale-issue path — typically rejecting the issue when the underlying SKILL.md concern was already fixed in a later release. Resolve `<X.Y.Z>` once before assembly via:
+Resolve `<X.Y.Z>` once before assembly via:
 
 ```bash
 ver=$(jq -r '(.plugins[] | select(.name == "dev-workflow") | .version) // "unknown"' .claude-plugin/marketplace.json 2>/dev/null)
 [ -z "$ver" ] && ver=unknown
 ```
 
-Both fallbacks are required, and plain `|| echo unknown` replaces neither: `jq -r` exits 0 on both no-match and missing-key, so the `||` branch never fires for the two cases that matter. The consumer treats `unknown` as "older than everything", so the version-aware reject path engages safely.
+The consumer treats `unknown` as "older than everything", so the version-aware reject path engages safely.
 
-The resolved `ver` is embedded in the assembled body as `**Producer version:** dev-workflow v<ver>`. It is **not** passed to the §2.1 subagent (whose return contract is Findings-only); main inserts the line during this assembly step, between the `# dev-workflow-bundle retrospective (auto-generated)` header and the first `### Finding 1` block.
+The resolved `ver` is **not** passed to the §2.1 subagent (whose return contract is Findings-only); main inserts the line during this assembly step.
 
-Then one section per candidate, with a short summary line. Keep the body compact — reviewers scan quickly.
+Then one section per candidate, with a short summary line. Keep the body compact.
 
 ### User preview and approval loop
 
@@ -229,20 +225,18 @@ Source:      <which settings layer provided it — ~/.claude/dev-workflow.local.
              | .claude/dev-workflow.md | .claude/dev-workflow.local.md>
 ```
 
-The destination header guards against a settings-layer hijack: `self_retrospective.feedback` can come from the git-tracked, team-shared `.claude/dev-workflow.md`, so a malicious commit could silently redirect retrospectives — surfacing the resolved value and its source layer lets the user catch that.
-
 Then ask for one of three responses:
 
-- **`approve`** — submit as-is to the configured destination (see below). A single `approve` covers **both** the assembled body and the resolved destination — once the user approves, the destination is confirmed and no separate confirmation turn follows. To keep the approval an informed acknowledgment rather than an autopilot wave-through, phrase the approval prompt so it names the resolved destination (the `<owner/repo>` in repo mode, the expanded absolute path in path mode), echoing what the destination header above already shows
+- **`approve`** — submit as-is to the configured destination (see below). A single `approve` covers **both** the assembled body and the resolved destination — once the user approves, the destination is confirmed and no separate confirmation turn follows. Phrase the approval prompt so it names the resolved destination (the `<owner/repo>` in repo mode, the expanded absolute path in path mode)
 - **`edit`** — the user provides revised text in chat (full replacement or surgical diff; accept either). Incorporate the edits and re-show the body (with the same destination header) for approval. Loop until the user approves or skips
 - **`skip`** — record the user's reason (if provided) and do not submit
 
-The preview exists to catch sanitization misses. Always show it — even in path mode where the output stays local.
+Always show the preview — even in path mode where the output stays local.
 
 ### Submit
 
 - **repo mode (approve)**:
-  1. Write the approved body to `.claude/plans/retrospective-<slug>.md` via the `Write` tool. The file is a staging input for the `gh api` POST in step 2 (read via `-F body=@<path>`) and is deleted in step 3 after a successful submission; the GitHub issue is the canonical record. On same-slug collision, append `-2`, `-3`, ... until an unused filename is found — a collision normally means a previous run's submission failed, and the suffix preserves that pending retry.
+  1. Write the approved body to `.claude/plans/retrospective-<slug>.md` via the `Write` tool. On same-slug collision, append `-2`, `-3`, ... until an unused filename is found.
   2. Run:
 
      ```bash
@@ -253,7 +247,7 @@ The preview exists to catch sanitization misses. Always show it — even in path
        -F body=@<the-path-chosen-in-step-1>
      ```
 
-     `gh api` is preferred over `gh issue create` so the call runs with the minimum GitHub token permissions — only `Issues: write` on the target repo (no `repo` scope or metadata reads required). No label attached.
+     No label attached.
 
   3. On successful submission (exit 0), delete the staging file via `rm <the-path-chosen-in-step-1>`. On failure, see § 5 gh submission failure.
 
@@ -271,8 +265,6 @@ Self-retrospective: <N> bundle findings (<submitted|skipped|failed>).
 - `skipped` — user chose `skip`, or pre-flight aborted, or zero findings
 - `failed` — submission was attempted but failed (e.g. `gh api` POST returned non-zero exit)
 
-This line guarantees the user knows Step 11.5 ran, even on a zero-finding run.
-
 ## 5. Error handling
 
 Submission-time errors (after user approval in section 4):
@@ -282,7 +274,7 @@ Submission-time errors (after user approval in section 4):
 
 Extraction-time errors (during §2):
 
-- **Subagent failure** — main rejects the return and aborts Step 11.5 when **any** of the conditions below hit. The conditions split into two tiers with different natures.
+- **Subagent failure** — main rejects the return and aborts Step 11.5 when **any** of the conditions below hit.
 
   *Machine-checkable rejections* (purely structural — can be evaluated with string / regex matching):
   - Return begins with `Status: ERROR` (subagent reported its own failure per §2.1 Error return contract)
@@ -295,8 +287,8 @@ Extraction-time errors (during §2):
   **Contract note — do not relax for i18n**: these rejections all key on English schema tokens (`Status: ERROR`, `### Finding <N>`, `Target skill` / `Category` label + enum values, `Findings: <N>`). §2.1 Language handling pins those tokens to English regardless of the configured output language precisely so this check stays string/enum-match. A future change that "relaxes" the checks to accept translated tokens breaks the contract between main and the subagent and should be rejected.
 
   *Heuristic spot-check* (main applies judgment — not purely mechanical):
-  - Obvious sanitization violations: raw conversation excerpts, absolute paths, credential-like literals, or project-specific identifiers from §3 that clearly slipped through. Flag the obvious cases; do not attempt exhaustive detection (the §4 user preview is the final catch-all for subtle misses)
+  - Obvious sanitization violations: raw conversation excerpts, absolute paths, credential-like literals, or project-specific identifiers from §3 that clearly slipped through. Flag the obvious cases; do not attempt exhaustive detection
 
-  On any of the above (either tier): do not submit, emit terminal summary as `skipped`, and do not retry automatically — a subagent that returned non-conforming content is not trusted to re-run safely in the same session
+  On any of the above (either tier): do not submit, emit terminal summary as `skipped`, and do not retry automatically
 
-Pre-flight errors (invalid `feedback`, auth failure, mkdir refusal, missing session jsonl) are handled in section 1 and always emit the terminal summary as `skipped`. The workflow must never block on a Step 11.5 error — always proceed to Completion.
+The workflow must never block on a Step 11.5 error — always proceed to Completion.

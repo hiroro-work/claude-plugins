@@ -2,6 +2,17 @@
 
 ## 2026-08-21
 
+### mobpro v1.28.2 / dev-workflow-bundle v1.140.27
+
+- refactor(mobpro): drop prose that does not change agent behavior (chunk 1 of 3)
+  - Scope is `SKILL.md` lines 1-147 -- the preamble through § Dispatch authorization (23,976 to 21,183 chars, -11.6%) -- plus `references/inline-defs.md` (12,317 to 11,017 chars, -10.6%) and `references/configuration.md` (4,762 to 3,987 chars, -16.3%). The M1-M13 procedure body and the remaining `references/*.md` files are untouched and are covered by chunks 2 and 3.
+  - Reference-file preamble meta removed from both files: `references/inline-defs.md`'s account of why the definitions are transcribed, where each upstream lives, and how the (a)-(g) ids are referenced; `references/configuration.md`'s opening line, which restated `SKILL.md` § Configuration in full. Each section's own `Keep in sync with ...` note names its upstream, and the H1 carries file identity. The read-once sentences are kept in both files -- `SKILL.md` § Constraint scope requires a reference reached from more than one M-step to name its read point.
+  - `SKILL.md`: removed the table-of-contents parentheticals into `references/configuration.md` and § (b), the reasons attached to unconditional rules (the sibling-relative path's install layout, the `scripts/` absence, the accept-token requirement), the sibling-equivalence and sibling-contrast clauses (`landed_count`'s init site versus dev-workflow's, the No-Stall scoping mirror, "Unlike the other two"), and the editor-facing aggregation notes (the re-entry-site ownership claim, the § (b) reference plumbing, the § Workflow artifacts anchor note, the § Fast mode table's completeness claim).
+  - `references/configuration.md`: reframed the tombstone step to the present tense, dropping which mobpro version last read the three removed threshold keys. Removed the reason for substituting a Default on an invalid value and the contrast with dev-workflow's `--init` prompt on an absent config.
+  - Authority-side source-of-truth declarations removed where the reference side already names them: § Fast mode's "Source of truth: this section" (`README.md` § Usage carries the pointer) and the duplicate `Keep in sync ...` at `SKILL.md`'s § (a) pointer.
+  - Kept: the § Learning-Stop Principle <-> § No-Stall Principle analogy, which is the only mapping a dev-workflow reference file's no-stall reminder resolves through; the `landed_count` retry / amend symmetry; the `fast_mode_skipped_steps` init-pass no-clear rule; the stale-base-commit and prose-only-item consequences in § (g); and § Fast mode's parity claim, which dev-workflow's `README.md` asserts.
+  - Two editor-facing sweep triggers moved to `README.md`, which is tracked but not read at runtime: § Fast mode's skip-site append instruction became `### Adding or dropping a --fast skip site`, matching dev-workflow's same-named section, and § Not-adopted keys' sync directive moved to the reference side in § Configuration.
+
 ### dev-workflow v1.118.16 / dev-workflow-bundle v1.140.26
 
 - refactor(dev-workflow): drop prose that does not change agent behavior (chunk 16 of 16)

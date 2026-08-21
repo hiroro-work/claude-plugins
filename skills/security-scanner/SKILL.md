@@ -80,7 +80,7 @@ target_agents:
 # Trusted sources (skipped during scanning)
 trusted_marketplaces:
   - claude-plugins-official    # Skip all plugins from this marketplace
-  - hiropon-plugins
+  - my-marketplace
 
 trusted_plugins:
   - plugin-dev@claude-plugins-official    # Skip specific plugin
@@ -249,7 +249,7 @@ Based on scope determined in Step 2 and `target_agents` from Step 1, collect tar
 
 *User-level:*
 1. Read `~/.claude/plugins/installed_plugins.json`
-2. Extract plugin name (e.g., `ask-claude@hiropon-plugins`) and `installPath`
+2. `.plugins` maps each plugin ID (`<plugin>@<marketplace>`) to an **array** of install records. Keep every record's `installPath` for that ID, then deduplicate the scan targets by `installPath` so one directory is scanned once
 3. If file doesn't exist, report "No user-level plugins installed"
 
 *Project-level:*
@@ -291,12 +291,16 @@ For each agent in `target_agents` list, collect skills from the corresponding di
 #### For plugins:
 
 **Self-exclusion (automatic):**
-- Skip `security-scanner@hiropon-plugins` (official scanner) to avoid false positives from example patterns
-- Plugins with the same name but different marketplace will NOT be skipped (potential impersonation)
+
+`<skill base directory>` is the directory the harness reports as "Base directory for this skill" at this skill's invocation. **Do not hardcode an absolute path.**
+
+- **Path match**: find the install record whose `installPath` either equals `<skill base directory>`, or which `<skill base directory>` starts with followed by `/`. On multiple matches take the longest `installPath`. Skip every record sharing that record's plugin ID, and report the skip as a path match
+- **Name match** (no path match, or `<skill base directory>` unavailable): skip plugins named `security-scanner`, and report the skip as a name match
+- A plugin named `security-scanner` that does not provide this running skill is scanned normally whenever the path match succeeds
 
 **Trusted sources:**
-- If marketplace (e.g., `hiropon-plugins`) is in `trusted_marketplaces` → Skip
-- If plugin ID (e.g., `ask-claude@hiropon-plugins`) is in `trusted_plugins` → Skip
+- If the marketplace (`<marketplace>`) is in `trusted_marketplaces` → Skip
+- If the plugin ID (`<plugin>@<marketplace>`) is in `trusted_plugins` → Skip
 - Report skipped plugins as "Trusted (skipped)"
 
 #### For skills:
@@ -399,6 +403,7 @@ Generate the report in the language specified by `report_language` setting (defa
 
 ## 信頼済み（スキップ）
 - plugin-name@marketplace（信頼済みマーケットプレイス）
+- plugin-name@marketplace（自己除外: パス一致 / 名前一致）
 - skill-name (claude) - 信頼済みスキル
 
 ## 検出結果
@@ -450,6 +455,7 @@ Note: Only rows for configured `target_agents` are shown. Plugins are always und
 
 ## Trusted (Skipped)
 - plugin-name@marketplace (trusted marketplace)
+- plugin-name@marketplace (self-exclusion: path match / name match)
 - skill-name (claude) - trusted skill
 
 ## Findings
@@ -475,6 +481,7 @@ Note: Only rows for configured `target_agents` are shown. Plugins are always und
 
 **Issues found:**
 - [Description of issue and why it's concerning]
+```
 
 #### For GitHub URL Scans (--url)
 

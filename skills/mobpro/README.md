@@ -37,6 +37,10 @@ There is no `--init` or `--executor`. `--fast` works the same way it does in `de
 
 Those per-unit snapshots are also what the commit gate proposes from: the commit plan comes out as **one commit per unit the junior reviewed, in the order they reviewed them** — plus a last commit for whatever the cleanup and review gates changed afterwards — rather than regrouped from the finished tree. So the diffs they approved during the loop and the commits they approve at the end are the same slices — and a unit that revisited a file already touched by an earlier unit still gets its own commit, instead of the two being flattened together.
 
+### Adding or dropping a `--fast` skip site
+
+`SKILL.md` § Fast mode's table is the closed list of what `--fast` skips, one row per skip site with the `fast_mode_skipped_steps` record it appends. Adding or dropping a row there sweeps the skip-set summary in § Usage above in the same commit.
+
 ## Interop with dev-workflow
 
 `mobpro` and `dev-workflow` share the same decomposition **state-file** schema and path (`.claude/plans/dev-workflow.<slug>.md`). So a parent task can be started under `mobpro` (learning through the first subtasks) and the rest handed off to a senior with `/dev-workflow --resume <slug>` — or the reverse.
@@ -57,4 +61,4 @@ The plan approval opens the bundled browser review gate, degrading to a chat app
 
 **Deliberately ignored** — `implementation_executor` and `subagent_model` are dev-workflow keys `mobpro` does not honor. They are ignored silently, since they remain valid settings for `dev-workflow` itself. `implementation_executor` stays `main` for the same reason the AI always drives: the junior has to watch each edit land. `subagent_model` has nothing to resolve against, since `mobpro` runs no difficulty assessment.
 
-See [`references/configuration.md`](references/configuration.md) for the full schema, the complete fallback list, and the canonical list of ignored keys (§ Not-adopted keys).
+See [`references/configuration.md`](references/configuration.md) for the full schema, the complete fallback list, and the canonical list of ignored keys (§ Not-adopted keys). Source of truth for the **Deliberately ignored** paragraph above is that section's list; keep the two in sync — adding a key there sweeps that paragraph in the same commit.

@@ -1,7 +1,5 @@
 # mobpro Configuration
 
-`mobpro` has no configuration of its own — every key it honors comes from `dev-workflow`'s layers (§ Fallback keys), and every pedagogical choice is fixed rather than configurable (`SKILL.md` § Learning-Stop Principle).
-
 **Read this file once**, at M1; M12's `subagent_model` carve-out names § Not-adopted keys of that same copy.
 
 ## Fallback keys
@@ -28,17 +26,17 @@ These project-characteristic keys are read from `dev-workflow`'s three layers (`
 
 ## Not-adopted keys
 
-These `dev-workflow` keys are **not** honored by `mobpro`. If present in dev-workflow config they are ignored **silently** (no warning — they are legitimate dev-workflow settings). `This list is the source of truth for README.md § Configuration's "Deliberately ignored" paragraph; keep the two in sync.`
+These `dev-workflow` keys are **not** honored by `mobpro`. If present in dev-workflow config they are ignored **silently** (no warning).
 
 - **`implementation_executor`** — always `main`.
 - **`subagent_model`** — every dispatch inherits the session model.
 
 ## Resolution procedure
 
-`SKILL.md` M1's **Resolve settings** sub-step delegates here. Four files are read: the three dev-workflow layers named in § Fallback keys and `~/.claude/settings.json` (the last link in `language`'s fallback chain). All four are independent, so issue their `Read` calls — plus step 3's one `Glob` — in **one upfront burst**; a file that does not exist is **skipped, not an error**. The per-class merge semantics live in [`inline-defs.md`](inline-defs.md) § (a) and are not restated here.
+`SKILL.md` M1's **Resolve settings** sub-step delegates here. Four files are read: the three dev-workflow layers named in § Fallback keys and `~/.claude/settings.json` (the last link in `language`'s fallback chain). Issue their `Read` calls — plus step 3's one `Glob` — in **one upfront burst**; a file that does not exist is **skipped, not an error**. The per-class merge semantics live in [`inline-defs.md`](inline-defs.md) § (a).
 
-1. **Fallback keys**: merge dev-workflow's three layers as listed in § Fallback keys and resolve that section's closed list, taking each unset key's value from its Default column. An **invalid** value (wrong type, or outside the key's accepted set) is handled by substituting the Default and emitting **one** warning line naming the key and the substituted value, since `mobpro` cannot read dev-workflow's per-key validation prose at runtime. **All three layers being absent is not an error** — the deliberate difference from `dev-workflow`, which stops and prompts `--init`.
+1. **Fallback keys**: merge dev-workflow's three layers as listed in § Fallback keys and resolve that section's closed list, taking each unset key's value from its Default column. An **invalid** value (wrong type, or outside the key's accepted set) is handled by substituting the Default and emitting **one** warning line naming the key and the substituted value. **All three layers being absent is not an error**.
 2. **Not-adopted keys**: ignore silently — no warning, no note (§ Not-adopted keys).
-3. **Removed keys (tombstone)**: `diff_verbatim_line_threshold` / `diff_verbatim_threshold` / `diff_condensed_threshold` are no longer read — M6 took them from the dev-workflow layers until mobpro v1.7.0, and the rendering thresholds are now fixed constants in `../dev-workflow/references/diff-presentation.md` § Rendering ladder. If step 1's merged layers still carry any of the three, emit **one** warning line naming them. Separately, the `checkpoint` / `quiz` / `error_reading_practice` **keys** no longer exist — M3's plan-building checkpoints are not the `checkpoint` key returning, since they always fire and nothing configures them. `Glob` `.claude/mobpro*.md` — one call covering both former layers, and not a `Read`, since their contents are never parsed. On any hit, emit **one** warning line naming every file found and stating that `mobpro` no longer reads them; presence is never an error.
+3. **Removed keys (tombstone)**: `diff_verbatim_line_threshold` / `diff_verbatim_threshold` / `diff_condensed_threshold` are not read — the rendering thresholds are fixed constants in `../dev-workflow/references/diff-presentation.md` § Rendering ladder. If step 1's merged layers still carry any of the three, emit **one** warning line naming them. Separately, the `checkpoint` / `quiz` / `error_reading_practice` **keys** do not exist — M3's plan-building checkpoints are not the `checkpoint` key returning. `Glob` `.claude/mobpro*.md` — one call covering both former layers, and not a `Read`. On any hit, emit **one** warning line naming every file found and stating that `mobpro` no longer reads them; presence is never an error.
 
 These are **project config files**, not `dev-workflow` reference files: `SKILL.md` § Runtime reads' closed list governs the latter, and its "never read `dev-workflow/SKILL.md`" constraint is untouched by this procedure.

@@ -2,6 +2,18 @@
 
 ## 2026-08-21
 
+### dev-workflow v1.118.15 / dev-workflow-bundle v1.140.25
+
+- refactor(dev-workflow): drop prose that does not change agent behavior (chunk 15 of 16)
+  - Scope is `references/self-retrospective.md` (27,356 to 22,948 chars, -16.1%) and `references/session-scan.md` (15,888 to 12,233 chars, -23.0%) -- the Step 11.5 axis spec and the shared scan dispatch it consumes. `SKILL.md` and the remaining `references/*.md` files are untouched and are covered by the other chunks.
+  - Removed `references/session-scan.md`'s preamble. Its H1 carries the file's identity, § When it runs maps each axis to its owning step and gate, § Subagent instructions step 2 states the single parse, and step 6 states the single delimited return. The read condition -- read this file when a participating step reaches its dispatch point -- is kept.
+  - Removed derivations of rules the same section already states: the Step 11-abstains walkthrough after the "never dispatches purely to serve Step 11.5 / Step 11.6" prohibition, the Step 11.5 and Step 11.6 bullets' re-derivations of their own still-active sets, and § Consuming a block's re-render of the per-axis sanitization tags that step 4 tags in place. The prohibition, the dispatcher rule, the three-cause closed list, and the `(rule-extraction is **not** in this set)` exclusion are unchanged.
+  - Removed rationale clauses attached to rules stated unconditionally: where the run-scoped state lives and why, what routes a later step to the dispatch branch, why the speculative self-retrospective block costs little, why a `Status: ERROR` couples every axis, and why the rule-extraction axis alone falls back rather than skipping. Each rule's operative half is kept, including the no-retry directive and the per-axis routing table.
+  - `references/self-retrospective.md`: removed the tier-independence restatement (`references/configuration.md` and `SKILL.md` § Step 11.5 both state it), the `mkdir` approval-gate rationale, the multi-instance heuristic caveat around the still-required "inform the user which file was selected", the `gh api`-over-`gh issue create` permissions rationale, the destination-header hijack rationale, the Producer-version consumer rationale, and the terminal-summary purpose sentence. The tilde-expansion reason is kept, since an unexpanded `~` silently writes to a literal directory.
+  - `references/self-retrospective.md`: kept the sentence sanctioning `unknown` as the Producer version, since a consumer repo without `.claude-plugin/marketplace.json` reaches it on every run; removed the `jq` exit-code explanation beside it, as the resolution command is verbatim in its own fenced block.
+  - `references/self-retrospective.md`: the `Target skill` placeholder and the § 2.3 candidate schema said "one of the four bundle skills" while the § 5 rejection list and the Purpose header both enumerate five. Dropped the stale count from both.
+  - No heading or bold label changed in either file.
+
 ### dev-workflow v1.118.14 / dev-workflow-bundle v1.140.24
 
 - refactor(dev-workflow): drop prose that does not change agent behavior (chunk 14 of 16)

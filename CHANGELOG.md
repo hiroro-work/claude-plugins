@@ -2,6 +2,18 @@
 
 ## 2026-08-21
 
+### dev-workflow v1.118.16 / dev-workflow-bundle v1.140.26
+
+- refactor(dev-workflow): drop prose that does not change agent behavior (chunk 16 of 16)
+  - Scope is `references/workability-retrospective.md` (18,923 to 17,021 chars, -10.1%), `references/update-rules.md` (8,703 to 6,077 chars, -30.2%) and `references/rule-extraction-axis.md` (12,885 to 10,442 chars, -19.0%) -- the Step 11.6 axis spec, the Step 11 procedure bodies, and the Step 11 rule-extraction axis spec. `SKILL.md` and the remaining `references/*.md` files are untouched and are covered by the other chunks. This is the last of the 16 chunks.
+  - `references/update-rules.md`: removed the preamble's and both sub-step preambles' inventories of what `references/finish-phase.md` keeps inline. That file's § Step 11 already enumerates each sub-step's control surface and points here per sub-step. The reference-resolution sentence -- unqualified `sub-step N` and `§ Completion` resolve to `finish-phase.md`, `§ No-Stall Principle` to `SKILL.md` -- is kept.
+  - `references/update-rules.md`: removed the first-dispatch-point aside, the reasons behind the no-fallback and skip-after-extraction rules, the retrospective-axis asymmetry comparison, the attribution of the major-bump signal to `references/tier-assessment.md`, the derivation of what the restricted pathspec leaves in the working tree, the output-class label's purpose sentence, and the bullet explaining why this gate sits in Step 11. Each rule's operative half is kept, including the `landed_count` mis-routing consequence and the `git checkout HEAD -- <path>` exclusion ban with its reason.
+  - `references/rule-extraction-axis.md`: removed the Purpose line's producer/consumer framing and the producer-spec paragraph. `references/finish-phase.md` § Step 11 names the consumer, its mode and the Step-C5-only scope; § 2.1 states this file is the axis spec. Also removed § 1's sibling-axis comparisons and § 3's extract-rules destination clause.
+  - `references/rule-extraction-axis.md`: aligned the two spots that had drifted more verbose than their canonical in `extract-rules` -- rule 9's permanent-cost preamble and § 2.2's general-knowledge restatement. Neither is in `extract-rules` `references/extraction-criteria.md` any more. The `Source of truth` directives in § 2.2 and § 2.3 are kept.
+  - `references/workability-retrospective.md`: removed the third axis bullet (a restatement of the Purpose line), the Step 11.5 mirror aside, the provenance of a non-`true` `enabled` value, the consequence of deferring `backlog_dir` creation, the reassurance beside the collapse-near-duplicates rule, § 2.4's parseable-but-empty derivation, the sanitization-preview purpose sentence, and the reason behind the no-retry rule.
+  - `references/workability-retrospective.md`: § 4's preamble slot list and single-candidate omission rule are re-renders of `references/plan-format.md` § User-gate summary preamble, which names this gate in its Applies to list, its Content slots and its Omission condition. Removed both; the pointer to that section stays.
+  - No heading changed in any of the three files. The bold spans that disappeared were all inside removed paragraphs.
+
 ### dev-workflow v1.118.15 / dev-workflow-bundle v1.140.25
 
 - refactor(dev-workflow): drop prose that does not change agent behavior (chunk 15 of 16)

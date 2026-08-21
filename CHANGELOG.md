@@ -2,6 +2,36 @@
 
 ## 2026-08-21
 
+### security-scanner v1.3.0
+
+- fix(security-scanner): identify the scanner itself by install path instead of by marketplace name
+  - Self-exclusion previously matched the literal string `security-scanner@hiropon-plugins`, so a user who added this marketplace under any other name silently lost it: the scan then found the skill's own threat-pattern list and reported it as a finding, with nothing to distinguish that from a real one. Self-exclusion now matches on **path**: a collected target is the scanner itself when its directory equals — or is a `/`-boundary prefix of — the directory the harness reports as the running skill's base directory, compared both as collected and symlink-resolved. Neither a marketplace name nor a plugin name appears in the path match.
+  - The rule moved up to apply to **every target type** rather than only to user-level plugin records. It now also covers a project-level plugin directory and a skill directory, so scanning a project that vendors this skill under `.claude/skills/` no longer reports that copy's own threat-pattern list. A matched plugin install record additionally skips every other record sharing its plugin ID.
+  - Self-exclusion covers the copy that is actually running. A **second** copy installed elsewhere on the same host — a plugin install alongside a vendored `.claude/skills/security-scanner`, say — is still scanned, and reports the threat-pattern list it contains. List the second copy in `trusted_plugins` or `trusted_skills`; the README documents this.
+  - The name-match fallback fires only when the harness reports no base directory, so the path match cannot run. That is the one case where a same-named impostor is also skipped, which is why the report names the basis each skip rested on. `trusted_plugins`, `trusted_skills` and `trusted_marketplaces` still exclude the scanner explicitly on any host, and `--all` still disables all filtering.
+  - Category: `wrong-default`
+- fix(security-scanner): read every install record per plugin ID
+  - `.plugins` in `installed_plugins.json` maps each plugin ID to an **array** of install records — one per scope, and one per cached version. Step 3 described a single `installPath`, so the new path match would have skipped only the running generation and left same-content siblings in the scan. Step 3 now keeps every record's `installPath` and deduplicates scan targets by it.
+  - Category: `ambiguity`
+- fix(security-scanner): close the unterminated code fence in the English report template
+  - The fence opened after `**English (en):**` was never closed, placing `#### For GitHub URL Scans`, `## Analysis Guidelines` and `## Important Notes` inside a code block.
+  - Category: `ambiguity`
+- refactor(security-scanner): drop prose that does not change agent behavior
+  - `SKILL.md` goes from 18,327 to 15,086 chars (-17.7%), net of the self-exclusion rewrite this release also lands. Each removal below names where the surviving copy is, so you can confirm nothing was lost.
+  - Removed `## Scan Targets`; Step 3 holds its agent path table and its `agents` two-path note. Its `**Symlink note**:` paragraph had no downstream copy and moved to the new README.
+  - Removed `## Important Notes`; its four lines are held by `## Analysis Guidelines`, Step 6, and the configuration reference.
+  - Removed `### URL Format` and the URL `**Note**` line; Step 2-URL-1's `**URL Patterns**` block, `## Usage`, Step 2-URL-2 and Step 2-URL-4 hold the grammar, the public-repo limit and the branch default.
+  - Removed the intro line under `# Security Scanner`; the frontmatter `description` holds it.
+  - Removed Step 2-URL-1's `**Examples**` block; steps 4-5 of that same sub-step hold the parse rules. It also carried a hardcoded repository name.
+  - Removed the four malicious-natural-language examples; the seven-category list above them is the detection spec.
+  - Removed Step 3's `agents` two-path item and the repeated default values in Step 1 and Step 7; the Agent path mapping table and Step 1's **Default values** block hold them.
+  - Removed five parentheticals and trailing clauses that justified a rule stated unconditionally.
+  - New `skills/security-scanner/README.md` takes `## Configuration` and its three subsections, and lands at the plugin source root under the direct-skill layout.
+  - The README names `SKILL.md` as the source of truth for the accepted keys, the valid `target_agents` values and the defaults — Step 1's **Default values** and **Validation** blocks and Step 3's **Agent path mapping** table — and states that adding a value sweeps both files in one commit.
+  - The README also documents self-exclusion for users. It names Step 4 as the source of truth for the matching rule and restates only the fallback and the second-copy case, with a keep-in-sync directive covering both.
+  - No author-specific identifier remains in `SKILL.md`: its `trusted_plugins` judgment line now uses the `<plugin>@<marketplace>` placeholder form.
+  - The configuration sample moved to `README.md`, where its `trusted_marketplaces` entry `hiropon-plugins` became `my-marketplace`. Real public marketplace names (`claude-plugins-official` and the like) are kept.
+
 ### mobpro v1.28.4 / dev-workflow-bundle v1.140.29
 
 - refactor(mobpro): drop prose that does not change agent behavior (chunk 3 of 3)

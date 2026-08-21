@@ -45,6 +45,10 @@ Those per-unit snapshots are also what the commit gate proposes from: the commit
 
 [`references/learning-gates.md`](references/learning-gates.md) § D is the single consolidated statement of the explanation-length discipline. The caps quoted inline at their application sites instantiate it and stay inline rather than being rewritten into pointers to it. Adding one sweeps § D in the same commit. The inline sites: M3's and M5's "2–3 lines" narration, M4 / M9's "1–2 lines" per applied finding, M6's "≤ 6 lines" preview, M7's "1–2 lines" cleanup explanation, M11's "1–2 line" point-of-this-diff note, and M13's "≤ 3 one-line points" learning summary.
 
+### Renaming a plan-section heading
+
+[`references/plan-format.md`](references/plan-format.md) § Template's heading names are the source of truth for every site that names them verbatim. Outside that file: the `SECTION_TYPES` prefix table in dev-workflow's `scripts/plan-review/public/index.html` (which M5's visual gate classifies plans with), [`references/m5-plan-approval.md`](references/m5-plan-approval.md) § **Approval surface** and its § **Chat path** sub-step's swap-dependent sweep list, and `SKILL.md` M6 sub-step 1's unit segmentation. Inside it: the paragraph below the template block, § Review lens' opening paragraph, and every § Review lens bullet. Renaming a heading sweeps all of them in the same commit. One carve-out: `Build order` and its step shape are owned upstream by `../dev-workflow/references/plan-authoring.md` § Template, so a rename of that heading starts there and sweeps that section's closed list together with this one — the sites listed above name `Build order` too.
+
 ## Interop with dev-workflow
 
 `mobpro` and `dev-workflow` share the same decomposition **state-file** schema and path (`.claude/plans/dev-workflow.<slug>.md`). So a parent task can be started under `mobpro` (learning through the first subtasks) and the rest handed off to a senior with `/dev-workflow --resume <slug>` — or the reverse.

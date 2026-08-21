@@ -2,6 +2,16 @@
 
 ## 2026-08-21
 
+### mobpro v1.28.4 / dev-workflow-bundle v1.140.29
+
+- refactor(mobpro): drop prose that does not change agent behavior (chunk 3 of 3)
+  - Scope is the four remaining M-step reference files: `references/m5-plan-approval.md` (7,972 to 6,649 chars, -16.6%), `references/m9-rules-code-review.md` (7,421 to 6,005 chars, -19.1%), `references/m11-commit.md` (8,404 to 5,940 chars, -29.3%) and `references/plan-format.md` (6,221 to 4,128 chars, -33.6%). The chunk totals 30,018 to 22,722 chars (-24.3%), completing the three-chunk pass over this skill.
+  - Reference-file preamble meta removed from all four files: each file's inverse enumeration of what its `SKILL.md` step kept inline (the M5 heading and USER GATE designation, M9's entry-condition paragraph, M11's entry condition / delegation / point-of-this-diff note) and `references/plan-format.md`'s self-description plus its pointer to the README paragraph explaining the plan shape. Every read-once sentence and every `§` resolution rule is kept.
+  - Duplicates removed against the file that owns the definition: `references/m11-commit.md`'s **Boundary chain input** paragraph and its inventory of the Step 10 definitions, both held by `references/inline-defs.md` § (e) -- the collapsed pointer additionally states that § (e) resolves the Approval-token pointer `crit-commit-review.md` makes to `finish-phase.md`, which `mobpro` does not read; the plan-body polish overlap note against `references/inline-defs.md` § (b); the `code-review-payload.md` and `crit-commit-review.md` contents lists, keeping the escalation-pass-only carve-out that narrows the first; and the `Reads` column enumeration in § Review lens, defined by `dev-workflow references/step3-plan-review.md`.
+  - Reasons attached to unconditional rules removed across all four files -- the `since` / `so` / `because` tails on the payload prerequisite, the `subagent_model` non-adoption, the fast-mode ledger substitution, the crit probe timing, the skip-option coverage cut-off, the M9 continuation into (b)-(d), and the two `Deliberately not adopted` items in `references/m9-rules-code-review.md` sub-step 6 (both prohibitions kept). Sibling-comparison clauses removed likewise (`the same routing dev-workflow Step 4 uses`, `same shape as dev-workflow Step 8 sub-step 4`, `the same 2-gate structure as dev-workflow's Step 8.5`, `like the m6_* variables diff-review.md declares`), keeping every substantive cap and boundary they carried.
+  - The one keep-in-sync directive on the authority side is dropped rather than restated: `references/learning-gates.md` § E already carries the reciprocal pointer to M5's **adjust** bucket, so M5's own source-of-truth sentence was pure double bookkeeping.
+  - `references/plan-format.md` § Template's heading-name sweep list moves to `README.md` § Renaming a plan-section heading, joining the two coordinated-sweep sections added in chunks 1 and 2. The README is not read at runtime, so the coordinated-sweep rule is satisfied at no per-run cost.
+
 ### mobpro v1.28.3 / dev-workflow-bundle v1.140.28
 
 - refactor(mobpro): drop prose that does not change agent behavior (chunk 2 of 3)

@@ -4,3 +4,5 @@
 .claude/retrospectives/
 .claude/improvements/
 .triage/
+
+.vscode/settings.json

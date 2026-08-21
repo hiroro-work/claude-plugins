@@ -1,5 +1,33 @@
 # Changelog
 
+## 2026-08-22
+
+### dev-workflow v1.118.17 / mobpro v1.29.0 / dev-workflow-bundle v1.141.0
+
+- fix(mobpro, dev-workflow): say what to do when neither the Task tools nor `TodoWrite` are on the tool surface
+  - Both skills described a two-step fallback and stopped there, so a session exposing neither had no instruction at all. Each now names a third step: register nothing, name the phase being entered in prose at every step boundary, and treat the later "mark the row" / "resolve the row by subject" instructions as satisfied by that prose. dev-workflow additionally names the two mechanisms that lose their backing on this path — the Phase-boundary self-audit's `TaskList` check and the Pre-completed row guard — and says to recognize each skip from the condition that caused it instead.
+  - Category: `missing-branch`
+- fix(mobpro, dev-workflow): define what makes the reviewer availability probe pass
+  - Both probe the resolved reviewer with a one-word request and branch on "failure" without saying what failure is, leaving it open whether a returning `Skill()` call is enough or a review has to actually run. Both now point at the criterion `references/prerequisites.md` already states for every callee — availability is the observable call outcome — so the probe stops at the call.
+  - Category: `ambiguity`
+- fix(mobpro): re-share a plan-building checkpoint when the reply says it never arrived
+  - `references/learning-gates.md` § E sorted replies into four buckets, and a reply doubting the output arrived fit only `not an answer`, whose disposition is to neither advance nor re-share — leaving the run with nothing it was allowed to do. That bucket now carries a carve-out: re-share the checkpoint, shortened. The four buckets are unchanged.
+  - Category: `missing-branch`
+- fix(mobpro): name both halves of the check/test re-run in M9's post-pass verification
+  - `references/m9-rules-code-review.md` sub-step 5 gate 1 said "re-run check/test once (reuse M8)", which reads as satisfiable by `check_commands` alone or by part of `test_commands`. It now says both halves in full, matching the write-out `references/crit-commit-review.md` § Round re-verification weight already uses for the same distinction.
+  - Category: `ambiguity`
+- fix(dev-workflow): wait for the background capture to finish before reading a decision from it
+  - Both gates that route on a `run_in_background` capture read it on the process's exit notification, which can arrive before the output is written. A capture holding only the startup lines then matched "no parseable result" and downgraded the approval surface the user had chosen — an approved commit to the chat-fallback gate at `references/crit-commit-review.md` § Procedure step 4, an approved plan to `fallback` at `references/visual-plan-review.md` § Procedure step 5. Both now decide immediately when the expected line **is** present, and only when it is absent re-read until the host's termination marker appears (`[exited with code N]`), for up to 5 further reads. Both a marker with no result and 5 reads without a marker take the outcome a genuinely absent result takes, so a host that emits no marker cannot hang either gate.
+  - Category: `missing-branch`
+- fix(mobpro, dev-workflow): point at the already-reviewed crit skip from the commit-plan gate itself
+  - The option to skip crit for commits already reviewed earlier in the run is defined in mobpro's `references/m11-commit.md`, which the run reads well before it reaches the gate that offers it. `references/interactive-commits.md` § Propose commit plan now names the extension directly after the paragraph that presents the gate, with a keep-in-sync directive and membership rule; the mobpro paragraph's now-redundant claim about that section is dropped.
+  - Category: `ambiguity`
+- fix(mobpro): list what M4 does not inherit from the plan-review payload it borrows
+  - M4 borrows `dev-workflow references/step3-plan-review.md` sub-step 1's payload definition, and reading that file also surfaces its sub-step 3 approach-reconsideration self-audit, which rewrites the plan and re-runs the review. M4 now scopes the borrow explicitly — nothing beyond sub-step 1's payload definition is adopted — and names that self-audit as the case in point.
+  - Category: `ambiguity`
+- refactor(mobpro): rename `references/plan-format.md` to `references/plan-shape.md`
+  - mobpro's own plan-shape reference and dev-workflow's `references/plan-format.md` — both read at runtime, for different things — shared a basename, and resolving a `§` reference against the wrong one reads as a dangling reference. The rename removes the collision, so M4's "resolve that path under mobpro's skill directory rather than dev-workflow's same-named file" qualifier is gone. The sweep covers both trees — mobpro's own references plus two sites in the dev-workflow tree that named mobpro's file by the old basename. The two references to dev-workflow's file are unchanged by design.
+
 ## 2026-08-21
 
 ### security-scanner v1.3.0

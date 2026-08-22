@@ -81,7 +81,7 @@ Per-key detail is in [`references/configuration.md`](references/configuration.md
 - **commit_review_gate**: Code-diff review surface — `diff` (default) / `crit`; Step 10's per-commit gate is one consumer.
 - **polish_prose**: Whether the two `prose-polish` passes (Step 4 plan-body + Step 6.5) run (default `true`).
 - **custom_instructions**: Free-form development instructions applied across planning / implementation / review / tidy (`.claude/rules/` and explicit user requests take precedence). Optional.
-- **language**: Output language for this skill's user-facing prose (resolution: merged config → `~/.claude/settings.json` `language` → default `ja`).
+- **language**: Output language for this skill's user-facing prose (resolution: merged config → `~/.claude/settings.json` `language` → default `ja`). See [`references/localization.md`](references/localization.md) § Localization granularity. Its **Self-application** paragraph applies here too; a site with no language note of its own is **not** exempt.
 - **check_commands**: Static checks (lint / format / typecheck); all run in order during Step 7.
 - **test_commands**: `Skill(<name>)` entries run sequentially during Step 7 (default `["Skill(run-tests)"]`).
 - **hooks.on_complete**: Skills (`Skill(<name>)`) or shell-command strings run as Step 9 (default none).

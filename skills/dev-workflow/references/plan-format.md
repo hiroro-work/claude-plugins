@@ -72,7 +72,7 @@ The other user-gates listed in `SKILL.md` § No-Stall Principle and its tail-sco
 - Bulleted list, 3–5 items, each one sentence.
 - Technical jargon pairs the localized phrasing with the original technical term in parentheses on first use within the preamble (e.g. `品質ゲート（check_commands / Step 7.5 Rules Compliance Review）` for `language: ja`, `quality gate (check_commands / Step 7.5 Rules Compliance Review)` for `language: en`). When the localized phrasing and the original technical term coincide (typically under `language: en` for English-origin jargon), pair the term with its identifying handle instead (e.g. `Step 7.5 (Rules Compliance Review)`, `rules-review (the rules-compliance reviewer skill)`).
 - Quoted heading anchors from rule files or other source files (e.g. a rule's section heading referenced from the preamble) are kept verbatim regardless of the resolved `language` — they are file-internal identifiers, not localizable prose.
-- Output language follows the resolved `language` (see `SKILL.md` § Configuration; default `ja`).
+- Output language follows the resolved `language` (see § Configuration; default `ja`).
 - Mark the boundary between preamble and the rest of the output with a bold lead-in placed at the top of the preamble, above the first bullet (`**Summary**` for `language: en`, `**概要**` for `language: ja` — the lead-in text is localized to follow the resolved `language`). A fenced section is an acceptable alternative but is redundant when a bold lead-in is present — do not emit both.
 
 **Content slots (per gate):**

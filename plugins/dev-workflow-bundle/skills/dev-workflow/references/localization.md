@@ -4,9 +4,9 @@ The localization boundary for every user-facing output this skill (and `mobpro`)
 
 ## Localization granularity
 
-Applies to all user-facing prose produced by this skill — plan bodies, user-gate preambles, violation / finding lists, log lines, commit-gate framing prose, and the Completion summary. The resolved `language` (see `SKILL.md` § Configuration) controls the output language; dev-workflow's `references/configuration.md` `language` bullet carries the exhaustive category enumeration and the per-category verbatim carve-outs. `Source of truth: that bullet; keep the gist above as a subset of its categories, and keep the two in sync when categories are added or removed.`
+Applies to all user-facing prose produced by this skill — plan bodies, user-gate preambles, violation / finding lists, log lines, commit-gate framing prose, and the Completion summary. The resolved `language` (see the running skill's § Configuration) controls the output language; dev-workflow's `references/configuration.md` `language` bullet carries the exhaustive category enumeration and the per-category verbatim carve-outs. `Source of truth: that bullet; keep the gist above as a subset of its categories, and keep the two in sync when categories are added or removed.`
 
-**Self-application**: these rules govern the prose **you** write, not only the prose you hand to a sub-skill. So read every output block back against this section once and correct it before the block goes out. That covers each block the `language` bullet's enumeration names. Run the pass even when this section is already in context — having read it does not discharge it.
+**Self-application**: these rules govern the prose **you** write, not only the prose you hand to a sub-skill. So read every output block back against this section once and correct it before the block goes out. That covers each block the `language` bullet's enumeration names. Run the pass even when this section is already in context — having read it does not discharge it. A site that emits user-facing output carrying no language note of its own is **not** exempt: read the absence of a per-site note as silence, never as a carve-out.
 
 **Two-way rule:**
 

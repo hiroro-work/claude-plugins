@@ -2,13 +2,25 @@
 
 ## 2026-08-22
 
+### dev-workflow v1.118.19 / dev-workflow-bundle v1.141.2
+
+- fix(dev-workflow): bind the localization rules to the skill's own prose from the definition site
+  - `references/localization.md`'s self-application paragraph only reaches steps that open that file, and the file is first read at Step 4. The difficulty log line and the tier-escalation notice both emit before then, and the post-fix natural-language quality self-check and the crit gate's own output carried no pointer to it at all. The **Self-application** paragraph in that section now states that a site emitting user-facing output with no language note of its own is not exempt, so both skills that read the file receive it. The `language` bullet in § Configuration — in context from the first turn, which is what the pre-Step-4 emitters need — points at that paragraph and repeats the not-exempt half; `references/configuration.md` carries the same pointer as its keep-in-sync pair.
+  - Category: `missing-branch`
+- fix(dev-workflow): point the language citations mobpro can reach at a file mobpro reads
+  - `references/crit-commit-review.md` and `references/interactive-commits.md` are both on mobpro's runtime-read list, and five places in them cited "`SKILL.md` § Configuration's `language` bullet" — a file mobpro declares it never reads, so the citation resolved for one of the two readers. All of them point at the translate-versus-verbatim boundary rather than at how `language` resolves, so they now cite `references/localization.md` § Localization granularity, which dev-workflow reads at Step 4 and mobpro at M3. The remaining three point at how `language` resolves rather than at that boundary, so they lose the `SKILL.md` prefix instead of being repointed and now resolve against whichever skill is reading — `references/update-rules.md`'s already had that shape, and `references/plan-format.md` and `references/localization.md` take it here.
+  - Category: `missing-branch`
+- fix(dev-workflow): describe the self-application check at the granularity it actually has
+  - The 2026-08-22 entry for that paragraph said every line in the section's output set is read back. The shipped paragraph reads back every output block once, before that block goes out. The entry now says block.
+  - Category: `ambiguity`
+
 ### dev-workflow v1.118.18 / mobpro v1.29.1 / dev-workflow-bundle v1.141.1
 
 - fix(dev-workflow): state the output language once for the whole commit-gate procedure
   - `references/interactive-commits.md` carried the `in the resolved language` instruction at 5 of the 17 places it puts something in front of the user, and the commit-plan presentation and each commit's presentation were not among them. An agent reading the file could take the absence of that note as putting those places outside the rule — `references/configuration.md`'s `language` bullet already names Step 10 gate output and its verbatim carve-outs, but nothing in the presenting file pointed there. A preamble paragraph now covers every line the Step presents, defers the verbatim side to whatever each step below already specifies, and says not to read a missing per-site note as an exemption.
   - Category: `ambiguity`
 - fix(dev-workflow): require the localization rules to be applied to self-authored output
-  - `references/localization.md` said which prose it governs but named no point at which that prose gets checked, and the only such check in the workflow was Step 4's plan-body self-audit — so gate prompts, log lines, finding lists, and the Completion summary had no checkpoint at all. § Localization granularity now carries a self-application paragraph after its opening sentence: the rules govern prose the skill writes itself and not only prose handed to a callee, every line in the section's output set is read back against the section before it leaves, and the check runs even when the section is already in context. `mobpro` reads this file at M3 and inherits it.
+  - `references/localization.md` said which prose it governs but named no point at which that prose gets checked, and the only such check in the workflow was Step 4's plan-body self-audit — so gate prompts, log lines, finding lists, and the Completion summary had no checkpoint at all. § Localization granularity now carries a self-application paragraph after its opening sentence: the rules govern prose the skill writes itself and not only prose handed to a callee, every output block in the section's output set is read back against the section once before that block goes out, and the check runs even when the section is already in context. `mobpro` reads this file at M3 and inherits it.
   - Category: `missing-branch`
 - fix(mobpro): read the commit reference's preamble, not only its Procedure
   - M11 delegates the whole commit gate to `dev-workflow references/interactive-commits.md`, but both places that declare how much of that file to read named its Procedure alone — the runtime-read row and M11's own body. Two cross-cutting paragraphs sit above the Procedure and bind anything the file drives, including the new output-language rule and the deferred-bookkeeping step, so M11 was declaring a read range narrower than what governs it. Both declarations now name the preamble.

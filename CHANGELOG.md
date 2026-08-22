@@ -2,6 +2,18 @@
 
 ## 2026-08-22
 
+### dev-workflow v1.118.18 / mobpro v1.29.1 / dev-workflow-bundle v1.141.1
+
+- fix(dev-workflow): state the output language once for the whole commit-gate procedure
+  - `references/interactive-commits.md` carried the `in the resolved language` instruction at 5 of the 17 places it puts something in front of the user, and the commit-plan presentation and each commit's presentation were not among them. An agent reading the file could take the absence of that note as putting those places outside the rule — `references/configuration.md`'s `language` bullet already names Step 10 gate output and its verbatim carve-outs, but nothing in the presenting file pointed there. A preamble paragraph now covers every line the Step presents, defers the verbatim side to whatever each step below already specifies, and says not to read a missing per-site note as an exemption.
+  - Category: `ambiguity`
+- fix(dev-workflow): require the localization rules to be applied to self-authored output
+  - `references/localization.md` said which prose it governs but named no point at which that prose gets checked, and the only such check in the workflow was Step 4's plan-body self-audit — so gate prompts, log lines, finding lists, and the Completion summary had no checkpoint at all. § Localization granularity now carries a self-application paragraph after its opening sentence: the rules govern prose the skill writes itself and not only prose handed to a callee, every line in the section's output set is read back against the section before it leaves, and the check runs even when the section is already in context. `mobpro` reads this file at M3 and inherits it.
+  - Category: `missing-branch`
+- fix(mobpro): read the commit reference's preamble, not only its Procedure
+  - M11 delegates the whole commit gate to `dev-workflow references/interactive-commits.md`, but both places that declare how much of that file to read named its Procedure alone — the runtime-read row and M11's own body. Two cross-cutting paragraphs sit above the Procedure and bind anything the file drives, including the new output-language rule and the deferred-bookkeeping step, so M11 was declaring a read range narrower than what governs it. Both declarations now name the preamble.
+  - Category: `missing-branch`
+
 ### dev-workflow v1.118.17 / mobpro v1.29.0 / dev-workflow-bundle v1.141.0
 
 - fix(mobpro, dev-workflow): say what to do when neither the Task tools nor `TodoWrite` are on the tool surface

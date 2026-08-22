@@ -1,16 +1,10 @@
 # Plan Authoring
 
-How a Step 2 plan is shaped and self-checked. The companion file [`plan-format.md`](plan-format.md) covers the other half — how a finished plan is reviewed, localized, and presented — and the two together are the specification for `/dev-workflow` plans.
+How a Step 2 plan is shaped and self-checked. [`plan-format.md`](plan-format.md) covers how a finished plan is reviewed, localized, and presented.
 
-Read this reference when executing:
-
-- **Step 2** — creating the plan (§ Template) and running the author's own checklist (§ Step 2 self-check)
-
-**Full lane only.** The express lane (Trivial / Simple — [`tier-assessment.md`](tier-assessment.md) § Lanes) authors from `references/step2-create-plan.md` § Compact plan template instead and never reads this file; a tier escalation out of that lane reads it as part of rejoining the full lane ([`tier-escalation.md`](tier-escalation.md) § What an escalation does, step 3).
+**Full lane only.** The express lane (Trivial / Simple — [`tier-assessment.md`](tier-assessment.md) § Lanes) authors from `references/step2-create-plan.md` § Compact plan template instead and never reads this file.
 
 ## Template
-
-`Source of truth for the Build order heading name and its N. **<heading>** — <detail> step shape: this section. A rename or a shape change sweeps this closed list in the same commit — this skill's README.md (plan-structure table, Two-tier presentation, How to review a plan quickly, visual-gate bullets), mobpro's references/plan-format.md (§ Template and § Review lens' Structure bullet), and, in scripts/plan-review/public/index.html, SECTION_TYPES for the heading plus collapseBuildOrderSteps and STEP_SEP_RE for the shape. Those sites re-encode the name or the shape in a form a grep for the old token can miss, which is what puts them on the list; a passing mention anywhere in this skill's own files is not a member, because that grep does reach it.`
 
 Every plan produced in Step 2 must follow this structure. Overview, Decisions, Build order, and Test plan are **required** (including Decisions when there are no user decisions — use the fixed sentence in § Empty-Decisions fixed sentences). Risks / Unknowns is optional.
 
@@ -37,7 +31,7 @@ Each item:
 - **Alternative**: the other option (omit this line entirely when there is no alternative)
 
 ### Build order
-<The body of the plan, **always** an ordered, numbered list of implementation steps — the order is the order the work lands in, and Step 5 executes it step by step. Write each step as `N. **<heading>** — <detail>`: a bold heading naming the change (verb-first, naming the file(s) it touches), then the detail. **The bold heading is what splits summary from detail** — the visual plan-review gate collapses each step to it and expands the rest on click, so a step that does not open with one renders uncollapsed. The em dash is the conventional separator and is stripped on render; it is not what the split keys on. A step may also name the Decision it implements and the task-relevant skill(s) to invoke there (see `SKILL.md` Step 2's **Task-relevant skill annotation** bullet for what qualifies as task-relevant). When the work has no inherent order, number it anyway — the numbering is then the order this plan chooses, and one line directly under the section heading says the order is free. See § Traceability for the optional Build order→Decision link. A Build order step — or the section as a whole — MAY include a mermaid diagram (e.g. a flowchart or sequence diagram) when a complex flow, state transition, or branching structure is hard to follow in prose; the diagram is a section-level visual aid, not a numbered step, so give it its own line rather than wedging it into the heading / detail shape above. The diagram must **replace** the prose it would otherwise need — a diagram that merely restates the numbered steps is padding (cut per § Sizing guidance). The visual plan-review gate renders mermaid as a diagram; the chat approval it degrades to shows the raw fenced block (acceptable degradation).>
+<The body of the plan, **always** an ordered, numbered list of implementation steps — the order is the order the work lands in, and Step 5 executes it step by step. Write each step as `N. **<heading>** — <detail>`: a bold heading naming the change (verb-first, naming the file(s) it touches), then the detail. **The bold heading is what splits summary from detail** — the visual plan-review gate collapses each step to it and expands the rest on click, so a step that does not open with one renders uncollapsed. The em dash is the conventional separator and is stripped on render; it is not what the split keys on. A step may also name the Decision it implements and the task-relevant skill(s) to invoke there (see `SKILL.md` Step 2's **Task-relevant skill annotation** bullet for what qualifies as task-relevant). When the work has no inherent order, number it anyway — the numbering is then the order this plan chooses, and one line directly under the section heading says the order is free. See § Traceability for the optional Build order→Decision link. A Build order step — or the section as a whole — MAY include a mermaid diagram (e.g. a flowchart or sequence diagram) when a complex flow, state transition, or branching structure is hard to follow in prose; the diagram is a section-level visual aid, not a numbered step, so give it its own line rather than wedging it into the heading / detail shape above. The diagram must **replace** the prose it would otherwise need — a diagram that merely restates the numbered steps is padding (cut per § Sizing guidance).>
 
 ### Test plan
 <Test files to add or update, test types, coverage scope — or the justification for no tests. Each test item should reference the Build order step(s) it verifies (recommended) — see § Traceability.>
@@ -48,13 +42,13 @@ Each item:
 
 ### Review guide line
 
-The `> Review guide` block sits directly under `## Plan`, above Overview, so a reviewer can tell at a glance which sections need judgment and which are reference detail. It renders as a multi-line blockquote — a heading line followed by one bullet per category. Unlike [`plan-format.md`](plan-format.md) § Empty-Decisions fixed sentences and its § Step 4 guidance lines (single sentences using the same **Blockquote rendering convention**), this block's `>`-prefixed bullets **are** the rendered output — don't extend those other two sections to this multi-line form:
+The `> Review guide` block sits directly under `## Plan`, above Overview. It renders as a multi-line blockquote — a heading line followed by one bullet per category. Unlike [`plan-format.md`](plan-format.md) § Empty-Decisions fixed sentences and its § Step 4 guidance lines (single sentences using the same **Blockquote rendering convention**), this block's `>`-prefixed bullets **are** the rendered output:
 
-- **Must-review** = the sections that need the user's judgment: `Overview` (Goal / Approach / Scope / Difficulty, plus `Highlights` when present), `Decisions`, and `Build order`. `Highlights` is one Overview bullet, not a standalone must-review category — Overview always carries it. `Build order` is must-review because approving the plan approves the sequence the work lands in.
+- **Must-review** = the sections that need the user's judgment: `Overview` (Goal / Approach / Scope / Difficulty, plus `Highlights` when present), `Decisions`, and `Build order`. `Highlights` is one Overview bullet, not a standalone must-review category — Overview always carries it.
 - **Reference** = supporting detail the user can skim: `Test plan`, `Risks` (omit any that are absent).
 - Localization ([`localization.md`](localization.md) § Localization granularity): the connective words (`Review guide`, `must-review`, `reference`) are translated to the resolved `language`; the section-name tokens (`Overview` / `Highlights` / `Decisions` / `Build order` / `Test plan` / `Risks`) stay verbatim — they are file-internal identifiers, and translating them would break the Step 2 self-check / Step 3 (d) heading exact-match.
 
-Paired bilingual sample (runtime rendering demonstration, not meta-prose):
+Paired bilingual sample:
 
 - `language: en`:
 
@@ -76,12 +70,12 @@ Paired bilingual sample (runtime rendering demonstration, not meta-prose):
 
 ### Sizing guidance
 
-A plan is the user's review surface, not a document — its purpose is fast, accurate review. Default to the **tersest form that still lets the reviewer judge**: cut only redundancy, duplication, and padding — **never** the information, rationale, or boundaries the reviewer needs to decide. Operational test for "is this padding?": if removing a passage does not change what the reviewer can verify or decide, it is padding (cut it); if it does, keep it. Prefer bullets over prose, but use prose where a bullet cannot carry the logic. The caps below are soft — clarity wins over character count. Traceability references (§ Traceability) are exempt from this padding rule — they pass the operational test, so a Step 6 tidy/simplify pass must not strip them.
+Default to the **tersest form that still lets the reviewer judge**: cut only redundancy, duplication, and padding — **never** the information, rationale, or boundaries the reviewer needs to decide. Operational test for "is this padding?": if removing a passage does not change what the reviewer can verify or decide, it is padding (cut it); if it does, keep it. Prefer bullets over prose, but use prose where a bullet cannot carry the logic. The caps below are soft — clarity wins over character count. Traceability references (§ Traceability) are exempt from this padding rule — a Step 6 tidy/simplify pass must not strip them.
 
 - Overview: at most 5 bullets (4 when Highlights is omitted), each at most one line.
 - Highlights: a **single** Overview bullet (it is one of the ≤5 Overview bullets above, not a separate list), holding at most 3 high-impact items on one line — only genuinely high-impact items. See § Template for the categories and the omit-when-none rule.
 - Decisions: up to 5 items. A single genuine (a)+(b) item is fine — surface it alone rather than padding.
-- Build order: an ordered, numbered list of actionable implementation steps, each written as `N. **<heading>** — <detail>` per § Template. Write a step as a bare heading only when the change is self-evident; otherwise keep the detail the reviewer needs to judge. Keep every heading to one line — it has to carry its step on every approval surface (§ Review guide line's **Must-review low-load rule** paragraph). As a concrete instance of the padding test above, avoid narrating what well-named files/functions already convey, and do not restate Decisions or Overview content. A mermaid diagram is exempt from the cut rule only where it replaces prose the reviewer would otherwise need, on the terms § Template sets.
+- Build order: an ordered, numbered list of actionable implementation steps, each written as `N. **<heading>** — <detail>` per § Template. Write a step as a bare heading only when the change is self-evident; otherwise keep the detail the reviewer needs to judge. Keep every heading to one line — it has to carry its step on every approval surface (§ Review guide line's **Must-review low-load rule** paragraph). Avoid narrating what well-named files/functions already convey, and do not restate Decisions or Overview content. A mermaid diagram is exempt from the cut rule only where it replaces prose the reviewer would otherwise need, on the terms § Template sets.
 - Test plan: bullet-list the test files and the case each covers, one line per case; each case may reference the Build order step(s) it verifies (see § Traceability). Do not re-describe (duplicate) the implementation.
 
 ## Traceability
@@ -92,8 +86,6 @@ Links between plan sections run **one direction only — the reference tier poin
 - **Build order → Decision** (optional): a Build order step may name the Decisions item it implements.
 - **Empty-Decisions degradation**: when Decisions renders an empty-Decisions fixed sentence ([`plan-format.md`](plan-format.md) § Empty-Decisions fixed sentences), `Build order → Decision` is naturally absent (it is optional and has no target item); `Test → Build order step` still applies unchanged.
 - The must-review tier carries **no** downward back-references (no "this Decision drives steps 3–4" annotations) — that detail lives in the reference tier.
-
-This section is the single source of truth for the traceability convention; § Step 2 self-check and § Step 3 (d) content-quality rubric reference it rather than restating the rule. § Sizing guidance holds the matching padding-rule exemption.
 
 ## Decisions criterion (AND condition)
 
@@ -123,11 +115,11 @@ If the current subtask has no in-scope decisions, use the Resume-mode fixed sent
 
 After the Simplicity self-audit in Step 2, run this check on the plan. Fix any failures before Step 3.
 
-**Run this check in the order listed — structural compliance first, then content quality.** If the plan was seeded from a carry-over document (an inherited spec, a prior-session draft, or a hand-off note), verify structure before content: create the template skeleton first, then embed the carry-over content, since such documents use free-form prose that does not match the template.
+**Run this check in the order listed — structural compliance first, then content quality.** If the plan was seeded from a carry-over document (an inherited spec, a prior-session draft, or a hand-off note), verify structure before content: create the template skeleton first, then embed the carry-over content.
 
 - [ ] **Structural compliance**: the plan contains exactly the required sections (`Overview`, `Decisions`, `Build order`, `Test plan`) in that order, with correct heading levels (`###` for top-level sections, `####` for sub-sections), and no sections outside the enumerated template (Overview, Decisions, Build order, Test plan, optionally Risks / Unknowns). If this check fails, stop here and restructure before running the remaining content checks.
 - [ ] Every Decisions item passes the (a)+(b) criterion — if in doubt, drop it to Build order.
-- [ ] **When Decisions renders an empty-Decisions fixed sentence** ([`plan-format.md`](plan-format.md) § Empty-Decisions fixed sentences): scan Build order and Approach for any passage that answers a "why X over Y" question or introduces a fixed value, threshold, or boundary — these are (a)+(b) candidates that may have been overlooked when the author pre-judged the task as decision-free. If any surface, promote to Decisions before advancing to Step 3. Declaring "no decisions" does not discharge the buried-decisions check; it makes it more important to run.
+- [ ] **When Decisions renders an empty-Decisions fixed sentence** ([`plan-format.md`](plan-format.md) § Empty-Decisions fixed sentences): scan Build order and Approach for any passage that answers a "why X over Y" question or introduces a fixed value, threshold, or boundary. If any surface, promote to Decisions before advancing to Step 3. Declaring "no decisions" does not discharge the buried-decisions check; it makes it more important to run.
 - [ ] No choice that qualifies under (a)+(b) is buried inside Build order instead of surfaced in Decisions. **Promotion cues** — any one is sufficient to flag a Build order passage as a Decisions candidate:
   - A Build order step answers a "why X over Y" question or a "why this specific value / boundary / timing" question, but Decisions has no corresponding item.
   - The plan introduces a new enum / fixed-value set, but Decisions does not record that each member is necessary and non-overlapping with the others.

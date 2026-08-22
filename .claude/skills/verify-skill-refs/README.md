@@ -27,6 +27,14 @@ Shorter closed set:
 
 Never both for a new token — a token has one owning stage. `stale-manifest` is the one exception (§ Return contract records that both stages emit it), so a token deliberately shared across stages sweeps both site sets.
 
+## Classes considered and not built
+
+**Does an output-instructing site carry the resolved-language rule?** Proposed as the counterpart to class (e): where (e) checks that a user-facing output *literal* names its phase, this would have checked that a site *instructing* user-facing output cites the localization rules. It is not built, for two reasons.
+
+The first is that the invariant it would enforce no longer holds. `dev-workflow`'s `SKILL.md` § Configuration `language` bullet now states that a site emitting user-facing output carrying no language note of its own is not exempt from those rules. "Every output-instructing site carries a language note" is therefore no longer a design property of the tree, and a check enforcing it would push the prose back toward the per-site-note design that bullet replaced.
+
+The second is that neither anchor extracts the right candidate set. Anchoring on class (e)'s emit verbs (`references/check-rules.md` § Class (e) step 2's extraction forms owns the set) selects 415 lines across the `dev-workflow` root's `SKILL.md` + `references/*.md`, with nothing in the line to separate user-facing output from internal operations that use the same verbs — appending to a ledger variable, reporting to a caller. Anchoring instead on the output literals class (e) already extracts gives a precise 155 candidates across both roots but misses every literal-free site, including `references/step8-code-review.md`'s post-fix natural-language quality self-check, which is one of the sites that motivated the proposal. Both counts were measured at `dev-workflow` v1.118.19 — the emit-verb count with the same verb set class (e) uses, the literal count from `scripts/lint.mjs`'s `output_literals`.
+
 ## Adding a target root
 
 Append it to `SKILL.md` § Target roots when another skill acquires the same shape — numbered phase identifiers plus a `references/` tree, which is what the reference-resolution and phase-naming invariants apply to.

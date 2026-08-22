@@ -102,6 +102,27 @@
 ### bundle 全メンバーに複製する横断ディレクティブは byte-identical を保ち、メンバー追加時に必ず同梱する
 **Good**: preamble 末尾・手続き本文の直前に置く。**Bad**: 先行する `## Sub-skill caller directive` / `## Stop hook structural conflict (caller-side note)` がファイル末尾に置かれているのを見て、`## Dispatch authorization` も末尾に置く。route 判断より後に読まれるため機能しない。`run-tests` Check 7 は節の存在と本文の一致だけを見て配置は検査しないので、この取り違えは機械検査に掛からない。
 
+### 同梱スクリプトは Node の組み込みモジュールだけで書く
+**Good:**
+```javascript
+// skills/dev-workflow/scripts/plan-review/serve.mjs — import は組み込みのみ
+import { createServer } from "node:http";
+import { readFileSync, existsSync, writeFileSync } from "node:fs";
+import { basename, dirname, extname, join, resolve } from "node:path";
+import { parseArgs } from "node:util";
+import { spawn } from "node:child_process";
+```
+```html
+<!-- ブラウザ側は対象外 — public/index.html からバージョン固定の CDN で読み込む -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/16.3.0/lib/marked.umd.min.js"></script>
+```
+**Bad:**
+```javascript
+// npm パッケージを import + package.json を追加
+import { program } from "commander";   // 配布先に node_modules が無く起動時に失敗する
+import chalk from "chalk";
+```
+
 ## Project-specific Patterns Examples
 
 ### Shell/git pre-flight gotchas (jq null + detached HEAD + refs glob quoting)
@@ -293,4 +314,26 @@ TaskOutput(task_id: a5db0d9...)  →  "No task found with ID"   # 両 executor �
 ```text
 <!-- resume 後も中断前 dispatch の完了通知を待ち続ける -->
 「起動済みの 2 executor の完了通知を待ちます」→（通知は永遠に来ない — dispatch は中断で消滅済み）
+```
+
+### SKILL.md の節本文を `references/*.md` へ移すときは、未修飾の `§` 参照の解決先をファイル冒頭で宣言する
+**Good:**
+```markdown
+<!-- 既定の解決先を宣言する形（finish-phase.md） -->
+Unqualified `§ <Heading>` references resolve to `SKILL.md` unless that heading appears in
+this file, and `sub-step N` references resolve to the step they sit under.
+
+<!-- 外側を指す参照だけを列挙する形（interactive-commits.md） -->
+Four unqualified `§` references below resolve outside this file: `§ Approval token closed
+list` and `§ Localized summary tokens` in finish-phase.md, and `§ Phase naming in
+user-facing output` and `§ Workflow artifacts` in `SKILL.md`. All other `§` references
+resolve within this file.
+```
+**Bad:**
+```markdown
+<!-- 節本文を逐語コピーしただけで、冒頭に解決先の宣言が無い -->
+# Step 5 — Implement (extracted sub-steps)
+
+1. ... § Workflow artifacts を差し引いた変更ファイル集合を集める ...
+<!-- → この `§ Workflow artifacts` が移設先と SKILL.md のどちらの節かは読み手に決まらない -->
 ```

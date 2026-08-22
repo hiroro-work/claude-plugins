@@ -36,6 +36,10 @@ An opt-in invocation flag for a faster, lower-thoroughness run — unrelated to 
 - **`subagent_model`** is unaffected — it always resolves from the task's real assessed difficulty, never from `--fast`.
 - `hooks.on_complete` still runs in full (fast mode does not gate project hooks).
 
+### Adding or dropping a `--fast` skip site
+
+`mobpro` mirrors this skill's `--fast` skip set at its own `SKILL.md` § Fast mode, which claims parity with it. Adding or dropping a skip site here therefore sweeps that table in the same commit.
+
 ## Setup (`--init`)
 
 `--init` auto-detects and configures the following interactively:
@@ -584,6 +588,24 @@ Three pieces of cross-step state sit outside that table on purpose, and the sub-
 
 **Deletion / no-duplication justified by an external reference — recipient-visibility check** has to survive `--fast`, which drops the Step 3 (Plan Review) pass but never the Step 2 audit. Recipient-visibility cannot be deferred to a review round fast mode skips.
 
+### Changing the express / full lane difference set
+
+`references/tier-assessment.md` § Lanes is the source of truth for what the two lanes differ in; keep every restating site in sync with it. Membership = every site that branches on the lane **or restates its difference set**, including this file's § Express lane and the tier table under its § Configuration section. A branch site says only which lane it is on and points at § Lanes — the set of differences lives in that table, not at the branch sites.
+
+### Renaming a review-category label
+
+`references/review-categories.md` is the single canonical home for the Step 3 and Step 8 review rubrics; the two dispatch sites keep a label-only enumeration — Step 3's in `references/step3-plan-review.md`'s group table, Step 8's in `references/code-review-payload.md` — and point the reviewer at the matching section rather than restating it.
+
+Several bold sub-check labels inside the categories (for example `Runtime/language major version upgrades`, `Internal convention citation verification`, `Cross-component sibling coverage`) are cited verbatim by `references/simplicity-self-audit.md` and `references/simplicity-self-audit-express.md`, and — for every category (a) sub-check — by `references/step3-plan-review.md`'s group table, which partitions them across its groups. The category labels themselves are cited by `references/plan-authoring.md` (§ Step 3 (d) content-quality rubric) and by `references/plan-format.md`, whose § User-gate summary preamble paraphrases the three code-review categories in its Step 8 slot.
+
+So when renaming any of those labels, sweep every citation site across the repository, the bundle copies included.
+
+### Renaming the Simplicity self-audit label
+
+`references/simplicity-self-audit-express.md` and `references/simplicity-self-audit.md` are the single canonical home for the Step 2 audit checklist; `SKILL.md` Step 2 points at them rather than restating the items. The stable phrase anchor `Step 2 § Simplicity self-audit` resolves to the **Simplicity self-audit** label kept in `SKILL.md` Step 2's delegation pointer, while the sub-step body itself lives in `references/step2-create-plan.md` — so keep that label in the pointer when either file is edited.
+
+Four sites cite the anchor: `references/review-categories.md` (Step 3 reviewer category (a)), `references/step5-implement.md` (the late-stage scaffolding self-audit), `references/plan-authoring.md` § Step 2 self-check, and `references/task-decomposition-normal.md`. Renaming the label means sweeping all four, the bundle copies included.
+
 ## Plan format
 
 Plans produced in Step 2 and presented in Step 4 follow a fixed structure so you can scan them quickly and focus on the parts that actually need your judgment. Full specification in [`references/plan-format.md`](references/plan-format.md).
@@ -597,6 +619,8 @@ Plans produced in Step 2 and presented in Step 4 follow a fixed structure so you
 | Build order | Yes | The body of the plan — always an ordered, numbered list of implementation steps, each written as `N. **<heading>** — <detail>`. The order is the order the work lands in, and Step 5 executes it step by step |
 | Test plan | Yes | Test files to add/update, test types, coverage — or justification for no tests; each case may reference the Build order step it verifies |
 | Risks / Unknowns | Optional | Non-trivial risks or open questions |
+
+The `Build order` heading name and its `N. **<heading>** — <detail>` step shape are specified by [`references/plan-authoring.md`](references/plan-authoring.md) § Template. A rename or a shape change sweeps this closed list in the same commit — in this README, the section table above plus Two-tier presentation, How to review a plan quickly, and the visual-gate bullets; mobpro's `references/plan-shape.md` (§ Template and § Review lens' Structure bullet); and, in `scripts/plan-review/public/index.html`, `SECTION_TYPES` for the heading plus `collapseBuildOrderSteps` and `STEP_SEP_RE` for the shape. Those sites re-encode the name or the shape in a form a grep for the old token can miss, which is what puts them on the list; a passing mention anywhere in the skill's own files is not a member, because that grep does reach it.
 
 ### The Decisions section
 
@@ -620,6 +644,14 @@ Step 4's approval runs in your browser. The gate serves the plan on a local `127
 - **mermaid diagrams** rendered as SVG (flowcharts / sequence diagrams)
 
 The gate needs a local browser — the agent and you on the same machine (local CLI / Remote Control). Where that does not hold, the approval degrades to **chat**: Step 4 probes `CLAUDE_CODE_REMOTE` before it even reads the gate procedure, so on Claude Code on the Web the browser gate is skipped outright; a launch failure or a timeout after the gate has started falls through to the same chat approval. A **Trivial** task takes the chat approval directly as well, with the gate never launched — a browser round-trip to approve a handful of lines costs more attention than the plan does (§ Express lane). The canonical plan document is always `.claude/plans/<slug>.md`.
+
+### Changing the plan-approval gate's return contract
+
+`references/visual-plan-review.md` is the single canonical home for the visual gate's **procedure**; the callers that read it — `references/step4-finalize-plan.md`'s **Run the approval gate** bullets and `mobpro`'s `references/m5-plan-approval.md` **Approval surface** sub-step — each probe browser reachability first and describe the surface for their own audience.
+
+A change to **the three-value return contract (`approve` / `rewrite-approach` / `fallback`) or the routing around it** — deliberately narrower than "anything that mentions the gate", so this list can stay complete — sweeps a closed list of sites: the whole of `references/step4-finalize-plan.md` (its **Run the approval gate** bullets and its § Sub-step 3 — rewrite-approach bucket runtime); `SKILL.md`'s Step 4 sub-step 2 and its § No-Stall Principle Step 4 bullet; `mobpro`'s `references/m5-plan-approval.md` **Approval surface** sub-step and its outcome-mapping sub-step. Keep those in sync with the gate procedure.
+
+Everything else — the two READMEs, `references/plan-format.md`, `references/step1-load-settings.md`'s state-variable table, and `SKILL.md` outside those two sites — *describes* the surface or tracks downstream state rather than stating the contract, so it is carved out of this directive and swept by the ordinary rename / behavior-change rules instead.
 
 ### How to review a plan quickly
 

@@ -1,7 +1,5 @@
 # Tech Stack Detection Heuristics
 
-Reference for detecting which source rules are relevant to the target project. These tables are a starting point — if the source contains rule files not covered here, use AI judgment to match them against the project's dependencies and file structure.
-
 ## Languages
 
 | Indicator | Rule file |

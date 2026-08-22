@@ -2,16 +2,14 @@
 
 Deep reference for the **rule-extraction axis** of the shared session scan (`references/session-scan.md`). Read this when the rule-extraction axis is active — i.e. [`finish-phase.md`](finish-phase.md) Step 11 sub-step 1 determined `rule-extraction-active` is true and the shared scan was dispatched with this axis in its still-active set.
 
-Purpose: scan the current conversation for **project-specific coding-rule candidates** — the same signal `extract-rules --from-conversation` looks for in its C4 analysis — and emit them as the shared scan's `--- RULE-CANDIDATES ---` block. The block is the **producer** half of a scan/apply split: the **consumer** is `extract-rules` **Conversation Candidate Apply Mode** (`--apply-conversation-candidates <path>`), which [`finish-phase.md`](finish-phase.md) § Step 11 invokes with the consumed block. extract-rules runs **only Step C5** on it (dedup / route / write / promote / `.examples.md` / Security Self-Check) — no re-parse of the jsonl.
-
-This file is the **rule-extraction-axis spec** the shared scan's subagent reads and applies — a **producer spec only**: the consume + failure routing live in `references/session-scan.md` § Consuming a block and [`finish-phase.md`](finish-phase.md) § Step 11. This axis carries project-internal candidates that stay inside the project (written to `.claude/rules/` by extract-rules), distinct from the self-retrospective axis whose output leaves the project and is sanitized project-agnostic.
+Purpose: scan the current conversation for **project-specific coding-rule candidates** and emit them as the shared scan's `--- RULE-CANDIDATES ---` block.
 
 ## 1. Activation & session handling
 
-Unlike the self-retrospective (`references/self-retrospective.md` §1) and workability (`references/workability-retrospective.md` §1) axes, this axis has **no pre-flight of its own**:
+This axis has **no pre-flight of its own**:
 
-- **Activation** is decided in [`finish-phase.md`](finish-phase.md) Step 11 sub-step 1 (`rule-extraction-active` = NOT the existing `--from-conversation` skip conditions). When inactive, the axis is simply absent from the shared scan's still-active set.
-- **Session file resolution + dispatch** are performed by the dispatching step (Step 11 when this axis is active) via the shared `references/session-scan.md` § Inputs procedure — the same `pwd` → encode → `Glob` newest-`.jsonl` resolution the other axes' §1.4 / §1.3 use. The subagent receives the resolved session file path; it does not resolve it.
+- **Activation** is decided in [`finish-phase.md`](finish-phase.md) Step 11 sub-step 1 (`rule-extraction-active` = NOT the existing `--from-conversation` skip conditions).
+- **Session file resolution + dispatch** are performed by the dispatching step (Step 11 when this axis is active) via the shared `references/session-scan.md` § Inputs procedure. The subagent receives the resolved session file path; it does not resolve it.
 
 ## 2. Detection
 
@@ -21,12 +19,12 @@ The subagent assembles the `--- RULE-CANDIDATES ---` block from the parsed conve
 
 ### 2.1 Spawn the subagent
 
-The actual `Agent` dispatch is performed **once per run by the shared session scan** (`references/session-scan.md`), which parses the session jsonl a single time and serves this axis alongside the other active axes. This section is the **rule-extraction-axis spec** the shared scan's subagent reads and applies; `references/session-scan.md` § Inputs lists the prompt inputs (the session file resolved by the dispatching step, this file's path, repo root, language, and the `subagent_model`-derived model). Do not spawn a separate subagent here.
+The actual `Agent` dispatch is performed **once per run by the shared session scan** (`references/session-scan.md`). This section is the **rule-extraction-axis spec** the shared scan's subagent reads and applies; `references/session-scan.md` § Inputs lists the prompt inputs. Do not spawn a separate subagent here.
 
 Instruct the subagent to:
 
 1. Read §2.2 (extraction criteria) and §2.3 (candidate schema) of this reference file, and §3 (sanitization rules).
-2. Parse the session jsonl (line-delimited JSON, each line one message) — the shared scan performs this parse **once** for all active axes (see `references/session-scan.md` § Subagent instructions); this step names only the per-axis extraction that single parse feeds. Extract `user` and `assistant` **text** content (skip `tool_use`, `thinking`, and similar internal blocks). A short `jq` or inline node/python is fine.
+2. Parse the session jsonl (line-delimited JSON, each line one message). Extract `user` and `assistant` **text** content (skip `tool_use`, `thinking`, and similar internal blocks). A short `jq` or inline node/python is fine.
 3. Scan for the rule signals in §2.2 and classify each candidate per its nine classification rules.
 4. Assemble candidates per §2.3, applying its discriminator-conditioned field rules so each candidate passes the consumer's Step A1 validation.
 5. Apply §3 sanitization to each candidate's prose fields (`Context` / `Rule`) **before** returning.
@@ -35,7 +33,7 @@ Instruct the subagent to:
 
 ### 2.2 Extraction criteria
 
-Extract what Claude would get **wrong or produce differently** without seeing this project — the "Claude knowledge gap" (per `extract-rules` `references/extraction-criteria.md`). If Claude would produce correct, consistent code without the rule, it is general knowledge — do **not** extract it.
+Extract what Claude would get **wrong or produce differently** without seeing this project — the "Claude knowledge gap" (per `extract-rules` `references/extraction-criteria.md`).
 
 Nine classification rules (the C4 analysis `extract-rules --from-conversation` applies):
 
@@ -45,9 +43,9 @@ Nine classification rules (the C4 analysis `extract-rules --from-conversation` a
 4. **Routine re-application of an existing pattern** → **skip** (mechanical extension / template expansion with no new decision or user correction). Extract only when a new design decision was made, an exceptional case was handled, or the user corrected / redirected the approach.
 5. **Ordering / sequencing rules observed in this run** → **self-check**: capture the underlying invariant ("shared dependency versions must stay aligned"), not the incidental direction ("always update X before Y"), unless the direction is confirmed intentional.
 6. **Abstraction normalization** → normalize phrasing so the main sentence generalizes and the rule can be re-matched in a later session (enabling staging → canonical promote). Incident-specific detail is **dropped**, not relocated into a parenthetical suffix; retain one such parenthetical only when the main sentence alone does not say where the rule applies. A rule whose main sentence is incident-specific will never re-match.
-7. **Durability** → **skip** a candidate that only records this session — one that would not change what gets written in a related but different task. Signals of a record: it reads as a sequence of what was done; its subject is one artifact rather than a class of situation; removing it would leave a future change equally consistent with what this project already does — different, not wrong. A settled convention is not caught by that removal signal: departing from it is wrong here, not merely different. "Settled" is shown by conformance visible across existing artifacts, or by an explicit user decision establishing the convention — never by the candidate's own assertion that it exists; with neither in evidence, the settledness call counts as genuinely uncertain. Where the judgement is genuinely uncertain, **emit it anyway only for a project-level pattern** (`Type: pattern` with `Category: project`) — the consumer stages those, so a second observation settles it. Every other combination lands directly in canonical, so an uncertain candidate there is not emitted.
+7. **Durability** → **skip** a candidate that only records this session — one that would not change what gets written in a related but different task. Signals of a record: it reads as a sequence of what was done; its subject is one artifact rather than a class of situation; removing it would leave a future change equally consistent with what this project already does — different, not wrong. A settled convention is not caught by that removal signal: departing from it is wrong here, not merely different. "Settled" is shown by conformance visible across existing artifacts, or by an explicit user decision establishing the convention — never by the candidate's own assertion that it exists; with neither in evidence, the settledness call counts as genuinely uncertain. Where the judgement is genuinely uncertain, **emit it anyway only for a project-level pattern** (`Type: pattern` with `Category: project`).
 8. **One rule, one claim** → a candidate needing "and also", several bolded sub-clauses, or a numbered procedure to state is several rules, or an account rather than a rule. Split it and apply the other rules to each part separately.
-9. **Reach** → **skip** a candidate that does not earn permanent context. Rule files load at every session start, so a norm firing in one narrow configuration of one component is durable and still not worth carrying. Judge reach by the class of situations the rule fires in, not by the single artifact it was observed on. Keep it when its reach is wide, **or** when a narrow reach pairs with a consequence that is silent, destructive, or expensive to recover from; skip it when a narrow reach pairs with a consequence a rerun or an ordinary review would absorb, and skip anything a linter, type checker, test, or verification step already catches — though a convention a linter *could* enforce but this project does not is still a rule. Expect this rule to reject the most candidates.
+9. **Reach** → **skip** a candidate that does not earn permanent context. Judge reach by the class of situations the rule fires in, not by the single artifact it was observed on. Keep it when its reach is wide, **or** when a narrow reach pairs with a consequence that is silent, destructive, or expensive to recover from; skip it when a narrow reach pairs with a consequence a rerun or an ordinary review would absorb, and skip anything a linter, type checker, test, or verification step already catches — though a convention a linter *could* enforce but this project does not is still a rule. Expect this rule to reject the most candidates.
 
 The highest-value signal is a **user correction** — where the user rejected Claude's approach and redirected, modified Claude's code to reveal a convention, or explained why an approach is preferred in this project.
 
@@ -86,14 +84,14 @@ Candidates: 2
 - **`Context`** — required-non-empty (a brief 2–5-word phrase) when `Type == pattern`; optional / informational for `principle`.
 - **`Rule`** — always required-non-empty (the abstraction-normalized rule text).
 
-**Source of truth**: the authoritative field contract — the per-field required-ness conditions above and the written-bullet mapping the consumer applies — is `extract-rules` `references/conversation-mode.md` § Rule-candidate contract. Keep this producer schema in sync with it; the consumer's Step A1 validation is keyed to that contract.
+**Source of truth**: the authoritative field contract — the per-field required-ness conditions above and the written-bullet mapping the consumer applies — is `extract-rules` `references/conversation-mode.md` § Rule-candidate contract. Keep this producer schema in sync with it.
 
 **Envelope-collision note**: the `### Candidate <N>` … `Candidates: <N>` envelope is **shared** with the workability axis (`references/workability-retrospective.md` §2.3), but the **field set differs** — this axis's `Type` enum is `principle | pattern`, whereas the workability axis's `Type` enum is `skill-candidate | lint-rule-candidate` with entirely different fields. The two blocks are disambiguated **only** by their delimiters (`--- RULE-CANDIDATES ---` vs `--- WORKABILITY ---`); never assume one axis emits the other's schema.
 
 ## 3. Sanitization
 
-This axis's candidates are **project-internal** — extract-rules writes them into this project's `.claude/rules/`, so project-specific identifiers (project type names, hook names, file paths, domain terms) are **kept**, not stripped. This is the **light / project-internal** regime — follow `references/workability-retrospective.md` §3 for it, **plus** the secret-redaction gist below.
+This axis's candidates are **project-internal**, so project-specific identifiers (project type names, hook names, file paths, domain terms) are **kept**, not stripped. This is the **light / project-internal** regime — follow `references/workability-retrospective.md` §3 for it, **plus** the secret-redaction gist below.
 
 Secret-redaction gist (from `extract-rules` `references/security.md`): do **not** emit into any candidate field — API keys, tokens, or credentials; internal URLs or endpoints; customer names or personal information; high-entropy strings that may be secrets. If such content appears in a signal, redact it with a placeholder (e.g. `API_KEY_REDACTED`) before emitting.
 
-Apply this §3 **strictly** and do **not** mix it with the other axes' sanitization regimes — keeping a single subagent does not collapse the regimes (the full cross-axis regime split is enumerated in `references/session-scan.md` § Subagent instructions step 4).
+Apply this §3 **strictly** and do **not** mix it with the other axes' sanitization regimes.

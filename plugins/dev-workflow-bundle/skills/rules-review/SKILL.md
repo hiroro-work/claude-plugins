@@ -7,8 +7,6 @@ allowed-tools: Read, Glob, Agent, Bash(git diff *), Bash(git rev-parse *)
 
 # Rules Review
 
-Check code changes for compliance with `.claude/rules/` rule files.
-
 ## Usage
 
 ```text
@@ -16,9 +14,9 @@ Check code changes for compliance with `.claude/rules/` rule files.
 /rules-review                        # Check diff from HEAD~1
 ```
 
-An optional `Model:` value — one of the model ids the current `Agent` tool's `model` parameter accepts (`sonnet` / `opus` / `haiku` / `fable` as of this writing; check the tool's live schema loaded in the current session rather than this fixed list, since Anthropic adds new model families over time) — may also be passed as a natural-language argument — an independent optional field (not part of a fixed-arity mode gate). When present and valid it is applied as the `model` parameter on each reviewer `Agent` dispatch in §5 (a caller such as `dev-workflow` uses this to run the review on a cheaper model). When absent or invalid, the reviewer `Agent` inherits the session model (backward-compatible default). `Model:` is **only effective on the Claude Code `Agent`-dispatch path**; on the inline / Codex fallback path no `Agent` is spawned, so the value is moot (the executing agent's own model governs).
+An optional `Model:` value — one of the model ids the current `Agent` tool's `model` parameter accepts (`sonnet` / `opus` / `haiku` / `fable` as of this writing; check the tool's live schema loaded in the current session rather than this fixed list) — may also be passed as a natural-language argument — an independent optional field (not part of a fixed-arity mode gate). When present and valid it is applied as the `model` parameter on each reviewer `Agent` dispatch in §5. When absent or invalid, the reviewer `Agent` inherits the session model. `Model:` is **only effective on the Claude Code `Agent`-dispatch path**; on the inline / Codex fallback path the executing agent's own model governs.
 
-An optional `Files:` value — a comma- or newline-separated list of repo-relative file paths — may likewise be passed as a natural-language argument, an **independent optional field** (not part of a fixed-arity mode gate; same standing as `Model:`). When present, the changed-file set (§ 1. Prepare) is narrowed to the intersection of the diff's changed files and this list, so the review covers only those files; when absent or invalid, all changed files are reviewed (the backward-compatible default). A caller such as `dev-workflow` uses this to scope a re-check to just the files a review-finding fix touched, rather than re-scanning the full base-commit diff. When the intersection is empty (none of the listed paths changed since `<base-commit>`), the § 1. Prepare `No changed files` early-exit fires (a loud `no-issues`), so an empty scope never silently passes.
+An optional `Files:` value — a comma- or newline-separated list of repo-relative file paths — may likewise be passed as a natural-language argument, an **independent optional field** (not part of a fixed-arity mode gate). When present, the changed-file set (§ 1. Prepare) is narrowed to the intersection of the diff's changed files and this list, so the review covers only those files; when absent or invalid, all changed files are reviewed. When the intersection is empty (none of the listed paths changed since `<base-commit>`), the § 1. Prepare `No changed files` early-exit fires (a loud `no-issues`), so an empty scope never silently passes.
 
 ## Dispatch authorization
 
@@ -34,9 +32,9 @@ This skill's procedure dispatches subagents, so invoking the skill **is** the re
 
 ### 2. Collect Rules
 
-1. Find rule files: `Glob(".claude/rules/**/*.md")`. Also `Glob(".claude/rules-extras/**/*.examples.md")` — § 5. Review resolves each rule file's examples out of these two path lists, so it needs no per-rule-file filesystem probe
-2. Exclude `*.examples.md` from the **check targets** (they are reference material, not enforceable rules). Keep them in step 1's path lists — § 5. Review's pre-split fallback reads the co-located ones from there
-3. If the check targets are empty after step 2's exclusion — the first glob may still have matched co-located `*.examples.md` — output `No rule files found in .claude/rules/` as the final prose result, then emit the verdict per `## Return contract` and end the processing flow
+1. Find rule files: `Glob(".claude/rules/**/*.md")`. Also `Glob(".claude/rules-extras/**/*.examples.md")`
+2. Exclude `*.examples.md` from the **check targets**. Keep them in step 1's path lists — § 5. Review's pre-split fallback reads the co-located ones from there
+3. If the check targets are empty after step 2's exclusion — output `No rule files found in .claude/rules/` as the final prose result, then emit the verdict per `## Return contract` and end the processing flow
 
 ### 3. Match Rules to Changed Files
 
@@ -54,7 +52,7 @@ Group matched rules into categories based on their directory path:
 - **project**: Files directly under `.claude/rules/` (e.g., `project.md`, `project.local.md`)
 - **{subdirectory}**: Files under `.claude/rules/{subdirectory}/` (e.g., `languages`, `frameworks`, `integrations`, or any custom directory)
 
-Within a category, group related rules by filename prefix into families (e.g., `rails.md`, `rails-controllers.md`, `rails-models.md` = one family). Keep related rules together for consistent judgment.
+Within a category, group related rules by filename prefix into families (e.g., `rails.md`, `rails-controllers.md`, `rails-models.md` = one family).
 
 Grouping policy (deterministic):
 - Default: 1 group per category (one Agent per category).
@@ -72,7 +70,7 @@ Host-aware dispatch:
 
 - **Claude Code path**: when the `Agent` tool is exposed and callable and no caller-imposed nesting bound applies (see the **Fallback path** bullet), launch one reviewer `Agent` per group — passing the parsed `Model:` value (§1) as the `Agent` `model` parameter when present, omitting it when absent (inherit).
 - **Codex path**: when Codex exposes a subagent / delegation mechanism in the current session, launch one reviewer per group through that mechanism.
-- **Fallback path**: when no host-provided reviewer dispatch is available — the `Agent` tool is absent from the tool surface (e.g. this skill runs inside a nested subagent context where nested `Agent` is not surfaced), or the invoking request explicitly bounds this skill to its own thread (a caller-imposed nesting bound — see `§ Dispatch authorization`, which excludes permission-shaped restrictions but not an explicit contract term from the caller) — execute the same reviewer prompt **inline sequentially** for each group. Being invoked as a sub-skill (e.g. via `Skill()` on the main thread) does **not** by itself trigger this path, and neither does a permission-shaped restriction (see `§ Dispatch authorization` — intentionally restated here so the rule fires at the decision moment): decide by whether `Agent` is exposed and callable and whether a caller-imposed nesting bound applies, not by invocation lineage — if `Agent` is callable and no such bound applies, take the Claude Code path. The current agent acts as the reviewer, reading the embedded rules/examples/diff and producing the reviewer report in the same format.
+- **Fallback path**: when no host-provided reviewer dispatch is available — the `Agent` tool is absent from the tool surface (e.g. this skill runs inside a nested subagent context where nested `Agent` is not surfaced), or the invoking request explicitly bounds this skill to its own thread (a caller-imposed nesting bound — see `§ Dispatch authorization`, which excludes permission-shaped restrictions but not an explicit contract term from the caller) — execute the same reviewer prompt **inline sequentially** for each group. Being invoked as a sub-skill (e.g. via `Skill()` on the main thread) does **not** by itself trigger this path, and neither does a permission-shaped restriction (see `§ Dispatch authorization`): decide by whether `Agent` is exposed and callable and whether a caller-imposed nesting bound applies, not by invocation lineage — if `Agent` is callable and no such bound applies, take the Claude Code path. The current agent acts as the reviewer, reading the embedded rules/examples/diff and producing the reviewer report in the same format.
 
 Detect availability by inspecting the current tool surface. Do not attempt speculative tool calls just to probe availability. Do not substitute `claude -p`, `codex`, or other external CLIs; the inline path is the defined fallback. Collect results identically in all paths.
 
@@ -90,7 +88,7 @@ Do NOT report general code quality, bugs, or design issues — only check what i
 
 **Cross-file scope**: when a rule's text does not restrict its scope to a single file (i.e., contains no "in this file", "within this file", or equivalent limiting phrase), apply it across all changed files in the diff — including cross-file references, imports, and shared contracts between changed files (for skill development: cross-references between SKILL.md files, callee/orchestrator return-contract wording, references/*.md inter-file citations). Apply this cross-file expansion in cycle 1 — deferring cross-file rule application to a later cycle is a defect, not expected behavior.
 
-**Same-rule complete enumeration in cycle 1**: when a rule fires at one location in the diff, actively sweep the **full diff** for additional same-rule violations rather than reporting only the first instance encountered. For rules whose violations cluster around a shared identifier, anchor, naming token, or cross-reference shape (renaming residue, deprecated import names, stale API references, anchor / cross-ref form requirements — for skill development this includes step / heading anchor stability, callee-name references, bundled rule citations), grep the diff for the violation's defining token (the renamed identifier, the rule-mandated anchor form, the deprecated name) and emit a separate report entry for every match — partial enumeration across cycles is a defect of the same shape as deferring cross-file expansion above, and turns what should be one repair pass into multiple round-trips through the caller's iteration budget.
+**Same-rule complete enumeration in cycle 1**: when a rule fires at one location in the diff, actively sweep the **full diff** for additional same-rule violations rather than reporting only the first instance encountered. For rules whose violations cluster around a shared identifier, anchor, naming token, or cross-reference shape (renaming residue, deprecated import names, stale API references, anchor / cross-ref form requirements — for skill development this includes step / heading anchor stability, callee-name references, bundled rule citations), grep the diff for the violation's defining token (the renamed identifier, the rule-mandated anchor form, the deprecated name) and emit a separate report entry for every match — partial enumeration across cycles is a defect of the same shape as deferring cross-file expansion above.
 
 **Existing-baseline judgment**: when the new diff follows the same pattern as a heavily-used existing baseline, judge the new addition against the rule on its own merits — do not let the existing baseline either excuse or condemn the new lines unless the rule's own scope clause says so.
 
@@ -127,16 +125,16 @@ For each violation, report:
 - **Confidence**: `high` for hard-rule violations; `low-confidence` for intent-rule borderline findings (see note above).
 - **Classification**: `code-violation` (default, omit for brevity) | `rule-doc-drift` (only when the finding meets the rule-doc-drift criteria above)
 
-When the same rule line is violated at multiple locations or by multiple sub-rules, emit **one entry per (location, sub-rule)** pair — do not collapse them into a single entry. This keeps fixes actionable.
+When the same rule line is violated at multiple locations or by multiple sub-rules, emit **one entry per (location, sub-rule)** pair — do not collapse them into a single entry.
 
 If no violations are found, respond with exactly: "No rule violations found"
 ```
 
 Before launching reviewers, **prepare the data to embed in each prompt** (do NOT rely on reviewers running git commands themselves):
 - For each group, run `git diff <base-commit> -- <matched-files>` using the **union of files matched by any rule in that group** (so each reviewer sees every file it is responsible for, and the same file may appear in diffs for multiple groups if multiple rules match it).
-- For each rule file, resolve its `.examples.md` out of the two path lists § 2. Collect Rules step 1 gathered — no new filesystem probe. Take the rule file's path relative to `.claude/rules/` and replace the trailing `.md` (and a `.local` before it, when present) with `.examples.md`: `languages/ruby.md` and `languages/ruby.local.md` both give `languages/ruby.examples.md`. Look for that sub-path under `.claude/rules-extras/`; when it is absent, fall back to it beside the rule file (pre-split layout). Read each resolved file once — a `.md` and its `.local.md` resolve to the same one. rules-review does not read extract-rules' `examples_output_dir`: its default and the `examples_output_dir: <output_dir>` opt-back-in both resolve here, the second through that fallback, but any other value leaves the examples unfound and the section below silently omitted. Source of truth for the `.claude/rules-extras/` literal is extract-rules' `examples_output_dir` default; keep in sync when that default changes — the two sites that hardcode it are this bullet and § 2. Collect Rules step 1's second glob.
+- For each rule file, resolve its `.examples.md` out of the two path lists § 2. Collect Rules step 1 gathered — no new filesystem probe. Take the rule file's path relative to `.claude/rules/` and replace the trailing `.md` (and a `.local` before it, when present) with `.examples.md`: `languages/ruby.md` and `languages/ruby.local.md` both give `languages/ruby.examples.md`. Look for that sub-path under `.claude/rules-extras/`; when it is absent, fall back to it beside the rule file (pre-split layout). Read each resolved file once — a `.md` and its `.local.md` resolve to the same one. rules-review does not read extract-rules' `examples_output_dir`. Source of truth for the `.claude/rules-extras/` literal is extract-rules' `examples_output_dir` default; keep in sync when that default changes — the two sites that hardcode it are this bullet and § 2. Collect Rules step 1's second glob.
 - If no `.examples.md` exists for any rule in the group, omit the `## Reference: Code Examples` section entirely from that reviewer prompt (do not write a placeholder line like `(no examples file)`).
-- **Resolve pointer rules before embedding**: if a matched rule file carries no inline enforceable rule text and instead defers its substance to a document outside the scanned tree via a reference link (an `@<path>` include, or a markdown link to a doc outside `.claude/rules/`), resolve that reference and `Read` the target so the embedded `## Rules to Check` content is the actual rule text — embedding the bare pointer would make the reviewer judge against empty rules and return `No rule violations found` even when the referenced rule is violated. If the reference cannot be resolved (target missing, or outside readable scope), do **not** embed an empty stub: drop the rule from the group and record it as an explicit coverage gap per § 6. Aggregate Results, so an unread rule is never silently reported as compliant.
+- **Resolve pointer rules before embedding**: if a matched rule file carries no inline enforceable rule text and instead defers its substance to a document outside the scanned tree via a reference link (an `@<path>` include, or a markdown link to a doc outside `.claude/rules/`), resolve that reference and `Read` the target so the embedded `## Rules to Check` content is the actual rule text — embedding the bare pointer would make the reviewer judge against empty rules and return `No rule violations found` even when the referenced rule is violated. If the reference cannot be resolved (target missing, or outside readable scope), do **not** embed an empty stub: drop the rule from the group and record it as an explicit coverage gap per § 6. Aggregate Results.
 - When multiple rule files are embedded in one reviewer prompt, separate them with a `### <.claude/rules/... path>` sub-heading inside the `## Rules to Check` section.
 
 For each reviewer:
@@ -156,7 +154,7 @@ For each reviewer:
    - Keep `low-confidence` findings in the list with their marker preserved — do not drop them.
 4. Edge cases:
    - If a reviewer returns an empty response or a response that does not match either `No rule violations found` or the violation format, retry that group once. If it fails again, include a synthetic entry in the final output under the group name with `Rule file: (review failed)`, `Description: reviewer returned unparseable output`, and continue aggregation for other groups.
-   - If a rule was dropped during data prep because it is an unresolvable pointer (see § 5's **Resolve pointer rules before embedding** bullet), include a synthetic entry in the final output with `Rule file: (rule not evaluated — unresolved pointer to <ref>)` and `Description: rule body deferred to an out-of-tree document that could not be resolved; left unevaluated rather than reported clean`. These coverage-gap entries are treated the same as `(review failed)` synthetic entries for the verdict (see `## Return contract`) — they surface loudly instead of letting an unread rule pass silently as `No rule violations found`.
+   - If a rule was dropped during data prep because it is an unresolvable pointer (see § 5's **Resolve pointer rules before embedding** bullet), include a synthetic entry in the final output with `Rule file: (rule not evaluated — unresolved pointer to <ref>)` and `Description: rule body deferred to an out-of-tree document that could not be resolved; left unevaluated rather than reported clean`. These coverage-gap entries are treated the same as `(review failed)` synthetic entries for the verdict (see `## Return contract`).
    - If a reviewer returns only `low-confidence` findings (no high-confidence violations), still emit the violation list — do not substitute `No rule violations found`.
 
 ## Output Format
@@ -167,7 +165,7 @@ For each reviewer:
 No rule violations found
 ```
 
-> **Scope note**: This check covers only rules documented under `.claude/rules/`. Project-specific vocabulary, naming, or style conventions that have not yet been written into a rules file are out of scope — if such an unwritten convention may apply to the changed code, verify manually or run `Skill(extract-rules)` to capture the pattern as a rule. The prose line stays exactly `No rule violations found` so callers that substring-match on that string (see `§ 6. Aggregate Results`) keep working; a single fenced JSON verdict block (see `## Return contract`) follows it as the additive structured return value.
+> **Scope note**: This check covers only rules documented under `.claude/rules/`. Project-specific vocabulary, naming, or style conventions that have not yet been written into a rules file are out of scope — if such an unwritten convention may apply to the changed code, verify manually or run `Skill(extract-rules)` to capture the pattern as a rule. The prose line stays exactly `No rule violations found`; a single fenced JSON verdict block (see `## Return contract`) follows it as the additive structured return value.
 
 ### When violations found
 
@@ -211,7 +209,7 @@ Status mapping (evaluate in order, first match wins):
 
 Field rules:
 
-- `violations_count`: non-negative integer. Total entries in the consolidated violation list (§ 6. Aggregate Results) for `violations`; `0` for `no-issues` and `error`. (For `error` the count is `0` even when the list holds synthetic non-evaluation entries — `violations_count` is a real-finding count, not the list length. The `violations`-vs-`error` asymmetry, where `violations` counts synthetic entries mixed in with real findings while `error` reports `0`, is intentional: an `error` list by definition evaluated nothing to a finding.)
+- `violations_count`: non-negative integer. Total entries in the consolidated violation list (§ 6. Aggregate Results) for `violations`; `0` for `no-issues` and `error`. (For `error` the count is `0` even when the list holds synthetic non-evaluation entries — `violations_count` is a real-finding count, not the list length.)
 - `reason`: a closed-enum string only when `status == "error"`, otherwise JSON `null` — keep it to the enum tokens (no free-form text, newlines, or control characters) so the verdict stays mechanically parseable. **Reason selection (within `status == "error"`, evaluate in order, first match wins):** a `diff collection failed` / `rule loading failed` source first (mutually exclusive — they short-circuit before any reviewer is dispatched) → else `verdict parse failure` if the consolidated list holds ≥ 1 `(review failed)` entry → else `coverage gap only` (the synthetic entries are all coverage gaps). Closed enum:
   - `"diff collection failed"` — § 1. Prepare produced no usable changed-file list.
   - `"rule loading failed"` — matched rule files could not be read in § 3. Match Rules to Changed Files.

@@ -7,14 +7,12 @@ allowed-tools: Read, Edit, Agent
 
 # Prose Polish
 
-Refactor natural-language prose into concise, native-sounding text in a target language, using a sonnet subagent by default (the model id is overridable). The refactoring runs in a fresh `Agent` dispatch so the executor judges the prose without the main thread's context; the main thread applies the result. This is a **single-pass** skill.
+The refactoring runs in a fresh `Agent` dispatch; the main thread applies the result. This is a **single-pass** skill.
 
 **Two modes** (mutually exclusive, selected by which inputs the caller supplies — see `## Invocation contract` § Mode determination):
 
-- **File mode** — given one or more file paths, rewrite the target-language natural-language prose **in place** (comments, test descriptions, docstrings, user-facing strings). Code, identifiers, proper-noun product / API / library / tool names, and logic-bearing string literals are left untouched; ordinary technical vocabulary sitting inside the target-language prose is translated, not preserved.
+- **File mode** — given one or more file paths, rewrite the target-language natural-language prose **in place** (comments, test descriptions, docstrings, user-facing strings).
 - **Text mode** — given a block of text, return the refactored text (for polishing prose before it is presented).
-
-Designed to be called from non-interactive routines; it never prompts the user — it either returns a structured summary or terminates early with a machine-readable reason code.
 
 ## Invocation contract
 
@@ -23,9 +21,9 @@ The caller passes these fields in natural language (the skill extracts them from
 - `File:` / `Files:` *(file mode — one or more paths, repo-relative or absolute)* — the files whose target-language prose is rewritten in place. Multiple paths may be listed (one per line or comma-separated), and the two forms may be mixed in one invocation: each entry is carried verbatim into `target_files`, so Step 3 (b)'s `file ∈ target_files` scope check and its `Edit` calls both use the form the caller passed.
 - `Text:` *(text mode — the prose to refactor)* — the block of text to polish and return.
 - `Language:` *(optional, default `ja`, e.g. `ja` / `en`)* — the target language whose prose is refactored. In file mode, only prose written in this language is rewritten; prose in other languages is left untouched.
-- `Model:` *(optional, default `sonnet`)* — the model id applied as the `model` parameter on the refactor `Agent` dispatch (Step 3 (a)). **Validity predicate**: a value is valid only if it is one of the model ids the current `Agent` tool's `model` parameter accepts — check the tool's live schema loaded in the current session rather than a fixed list, since Anthropic adds new model families over time (`sonnet` / `opus` / `haiku` / `fable` as of this writing); a full `claude-*` id (e.g. `claude-sonnet-5`) is outside that parameter's accepted aliases and is therefore invalid too. An absent field or an invalid value falls back to the default `sonnet` — sonnet produces more concise, natural prose than the larger models this skill is meant to clean up after.
+- `Model:` *(optional, default `sonnet`)* — the model id applied as the `model` parameter on the refactor `Agent` dispatch (Step 3 (a)). **Validity predicate**: a value is valid only if it is one of the model ids the current `Agent` tool's `model` parameter accepts — check the tool's live schema loaded in the current session rather than a fixed list (`sonnet` / `opus` / `haiku` / `fable` as of this writing); a full `claude-*` id (e.g. `claude-sonnet-5`) is outside that parameter's accepted aliases and is therefore invalid too. An absent field or an invalid value falls back to the default `sonnet`.
 
-**Pass related files together (file mode)** — cross-file duplicate-comment detection (`## Process` Step 3's `recommendations`) works only when the related files are listed together in a **single** file-mode invocation: the refactor subagent can spot a comment duplicated across files only when it sees those files in one dispatch.
+**Pass related files together (file mode)** — cross-file duplicate-comment detection (`## Process` Step 3's `recommendations`) works only when the related files are listed together in a **single** file-mode invocation.
 
 ### Mode determination
 
@@ -33,10 +31,10 @@ Evaluate against the two mode selectors — the `File:` / `Files:` group and `Te
 
 - **`File:` / `Files:` provided AND `Text:` absent** → **file mode** (run `## Process` Steps 1–4 in the file-mode branch).
 - **`Text:` provided AND `File:` / `Files:` absent** → **text mode** (run `## Process` Steps 1–4 in the text-mode branch).
-- **Both provided** → return early with `{"status": "error", "mode": null, "language": "<resolved>", "applied_edits_count": 0, "files_modified": [], "recommendations": [], "refactored_text": null, "reason": "ambiguous args"}` — two modes were requested at once; surfaced loudly rather than silently picking one.
-- **Both absent** → return early with `{"status": "error", "mode": null, "language": "<resolved>", "applied_edits_count": 0, "files_modified": [], "recommendations": [], "refactored_text": null, "reason": "incomplete args"}` — no mode could be selected.
+- **Both provided** → return early with `{"status": "error", "mode": null, "language": "<resolved>", "applied_edits_count": 0, "files_modified": [], "recommendations": [], "refactored_text": null, "reason": "ambiguous args"}`.
+- **Both absent** → return early with `{"status": "error", "mode": null, "language": "<resolved>", "applied_edits_count": 0, "files_modified": [], "recommendations": [], "refactored_text": null, "reason": "incomplete args"}`.
 
-This fixed mode gate (one selector group present → that mode; both → ambiguous; neither → incomplete) surfaces a conflicting or empty argument set as a loud error rather than silently picking a mode. On both early-return errors `mode` is `null` (no mode was selected); callers branch on `status == "error"` + `reason`.
+On both early-return errors `mode` is `null` (no mode was selected); callers branch on `status == "error"` + `reason`.
 
 ## Dispatch authorization
 
@@ -46,20 +44,20 @@ This skill's procedure dispatches subagents, so invoking the skill **is** the re
 
 ### Step 1 — Determine mode and parse inputs (main thread)
 
-1. Resolve `Language:` to `<resolved-language>` — the provided value, else the default `ja`. This resolved value is echoed in the return contract's `language` field (so a caller that passed nothing can tell the skill defaulted to `ja`).
+1. Resolve `Language:` to `<resolved-language>` — the provided value, else the default `ja`. This resolved value is echoed in the return contract's `language` field.
 2. Parse the optional `Model:` value per `§ Invocation contract`'s `Model` field — hold a valid value for the Step 3 (a) dispatch; absent or invalid → default `sonnet`.
 3. Determine the mode per `§ Invocation contract` § Mode determination. On `ambiguous args` / `incomplete args`, emit the corresponding early-return verdict and stop.
 4. **File mode**: collect the listed paths into `target_files` (the scope-check baseline for Step 3 (b)). **Text mode**: hold the input text as `input_text`.
 
 ### Step 2 — Load the style guide (main thread)
 
-`Read` [`references/prose-style-guide.md`](references/prose-style-guide.md) — the concise-and-natural prose rules injected into the dispatch payload (Step 3 (a)). In file mode, also `Read` each entry in `target_files` for injection into that payload.
+`Read` [`references/prose-style-guide.md`](references/prose-style-guide.md). In file mode, also `Read` each entry in `target_files` for injection into that payload.
 
 ### Step 3 — Dispatch the refactor subagent
 
 #### (a) Dispatch
 
-Dispatch a fresh subagent via the `Agent` tool (`subagent_type: general-purpose`), passing the parsed `Model` value as the `Agent` `model` parameter (the default `sonnet` when none was provided). Assemble the dispatch prompt from the sections below, each framed with a clear `--- LABEL ---` fence so the subagent can parse each payload unambiguously:
+Dispatch a fresh subagent via the `Agent` tool (`subagent_type: general-purpose`), passing the parsed `Model` value as the `Agent` `model` parameter (the default `sonnet` when none was provided). Assemble the dispatch prompt from the sections below, each framed with a clear `--- LABEL ---` fence:
 
 - `--- PROSE STYLE GUIDE ---`: the full content of `references/prose-style-guide.md`
 - `--- TARGET LANGUAGE ---`: the `<resolved-language>` code
@@ -74,7 +72,7 @@ Dispatch a fresh subagent via the `Agent` tool (`subagent_type: general-purpose`
 >
 > **Preserve everything that is not target-language prose (hard constraint)**: never change code, identifiers, function / variable / type names, proper-noun product / API / library / tool names and code symbols, import paths, or any string literal that carries program logic (keys, enum values, format specifiers, paths, commands). An **ordinary** source-language word sitting inside the target-language prose — a common verb, noun, or adjective with a natural target-language equivalent, not a proper noun or code symbol — is itself translatable prose, not a preserved token: render it in the target language per the PROSE STYLE GUIDE's `Preserve-vs-translate litmus test` rather than leaving it code-mixed. Leave a **whole** passage written entirely in another language untouched. If a candidate change could alter program behavior or touch a non-prose token, do not emit it.
 >
-> Return each rewrite as a `{file, old_string, new_string, rationale}` Edit. `old_string` must match exactly one location in the current file — include **1–3 lines of surrounding context** so the snippet is unique (short one-liners collide and cause the Edit to fail). A rewrite may change the number of prose lines in either direction: merge adjacent comment lines that state the same thing, **delete** a comment whose only content is *what*-narration of the code beneath it (per the style guide's "say what the code does not" rule) by emitting an edit whose `new_string` omits that line, or **split** an overloaded unordered bullet into several (per the style guide's General rule 3) — each is a prose change, not a structural code edit. Delete a comment only when it is fully redundant with the adjacent code; otherwise shorten it. When `old_string` carries a non-target line purely for uniqueness (an adjacent line in another language, or a code line), reproduce that line **byte-identically** in `new_string` so the preserve constraint is not breached. If a file needs no prose changes, emit no edits for it. If nothing needs changing across all files, return `edits: []`.
+> Return each rewrite as a `{file, old_string, new_string, rationale}` Edit. `old_string` must match exactly one location in the current file — include **1–3 lines of surrounding context** so the snippet is unique. A rewrite may change the number of prose lines in either direction: merge adjacent comment lines that state the same thing, **delete** a comment whose only content is *what*-narration of the code beneath it (per the style guide's "say what the code does not" rule) by emitting an edit whose `new_string` omits that line, or **split** an overloaded unordered bullet into several (per the style guide's General rule 3) — each is a prose change, not a structural code edit. Delete a comment only when it is fully redundant with the adjacent code; otherwise shorten it. When `old_string` carries a non-target line purely for uniqueness (an adjacent line in another language, or a code line), reproduce that line **byte-identically** in `new_string`. If a file needs no prose changes, emit no edits for it. If nothing needs changing across all files, return `edits: []`.
 >
 > **Cross-file duplicate comments → a `recommendations` entry, not per-copy edits**: when a comment qualifies as a cross-file duplicate under the PROSE STYLE GUIDE's `Cross-file duplicate comments` rule (which owns what qualifies, the exclusions, and the threshold), do **not** emit a per-copy polish edit for those copies — instead emit a single `recommendations` entry (see RESPONSE FORMAT) flagging the duplication. A comment that does not qualify is ordinary prose — polish it as usual. If nothing qualifies, return `recommendations: []`.
 
@@ -95,7 +93,7 @@ Dispatch a fresh subagent via the `Agent` tool (`subagent_type: general-purpose`
 > ```
 > ````
 >
-> `recommendations` holds cross-file duplicate-comment consolidation candidates (return `[]` when none qualify): `summary` identifies the duplicated knowledge in one line, `files` lists the **two or more** TARGET FILES the comment recurs in (the set, not ranked), and `suggestion` is the concrete consolidate-and-remove-copies advice — when it names a consolidation destination, phrase it as an illustrative example (e.g. a shared doc or rule file) rather than asserting a specific path, since the skill never verifies or dereferences it.
+> `recommendations` holds cross-file duplicate-comment consolidation candidates (return `[]` when none qualify): `summary` identifies the duplicated knowledge in one line, `files` lists the **two or more** TARGET FILES the comment recurs in (the set, not ranked), and `suggestion` is the concrete consolidate-and-remove-copies advice — when it names a consolidation destination, phrase it as an illustrative example (e.g. a shared doc or rule file) rather than asserting a specific path.
 
 **Refactor prompt — text mode (include verbatim in the dispatch):**
 
@@ -115,20 +113,18 @@ Dispatch a fresh subagent via the `Agent` tool (`subagent_type: general-purpose`
 > ```
 > ````
 
-**`Agent`-unavailable fallback**: detect availability by inspecting the current tool surface — do not attempt a speculative call to probe it. When the `Agent` tool is absent (e.g. this skill runs inside a nested subagent context where nested `Agent` is not surfaced), perform the refactor inline in the main thread once, constructing the same fenced JSON block defined above so Step 3 (b)'s parser handles both paths identically. The inline pass runs on the executing agent's own model (the `Model` value is moot with no `Agent` to spawn). Being invoked as a sub-skill via `Skill()` does **not** by itself trigger this path, and neither does a permission-shaped restriction (see `§ Dispatch authorization` — intentionally restated here so the rule fires at the decision moment) — decide by whether `Agent` is exposed and callable, not by invocation lineage.
+**`Agent`-unavailable fallback**: detect availability by inspecting the current tool surface — do not attempt a speculative call to probe it. When the `Agent` tool is absent (e.g. this skill runs inside a nested subagent context where nested `Agent` is not surfaced), perform the refactor inline in the main thread once, constructing the same fenced JSON block defined above so Step 3 (b)'s parser handles both paths identically. The inline pass runs on the executing agent's own model. Being invoked as a sub-skill via `Skill()` does **not** by itself trigger this path, and neither does a permission-shaped restriction (see `§ Dispatch authorization`) — decide by whether `Agent` is exposed and callable, not by invocation lineage.
 
 **Dispatch failure**: if the `Agent` dispatch itself errors, times out, or returns an empty response, emit `{"status": "error", ..., "reason": "dispatch error"}` per `## Return contract` and stop — caught before the parse step, and distinct from a returned-but-unparseable verdict (Step 3 (b) sub-case 1). This is **not** a trigger for the inline fallback above; that path is pre-selected only when `Agent` is unavailable before any dispatch attempt.
 
 #### (b) Parse & apply — evaluate in this order, first match wins
 
-This single-pass parser evaluates the cases below in order, first match wins (there are no convergence / divergence cases, since there is no iteration loop):
-
 1. **Verdict missing or malformed** — no fenced JSON block found, or JSON parse fails → emit `{"status": "error", ..., "reason": "verdict parse failure"}` per `## Return contract` and stop.
 2. **Schema violation** — emit `{"status": "error", ..., "reason": "verdict schema violation"}` and stop when:
-   - **File mode**: `edits` is missing or not an array, or any entry fails its per-entry shape — each entry must have non-empty string `file`, `old_string`, and `new_string` (per-entry shape is validated **here at parse time**, before any `Edit`, so a malformed entry cannot crash a downstream `Edit` call). The optional `recommendations` field, **when present**, must be an array in which every entry has a non-empty string `summary`, a non-empty string `suggestion`, and a `files` array of **two or more distinct non-empty strings** (duplicate paths within one entry are de-duplicated before the count check — not a violation); an **absent** `recommendations` is treated as `[]` (lenient). `recommendations[].files` entries are **not** scope-checked against `target_files` (advisory, never dereferenced).
+   - **File mode**: `edits` is missing or not an array, or any entry fails its per-entry shape — each entry must have non-empty string `file`, `old_string`, and `new_string` (per-entry shape is validated **here at parse time**, before any `Edit`). The optional `recommendations` field, **when present**, must be an array in which every entry has a non-empty string `summary`, a non-empty string `suggestion`, and a `files` array of **two or more distinct non-empty strings** (duplicate paths within one entry are de-duplicated before the count check — not a violation); an **absent** `recommendations` is treated as `[]` (lenient). `recommendations[].files` entries are **not** scope-checked against `target_files` (advisory, never dereferenced).
    - **Text mode**: `refactored_text` is missing or is not a non-empty string.
 3. **Otherwise — apply (file mode) or accept (text mode)**:
-   - **File mode**: apply `edits` in order. For each entry, verify `file ∈ target_files`; if not, skip the entry without calling `Edit` (an out-of-scope write never occurs — no revert rail is needed). For each in-scope entry, call `Edit` (the Step 2 read is the baseline; re-`Read` the file first only if an earlier edit in this pass already modified it, so `old_string` matches the post-edit contents); if `old_string` is not found, skip that entry and continue (expected when two edits from one snapshot overlap a region an earlier edit already rewrote — a no-op skip, not an error). Increment `applied_edits_count` only for entries whose `Edit` call succeeded. Set `files_modified` to the distinct set of `file` values whose `Edit` succeeded, and `refactored_text = null`. Carry the validated `recommendations` through to the verdict **unchanged** — it is advisory and never applied; an absent / empty array becomes `[]`.
+   - **File mode**: apply `edits` in order. For each entry, verify `file ∈ target_files`; if not, skip the entry without calling `Edit`. For each in-scope entry, call `Edit` (the Step 2 read is the baseline; re-`Read` the file first only if an earlier edit in this pass already modified it, so `old_string` matches the post-edit contents); if `old_string` is not found, skip that entry and continue (expected when two edits from one snapshot overlap a region an earlier edit already rewrote — a no-op skip, not an error). Increment `applied_edits_count` only for entries whose `Edit` call succeeded. Set `files_modified` to the distinct set of `file` values whose `Edit` succeeded, and `refactored_text = null`. Carry the validated `recommendations` through to the verdict **unchanged** — it is advisory and never applied; an absent / empty array becomes `[]`.
    - **Text mode**: take `refactored_text` from the verdict. Set `applied_edits_count = 0`, `files_modified = []`, and `recommendations = []` (cross-file duplication is a file-mode-only concept).
 
 ### Step 4 — Emit verdict
@@ -140,7 +136,7 @@ Determine `status` and emit the verdict per `## Return contract`:
 
 ## Return contract
 
-The skill emits a **single** fenced JSON block at the very end of the invocation (the only fenced JSON block in the user-visible response, so callers can locate it unambiguously — any JSON the `Agent`-unavailable fallback synthesizes internally is held in main-thread context and does not enter the response stream):
+The skill emits a **single** fenced JSON block at the very end of the invocation (the only fenced JSON block in the user-visible response — any JSON the `Agent`-unavailable fallback synthesizes internally is held in main-thread context and does not enter the response stream):
 
 ```json
 {
@@ -161,7 +157,7 @@ Field semantics:
 
 - `status`:
   - `done`: refactoring was applied — file mode `applied_edits_count > 0`, or text mode `refactored_text` differs from the input.
-  - `no-change`: no in-place edit was applied — file mode `applied_edits_count == 0` (the subagent returned `edits: []`, or every entry was skipped as out-of-scope / `old_string` not found), or text mode `refactored_text` equals the input. In file mode `recommendations` may still be non-empty, so read it independently of `status` (see the `recommendations` field below).
+  - `no-change`: no in-place edit was applied — file mode `applied_edits_count == 0` (the subagent returned `edits: []`, or every entry was skipped as out-of-scope / `old_string` not found), or text mode `refactored_text` equals the input.
   - `error`: an early-return or dispatch error occurred — see `reason`.
 - `mode`: `"file"` or `"text"`, the resolved mode; `null` on the two `§ Mode determination` early-return errors (`ambiguous args` / `incomplete args`), where no mode was selected.
 - `language`: the **resolved** target language echoed back (`Language:` value, or the default `ja`).
@@ -185,8 +181,4 @@ When invoked as a sub-skill (i.e. via `Skill(prose-polish)` from an orchestrator
 
 ## Stop hook structural conflict (caller-side note)
 
-On Claude Code on the Web the auto-installed `~/.claude/stop-hook-git-check.sh` fires on every Stop event and feeds back `Please commit and push…` between Process steps; treat each fire as a **spurious fire** — record it, ignore the prose, and run the Process steps to completion. Do **not** commit from inside this skill; commit policy lives with the caller (the `allowed-tools` frontmatter intentionally omits any `git` command, so an attempt would fail anyway).
-
-## Keeping the style guide fresh
-
-`references/prose-style-guide.md` is the source of the concise-and-natural prose rules surfaced to the subagent. When the prose discipline you want this skill to enforce evolves (new target languages, refined concision rules), refresh the style-guide file and ship the refresh as its own commit so the change history is legible.
+On Claude Code on the Web the auto-installed `~/.claude/stop-hook-git-check.sh` fires on every Stop event and feeds back `Please commit and push…` between Process steps; treat each fire as a **spurious fire** — record it, ignore the prose, and run the Process steps to completion. Do **not** commit from inside this skill; commit policy lives with the caller.

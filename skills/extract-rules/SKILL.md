@@ -43,14 +43,14 @@ Settings file: `extract-rules.local.md` (YAML frontmatter only, no markdown body
 | `target_dirs` | `["."]` | Analysis target directories |
 | `exclude_dirs` | `[".git", ".claude"]` | Exclude directories (in addition to .gitignore) |
 | `exclude_patterns` | `[]` | Exclude file patterns (e.g., `*.generated.ts`, `*.d.ts`) |
-| `output_dir` | `.claude/rules` | Output directory for rule files (`.md` and `.local.md`). This directory is inside Claude Code's `.claude/rules/**` recursive auto-load scope, so every file written here is injected into context on session start |
+| `output_dir` | `.claude/rules` | Output directory for rule files (`.md` and `.local.md`) |
 | `examples_output_dir` | `.claude/rules-extras` | Output directory for `.examples.md` files. Defaults to a sibling directory **outside** `.claude/rules/**` so examples are not auto-loaded into context on session start. Set to `output_dir` (or any path under `output_dir`) to opt examples back into auto-load |
-| `staging_output_dir` | `.claude/rules-staging` | Output directory for staged project-level patterns extracted in incremental modes (`--from-conversation` / `--from-pr` / `--apply-conversation-candidates`). On 1st observation, project-level patterns land here; on 2nd observation (matched in a later incremental run or by `--update`), they are promoted to `<output_dir>/project.md` and removed from staging. Defaults to a sibling directory **outside** `.claude/rules/**` so staged candidates are not auto-loaded into context on session start. Set to `output_dir` (or any path under `output_dir`) to opt staging back into auto-load. Language / framework / integration patterns bypass staging and land directly in their respective `.local.md` files (gating is scoped to project-level patterns). Note: uncommitted staging files are therefore invisible to downstream automation that watches only `output_dir` — `dev-workflow`'s Completion section explicitly surfaces them as a reminder so candidates are not silently left behind. |
+| `staging_output_dir` | `.claude/rules-staging` | Output directory for staged project-level patterns extracted in incremental modes (`--from-conversation` / `--from-pr` / `--apply-conversation-candidates`). On 1st observation, project-level patterns land here; on 2nd observation (matched in a later incremental run or by `--update`), they are promoted to `<output_dir>/project.md` and removed from staging. Defaults to a sibling directory **outside** `.claude/rules/**` so staged candidates are not auto-loaded into context on session start. Set to `output_dir` (or any path under `output_dir`) to opt staging back into auto-load. Language / framework / integration patterns bypass staging and land directly in their respective `.local.md` files (gating is scoped to project-level patterns). |
 | `language` | `ja` | Report language (e.g., `ja`) |
 | `split_output` | `true` | Separate Principles (.md) and patterns (.local.md) |
 | `resolve_references` | `true` | Resolve file references during restructure |
-| `compaction_threshold` | `40000` | Char count threshold for `--compact` mode (file is compacted if char count exceeds this). Set to a very large number (e.g. `99999999`) to opt out of compaction. The default `40000` matches Claude Code's per-file warning threshold (40k chars, observed in Claude Code 2.1.x) — firing the gate exactly at the warning matches the user's visible signal that the file needs attention (buffer 0). To restore the prior `32000` default (80% buffer for subsequent rule additions — preventive trigger before the warning fires), set `compaction_threshold: 32000` explicitly |
-| `min_cluster_size` | `3` | Minimum related-bullet cluster size for `--compact` mode's consolidation detection. The subagent emits `consolidation_proposals` only when a cluster has at least this many related bullets. Set to a very large number (e.g. `99999999`) to disable consolidation while keeping compaction (matches the `compaction_threshold` opt-out sentinel convention) |
+| `compaction_threshold` | `40000` | Char count threshold for `--compact` mode (file is compacted if char count exceeds this). Set to a very large number (e.g. `99999999`) to opt out of compaction. The default `40000` matches Claude Code's per-file warning threshold (40k chars, observed in Claude Code 2.1.x) — firing the gate exactly at the warning matches the user's visible signal that the file needs attention (buffer 0). |
+| `min_cluster_size` | `3` | Minimum related-bullet cluster size for `--compact` mode's consolidation detection. The subagent emits `consolidation_proposals` only when a cluster has at least this many related bullets. Set to a very large number (e.g. `99999999`) to disable consolidation while keeping compaction |
 
 ```yaml
 ---
@@ -74,7 +74,7 @@ min_cluster_size: 3
 
 ## Output Structure
 
-Three output directories are involved: `output_dir` for rule files (`.md` / `.local.md`), `examples_output_dir` for `.examples.md` files, and `staging_output_dir` for staged 1st-observation project-level patterns from incremental modes. The default values place rule files under Claude Code's `.claude/rules/**` recursive auto-load scope and place examples / staging in sibling directories outside that scope, so examples and staged candidates do not consume context on session start. The `paths:` frontmatter on rule files is preserved as a human-facing category-scope hint — its loader-side semantics is not empirically verified, and the actual auto-load boundary is determined by directory placement only.
+Three output directories are involved: `output_dir` for rule files (`.md` / `.local.md`), `examples_output_dir` for `.examples.md` files, and `staging_output_dir` for staged 1st-observation project-level patterns from incremental modes. The `paths:` frontmatter on rule files is preserved as a human-facing category-scope hint — its loader-side semantics is not empirically verified, and the actual auto-load boundary is determined by directory placement only.
 
 **Default** (`split_output: true`):
 ```text
@@ -98,9 +98,7 @@ Three output directories are involved: `output_dir` for rule files (`.md` / `.lo
 └── project.staging.local.md       # 1st-observation project-level candidates (incremental modes only)
 ```
 
-Staging holds project-level 1-shot pattern candidates written by a single `--from-conversation` / `--from-pr` invocation; the next incremental run promotes a re-observed candidate to canonical and removes it from staging.
-
-Principles (portable across projects) and Project-specific patterns (local) are separated by default. This enables organizational rule sharing and AI-driven merge across projects.
+Principles (portable across projects) and Project-specific patterns (local) are separated by default.
 
 **Hybrid mode** (`split_output: false`):
 ```text
@@ -132,36 +130,7 @@ When a framework has distinct architectural layers, generate layer-specific file
 When integration libraries are detected alongside a layered framework:
 - `integrations/<framework>-<integration>.md` — Integration-specific rules
 - Separated from layer files into dedicated `integrations/` directory
-- Framework name is included because rules differ by host framework
-  (e.g., Rails: `render inertia:` vs Laravel: `Inertia::render()`)
 - In split mode, integration files also get `.local.md` counterparts
-
-Example output with integrations (split mode — each category also gets a `.examples.md` under `examples_output_dir`):
-```text
-.claude/rules/                     # output_dir
-├── languages/
-│   └── ruby.md / ruby.local.md
-├── frameworks/
-│   ├── rails.md / rails.local.md
-│   ├── rails-controllers.md / .local.md
-│   └── rails-models.md / .local.md
-├── integrations/
-│   ├── rails-inertia.md / .local.md
-│   └── rails-pundit.md / .local.md
-└── project.md
-
-.claude/rules-extras/              # examples_output_dir
-├── languages/
-│   └── ruby.examples.md
-├── frameworks/
-│   ├── rails.examples.md
-│   ├── rails-controllers.examples.md
-│   └── rails-models.examples.md
-├── integrations/
-│   ├── rails-inertia.examples.md
-│   └── rails-pundit.examples.md
-└── project.examples.md
-```
 
 **Format switching:** Run `--restructure` after changing `split_output` setting to switch between split and hybrid formats.
 
@@ -250,7 +219,7 @@ For each detected language, framework, and **integration library**:
 4. **For project-specific patterns:**
    - Extract only the **minimal signature** (type definition, function signature, or API combination)
    - Format as one line: `signature` - brief context (2-5 words)
-   - Avoid multi-line code blocks to minimize context overhead
+   - Avoid multi-line code blocks
 
 5. Apply AI judgment to determine which patterns meet the extraction criteria (see `references/extraction-criteria.md`)
 
@@ -267,7 +236,7 @@ Also analyze non-code documentation:
 
 Extract explicit coding rules and guidelines from these documents.
 
-**Deduplication check:** Read any files under `.claude/rules/` to build a set of already-documented rules. Rules extracted in Step 4 that overlap with these existing rules should be skipped to avoid duplication. Note: CLAUDE.md is NOT a deduplication source — rules should exist in `.claude/rules/` even if also mentioned in CLAUDE.md, because rule files are portable across projects via merge-rules. This check applies to all modes (Full Extraction, Update, Conversation, Conversation Candidate Apply, PR Review).
+**Deduplication check:** Read any files under `.claude/rules/` to build a set of already-documented rules. Rules extracted in Step 4 that overlap with these existing rules should be skipped. Note: CLAUDE.md is NOT a deduplication source — rules should exist in `.claude/rules/` even if also mentioned in CLAUDE.md. This check applies to all modes (Full Extraction, Update, Conversation, Conversation Candidate Apply, PR Review).
 
 ### Step 6: Generate Output
 
@@ -277,7 +246,7 @@ Read `references/security.md` before generating output to ensure sensitive infor
    - If exists: Error "Output directory already exists. Use `--restructure` to reorganize, `--update` to add new patterns, or delete the directory manually to start fresh."
    - If not exists: Create `output_dir`. Also create `examples_output_dir` if it differs from `output_dir` and does not exist yet (when both resolve to the same path the single directory created above is reused).
 
-2. Generate rule files per category. Rule files (`<name>.md` and `<name>.local.md`) are written under `output_dir`; `<name>.examples.md` files are written under `examples_output_dir` (default: `.claude/rules-extras` — outside Claude Code's `.claude/rules/**` auto-load scope, so examples do not consume context on session start).
+2. Generate rule files per category. Rule files (`<name>.md` and `<name>.local.md`) are written under `output_dir`; `<name>.examples.md` files are written under `examples_output_dir`.
 
    - `languages/<lang>.md` for language-specific rules (under `output_dir`)
    - `frameworks/<framework>.md` for framework-specific rules (under `output_dir`)
@@ -287,9 +256,9 @@ Read `references/security.md` before generating output to ensure sensitive infor
 
    **By default** (`split_output: true`): Generate 3 files per category (except project which gets 2):
    - `<output_dir>/<name>.md` — `## Principles` only (portable), with `paths:` frontmatter
-   - `<output_dir>/<name>.local.md` — `## Project-specific patterns` only (local), with the **same `paths:` frontmatter** as its `<name>.md` counterpart (`paths:` is retained as a human-facing category-scope hint; loader-side semantics is not empirically verified, and auto-load is determined by directory placement only)
-   - `<examples_output_dir>/<name>.examples.md` — Examples for both. Whether the file is auto-loaded depends on `examples_output_dir`'s placement relative to `.claude/rules/**`: with the default `.claude/rules-extras` it is outside auto-load scope; with `examples_output_dir` set to `output_dir` (or any path under it) it is auto-loaded
-   - Layer-specific and regular files each define their own `paths:` independently (applies to both `.md` and `.local.md`). Cross-layer files (`<framework>.md` / `<framework>.local.md`) use no `paths:` or broad scope as they apply across all layers.
+   - `<output_dir>/<name>.local.md` — `## Project-specific patterns` only (local), with the **same `paths:` frontmatter** as its `<name>.md` counterpart
+   - `<examples_output_dir>/<name>.examples.md` — Examples for both
+   - Layer-specific and regular files each define their own `paths:` independently (applies to both `.md` and `.local.md`). Cross-layer files (`<framework>.md` / `<framework>.local.md`) use no `paths:` or broad scope.
    - Skip generating a file if it would be empty. Skipped files are omitted from the Step 7 report.
 
    **When `split_output: false`**: Generate single hybrid file per category under `output_dir`, and the matching `<name>.examples.md` under `examples_output_dir`.
@@ -338,7 +307,7 @@ For **Project-specific patterns** section:
 - Only include the minimal signature: type name, function signature with return type, or API combination
 - Example of minimal: `useAuth() → { user, login, logout }` (not full implementation)
 
-For a **prose rule** — a project-level rule stating a working convention rather than naming a symbol, the shape conversation extraction produces most often — see `references/extraction-criteria.md` § What a Rule Is Made Of, which defines it alongside the criteria that judge it and states how a shape mismatch is dispositioned.
+For a **prose rule** — a project-level rule stating a working convention rather than naming a symbol — see `references/extraction-criteria.md` § What a Rule Is Made Of.
 
 **For `.examples.md` files:** Read `references/examples-format.md` for file structure, Good/Bad contrast guidelines, and the reference section format. Each rule file with a corresponding `.examples.md` must end with a `## Examples` reference section (see the reference for format). `###` titles must match the corresponding rule name exactly — do not translate or rephrase.
 
@@ -361,7 +330,7 @@ After generating all rule files, verify no sensitive information was included:
    - Internal URLs: `(internal|staging|localhost:[0-9]+)`
 2. If found, redact with placeholders (e.g., `API_KEY_REDACTED`) and warn the user
 
-**Note:** This check applies to all modes that generate or update rule files (Full Extraction, Update, Restructure, Conversation Extraction, Conversation Candidate Apply, Realign). Also check `.examples.md` files — they contain actual code from the codebase and may include sensitive information.
+**Note:** This check applies to all modes that generate or update rule files (Full Extraction, Update, Restructure, Conversation Extraction, Conversation Candidate Apply, Realign). Also check `.examples.md` files.
 
 ### Step 7: Report Summary
 
@@ -373,9 +342,9 @@ Display analysis summary. See `references/report-templates.md` for format.
 
 When `--update` is specified, re-scan the codebase and add new patterns while preserving existing rules.
 
-**Staging awareness**: Update Mode reads the staging file under `staging_output_dir` (when present) and promotes any staged project-level patterns that re-match against fresh code observations to canonical (`<output_dir>/project.md`, the single hybrid file for project-level patterns), removing them from staging. Update Mode does **not** write new entries to staging — un-matched new patterns from this run land directly in canonical as today (operator-driven Update is treated as explicit "land this now" intent). See `references/conversation-mode.md` § Mode interaction summary for the full per-mode staging behavior.
+**Staging awareness**: Update Mode reads the staging file under `staging_output_dir` (when present) and promotes any staged project-level patterns that re-match against fresh code observations to canonical (`<output_dir>/project.md`, the single hybrid file for project-level patterns), removing them from staging. Update Mode does **not** write new entries to staging — un-matched new patterns from this run land directly in canonical. See `references/conversation-mode.md` § Mode interaction summary for the full per-mode staging behavior.
 
-**Operational note**: After a dependency's major-version bump, run `--update` so the Step U3 staleness check flags removed symbols. The check only scans inline `` `symbol` `` in `.local.md`'s `## Project-specific patterns` — `.examples.md` is not auto-scanned, so manually review it for the affected framework(s). Stale samples there propagate via reviewers trusting project examples as authoritative. `--restructure` is not a substitute here: it reorganizes files without running the staleness check.
+**Operational note**: After a dependency's major-version bump, run `--update` so the Step U3 staleness check flags removed symbols. The check only scans inline `` `symbol` `` in `.local.md`'s `## Project-specific patterns` — `.examples.md` is not auto-scanned, so manually review it for the affected framework(s).
 
 ### Step U1: Load Settings and Check Prerequisites
 
@@ -386,7 +355,7 @@ When `--update` is specified, re-scan the codebase and add new patterns while pr
    - If `split_output: true` and hybrid files exist (`.md` files containing both `## Principles` and `## Project-specific patterns`): warn that hybrid files were found — recommend running `--restructure` to migrate to split format
    - If `split_output: false` and `.local.md` files exist: warn that orphaned `.local.md` files were found — recommend deleting orphaned files manually or running `--restructure`
 
-3. Load existing rule files to understand current rules (load `<output_dir>/<name>.md`, `<output_dir>/<name>.local.md`, and `<examples_output_dir>/<name>.examples.md` when split). When `examples_output_dir` does not yet exist (e.g. legacy projects where examples were co-located under `output_dir`), fall back to loading `<output_dir>/<name>.examples.md` so existing examples are not invisible to the merge step; `--restructure` can subsequently migrate them to `examples_output_dir`. Additionally load `<staging_output_dir>/project.staging.local.md` if present — this file is required for the Step U4 staging-match branch. Skip silently if the staging file does not yet exist (no incremental run has populated it yet).
+3. Load existing rule files to understand current rules (load `<output_dir>/<name>.md`, `<output_dir>/<name>.local.md`, and `<examples_output_dir>/<name>.examples.md` when split). When `examples_output_dir` does not yet exist (e.g. legacy projects where examples were co-located under `output_dir`), fall back to loading `<output_dir>/<name>.examples.md`. Additionally load `<staging_output_dir>/project.staging.local.md` if present — this file is required for the Step U4 staging-match branch. Skip silently if the staging file does not yet exist.
 
 ### Step U2: Re-scan Codebase
 
@@ -409,13 +378,11 @@ Before adding new rules, check existing project-specific patterns for staleness:
 3. Patterns whose symbols can no longer be found → Flag as potentially stale in the Step U6 report
 4. Do NOT auto-delete stale rules — only report them for user review
 
-This prevents rule files from growing indefinitely as the codebase evolves.
-
 ### Step U4: Compare and Merge
 
 For each extracted principle/pattern:
 
-1. **Check if already exists**: Compare with existing rules (check both shared and local files if `split_output: true`). Evaluate the branches below in order, first match wins (same evaluate-in-order discipline as `references/conversation-mode.md` § Step C5's "Check for duplicates and route per category" step):
+1. **Check if already exists**: Compare with existing rules (check both shared and local files if `split_output: true`). Evaluate the branches below in order, first match wins:
    - Exact match → Skip
    - Similar but different → Keep both (let user review)
    - **Cross-format duplicate check**: A project-specific pattern may have been promoted to a Principle by merge-rules. Check if the pattern's description semantically matches an existing principle name in the corresponding `.md` file (use AI judgment: case-insensitive, synonyms). For example, `` `useAuth() → { user, login, logout }` - auth hook interface `` is a duplicate of `Auth hook interface (useAuth)` in `## Principles`. Skip patterns that already exist as Principles.
@@ -432,7 +399,7 @@ For each extracted principle/pattern:
 4. **When `split_output: true`**: Principles go to `<output_dir>/<name>.md`, patterns go to `<output_dir>/<name>.local.md`. Create missing files with proper frontmatter.
 5. For `<output_dir>/project.md`: always append to the single file
 6. Maintain file structure and formatting
-7. **Update `.examples.md`**: Resolve the target path via `examples_output_dir` (`<examples_output_dir>/<name>.examples.md`). Create the file (and any missing parent directories under `examples_output_dir`) when absent. Follow the common generation procedure in `references/examples-format.md` to add examples for each new rule. Per `references/conversation-mode.md` § Step C5's **"Update `.examples.md`"** step ("examples-on-canonical-only"), both direct canonical appends and promotes from staging count as canonical writes and trigger examples; Update Mode has no staging-only path, so every new rule in this step gets an `.examples.md` entry.
+7. **Update `.examples.md`**: Resolve the target path via `examples_output_dir` (`<examples_output_dir>/<name>.examples.md`). Create the file (and any missing parent directories under `examples_output_dir`) when absent. Follow the common generation procedure in `references/examples-format.md` to add examples for each new rule. Promotes from staging (item 8) count as canonical writes and get an entry too.
 8. **Promote staging matches** (project-level patterns flagged in Step U4 as staging matches): append each to `<output_dir>/project.md` (the single hybrid file for project-level patterns, per item 5) and, after verifying the canonical write, `Edit` `<staging_output_dir>/project.staging.local.md` to remove the corresponding bullet. If the staging-delete `Edit` fails because the bullet is no longer uniquely matchable, leave the duplicate — the next session's canonical-match skip resolves it. Update Mode does not write new staging entries.
 
 ### Step U5.5: Security Self-Check
@@ -441,7 +408,7 @@ Run Security Self-Check (same as Step 6.5) on new/updated files, **including the
 
 ### Step U6: Report Changes
 
-Report what was added per file. Also report any stale rules found in Step U3. Include `canonical_skip_count` and `promoted_count` (Update Mode never increments `staged_count` because it does not write new staging entries). See `references/report-templates.md` for format.
+Report what was added per file. Also report any stale rules found in Step U3. Include `canonical_skip_count` and `promoted_count` (Update Mode never increments `staged_count`). See `references/report-templates.md` for format.
 
 ---
 
@@ -469,7 +436,7 @@ Scan existing rule content (loaded in R1) for file references (Markdown links, t
 
 ### Step R3: Show Restructure Plan and Confirm
 
-Compare old and new file structures, display planned changes (Keep/New/Remove per file), and wait for user confirmation before proceeding. If references were resolved in R2.5, include the number of rules extracted from referenced files in the plan display so the user understands where additional rules came from.
+Compare old and new file structures, display planned changes (Keep/New/Remove per file), and wait for user confirmation before proceeding. If references were resolved in R2.5, include the number of rules extracted from referenced files in the plan display.
 
 ### Step R4: Merge and Write
 
@@ -492,7 +459,7 @@ Report structural changes, content merge summary, unmatched rules, and reference
 
 ## Conversation Extraction Mode
 
-When `--from-conversation` is specified, extract rules from the full conversation history stored in session `.jsonl` files. The heavy processing (jsonl parsing, analysis, rule writing) is delegated to a subagent to keep the main context clean.
+When `--from-conversation` is specified, extract rules from the full conversation history stored in session `.jsonl` files. The heavy processing (jsonl parsing, analysis, rule writing) is delegated to a subagent.
 
 ### Step C1: Prepare and Locate Session File (main agent)
 
@@ -505,7 +472,7 @@ When `--from-conversation` is specified, extract rules from the full conversatio
 
    1. Get the current working directory (`pwd`)
    2. Encode the path: replace `/` and `.` with `-` (leading `-` is kept)
-      - Example: `/Users/hiropon/Sources/github.com/myproject` → `-Users-hiropon-Sources-github-com-myproject`
+      - Example: `/Users/alice/src/github.com/acme/widget` → `-Users-alice-src-github-com-acme-widget`
    3. Session files are stored at: `~/.claude/projects/<encoded-path>/<session-id>.jsonl`
 
 4. **Select the target session:**
@@ -533,14 +500,14 @@ After the subagent completes, report the results to the user.
 
 ## Conversation Candidate Apply Mode
 
-When `--apply-conversation-candidates <path>` is specified, run **only Step C5** (dedup / route / write / promote / `.examples.md` / Security Self-Check) against a pre-scanned rule-candidate block, skipping the jsonl parsing and analysis (C3/C4). The candidates are produced by the caller — typically a shared conversation scan in an orchestrator such as `dev-workflow` — so this mode is the **apply** half of a scan/apply split. For standalone testing, pass a hand-authored candidate file.
+When `--apply-conversation-candidates <path>` is specified, run **only Step C5** (dedup / route / write / promote / `.examples.md` / Security Self-Check) against a pre-scanned rule-candidate block, skipping the jsonl parsing and analysis (C3/C4).
 
-The input candidate file conforms to `references/conversation-mode.md` § Rule-candidate contract. This mode runs entirely in the **main agent** (no subagent spawn): the input is already sanitized and small, so the context-isolation rationale that Conversation Extraction Mode's Step C2 subagent serves does not apply — this mirrors how Update Mode and PR Review Mode run Step C5 directly (see `references/conversation-mode.md` § Step C5 item 1).
+The input candidate file conforms to `references/conversation-mode.md` § Rule-candidate contract. This mode runs entirely in the **main agent** (no subagent spawn).
 
 ### Step A1: Load Settings and Read Candidates (main agent)
 
 1. Load settings from `extract-rules.local.md` (same as Step 1 in Full Extraction Mode).
-2. Check the output directory exists (default `.claude/rules/`); if not, Error "Run /extract-rules first to initialize rule files." (same as Step C1's output-directory-existence check).
+2. Check the output directory exists (default `.claude/rules/`); if not, Error "Run /extract-rules first to initialize rule files."
 3. Read the candidate file at `<path>` and validate it against `references/conversation-mode.md` § Rule-candidate contract: each `### Candidate <N>` carries the required fields, `Type` / `Category` hold enum values, and the trailing `Candidates: <N>` count matches the number of parsed `### Candidate` blocks. On an empty file, a parse failure, a count mismatch, or any candidate that omits a field its `Type` / `Category` discriminators mark required-non-empty (per the contract's Fields section — e.g. a `Type: pattern` candidate with an empty `Signature`), stop with a fail-loud diagnostic naming the path and the validation failure — do not silently proceed with a partial candidate set.
 
 ### Step A2: Apply via Step C5 (main agent)
@@ -551,28 +518,28 @@ Execute `references/conversation-mode.md` § Step C5 with the Step A1 candidate 
 
 ## Compaction Mode
 
-When `--compact` is specified, compact over-threshold rules files so they stay below Claude Code's per-file warning threshold (40k chars in Claude Code 2.1.x). Target file selection, char-count check, and threshold filtering all happen inside this mode — callers invoke `--compact` without file arguments and let this mode resolve the target set.
+When `--compact` is specified, compact over-threshold rules files so they stay below Claude Code's per-file warning threshold. Target file selection, char-count check, and threshold filtering all happen inside this mode — callers invoke `--compact` without file arguments and let this mode resolve the target set.
 
-Use the Pattern A iteration loop convention (sibling to `verify-diff` / `publicity-review` / `skill-review`): the Skill wrapper runs in the main thread, a subagent performs the compaction analysis, the main thread applies the resulting `mechanical_edits`, and a fenced JSON return contract is emitted for caller dispatch. Per-file outer loop with `max_iterations = 2` (default).
+The Skill wrapper runs in the main thread, a subagent performs the compaction analysis, the main thread applies the resulting `mechanical_edits`, and a fenced JSON return contract is emitted for caller dispatch. Per-file outer loop with `max_iterations = 2` (default).
 
 ### Step CP1: Load Settings and Resolve Targets
 
 1. Load settings from `extract-rules.local.md` (same as Step 1 in Full Extraction Mode). `compaction_threshold` (default `40000`) is the filter applied below in step 3. `min_cluster_size` (default `3`) gates consolidation detection inside Step CP2 — it does not affect target resolution here
 2. Check `output_dir` exists. If not, emit `{"status": "error", "reason": "output directory not found"}` and stop
 3. Resolve targets:
-   - With explicit path arguments (caller-passed paths): use those paths. For each, `Read` the file content and measure its char count via the `Read` output length (do **not** use `Bash(wc -m)` — `Read` length matches Claude Code's char-count metric, while `wc -c` reports bytes which diverge for multi-byte content). All explicit paths join the Step CP2 target set, regardless of char count: under-threshold paths still enter Step CP2 so the consolidation pass can run on them — `mechanical_edits` will be empty for under-threshold files (the convergence check at (d) terminates them immediately), but `consolidation_proposals` may still be emitted. The widened `skipped-below-threshold` status (set at Step CP2 (d), not here — (f) merely records what (d) chose) labels these files. Explicit-paths mode accepts paths under either `output_dir` or `examples_output_dir` — callers needing to compact `.examples.md` files when `examples_output_dir != output_dir` must use this mode
-   - Without arguments: `Glob <output_dir>/**/*.md` (covers `.md` / `.local.md` uniformly — and also `.examples.md` if any are still co-located under `output_dir` from legacy runs, since the glob does not distinguish by extension). For each file, `Read` and measure its char count; collect entries with char count `> compaction_threshold` into the target set. **Note**: discovery mode does **not** surface sub-threshold files in `files_processed` (they are silently filtered out). This asymmetry is intentional: an unargumented `--compact` invocation reports only files that actually crossed the threshold, while caller-passed paths report every path the caller named so the caller can correlate input to output. **Trade-off**: clusters inside small (under-threshold) files are not detected by discovery mode; to scan them for consolidation, invoke `--compact <path>` (or `--compact <path1> <path2> ...`) with explicit paths. **Discovery scope**: this branch scans `output_dir` only — when `examples_output_dir` differs from `output_dir` (including the default `.claude/rules-extras` configuration), `.examples.md` files under `examples_output_dir` are **not** discovered automatically. Rationale: `.examples.md` files outside `.claude/rules/**` are already exempt from Claude Code auto-load, so they do not consume session-start context and the compaction priority is correspondingly lower; the explicit-paths route preserves the ability to compact them on demand
+   - With explicit path arguments (caller-passed paths): use those paths. For each, `Read` the file content and measure its char count via the `Read` output length (do **not** use `Bash(wc -m)` — `Read` length matches Claude Code's char-count metric, while `wc -c` reports bytes which diverge for multi-byte content). All explicit paths join the Step CP2 target set, regardless of char count: under-threshold paths still enter Step CP2 so the consolidation pass can run on them — `mechanical_edits` will be empty for under-threshold files (the convergence check at (d) terminates them immediately), but `consolidation_proposals` may still be emitted. The `skipped-below-threshold` status (set at Step CP2 (d), not here — (f) merely records what (d) chose) labels these files. Explicit-paths mode accepts paths under either `output_dir` or `examples_output_dir` — callers needing to compact `.examples.md` files when `examples_output_dir != output_dir` must use this mode
+   - Without arguments: `Glob <output_dir>/**/*.md` (covers `.md` / `.local.md` uniformly — and also `.examples.md` if any are still co-located under `output_dir` from legacy runs, since the glob does not distinguish by extension). For each file, `Read` and measure its char count; collect entries with char count `> compaction_threshold` into the target set. **Note**: discovery mode does **not** surface sub-threshold files in `files_processed` (they are silently filtered out); to scan an under-threshold file for consolidation, invoke `--compact <path>` (or `--compact <path1> <path2> ...`) with explicit paths. **Discovery scope**: this branch scans `output_dir` only — when `examples_output_dir` differs from `output_dir` (including the default `.claude/rules-extras` configuration), `.examples.md` files under `examples_output_dir` are **not** discovered automatically; the explicit-paths route compacts them on demand
 
    Cache the per-file `Read` content keyed by path for reuse in Step CP2 (a) iter 1's dispatch payload — avoids a second `Read` of the same file before the first subagent dispatch
 4. If the target set is empty (no paths resolved at all — empty explicit-paths argument or zero discovery hits), emit `{"status": "no-actionable", "compaction_threshold": <int>, "min_cluster_size": <int>, "files_processed": [], "reason": "no targets resolved"}` and stop
 
 ### Step CP2: Per-File Compaction (Pattern A iteration loop)
 
-**Pre-register per-file tasks** — before entering the per-file outer loop, `TaskCreate` one task per file in the target set (e.g. `compact: <path>`); the target set now includes both over-threshold and under-threshold explicit paths (under-threshold paths enter the loop so the consolidation pass can run on them). Mark each task `in_progress` (via `TaskUpdate`) before its first dispatch and `completed` after the per-file loop terminates (regardless of `per_file_status` outcome — `converged` / `partial` / `unresolved` / `error` / `skipped-below-threshold` all flip the row to `completed`; the outcome is carried in the per-file record, not the task status). Per-iter progress within a file is tracked inline within this Step (no per-iter task) because the iter count is bounded at `max_iterations = 2`. Where the Task tools are unavailable (e.g. the VSCode extension, or Claude Code before v2.1.142), use the equivalent `TodoWrite` operations instead — the status values and pre-register semantics are identical; `allowed-tools` grants both.
+**Pre-register per-file tasks** — before entering the per-file outer loop, `TaskCreate` one task per file in the target set (e.g. `compact: <path>`). Mark each task `in_progress` (via `TaskUpdate`) before its first dispatch and `completed` after the per-file loop terminates (regardless of `per_file_status` outcome — `converged` / `partial` / `unresolved` / `error` / `skipped-below-threshold` all flip the row to `completed`; the outcome is carried in the per-file record, not the task status). Per-iter progress within a file is tracked inline within this Step (no per-iter task). Where the Task tools are unavailable (e.g. the VSCode extension, or Claude Code before v2.1.142), use the equivalent `TodoWrite` operations instead — the status values and pre-register semantics are identical; `allowed-tools` grants both.
 
-For each file in the target set, run the per-file iteration loop. `max_iterations = 2` by default (compaction is judgment-heavy; two passes give the subagent a chance to refine its first attempt before declaring `partial`). Under-threshold files terminate at iter 1's (d) convergence check (chars_after ≤ compaction_threshold is already true), so their loop effectively runs once for consolidation detection only.
+For each file in the target set, run the per-file iteration loop. `max_iterations = 2` by default. Under-threshold files terminate at iter 1's (d) convergence check (chars_after ≤ compaction_threshold is already true), so their loop effectively runs once for consolidation detection only.
 
-**(a) Read & dispatch (per-iter)**: On iter 1, reuse the cached content from Step CP1 step 3 — `chars_before` is that cache entry's char count (avoids re-reading the same file). On iter `i ≥ 2`, re-`Read` the target file so the subagent operates on the post-prior-iter content. Spawn an `Agent` (`subagent_type: general-purpose`) — dispatch without asking the user to re-confirm; per `§ Dispatch authorization`, a permission-shaped restriction does not justify substituting inline execution — with the dispatch prompt assembled from these `--- LABEL ---` sections (same fence convention as `verify-diff` Step 3 dispatch):
+**(a) Read & dispatch (per-iter)**: On iter 1, reuse the cached content from Step CP1 step 3 — `chars_before` is that cache entry's char count (avoids re-reading the same file). On iter `i ≥ 2`, re-`Read` the target file so the subagent operates on the post-prior-iter content. Spawn an `Agent` (`subagent_type: general-purpose`) — dispatch without asking the user to re-confirm; per `§ Dispatch authorization`, a permission-shaped restriction does not justify substituting inline execution — with the dispatch prompt assembled from these `--- LABEL ---` sections:
 
 - `--- TARGET FILE ---`: absolute path + full current content
 - `--- COMPACTION HEURISTICS ---`: the four heuristics enumerated in `references/compaction-mode.md` § Heuristics (class-level extension merge / similar-entry merge / example reference extraction / one-shot incident dropout) — emit into `mechanical_edits` / `structural_notes`
@@ -580,19 +547,19 @@ For each file in the target set, run the per-file iteration loop. `max_iteration
 - `--- TARGET CHARS ---`: the resolved `compaction_threshold`
 - `--- MIN CLUSTER SIZE ---`: the resolved `min_cluster_size` integer
 - `--- ITER INFO ---`: current iter number (1 or 2), `max_iter` (2). On iter 2, also include a one-line summary of what iter 1 applied (the count of `mechanical_edits` landed and the iter-1 `chars_after` figure) so the subagent can plan an additional pass. Note: `consolidation_proposals` are collected from iter 1 only and the subagent should not re-emit them on iter 2
-- `--- COMPACTOR PROMPT ---`: the subagent instructions, including the `mechanical_edits` `old_string` uniqueness convention (1–3 lines of surrounding context, per the `verify-diff` convention) and the two-heuristic-set / distinct-output-array routing (see `references/compaction-mode.md` § Contract). Include the body verbatim from `references/compaction-mode.md`
+- `--- COMPACTOR PROMPT ---`: the subagent instructions, including the `mechanical_edits` `old_string` uniqueness convention (1–3 lines of surrounding context) and the two-heuristic-set / distinct-output-array routing (see `references/compaction-mode.md` § Contract). Include the body verbatim from `references/compaction-mode.md`
 - `--- RESPONSE FORMAT ---`: the fenced JSON schema the subagent must emit (per-iter response, not the top-level skill return shape)
 
-**(b) Parse**: parse the subagent's fenced JSON response. Evaluate in this order, **first match wins** (same evaluate-in-order discipline as `verify-diff` § (b) Parse & apply):
+**(b) Parse**: parse the subagent's fenced JSON response. Evaluate in this order, **first match wins**:
 
 1. **Verdict missing or malformed** — no fenced JSON block found, or JSON parse fails → terminate this file's loop with per-file `status: "error"`, `reason: "verdict parse failure"`
-2. **Schema violation** — required keys (`mechanical_edits`, `structural_notes`, `consolidation_proposals`) are missing, values are not arrays, or any entry fails its expected shape: each `mechanical_edits` entry needs non-empty string `file`, `old_string`, `new_string`; each `structural_notes` entry needs non-empty string `file`, `description`, `rationale`; each `consolidation_proposals` entry needs non-empty string `file`, non-empty `cluster_bullets` array (each item with non-empty string `line_range` and `snippet`), `merged_principle` object with non-empty string `name` and `text`, and non-empty `replacements` array (each item with non-empty string `line_range`, `strategy ∈ {"delete", "cross_ref"}`, and — when `strategy: "cross_ref"` — non-empty string `cross_ref_text`) → terminate with per-file `status: "error"`, `reason: "verdict schema violation"`. Validating entry shape here prevents a malformed entry from crashing downstream consumers (`Edit` calls for `mechanical_edits`, caller-side rendering for `consolidation_proposals`). For forward-compat with older subagent prompts that do not emit `consolidation_proposals`, the main thread treats a **missing** `consolidation_proposals` key (not present in the JSON) as an empty array; only an explicitly non-array value triggers the schema-violation path
-3. **Divergence (iter `i ≥ 2`)** — the `(remaining_edits_count, structural_notes_count)` multiset matches iter `i − 1`'s same multiset (the subagent is not making forward progress) → terminate with per-file `status: "unresolved"`, `reason: "no progress between iters"`
+2. **Schema violation** — required keys (`mechanical_edits`, `structural_notes`, `consolidation_proposals`) are missing, values are not arrays, or any entry fails its expected shape: each `mechanical_edits` entry needs non-empty string `file`, `old_string`, `new_string`; each `structural_notes` entry needs non-empty string `file`, `description`, `rationale`; each `consolidation_proposals` entry needs non-empty string `file`, non-empty `cluster_bullets` array (each item with non-empty string `line_range` and `snippet`), `merged_principle` object with non-empty string `name` and `text`, and non-empty `replacements` array (each item with non-empty string `line_range`, `strategy ∈ {"delete", "cross_ref"}`, and — when `strategy: "cross_ref"` — non-empty string `cross_ref_text`) → terminate with per-file `status: "error"`, `reason: "verdict schema violation"`. The main thread treats a **missing** `consolidation_proposals` key (not present in the JSON) as an empty array; only an explicitly non-array value triggers the schema-violation path
+3. **Divergence (iter `i ≥ 2`)** — the `(remaining_edits_count, structural_notes_count)` multiset matches iter `i − 1`'s same multiset → terminate with per-file `status: "unresolved"`, `reason: "no progress between iters"`
 4. **Otherwise** — proceed to apply
 
 **(c) Apply (per-iter)**: this phase has two sub-phases — (c1) `mechanical_edits` apply (compaction heuristics 1–4), followed by (c2) `consolidation_proposals` main-thread synthesis (iter 1 only; consolidation heuristics 1–4). Both sub-phases share the iter-level `applied_edits_count` counter.
 
-**(c1) `mechanical_edits` apply**: for each entry in `mechanical_edits`, re-`Read` the target file (so `old_string` matches the current contents after any earlier edit in this iter), then call `Edit`. **Scope rail**: before each `Edit`, verify the entry's `file` equals the target file's path; if not, skip that entry (no working-tree write) and record the rejected path. This mirrors `verify-diff` Auto-derive A2 (c) Scope rail. If `old_string` is not found, skip that entry — this is the expected no-op fallback for overlapping edits emitted from the same iter-1 snapshot. Increment the iter-level `applied_edits_count` only for entries whose `Edit` call succeeded.
+**(c1) `mechanical_edits` apply**: for each entry in `mechanical_edits`, re-`Read` the target file (so `old_string` matches the current contents after any earlier edit in this iter), then call `Edit`. **Scope rail**: before each `Edit`, verify the entry's `file` equals the target file's path; if not, skip that entry (no working-tree write) and record the rejected path. If `old_string` is not found, skip that entry — this is the expected no-op fallback for overlapping edits emitted from the same iter-1 snapshot. Increment the iter-level `applied_edits_count` only for entries whose `Edit` call succeeded.
 
 **(c2) `consolidation_proposals` main-thread synthesis (iter 1 only)**: for each cluster in `consolidation_proposals` (process clusters sequentially — cluster A complete before cluster B begins, so cluster B's bullet extraction reads the post-cluster-A working-tree state). Per § `consolidation_proposals` schema in `references/compaction-mode.md`, the subagent does **not** emit `mechanical_edits` for these proposals — main thread synthesizes the `Edit` calls from the proposal's `cluster_bullets` + `merged_principle` + `replacements` fields. Per-cluster procedure:
 
@@ -606,7 +573,7 @@ For each file in the target set, run the per-file iteration loop. `max_iteration
 
 The same scope rail and no-op-fallback semantics from (c1) apply: any entry whose `file` does not match the dispatched target path is skipped (recorded as rejected); any `old_string` not found in the current content is skipped (treated as overlapping-edit no-op fallback). Increment `applied_edits_count` for each successful `Edit` — the counter is **shared** between (c1) and (c2), so a post-(c) `applied_edits_count > 0` means at least one compaction edit **or** consolidation edit landed.
 
-**(d) Per-iter convergence check**: re-`Read` the target file to measure `chars_after_iter_i`. If `chars_after_iter_i ≤ compaction_threshold`, the file's compaction work is **complete**; terminate the loop. The per-file status is then **`skipped-below-threshold`** when the cumulative `applied_edits_count` across iters is `0` (no compaction-or-consolidation edits ever landed — this can only happen when the file was already at-or-below threshold on entry, since otherwise (d)'s convergence check would have been false and the loop would have continued to iter 2 or terminated via (e) as `partial`), or **`converged`** when the cumulative `applied_edits_count > 0` (one or more edits — compaction-mechanical or consolidation-synthesized — landed and the file is now at-or-below threshold). Per (c1) + (c2), `applied_edits_count` aggregates both edit classes, so the convergence check is uniform across compaction-only / consolidation-only / mixed runs
+**(d) Per-iter convergence check**: re-`Read` the target file to measure `chars_after_iter_i`. If `chars_after_iter_i ≤ compaction_threshold`, the file's compaction work is **complete**; terminate the loop. The per-file status is then **`skipped-below-threshold`** when the cumulative `applied_edits_count` across iters is `0` (no compaction-or-consolidation edits ever landed — this can only happen when the file was already at-or-below threshold on entry), or **`converged`** when the cumulative `applied_edits_count > 0` (one or more edits — compaction-mechanical or consolidation-synthesized — landed and the file is now at-or-below threshold).
 
 **(e) Continue or terminate**: if `i < max_iterations` and not converged, proceed to iter `i + 1` (back to (a)). If `i == max_iterations` and not converged, terminate the loop with per-file `status: "partial"` (the file was reduced but did not reach the threshold)
 
@@ -614,13 +581,13 @@ The same scope rail and no-op-fallback semantics from (c1) apply: any entry whos
 
 - `path`, `chars_before`, `chars_after` (the latest measured), `iterations_used`
 - `applied_edits_count` (sum across iters)
-- `structural_notes` — captured from iter 1 only (treat iter 1 as the source of truth; iter 2 re-runs the heuristics on already-modified content and may return drifted notes — same `inferred_intent persistence` discipline as `verify-diff`). If iter 1 produced no parseable verdict (terminated via the (b) error paths), `structural_notes` is `[]`
+- `structural_notes` — captured from iter 1 only (treat iter 1 as the source of truth). If iter 1 produced no parseable verdict (terminated via the (b) error paths), `structural_notes` is `[]`
 - `consolidation_proposals` — same iter-1-only discipline as `structural_notes` above. Iter 2's `consolidation_proposals_count` is ignored (the subagent should not re-emit them, and the main thread does not consume them if returned). If iter 1 produced no parseable verdict, `consolidation_proposals` is `[]`
-- `per_file_status` ∈ {`converged`, `partial`, `unresolved`, `error`, `skipped-below-threshold`}. Set by (d) (`converged` or `skipped-below-threshold` per the threshold-vs-applied-edits discrimination), (e) (`partial`), or (b) (`error` / `unresolved`). The `skipped-below-threshold` value's semantic is **widened**: it now means "compaction skipped because the file was already at-or-below threshold (no compaction-or-consolidation edits landed — cumulative `applied_edits_count == 0`), but Step CP2 still ran the per-file dispatch and any `consolidation_proposals` / `structural_notes` may be present"
+- `per_file_status` ∈ {`converged`, `partial`, `unresolved`, `error`, `skipped-below-threshold`}. Set by (d) (`converged` or `skipped-below-threshold` per the threshold-vs-applied-edits discrimination), (e) (`partial`), or (b) (`error` / `unresolved`). `skipped-below-threshold` means "compaction skipped because the file was already at-or-below threshold (no compaction-or-consolidation edits landed — cumulative `applied_edits_count == 0`), but Step CP2 still ran the per-file dispatch and any `consolidation_proposals` / `structural_notes` may be present"
 - `below_threshold` = `chars_after ≤ compaction_threshold`
 - `reason` (set only when `per_file_status ∈ {error, unresolved}`; omitted otherwise — including for `converged` / `partial` / `skipped-below-threshold`)
 
-**Important**: `consolidation_proposals` are **auto-applied by the main thread synthesis sub-phase (c2)** — the subagent still emits them as detection-only output (the subagent does **not** call `Edit` itself, per the analysis-only / file-write contract in `references/compaction-mode.md` § Forbidden tool calls and § `consolidation_proposals` schema's Materialization disposition), and the main thread synthesizes the corresponding `Edit` calls from the cluster description. The `consolidation_proposals` array in the per-file record is therefore now the **applied-cluster trace** (surfaced alongside the resulting file-content change), not a caller-judgment note. `structural_notes` remain **not applied** by this mode — they are surfaced as caller-judgment notes rather than applied, because they cannot be expressed as safe mechanical edits; the caller decides whether to act.
+**Important**: `consolidation_proposals` are **auto-applied by the main thread synthesis sub-phase (c2)** — the subagent still emits them as detection-only output (the subagent does **not** call `Edit` itself, per the analysis-only / file-write contract in `references/compaction-mode.md` § Forbidden tool calls and § `consolidation_proposals` schema's Materialization disposition), and the main thread synthesizes the corresponding `Edit` calls from the cluster description. The `consolidation_proposals` array in the per-file record is the **applied-cluster trace**, not a caller-judgment note. `structural_notes` are **not applied** by this mode — they are surfaced as caller-judgment notes and the caller decides whether to act.
 
 ### Step CP3: Security Self-Check
 
@@ -675,13 +642,13 @@ Emit a single fenced JSON block at the end of the response, matching the schema:
 }
 ```
 
-Top-level `status` mapping (3-way OR — fires when any of `mechanical_edits` / `consolidation_proposals` / `structural_notes` is non-empty on any file):
+Top-level `status` mapping:
 
 - `compacted`: at least one file in `files_processed` has `applied_edits_count > 0` **OR** non-empty `consolidation_proposals[]` **OR** non-empty `structural_notes[]`
 - `no-actionable`: the target set was empty, **or** every file satisfies all three of (`applied_edits_count == 0`, empty `consolidation_proposals[]`, empty `structural_notes[]`) — including all-error cases where iter-1 verdicts failed before notes / proposals could be collected
 - `error`: top-level dispatch error (e.g. settings load failure, output directory missing). Per-file dispatch errors do not propagate to the top — they appear inside `files_processed` with `per_file_status: "error"` under top-level `status: "compacted"` (when at least one other file applied edits or produced notes / proposals) or `status: "no-actionable"` (when no file produced any actionable output)
 
-`reason` enum (closed list — callers may switch on these values deterministically):
+`reason` enum (closed list):
 
 - Per-file `reason` (set when `per_file_status ∈ {error, unresolved}`):
   - `"verdict parse failure"` — subagent response had no fenced JSON block or failed to parse (Step CP2 (b) #1)
@@ -692,7 +659,7 @@ Top-level `status` mapping (3-way OR — fires when any of `mechanical_edits` / 
   - `"output directory not found"` — Step CP1 step 2 directory check failed
   - `"no targets resolved"` — used with `status: "no-actionable"` from Step CP1 step 4 (top-level `reason` is optional in `no-actionable`; this token is its canonical value)
 
-Partial results: when top-level `status: "compacted"`, individual files in `files_processed` may carry `per_file_status` of `error` / `unresolved` / `partial` / `skipped-below-threshold` mixed with `converged`. Callers should branch on `per_file_status` per file rather than assume uniform success. (`skipped-below-threshold` appears in explicit-paths mode for files whose char count was already at-or-below `compaction_threshold` — Step CP2 still ran on them for the consolidation pass, so they may carry `consolidation_proposals` / `structural_notes` even though `applied_edits_count == 0`.)
+Partial results: when top-level `status: "compacted"`, individual files in `files_processed` may carry `per_file_status` of `error` / `unresolved` / `partial` / `skipped-below-threshold` mixed with `converged`. Callers should branch on `per_file_status` per file rather than assume uniform success.
 
 ### Step CP5: Sub-skill caller directive
 
@@ -704,9 +671,9 @@ See § Sub-skill caller directive at the bottom of this SKILL.md.
 
 When `--realign [<path> ...]` is specified, re-judge rules already written against the current extraction criteria, then drop, split, or trim the ones that no longer meet them (§ Restructure Mode's intro says which of the two modes a given change calls for). Named paths judge only those files; no paths judges every rule file under `output_dir`.
 
-**Against `--compact`**, which also shrinks a rule file: one invariant divides them — `--compact` preserves the set of norms a file states, merging near-duplicates and dropping an entry only where another already subsumes it, while `--realign` can take a norm away outright. That is also what settles the gate: a run that cannot lose a rule needs no approval. When both apply to one file, realign first, so compaction does not spend effort merging rules that were about to go.
+**Against `--compact`**, which also shrinks a rule file: one invariant divides them — `--compact` preserves the set of norms a file states, merging near-duplicates and dropping an entry only where another already subsumes it, while `--realign` can take a norm away outright. When both apply to one file, realign first.
 
-Read `references/realign-mode.md` for the full processing steps (RA1-RA5) — it is the single canonical home for this mode's procedure and for the subagent instructions RA2 dispatches. Key flow:
+Read `references/realign-mode.md` for the full processing steps (RA1-RA5). Key flow:
 
 1. Load settings; check `output_dir` exists (same as Step C1's output-directory-existence check); resolve the targets from the named paths, or by discovery under `output_dir` when none were named
 2. Dispatch one analysis subagent per target file, parse its fenced JSON verdict, and count each non-`keep` rule's referrers

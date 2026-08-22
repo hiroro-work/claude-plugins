@@ -1,14 +1,14 @@
 # mobpro Learning Gates
 
-Operational detail for `mobpro`'s learning gates — the M6 diff review, the M8 error narration, the M9 prediction narration, the M3 plan-building checkpoints, and the explanation-length discipline. `mobpro`'s SKILL.md holds each gate's firing condition and branch skeleton; this file holds the "how to run it" detail and what each prompt has to convey. It is a `mobpro`-own reference (not a transcription of any `dev-workflow` file). **Read it once**, at M3 — § E fires there, ahead of every other section; § A is then loop-invariant across M6, and M8 and M9 name a section of that same copy.
+**Read it once**, at M3 — § A is then loop-invariant across M6, and M8 and M9 name a section of that same copy.
 
 **Each section states what its prompt must convey, not the words to say it in.** Write the prompt yourself, in the run's resolved `language`, in the voice the rest of the session is already speaking. The junior's own illustrative replies quoted in the reply-handling lists (`進めて` / `go ahead`, `どう？` / `how about it?`, and the like) are the exception: those are speech to classify, not text `mobpro` emits, so they stay as literal tokens.
 
-Nothing here asks the junior to answer a comprehension question — § E stops for a reply, but only to ask what the junior still finds unclear (`SKILL.md` § Learning-Stop Principle's "Narration is not a stop" paragraph owns that rule). The AI narrates; the junior learns by reading each diff and asking whatever the narration left open.
+Nothing here asks the junior to answer a comprehension question — § E stops for a reply, but only to ask what the junior still finds unclear (`SKILL.md` § Learning-Stop Principle's "Narration is not a stop" paragraph owns that rule).
 
 ## § A. M6 diff review
 
-The junior reviews each implementation unit's diff. `SKILL.md` § Learning-Stop Principle owns this review's firing condition and [`diff-review.md`](diff-review.md) its display surface.
+The junior reviews each implementation unit's diff.
 
 **Opening the review**: state the point of this unit's diff, hand the diff over, and invite questions on anything that stands out.
 
@@ -36,23 +36,19 @@ The caps, by explanation class:
 - **Narration-class single explanations** — M3's design-approach narration, the second half of each M3 checkpoint and the answers given inside it (§ E), M5's plan explanation, the M8 error read (§ B), the M9 prediction and its cross-check (§ C), and each answer to a junior's question (§ A): 2–3 lines each.
 - **Applied-finding explanations** (M4 and M9, one per finding): 1–2 lines each — deliberately tighter than the narration class.
 
-This section is the **single consolidated statement** (source of truth) of the length discipline. The inline caps at their application sites are kept inline as load-bearing local values and are not rewritten; they instantiate this discipline. The closed list, which a new inline cap must join in the same change that introduces it: M3's and M5's "2–3 lines" narration, M4 / M9's "1–2 lines" per applied finding, M6's "≤ 6 lines" preview, M7's "1–2 lines" cleanup explanation, M11's "1–2 line" point-of-this-diff note, and M13's "≤ 3 one-line points" learning summary.
-
 ## § E. M3 plan-building checkpoints
-
-The code a plan rests on reaches the junior in installments, and each installment ends in a partial approval. `SKILL.md` M3 sub-step 2.5's **Plan-building checkpoints** gate owns the firing condition, the 2–5 segmentation, and the rule that the existing code comes before what was concluded from it; this section holds the wording and the reply handling.
 
 **Each checkpoint carries two halves in this order**: what the relevant code does today and how it is put together, then what follows from it for the plan.
 
 **Opening the first checkpoint**: say that the walk comes before the plan, name how many parts there will be, then give the first.
 
-**Closing every checkpoint**, the first included: ask in chat what is still unclear, and put the question on the **turn's last line**. Keep that placement on every later turn this checkpoint asks it again. Anywhere else in the turn, the question reads as one more paragraph of narration rather than as the point the run stops at. **It is still not a comprehension question** (this file's opening paragraph): it asks what was left open, never whether the junior got something right. Then wait for the reply.
+**Closing every checkpoint**, the first included: ask in chat what is still unclear, and put the question on the **turn's last line**. Keep that placement on every later turn this checkpoint asks it again. Anywhere else in the turn, the question reads as one more paragraph of narration rather than as the point the run stops at. **It is still not a comprehension question**: it asks what was left open, never whether the junior got something right. Then wait for the reply.
 
-**One reply closes a checkpoint**: only the **go on** bucket below advances past it, so a checkpoint runs as many rounds as the junior has questions and answering one is never a checkpoint's last act. What a non-**go on** reply does instead is its own bucket's business. This condition is restated in `SKILL.md` M3 sub-step 2.5's **Each checkpoint is a partial approval** bullet; keep the two in sync.
+**One reply closes a checkpoint**: only the **go on** bucket below advances past it, so a checkpoint runs as many rounds as the junior has questions and answering one is never a checkpoint's last act.
 
 **Reply handling** — four buckets, judged semantically (the phrasings below are illustrative, not literal discriminators):
 
 - **go on** (`無い` / `大丈夫` / `進めて` / `nothing unclear` / `go ahead`, or any equivalent that nothing was left open): move to the next checkpoint, or — once the last one closes — to M3 sub-step 3's plan authoring.
 - **question** (anything naming a part that did not land, asking about what was explained, or saying only that a question exists): answer within the § D length, then ask the closing question again. **When the reply says a question exists without naming it**, ask which part did not land and wait for that answer before answering it.
 - **change** (a request to look somewhere else, or to take a different direction): do that reading or record that direction, share what came of it, and ask again. **When the reply names no place or direction**, ask which and wait for that answer before doing either. A request to drop the task outright is the far end of this bucket and takes M5's **withdraw** disposition — end the workflow without authoring the plan. Source of truth: `m5-plan-approval.md` sub-step 3's **adjust** bucket; this bucket is that one a phase earlier, so keep it in sync when that bucket changes.
-- **not an answer** (interrogative or non-committal — `どう？` / `なるほど` / `how about it?` / `I see`): re-classify it with a confirming question, the way `m5-plan-approval.md` sub-step 3 handles its own non-committal replies. Neither advance nor re-share on it.
+- **not an answer** (interrogative or non-committal — `どう？` / `なるほど` / `how about it?` / `I see`): re-classify it with a confirming question, the way `m5-plan-approval.md` sub-step 3 handles its own non-committal replies. Neither advance nor re-share on it. **Carve-out — a reply doubting the output arrived** (`こっちに質問してた？` / `画面に出ていないかも` / `did you ask me something?` / any equivalent reading as *the checkpoint never reached me*): re-share instead — send the checkpoint again, shortened.

@@ -1,6 +1,6 @@
 # Resolve File References (Step R2.5)
 
-Scan existing rule content (loaded in R1) for references to other files, resolve them, and integrate the referenced content. This step runs after R2 so that project type information (languages, frameworks) is available for categorizing extracted rules.
+Scan existing rule content (loaded in R1) for references to other files, resolve them, and integrate the referenced content.
 
 ## 1. Detect References
 
@@ -10,7 +10,7 @@ Detect references in all loaded rule content — 3 patterns:
 - Text references: "See `<path>`", "Refer to `<path>`", "Details in `<path>`", "参照: `<path>`" and similar patterns
 - @references: `@path/to/file.md` — `@` prefix means repository root (e.g., `@docs/conventions.md` → `<repo-root>/docs/conventions.md`)
 
-Exclude references inside code blocks to avoid false positives.
+Exclude references inside code blocks.
 
 ## 2. Resolve Paths
 
@@ -36,7 +36,7 @@ Exclude references inside code blocks to avoid false positives.
 
 ## 5. Merge into Rules Pool
 
-Merge extracted rules into the R1 snapshot so they participate in R4's category routing. Rules extracted from references are treated as **existing rules** (user intentionally added the reference), so they take priority on conflict in R4.
+Merge extracted rules into the R1 snapshot so they participate in R4's category routing. Rules extracted from references are treated as **existing rules**, so they take priority on conflict in R4.
 
 ## 6. Remove Resolved Reference Lines
 

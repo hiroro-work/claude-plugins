@@ -29,5 +29,4 @@ When analyzing layer code (Step 4), if a pattern uses APIs/modules from a detect
 ## Output structure
 
 - `integrations/<framework>-<integration>.md` with `paths:` scoped to layers where the integration is used
-- Framework name is included because rules differ by host framework (e.g., Rails: `render inertia:` vs Laravel: `Inertia::render()`)
 - In split mode, integration files also get `.local.md` counterparts

@@ -157,7 +157,7 @@ Omit the `### Promoted from staging` and `### Newly staged` sections entirely wh
 
 ## Compaction Mode (Step CP4)
 
-Compaction Mode returns a fenced JSON block (the only output) — not a Markdown report. See `SKILL.md` § Step CP4: Emit Structured Summary for the canonical schema. The main thread (caller) renders human-readable output if needed; the fenced JSON is the machine-readable contract.
+Compaction Mode returns a fenced JSON block (the only output) — not a Markdown report. See `SKILL.md` § Step CP4: Emit Structured Summary for the canonical schema. The main thread (caller) renders human-readable output if needed.
 
 **Human-readable rendering examples** (illustrative — the caller chooses the format):
 
@@ -226,9 +226,9 @@ Judged 38 rules — keep 24 / drop 7 / split 4 / reshape 3
 
 Every non-`keep` rule appears in exactly one section, each entry carrying the referrer count Step RA3's gate presented. Omit a section whose count is 0. When every rule was kept, report the `keep` count and state that nothing changed.
 
-A rule the user excluded at the Step RA3 gate counts as `keep`, since nothing was written for it. Name the exclusions on one line below the counts, so an excluded rule is not read as one that passed the criteria.
+A rule the user excluded at the Step RA3 gate counts as `keep`. Name the exclusions on one line below the counts.
 
-**Not applied** lists every accepted edit that did not land, naming the rule and the verdict it was accepted under. The rule still appears in its verdict's section — the counts are counts of judgements — so this section is the only place a `drop` that never reached the file is distinguishable from one that did (`references/realign-mode.md` § Step RA4's **What the counts mean** paragraph). Omit it when every accepted edit landed.
+**Not applied** lists every accepted edit that did not land, naming the rule and the verdict it was accepted under. The rule still appears in its verdict's section — the counts are counts of judgements (`references/realign-mode.md` § Step RA4's **What the counts mean** paragraph). Omit it when every accepted edit landed.
 
 ## PR Review Extraction Mode (Step P5)
 
@@ -257,7 +257,7 @@ A rule the user excluded at the Step RA3 gate counts as `keep`, since nothing wa
 - No project-specific rules found in general feedback
 ```
 
-The `### Promoted from staging` / `### Newly staged` sections follow the same per-section invariant as the Conversation template above (each pattern appears in exactly one section; omit when count is 0). Staging gating applies only to project-level patterns — language / framework / integration entries (like the `fetchWithRetry()` example above when scoped to `frameworks/rails.local.md`) bypass staging.
+The `### Promoted from staging` / `### Newly staged` sections follow the same per-section invariant as the Conversation template above. Staging gating applies only to project-level patterns — language / framework / integration entries (like the `fetchWithRetry()` example above when scoped to `frameworks/rails.local.md`) bypass staging.
 
 **Multiple PRs:**
 

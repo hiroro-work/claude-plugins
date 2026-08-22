@@ -1,6 +1,6 @@
 # Prose Style Guide
 
-The refactor subagent rewrites natural-language prose to be **concise and natural for a native reader of the target language**. This guide is the rule set injected into the dispatch payload; apply it to the prose in the TARGET LANGUAGE only.
+Apply these rules to the prose in the TARGET LANGUAGE only.
 
 ## Preserve (hard constraint, applies before every rule)
 
@@ -21,10 +21,10 @@ When a candidate rewrite could change program behavior or touch a non-prose toke
 
 The boundary between a preserved proper noun and translatable ordinary vocabulary is the most common source of unnatural code-mixing, so make it the deciding test for every word in the prose that traces back to the source language — **including one already written in the target language's own script**. For `ja`, a katakana rendering of an English term is a candidate like any other. Apply the four checks in order — first match wins:
 
-1. **Recoverability-test** — the word is already written in the target language's own script, and a reader who does not know the source-language original recovers its meaning from the word alone (`キャッシュ`, `レスポンス`). Keep it: it is already native prose. A script-native token that fails this test (`セマンティクス`) falls through to the checks below.
+1. **Recoverability-test** — the word is already written in the target language's own script, and a reader who does not know the source-language original recovers its meaning from the word alone (`キャッシュ`, `レスポンス`). Keep it. A script-native token that fails this test (`セマンティクス`) falls through to the checks below.
 2. **Preserve-test** — the word names a *specific* product, API, library, tool, format, standard, or code symbol that appears verbatim as a proper noun in code or docs (`git`, `Promise`, `Agent`, `JSON`, `URL`). Keep it verbatim, whether or not the source wrapped it in backticks.
 3. **Translate-test** — the word *describes* an action, state, quality, or relation and has an everyday equivalent in the target language. Translate it.
-4. **Default** — no test above clearly matches: translate. Over-preserving ordinary vocabulary is the code-mixing this guide exists to remove, so a bare word that is not clearly a proper noun defaults to translation.
+4. **Default** — no test above clearly matches: translate.
 
 The preserve-test outranks the translate-default, so a recognized proper noun (`git` / `Promise` / `API` / `URL`) is never translated even when it appears bare. Ordinary vocabulary takes the translate side (for `ja`: `dispatch`→「呼び出す」 not 「dispatch する」, `stale`→「古い」 not 「stale だった」, `validate`→「検証する」, `scope`→「範囲」, `fallback`→「代替手段」, `semantics`→「意味づけ」 not 「セマンティクス」, `tie-break`→「同点時の決め方」 not 「タイブレーク」). These glosses show the translate-vs-code-mix contrast, not a fixed dictionary: pick the target word that reads most naturally in context, since one source word can map to different targets (`dispatch`→「振り分ける」 when it distributes work across workers, 「呼び出す」 when it invokes a call).
 
@@ -35,15 +35,15 @@ The preserve-test outranks the translate-default, so a recognized proper noun (`
 3. **One idea per sentence — and per list item.** Split runaway sentences that chain three or more clauses; merge two sentences that state the same thing. An **unordered** bullet counts as one unit under this rule: when a single bullet carries three or more distinct claims, split it into separate bullets rather than leaving the reader to unpack one sentence. The recurring shape is an inline `(i)/(ii)/(iii)` enumeration, each element carrying its own sub-clauses, closed by a trailing verb far from its subject. Leave **numbered** items intact — splitting one renumbers every item below it, and prose elsewhere addresses list positions by number, so a split there silently breaks references. Rewrite such an item in place instead.
 4. **Prefer the direct form.** Active over passive where it reads naturally, concrete nouns over abstractions, the plain verb over a nominalized phrase ("decides" over "makes a decision").
 5. **Match the surrounding register.** Keep terminology and tone consistent with the neighboring prose; do not introduce a synonym for a term already used nearby.
-6. **Translate ordinary vocabulary; don't code-mix.** Decide each source-language word by the Preserve section's `Preserve-vs-translate litmus test`: translate ordinary vocabulary that has a natural target-language equivalent, and keep the source-language form only for the proper nouns / identifiers / code the litmus test preserves. Dropping ordinary source-language words into target-language prose reads as unnatural to a native reader.
+6. **Translate ordinary vocabulary; don't code-mix.** Decide each source-language word by the Preserve section's `Preserve-vs-translate litmus test`: translate ordinary vocabulary that has a natural target-language equivalent, and keep the source-language form only for the proper nouns / identifiers / code the litmus test preserves.
 
    A word rendered fully in the target language can fail the same test. Translating a source-language figure of speech word for word yields a term the reader can only decode by translating it back — it looks native but is not. Name what the thing does instead (for `ja`: `land`→「コミットされる」 not 「着地する」, `fall back to`→「〜として扱う」 not 「〜に倒す」, `run` as a noun→「実行」 not 「走行」, `closed list`→「決められた一覧」 not 「閉じたリスト」).
 
 ## Cross-file duplicate comments (file mode, multiple files)
 
-This rule applies only when more than one file is polished in a single file-mode pass. It is the **canonical home** for what counts as a cross-file duplicate; the SKILL.md dispatch references it by name and owns how the finding is reported (the `recommendations` field).
+This rule applies only when more than one file is polished in a single file-mode pass.
 
-When the **same non-obvious knowledge** — a *why* / rationale / workaround / constraint / precondition note — appears as a comment in **two or more** of the target files, treat it as a **consolidation candidate**, not an in-place polish target. Do not polish each copy individually: the correct fix is to consolidate the knowledge into one canonical location (a doc or rule file) and remove the inline copies. This skill does not delete by default (the knowledge would be lost if the consolidation destination is not guaranteed), so it surfaces the finding as a recommendation rather than editing.
+When the **same non-obvious knowledge** — a *why* / rationale / workaround / constraint / precondition note — appears as a comment in **two or more** of the target files, treat it as a **consolidation candidate**, not an in-place polish target. Do not polish each copy individually: the correct fix is to consolidate the knowledge into one canonical location (a doc or rule file) and remove the inline copies.
 
 A comment qualifies as a consolidation candidate only when **all** of these hold:
 
@@ -57,12 +57,12 @@ Judge conservatively: flag only clear same-knowledge duplication across files. W
 
 ## Japanese (`ja`) — primary use case
 
-Models prone to verbosity tend to produce Japanese that reads as translated-from-English. Fix these patterns:
+Fix these patterns:
 
 1. **Machine-translation / literal-translation tone (機械翻訳調・直訳調)** — Drop English-syntax calques: leading "〜することによって", over-use of "〜において" / "〜に関して", and literal renderings of English connectives. Rephrase into the structure a native writer would choose.
 2. **Redundant politeness and modifiers (冗長な敬体・修飾)** — Trim redundant politeness scaffolding ("〜していただく必要があります" → "〜してください" where appropriate) and stacked modifiers that add no information.
 3. **Restatement removal (重複の除去)** — Remove restatement: a sentence that repeats the previous sentence's content with different words, or a parenthetical that duplicates the main clause. General rule 2's "state that *why* in one sentence" guidance applies to multi-line *why* comments here too (e.g. 「<ビルドツールの進捗表示>が全画面スクリーンショットに写り込みビジュアル回帰が非決定的に差分化するため、test 環境では開発インジケータを無効化する」→「スクショに影響するので test 環境では開発インジケータを無効化する」).
-4. **Technical-term handling (テクニカルターム)** — Apply the `Preserve-vs-translate litmus test`: keep genuine proper-noun terms and identifiers in their original form, and translate ordinary technical vocabulary that has a natural Japanese equivalent rather than code-mixing. On a proper-noun term's first use, a short Japanese gloss in parentheses may aid comprehension. General rule 6's second paragraph covers the mirror-image failure.
+4. **Technical-term handling (テクニカルターム)** — Apply the `Preserve-vs-translate litmus test`: keep genuine proper-noun terms and identifiers in their original form, and translate ordinary technical vocabulary that has a natural Japanese equivalent rather than code-mixing. On a proper-noun term's first use, a short Japanese gloss in parentheses may aid comprehension.
 5. **Particle and word-order naturalness (助詞・語順)** — Fix unnatural particle choices and English-driven word order so the sentence flows as native Japanese.
 6. **Verbose politeness forms (丁寧語の過剰形)** — Where doing so does not change the meaning or nuance, shorten these over-long politeness constructions that large language models commonly produce:
    - 「〜となります」 / 「〜となっております」 expressing a **static state** (not a transition) → 「〜です」 / 「〜できます」 (as appropriate) (e.g. 「デフォルト値となります」→「デフォルト値です」, 「可能となっております」→「できます」). Do **not** shorten these when they express a genuine state change (e.g. 「有効となります」= "becomes active").

@@ -25,17 +25,15 @@ Leave out:
 
 **Exit test**: read the written rule on its own, with no memory of what produced it. Can you name in one phrase the moment it fires? If not, it is not a rule yet — either the trigger is missing, or what you wrote is an account rather than a norm.
 
-**One rule, one claim.** A rule states a single claim a reader can apply or violate. A candidate that needs "and also", several bolded sub-clauses, or a numbered procedure to state is not one rule. Split it into the rules it contains and judge each on its own; most such candidates lose most of their parts to the durability test below, because a procedure decomposes into steps and steps are not rules.
+**One rule, one claim.** A rule states a single claim a reader can apply or violate. A candidate that needs "and also", several bolded sub-clauses, or a numbered procedure to state is not one rule. Split it into the rules it contains and judge each on its own.
 
-**The written shape.** A project-level rule stating a working convention — the shape conversation extraction produces most often — is written as a **bold label, then one claim**: `**<short label>**: <the norm>, the situation it fires in, and how to tell that situation from the ones next to it`. Carry only the three things above; worked examples belong in `.examples.md`. Aim for **≤400 chars** — a soft target, not a gate, and the figure `references/compaction-mode.md` § Compact cross_ref wording guidance already sets for a merged principle on the same skim-readability grounds. The bold label is the rule's name: `.examples.md` titles it verbatim, and other documents cite it, so keep it stable when reshaping. Principles and signature-bearing patterns keep their own shapes (main SKILL.md Step 6 Format guidelines).
+**The written shape.** A project-level rule stating a working convention is written as a **bold label, then one claim**: `**<short label>**: <the norm>, the situation it fires in, and how to tell that situation from the ones next to it`. Carry only the three things above; worked examples belong in `.examples.md`. Aim for **≤400 chars** — a soft target, not a gate. The bold label is the rule's name: `.examples.md` titles it verbatim, and other documents cite it, so keep it stable when reshaping. Principles and signature-bearing patterns keep their own shapes (main SKILL.md Step 6 Format guidelines).
 
 **These shapes are a signal, not a gate.** A candidate that fits none of the three written shapes is usually more than one rule: split it and judge each part. Not fitting a shape is never by itself grounds to reject a durable, wide-reaching rule.
 
 ## Durability: Would This Change What Gets Written Next Time?
 
-The knowledge-gap test above asks whether Claude needs to be told. It does not ask whether the thing is worth telling. An account of how one change happened to be made passes the knowledge-gap test too — nobody could have guessed it — while constraining nothing that comes after.
-
-Apply a second test to every candidate that survives the knowledge-gap test.
+The knowledge-gap test above asks whether Claude needs to be told. Apply a second test to every candidate that survives it.
 
 > "If a related but different task came up next week, would this rule change what gets written?"
 > - **Yes** → extract it
@@ -50,13 +48,9 @@ Signals that a candidate is a record rather than a rule:
 
 A settled convention is not caught by that removal signal: departing from it is wrong here, not merely different. "Settled" is shown by conformance visible across existing artifacts, or by an explicit user decision establishing the convention — never by the candidate's own assertion that it exists.
 
-Whether a candidate carries a code signature is **not** a signal either way. A durable convention about how to work often has no signature at all, and a one-off note can carry one.
-
-A narrower retroactive counterpart lives in Compaction Mode as `heuristic 4 (one-shot incident dropout)` (`references/compaction-mode.md`), which drops an incident-specific entry only when another entry already subsumes it. This test does not require subsumption.
+Whether a candidate carries a code signature is **not** a signal either way.
 
 ## Reach: Is the Rule Worth Its Permanent Cost?
-
-Rule files are loaded at the start of every session, whether or not the situation a rule names ever comes up. Every rule therefore charges rent against the reader's attention forever, and durability alone does not cover that rent: a norm that fires in exactly one narrow configuration of one component is durable and still not worth carrying.
 
 Apply this third test to every candidate that survives the two above. It has two halves, and a candidate needs only one of them.
 
@@ -65,9 +59,9 @@ Apply this third test to every candidate that survives the two above. It has two
 
 Keep the candidate when its reach is wide, **or** when a narrow reach pairs with a consequence that is silent, destructive, or expensive to recover from. Skip it when a narrow reach pairs with a consequence an ordinary rerun or review would absorb.
 
-One further signal to skip: **already enforced elsewhere**. When a mechanical check this project actually runs — a linter, a type checker, a test, an automated verification step whose failure surfaces in the normal workflow — catches the violation on its own, the rule documents that check rather than guarding anything. The check is the rule; carrying a prose copy costs attention and adds no decision. A convention a linter *could* enforce but this project does not is still a rule.
+One further signal to skip: **already enforced elsewhere**. When a mechanical check this project actually runs — a linter, a type checker, a test, an automated verification step whose failure surfaces in the normal workflow — catches the violation on its own, skip the candidate. A convention a linter *could* enforce but this project does not is still a rule.
 
-This test is the one that keeps a rule file from growing without bound. The two tests above ask whether a candidate is a rule at all; this one asks whether it is worth the room. Expect it to reject more candidates than the other two combined, and expect it to reject some that are genuinely true — being correct is not the bar.
+Expect this test to reject more candidates than the other two combined, and expect it to reject some that are genuinely true — being correct is not the bar.
 
 ## Principle Extraction Criteria
 
@@ -90,8 +84,6 @@ Principles that **Claude already knows and would follow by default**:
 - Language/framework best practices documented in official style guides
 - Common code review feedback applicable to any project (const over let, no magic numbers, DRY, SOLID, early returns, etc.)
 - Patterns where only one practical approach exists (PascalCase for React components, snake_case for Python, etc.)
-
-**Rule of thumb:** If Claude would produce correct, consistent code without this rule, it is general knowledge — do not extract it.
 
 ### Decision criterion
 
@@ -140,16 +132,6 @@ Pattern uses only **language built-ins** or **well-known patterns**:
 > - **Yes** → Include concrete example (e.g., `useAuth()` — without it, AI would write custom auth logic)
 > - **No** → Skip or abstract principle only (e.g., a utility hook used in 2 files — AI not knowing it won't cause inconsistency)
 
-### Example classification
-
-| Pattern | Classification | Reason |
-|---------|---------------|--------|
-| Prefer `const` over `let` | Do not extract | General best practice, AI already knows |
-| No magic numbers | Do not extract | General best practice, AI already knows |
-| FP only, no classes | Principle | Team-specific paradigm choice |
-| `RefOrNull<T>` type usage | Concrete example | Project-defined type, AI cannot infer |
-| `pathFor()` + `url()` combination | Concrete example | Project-specific API combination |
-
 ### Gray zone handling
 
 For patterns that are **not clearly general or project-specific**:
@@ -161,7 +143,6 @@ For patterns that are **not clearly general or project-specific**:
 
 - If the pattern is used project-wide or defines a convention → include
 - If the pattern is a local utility (1-2 usage sites) → skip
-- Rationale: Over-specifying with local utilities clutters rule files with implementation details rather than style guidance. Rules should answer "how to write new code" not "what utilities exist."
 
 ---
 

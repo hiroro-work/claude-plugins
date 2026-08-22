@@ -1,7 +1,7 @@
 # PR Review Extraction Mode
 
 When `--from-pr` is specified, extract rules from PR review comments (human comments only).
-Single or multiple PRs can be specified. Multiple PRs enable cross-PR frequency analysis to detect organizational emphasis.
+Single or multiple PRs can be specified.
 
 ## Step P1: Load Settings and Check Prerequisites
 
@@ -10,7 +10,7 @@ Single or multiple PRs can be specified. Multiple PRs enable cross-PR frequency 
 2. Check if output directory exists (default: `.claude/rules/`)
    - If not exists: Error "Run /extract-rules first to initialize rule files."
 
-3. Load existing rule files to understand current rules (if `split_output: true`, load `<output_dir>/<name>.md`, `<output_dir>/<name>.local.md`, and `<examples_output_dir>/<name>.examples.md`; when `examples_output_dir` differs from `output_dir`, also scan `<output_dir>/<name>.examples.md` for any legacy co-located files). Additionally load `<staging_output_dir>/project.staging.local.md` if present — used by the Step P5 staging-match branch (PR Review runs in the main agent, so the `canonical_files` / `staging_files` separately-tagged framing from `conversation-mode.md` § Step C5's **"Read existing rule files"** step is a conceptual file-set distinction here, not a prompt-passing boundary). Skip silently if the staging file does not yet exist.
+3. Load existing rule files to understand current rules (if `split_output: true`, load `<output_dir>/<name>.md`, `<output_dir>/<name>.local.md`, and `<examples_output_dir>/<name>.examples.md`; when `examples_output_dir` differs from `output_dir`, also scan `<output_dir>/<name>.examples.md` for any legacy co-located files). Additionally load `<staging_output_dir>/project.staging.local.md` if present — used by the Step P5 staging-match branch. Skip silently if the staging file does not yet exist.
 
 4. Verify `gh` CLI is available and authenticated
    - Run `gh auth status` to confirm authentication
@@ -27,16 +27,16 @@ Parse all arguments (space-separated) to determine targets. Each argument is ind
 - **Repository-scoped range** (e.g., `owner/repo#100..110`): Expand range for the specified repository
 - **URL** (e.g., `https://github.com/owner/repo/pull/123`): Also accepted, parsed as `owner/repo#123`
 - All formats can be mixed (e.g., `--from-pr 100..105 org/other#99`)
-- Cross-repository PRs are allowed (useful for detecting organization-wide principles)
+- Cross-repository PRs are allowed
 
 Validate each PR exists:
 
 - Number: `gh pr view <number> --json number,title,state`
 - URL: `gh pr view <URL> --json number,title,state`
 - Range-expanded numbers: validate each individually
-- If any PR not found: skip silently and continue with remaining PRs (ranges often contain issues or gaps)
+- If any PR not found: skip silently and continue with remaining PRs
 
-**Performance note:** Each PR requires 3 API calls (Step P3). Keep total PR count reasonable (recommended: up to 10 PRs) to avoid GitHub API rate limits. If a range expands to more than 10 PRs, warn the user and suggest narrowing the range.
+**Performance note:** Keep total PR count reasonable (recommended: up to 10 PRs) to avoid GitHub API rate limits. If a range expands to more than 10 PRs, warn the user and suggest narrowing the range.
 
 ## Step P3: Fetch PR Review Comments
 
@@ -66,7 +66,7 @@ Tag each comment with its source PR number for cross-PR analysis.
 
 Analyze the collected human review comments to identify coding rules.
 
-**First, apply the general knowledge filter.** Most PR review comments are general best practices (const over let, no magic numbers, DRY, early returns, etc.). These are knowledge any AI already has — skip them. Only extract rules that reflect project/team-specific choices.
+**First, apply the general knowledge filter.** Only extract rules that reflect project/team-specific choices.
 
 - **General best practice feedback** → Skip (do NOT extract)
   (e.g., "Use `const` here", "This is a magic number", "DRY this up", "Prefer early returns")
@@ -83,26 +83,26 @@ Apply the same criteria as Full Extraction Mode (see `extraction-criteria.md`).
 When multiple PRs are provided, perform additional frequency analysis after the initial classification:
 
 - Identify general best practice comments that appear **repeatedly across different PRs** (not just multiple times in a single PR)
-- A general principle mentioned across multiple PRs by reviewers signals an **organizational emphasis** — the team cares about this principle more than typical teams do
+- A general principle mentioned across multiple PRs by reviewers signals an **organizational emphasis**
 - Promote such recurring principles from "general knowledge (skip)" to extractable, but **reframe them to capture the specific way the organization applies them**, not just restate the general principle
   - Example: DRY指摘が複数PRで繰り返される → `DRY厳格 (ビジネス値の定数化を徹底, ビューへのハードコード禁止)` のように具体的な適用方法を明記
   - Example: const指摘が複数PRで繰り返される → 単なる「const使え」ではなく、どういう場面で特に厳しく求めているかを具体化
 
 Use AI judgment to determine what constitutes "repeated across PRs" based on the number of PRs analyzed. The goal is to identify patterns that clearly stand out as organizational values, not to apply rigid thresholds.
 
-**For single PR:** Skip frequency analysis entirely. Apply only the general knowledge filter (existing behavior).
+**For single PR:** Skip frequency analysis entirely. Apply only the general knowledge filter.
 
 **If no project-specific rules are found, report that no rules were extracted.** It is expected that many PRs contain only general feedback and yield zero extractable rules.
 
 ## Step P5: Append Principles and Patterns
 
-Same as Step C5 in Conversation Extraction Mode (see `references/conversation-mode.md` — that file is the single source of truth for the 3-branch dedup, canonical / staging write split, examples-on-canonical-only rule, security-includes-staging rule, and counter-in-summary contract; this list defers to it):
+Same as Step C5 in Conversation Extraction Mode (see `references/conversation-mode.md` — the single source of truth; this list defers to it):
 
 1. Categorize each extracted item by language/framework/integration/project
 2. When `split_output: true`: Project-specific patterns go to `.local.md` files
-3. Check for duplicates against existing rules (per § Step C5's **"Check for duplicates and route per category"** step — 3-branch decision: canonical match / staging match / new; staging-match criterion and per-category routing defer to C5 verbatim)
+3. Check for duplicates against existing rules (per § Step C5's **"Check for duplicates and route per category"** step — 3-branch decision: canonical match / staging match / new)
 4. Append using standard format (per § Step C5's **"Append"** step — canonical-write / staging-write split + move atomicity)
-5. **Delete promoted staging entries**: per § Step C5's **"Delete promoted staging entries"** step (same `Edit` semantics, same uniqueness-failure fallback — leave the duplicate if the bullet's `old_string` is no longer unique).
+5. **Delete promoted staging entries**: per § Step C5's **"Delete promoted staging entries"** step.
 6. Update `.examples.md`: Resolve the target path via `examples_output_dir` (`<examples_output_dir>/<name>.examples.md`). Create the file and any missing parent directories under `examples_output_dir` when absent. Follow the common generation procedure in `examples-format.md` to add examples for each new rule. (Per § Step C5's **"Update `.examples.md`"** step, staging-only items do **not** receive `.examples.md` entries — only canonical writes do.)
 7. Run Security Self-Check (same as Step 6.5; include the staging file when any staging append landed in step 4)
 8. Report what was added including `canonical_skip_count`, `promoted_count`, `staged_count`. See `report-templates.md` § PR Review Extraction Mode for format.

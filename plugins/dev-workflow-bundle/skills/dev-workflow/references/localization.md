@@ -6,6 +6,8 @@ The localization boundary for every user-facing output this skill (and `mobpro`)
 
 Applies to all user-facing prose produced by this skill — plan bodies, user-gate preambles, violation / finding lists, log lines, commit-gate framing prose, and the Completion summary. The resolved `language` (see `SKILL.md` § Configuration) controls the output language; dev-workflow's `references/configuration.md` `language` bullet carries the exhaustive category enumeration and the per-category verbatim carve-outs. `Source of truth: that bullet; keep the gist above as a subset of its categories, and keep the two in sync when categories are added or removed.`
 
+**Self-application**: these rules govern the prose **you** write, not only the prose you hand to a sub-skill. So read every output block back against this section once and correct it before the block goes out. That covers each block the `language` bullet's enumeration names. Run the pass even when this section is already in context — having read it does not discharge it.
+
 **Two-way rule:**
 
 - **Translate**: generic technical concepts that have natural equivalents in the target language. The output must read naturally to a native speaker of the resolved language. Examples: primary source → 一次情報源 (`ja`), self-audit → 自己監査 (`ja`), blast radius → 影響範囲 (`ja`), edge case → 境界ケース (`ja`).

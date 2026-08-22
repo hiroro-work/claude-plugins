@@ -46,7 +46,7 @@ There is no `--init`, no `--executor`, and no difficulty assessment (see [`refer
 | `code-review-payload.md` | M9 (only when `code_review_enabled` — M9 sub-step 3 (code review) is skipped when `code_review: false`) | § Sub-step 1 code-review payload definition (payload only; the payload carries a pointer to `review-categories.md § Code review categories` that the **reviewer** reads) |
 | `step9-completion-hooks.md` | M10 | Hook execution / review-class classification / failure-continue / post-hook re-check |
 | `diff-presentation.md` | M6 loop entry, both surfaces (M11 reuses it) | § Detached review object (the `<base>`..`<head>` scoping technique) + § Rendering ladder (verbatim / condensed / skeleton) |
-| `interactive-commits.md` | M11 | its § Procedure in full, from § Collect changes through § Per-commit loop and the sections after it |
+| `interactive-commits.md` | M11 | its preamble in full, plus its § Procedure in full, from § Collect changes through § Per-commit loop and the sections after it |
 | `crit-commit-review.md` | M6 / M11 (only when `commit_review_gate` resolves to `crit` **and** that gate's two crit-availability probes clear) | Diff review via crit — CLI contract, story prologue, launch. That gate stages nothing and has no unstage step (its § Procedure step 4). M11 also takes its per-commit outcome mapping; M6 substitutes its own and clears its own staged paths at M6 exit (`references/crit-diff-review.md`, reached from `references/diff-review.md` § crit path) |
 | `update-rules.md` | M12 | Step 11 procedure body |
 | `session-scan.md` | M12 | Shared session-scan dispatch-once contract |
@@ -233,7 +233,7 @@ Skip (and do not register) when `hooks.on_complete` is unset. Otherwise, before 
 
 ## M11 — Commit (USER GATES)
 
-Runs only when `interactive_commits` is true (else unregistered). **Read [`references/m11-commit.md`](references/m11-commit.md) first** — the Procedure below consumes its definitions as it runs, not after it. Then read `../dev-workflow/references/interactive-commits.md` and follow its **Procedure** from top to bottom, verbatim — starting at § Collect changes, not at § Propose commit plan. Two learning extensions: a 1–2 line "point of this diff" note added to each per-commit presentation, and the already-reviewed skip option [`references/m11-commit.md`](references/m11-commit.md)'s **Already-reviewed skip option (commit-plan gate)** paragraph defines. The procedure and the presented elements are otherwise unchanged. `git push` is never performed by any step.
+Runs only when `interactive_commits` is true (else unregistered). **Read [`references/m11-commit.md`](references/m11-commit.md) first** — the Procedure below consumes its definitions as it runs, not after it. Then read `../dev-workflow/references/interactive-commits.md` and follow its **Procedure** from top to bottom, verbatim — starting at § Collect changes, not at § Propose commit plan. Its preamble binds M11 as well: `§ Output language` governs every line M11 presents, including the two learning extensions below, and the deferred-bookkeeping paragraph runs before § Collect changes does. Two learning extensions: a 1–2 line "point of this diff" note added to each per-commit presentation, and the already-reviewed skip option [`references/m11-commit.md`](references/m11-commit.md)'s **Already-reviewed skip option (commit-plan gate)** paragraph defines. The procedure and the presented elements are otherwise unchanged. `git push` is never performed by any step.
 
 ## M12 — Rule update / retrospective
 

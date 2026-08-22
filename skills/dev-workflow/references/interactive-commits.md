@@ -2,6 +2,8 @@
 
 Four unqualified `§` references below resolve outside this file: `§ Approval token closed list` and `§ Localized summary tokens` in [`finish-phase.md`](finish-phase.md), and `§ Phase naming in user-facing output` and `§ Workflow artifacts` in `SKILL.md`. All other `§` references resolve within this file.
 
+**Output language.** Every line this Step puts in front of the user — the commit-plan presentation and the notes that join it, each commit's presentation, the gate questions, the informational notes, and the failure reports — is framed in the resolved `language` (see `SKILL.md` § Configuration's `language` bullet). It covers the framing only: content whose rendering a step below already specifies — a fenced block's contents, a path list, a diff hunk, a literally-named label — stays exactly as that step specifies it. An English example string a step offers for a line's shape fixes the shape, not the wording: that line's framing still takes the resolved `language`. Several sites below repeat the resolved-language instruction for their own output; do not read its absence at a site as putting that site outside this paragraph.
+
 If the current plan explicitly deferred bookkeeping edits to the commit stage — for example, CHANGELOG entries or version-bump lines whose content was deferred until the implementation is confirmed complete — apply those edits now, before Procedure 1 collects the working tree. Use the plan's deferral language (e.g. "will add the CHANGELOG entry at commit time", "version bump deferred to Step 10") as the trigger. Apply these deferred edits autonomously, with no user gate before Procedure 1. If any edit call fails, stop Step 10 and report the failure to the user.
 
 **Procedure**:

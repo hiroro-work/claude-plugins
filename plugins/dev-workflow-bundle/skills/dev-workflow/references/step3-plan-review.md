@@ -5,6 +5,17 @@ Deep reference for `SKILL.md` **Step 3: Plan Review**. Unqualified `§ No-Stall 
 1. Call the reviewer skill resolved in Step 1 (e.g. `Skill(ask-peer)`): Review the plan. **`subagent_model` propagation (inline reviewer)**: when the resolved reviewer is Claude-family (per Step 1's reviewer-family classification) and `subagent_model` is a model id, propagate it — pass `Model: <subagent_model>` to `ask-peer`, or include `--model <subagent_model>` in the dispatch instruction to `ask-claude`. External-CLI reviewers and an `inherit` resolution carry no model (current behavior).
    **Pre-dispatch dispatch-boundary reminder**: Issue the `Skill(<reviewer>)` call in the same turn as any accompanying status prose — never produce a standalone status turn before the `Skill()` call. Reading the reviewer's SKILL.md is preparation, not dispatch; the `Skill()` call is the dispatch.
 
+   **Review scope branch.** `plan_review_scope` — resolved at `SKILL.md` Step 1 sub-step 4's review-phase resolution, alongside `plan_review_enabled` — selects the request's shape. A caller that resolves no scope of its own treats the value as `full`.
+
+   **Full set of request terms (applies to both `full` and `rules-only`)**: the reviewer resolution and `subagent_model` propagation above; the **Pre-dispatch dispatch-boundary reminder** above; the **`.claude/rules/` file selection** paragraph below; the Decisions field shape and the `references/*.md` link resolution the link-resolution paragraph defines; the full plan body, `custom_instructions`, and the report-only-actionable instruction the **Every group receives** bullet defines; and the state-file subtask scope the **If a state file is active** bullet defines.
+
+   Branch-specific actions, the delta only:
+
+   - On **`full`**: compose the three-group request — the group table, its **Merge order**, and the four bullets under them, including **Apply only the sub-checks this plan triggers (every group)** and **Express-lane plan shape (every group)**.
+   - On **`rules-only`**: compose the single-unit request in § Rules-only single unit. Of the four bullets, the two marked `(every group)` still apply — the sub-check trigger test and, on an express-lane run, the compact-plan-shape note — and the remaining two do not: **`.claude/rules/` scope (G1a only)** is superseded by the caller resolving that selection itself, and **Every group receives**' "full-coverage pass" sentence does not apply.
+
+   **`.claude/rules/` file selection** (both branches): every `*.md` **directly under** `.claude/rules/` — those are the project-wide rules and always apply — plus one under a **subdirectory** (`languages/` / `frameworks/` / `integrations/` / any custom directory) only when that subdirectory's domain matches what the plan touches. The plan has no changed-file list yet, so this is a prospective judgment on what the plan will touch. The branches differ only in **who** resolves it: on `full` the reviewer does, on `rules-only` the caller does.
+
    **Three independent review groups.** Declare the request as **three independent review units** and ask for one reviewer per group, run in parallel; a reviewer with no parallel dispatch runs all three in one sequential pass. **State in the request that the reviewer for a group reads only that group's Reads column and reports only the checks in its Covers column**.
 
    | Group | Covers | Reads |
@@ -19,7 +30,7 @@ Deep reference for `SKILL.md` **Step 3: Plan Review**. Unqualified `§ No-Stall 
 
    On a `dev-workflow` run whose tier put it on the express lane ([`tier-assessment.md`](tier-assessment.md) § Lanes — Step 3 reaches this on Simple), G1b is handed `simplicity-self-audit-express.md` alone. Every other caller hands it both.
 
-   - **`.claude/rules/` scope (G1a only)**: list the `*.md` files under `.claude/rules/` first, then read every one **directly under** that directory — those are the project-wide rules and always apply — and one under a **subdirectory** (`languages/` / `frameworks/` / `integrations/` / any custom directory) only when that subdirectory's domain matches what the plan touches. The plan has no changed-file list yet, so this is a prospective judgment on what the plan will touch.
+   - **`.claude/rules/` scope (G1a only)**: tell the reviewer to list the `*.md` files under `.claude/rules/` and read the ones the **`.claude/rules/` file selection** paragraph above keeps.
    - **Every group receives**: the full plan body; `custom_instructions` when configured (have the reviewer verify alignment and report conflicts); and the instruction to report only actionable findings, explicitly stating "No actionable findings" when there are none. Every plan section, decision, and cited reference is in scope of the three groups taken together — this is a full-coverage pass.
    - **Apply only the sub-checks this plan triggers (every group)**: each sub-check in the rubric opens with the condition that fires it ("when the plan introduces a new state variable", "if the plan contains shell commands"). Tell the reviewer to decide that condition first and move on immediately when it does not hold, rather than reasoning about a check the plan cannot trip. Bias toward applying when the condition is genuinely uncertain.
    - **Express-lane plan shape (every group)**: on a `dev-workflow` run whose tier put it on the express lane ([`tier-assessment.md`](tier-assessment.md) § Lanes — Step 3 reaches this on Simple), tell the reviewer the plan was authored from [`references/step2-create-plan.md`](step2-create-plan.md) § Compact plan template rather than `plan-authoring.md` § Template, so the compact shape — the shorter Overview, the fixed-sentence Decisions, the absent `> Review guide` line — is not reported as a § Template / § Sizing guidance violation. Omit this item on every other run.
@@ -32,3 +43,22 @@ Deep reference for `SKILL.md` **Step 3: Plan Review**. Unqualified `§ No-Stall 
 
    **Return-point no-stall reminder**: When the reviewer returns (regardless of outcome — findings reported, "No actionable findings", any non-error result), the next action — applying the findings, or the Step 4 transition — must be issued in the **next tool call**. Do not insert an interstitial summary or acknowledgment turn.
 4. If actionable feedback still remains after the pass (points neither applied nor rejected), carry the unresolved points forward to Step 4.
+
+## Rules-only single unit
+
+Within this section an unqualified `sub-step N` is **this file's** own numbered procedure, not `SKILL.md`'s.
+
+The request shape sub-step 1's **Review scope branch** selects when `plan_review_scope` is `rules-only`. Declare the request as **one review unit**, not three.
+
+| Unit | Covers | Reads |
+| --- | --- | --- |
+| **R — Rules compliance** | a. **Scope & feasibility**, its `.claude/rules/` compliance leg **only** — not that category's dependencies / risks leg, none of its sub-checks, and none of categories (b) / (c) / (d) | the `.claude/rules/` files the caller selected per the paragraph below; [`references/review-categories.md`](review-categories.md) § Plan review categories, category (a) only |
+
+**Resolve the Reads column to a closed list before composing the request**, since the tool restriction below bars the reviewer from finding its own inputs: `Glob` `.claude/rules/**/*.md`, keep what sub-step 1's **`.claude/rules/` file selection** paragraph keeps, and write those paths into the request as an explicit numbered list alongside `review-categories.md`. **When the glob returns nothing** — no `.claude/rules/` directory, or no `*.md` under it — do not dispatch: emit a one-line note in the resolved `language` saying the review found no project rules to check, then treat the pass as nothing-actionable and continue wherever the caller routes that outcome (this file's sub-step 2's semantic judge; `mobpro`'s M4 sub-step 2's semantic judge). **Record that the pass never dispatched** — [`references/plan-format.md`](plan-format.md) § Step 4 guidance lines has a third sentence for it.
+
+Beyond sub-step 1's **Full set of request terms**, the request carries:
+
+- **The tool restriction.** State that the reviewer reads exactly the enumerated files and then uses no other tool — no glob, no grep, no codebase exploration, no reading anything else.
+- **The judgment basis.** Compliance is judged from the plan body against the rule text, plus the confirmations the rules themselves name. When a rule's confirmation would need a file outside the enumerated list, the reviewer does not read it — it reports that item under a separate unverified-items heading naming what it could not confirm and what would confirm it, rather than dropping it or guessing.
+
+**Do not widen the unit** — the Covers column is exhaustive, and [`references/plan-format.md`](plan-format.md) § Step 4 guidance lines tells the user exactly what it leaves unreviewed.

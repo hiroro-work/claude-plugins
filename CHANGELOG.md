@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-08-23
+
+### dev-workflow v1.119.0 / mobpro v1.30.0 / dev-workflow-bundle v1.142.0
+
+- feat(dev-workflow, mobpro): let `plan_review` narrow Plan Review to project-rule compliance
+  - `plan_review` now takes `true` / `false` / `"rules-only"` instead of a boolean; the default `true` is unchanged, so existing projects behave as before. `"rules-only"` runs the same single pass with one reviewer covering the `.claude/rules/` compliance leg alone, its inputs enumerated up front and every other tool barred, so it does no exploratory reading — substantially faster and cheaper than the full pass. Design, approach, and completeness go unreviewed in that shape, so the Step 4 approval line says so and that approval becomes the only judgment they get. Choose it where a project's rules are the part of review that pays, and leave the default where plan design still needs a second reader.
+  - `mobpro` honors the value on the same terms — M4 composes the narrowed request and M5's narration tells the junior what the pass covered.
+
 ## 2026-08-22
 
 ### dev-workflow v1.118.19 / dev-workflow-bundle v1.141.2

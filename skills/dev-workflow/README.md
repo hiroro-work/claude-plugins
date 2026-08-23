@@ -201,7 +201,7 @@ Two keys deciding whether the review phases run at all, both defaulting to on. E
 | `plan_review` | Step 3 |
 | --- | --- |
 | `true` (default) | Runs the full single pass — review categories a–d across three reviewers |
-| `"rules-only"` | Runs the same single pass narrowed to **one** reviewer checking `.claude/rules/` compliance. Its inputs are enumerated up front and every other tool is barred, so the pass costs roughly a third of the full one — and design, approach, and completeness go unreviewed. The Step 4 approval line says so, and that approval becomes the only judgment those aspects get |
+| `"rules-only"` | Runs the same single pass narrowed to **one** reviewer checking `.claude/rules/` compliance. Its inputs are enumerated up front and every other tool is barred, so it neither explores the codebase nor reviews design, approach, or completeness — substantially faster and cheaper than the full pass, and the Step 4 approval becomes the only judgment those aspects get. The approval line says so |
 | `false` | Skipped entirely |
 
 Set `plan_review: false` to run the workflow without Plan Review, or `code_review: false` to run it without Code Review. The phase is then skipped exactly the way the Trivial tier skips it: its task rows are registered `completed` and the step passes straight through. Because `false` and `"rules-only"` are your own declaration rather than something the workflow decided for you, neither raises a Completion-summary skip reminder (unlike the difficulty-skip and `--fast` skips, which are always named there). A `code_review` that is not a boolean, or a `plan_review` outside those three values, warns and falls back to on.

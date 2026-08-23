@@ -11,7 +11,7 @@ These project-characteristic keys are read from `dev-workflow`'s three layers (`
 | Key | Default | Used by |
 | --- | --- | --- |
 | `reviewer` | `ask-peer` | M1 probe, M4, M9 |
-| `plan_review` | `true` | M1 (`plan_review_enabled`), M4 |
+| `plan_review` | `true` | M1 (`plan_review_enabled` / `plan_review_scope`), M4, M5 narration |
 | `code_review` | `true` | M1 (`code_review_enabled`), M9 |
 | `check_commands` | none (unset) | M8 |
 | `test_commands` | `["Skill(run-tests)"]` | M8 |

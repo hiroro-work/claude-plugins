@@ -15,7 +15,7 @@ Emit each reminder whose condition holds, in the resolved `language`, in the ord
 
 The reminder is omitted when `difficulty_skipped_steps` is empty. The step names (`Step 6 Tidy` / `Step 6.5 Polish Prose` / `Step 7.5 Rules Compliance Review` / `Step 11 Update Rules`) stay verbatim regardless of `language`.
 
-**Fast-mode-skip reminder**: when `fast_mode_skipped_steps` is non-empty, surface a line in the resolved `language` naming the steps `--fast` skipped:
+**Fast-mode-skip reminder**: when `fast_mode_skipped_steps` is non-empty, surface a line in the resolved `language` naming the steps the `fast` run mode skipped:
 
 - `language: ja`: `fast モードにより <steps> を skip しました` — 例: `fast モードにより Step 3 Plan Review / Step 6.5 Polish Prose を skip しました`
 - `language: en`: `Skipped <steps> per fast mode` — e.g. `Skipped Step 3 Plan Review / Step 6.5 Polish Prose per fast mode`

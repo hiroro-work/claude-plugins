@@ -414,23 +414,41 @@
     // question / recommendation / alternative raw text for card rendering.
     function parseDecisions(body) {
       const FIELD_RE = /^\s*(?:[-*]\s+)?\*\*(Question|Recommendation|Alternative)\*\*\s*[:：]?\s*(.*)$/;
+      // A numbered bold-only line ("**1. title**") starts an item too: the template forbids it,
+      // but a plan that carries one would otherwise fold every later item into this one's alternative.
+      const ITEM_HEAD_RE = /^\s*(?:#{3,6}\s+)?\*\*(\d+[.)]\s*\S.*?)\*\*\s*$/;
       const items = [];
       const preamble = [];
-      let cur = null, field = null;
+      let cur = null, field = null, inFence = false;
+      const open = (question) => {
+        cur = { question, recommendation: "", alternative: "" };
+        items.push(cur);
+        field = "question";
+      };
       for (const line of body.split("\n")) {
-        const m = FIELD_RE.exec(line);
+        if (FENCE_RE.test(line)) inFence = !inFence;
+        const m = inFence ? null : FIELD_RE.exec(line);
         if (m) {
           const f = m[1].toLowerCase();
           if (f === "question") {
-            cur = { question: m[2] || "", recommendation: "", alternative: "" };
-            items.push(cur);
-            field = "question";
+            // Fold into an item this heading rule just opened, so both shapes yield one item.
+            if (cur && !cur.recommendation && !cur.alternative) {
+              cur.question += (cur.question ? "\n\n" : "") + (m[2] || "");
+              field = "question";
+            } else {
+              open(m[2] || "");
+            }
           } else if (cur) {
             field = f;
             cur[f] = m[2] || "";
           } else {
             preamble.push(line); // stray Recommendation/Alternative before any Question — keep, don't drop
           }
+          continue;
+        }
+        const h = inFence ? null : ITEM_HEAD_RE.exec(line);
+        if (h && (!cur || cur.recommendation || cur.alternative)) {
+          open(h[1]);
           continue;
         }
         if (cur && field) cur[field] += "\n" + line;

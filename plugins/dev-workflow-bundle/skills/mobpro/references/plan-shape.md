@@ -25,6 +25,8 @@ Heading tokens stay verbatim English on every `language`; the body prose is writ
 - **Recommendation**: <the side taken, and why>
 - **Alternative**: <the other side and what it would have meant — omit this line entirely when there was no real second option; never invent one to fill the slot>
 
+<The `**Question**` line separates one item from the next: M5's visual gate splits the section on it and reads everything after `**Alternative**` as still belonging to the item above. Put nothing between items — no per-item heading, no introductory paragraph — and fold context that wants a heading into the `**Question**` line instead.>
+
 <When no fork qualifies, say so in one sentence rather than omitting the section.>
 
 ### How we'll check it works
@@ -40,7 +42,7 @@ M3 sub-step 2's **Design-approach narration** states the chosen approach and its
 
 This stands in for `dev-workflow`'s `references/plan-authoring.md` § Step 3 (d) content-quality rubric. The `Decisions` (a)+(b) criterion that same substitution displaces is deliberately not carried over. **The mapping rule below binds whichever group you are reviewing**, not only the one holding category (d). The rest of the payload keeps its own wording, so read whatever your group's Reads column names through one mapping rule: wherever it prescribes surfacing something as a `Decisions` item, or points at `Overview`, `Test plan`, or `Risks`, substitute — respectively — `Choices I made`, `What we're building`, `How we'll check it works`, and `Watch-outs`. `Build order` needs no substitution. A `mobpro` plan has none of those four sections. The absence of the first three is never a finding and no finding may ask for one to be added; a remedy that would land in `Risks` lands in `Watch-outs`, which is created when a remedy needs it. `Choices I made` borrows `Decisions`' `**Question**` / `**Recommendation**` / `**Alternative**` field shape; only the shape is borrowed.
 
-- **Structure** — are `What we're building` / `Build order` / `Why this order` / `Choices I made` / `How we'll check it works` all present under those exact headings; is every `Build order` step written as `N. **<heading>** — <detail>` (§ Template); and does every `Choices I made` item carry `**Question**` and `**Recommendation**` (with `**Alternative**` only where a real second option existed)?
+- **Structure** — are `What we're building` / `Build order` / `Why this order` / `Choices I made` / `How we'll check it works` all present under those exact headings; is every `Build order` step written as `N. **<heading>** — <detail>` (§ Template); and does every `Choices I made` item carry `**Question**` and `**Recommendation**` (with `**Alternative**` only where a real second option existed) with nothing between one item and the next (§ Template)?
 - **Hidden choices** — does a `Build order` step or a `Why this order` line rest on a fork that `Choices I made` never names?
 - **Coverage** — does `How we'll check it works` reach every `Build order` step, and does each check name the step it verifies?
 - **Plain enough to follow** — could someone new to this codebase read `What we're building` and `Build order` and predict what each unit's diff will contain?

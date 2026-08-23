@@ -6,12 +6,11 @@
 
 These project-characteristic keys are read from `dev-workflow`'s three layers (`~/.claude/dev-workflow.local.md` → `.claude/dev-workflow.md` → `.claude/dev-workflow.local.md`) using the same per-class merge semantics as `dev-workflow` (see [`inline-defs.md`](inline-defs.md) § (a)). `mobpro` never writes to these files.
 
-`Keep this list and its Default column in sync with dev-workflow references/configuration.md — a key listed there belongs here when it governs a step mobpro also runs and is not carved out by § Not-adopted keys. The Default column is the only runtime source for the values in this table (SKILL.md § Runtime reads).` A key absent from all three layers resolves to its Default below. This closed list of 13 is complete:
+`Keep this list and its Default column in sync with dev-workflow references/configuration.md — a key listed there belongs here when it governs a step mobpro also runs and is not carved out by § Not-adopted keys. The Default column is the only runtime source for the values in this table (SKILL.md § Runtime reads).` A key absent from all three layers resolves to its Default below. This closed list of 12 is complete:
 
 | Key | Default | Used by |
 | --- | --- | --- |
 | `reviewer` | `ask-peer` | M1 probe, M4, M9 |
-| `plan_review` | `true` | M1 (`plan_review_enabled` / `plan_review_scope`), M4, M5 narration |
 | `code_review` | `true` | M1 (`code_review_enabled`), M9 |
 | `check_commands` | none (unset) | M8 |
 | `test_commands` | `["Skill(run-tests)"]` | M8 |

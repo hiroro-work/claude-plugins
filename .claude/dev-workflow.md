@@ -1,6 +1,5 @@
 ---
 reviewer: "ask-peer"
-plan_review: "rules-only"
 check_commands:
   - "jq empty .claude-plugin/marketplace.json plugins/*/.claude-plugin/plugin.json"
   - "! git ls-files --others --exclude-standard 'skills/**/*.stdout' 'skills/**/*.stderr' 'plugins/dev-workflow-bundle/skills/**/*.stdout' 'plugins/dev-workflow-bundle/skills/**/*.stderr' | grep -q ."

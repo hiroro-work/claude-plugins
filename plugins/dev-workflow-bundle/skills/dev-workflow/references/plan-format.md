@@ -48,7 +48,14 @@ Pick exactly one variant and use its literal text verbatim — do not concatenat
 - **an assessed tier of Trivial** — use `Step 3 (Plan Review) was skipped because this task was assessed Trivial — this approval is the sole review.` Key this on the **assessed tier**, never on `code_review_enabled` being `false`: a configured `code_review: false` also produces that without the tier being Trivial, so a flag-based test would assert Trivial of a task that was never assessed so.
 - **`--fast` forced the plan phase off on a non-Trivial tier** — use `Step 3 (Plan Review) was skipped because fast mode skips Plan Review for this run — this approval is the sole review.` instead.
 
-Applying whichever sentence the list above selected (all three cases alike): for a preamble variant that **contains** a "The plan has been reviewed in Step 3 ..." sentence, **replace** that sentence with it; for a variant that **contains no** such sentence (the Resume-mode empty-Decisions variant), **append** it. The lead clause of each variant ("Decisions has items requiring your judgment ..." / "No user decisions required ...") is unchanged in both cases — only the review-status sentence is substituted or appended.
+**Rules-only conditional**: when `plan_review_enabled` is `true` and `plan_review_scope` is `rules-only` (§ Configuration's `plan_review` bullet), Step 3 ran, but over `.claude/rules/` compliance alone — so the "The plan has been reviewed in Step 3 ..." sentence overstates what was reviewed. Two sentences, on whether the pass reached a reviewer at all:
+
+- **The pass dispatched** — use `Step 3 (Plan Review) ran in rules-only scope — only .claude/rules/ compliance was reviewed, so the design and completeness of this plan reach you unreviewed.`
+- **The pass never dispatched** because the project has no `.claude/rules/` files to check (`references/step3-plan-review.md` § Rules-only single unit's empty-glob path) — use `Step 3 (Plan Review) found no project rules to check and did not run — this approval is the sole review.` Do not emit the dispatched-pass sentence on this path.
+
+Evaluate the **Disabled-plan-phase conditional** above first and reach this only when it did not fire.
+
+Applying whichever sentence the two conditionals above selected: for a preamble variant that **contains** a "The plan has been reviewed in Step 3 ..." sentence, **replace** that sentence with it; for a variant that **contains no** such sentence (the Resume-mode empty-Decisions variant), **append** it. The lead clause of each variant ("Decisions has items requiring your judgment ..." / "No user decisions required ...") is unchanged in both cases — only the review-status sentence is substituted or appended.
 
 ## Localization granularity
 

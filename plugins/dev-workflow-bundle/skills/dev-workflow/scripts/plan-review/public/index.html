@@ -414,23 +414,63 @@
     // question / recommendation / alternative raw text for card rendering.
     function parseDecisions(body) {
       const FIELD_RE = /^\s*(?:[-*]\s+)?\*\*(Question|Recommendation|Alternative)\*\*\s*[:：]?\s*(.*)$/;
+      // An unindented numbered bold-only line ("**1. title**") starts an item, but only when a
+      // **Question** is the next non-blank line after it. Both guards keep the rule from ever splitting
+      // a field body: an indented or unnumbered bold line, any ATX heading, and a bold line followed by
+      // prose all stay body text, because splitting there truncates a Recommendation and carries its
+      // tail onto the next card. Everything outside that one shape keeps the old fold — the template
+      // statement is the real fix; this is only the net under it.
+      const ITEM_HEAD_RE = /^\*\*(\d+[.)]\s*\S.*?)\*\*\s*$/;
       const items = [];
       const preamble = [];
-      let cur = null, field = null;
-      for (const line of body.split("\n")) {
-        const m = FIELD_RE.exec(line);
+      const lines = body.split("\n");
+      // Fence state after each line, so the lookahead reads it instead of re-scanning.
+      const fenced = [];
+      for (let i = 0, f = false; i < lines.length; i++) {
+        if (FENCE_RE.test(lines[i])) f = !f;
+        fenced.push(f);
+      }
+      const headStartsItem = (i) => {
+        for (let j = i + 1; j < lines.length; j++) {
+          if (fenced[j] || !lines[j].trim()) continue;
+          const fm = FIELD_RE.exec(lines[j]);
+          return !!fm && fm[1].toLowerCase() === "question";
+        }
+        return false;
+      };
+      let cur = null, field = null, curFromHead = false;
+      const open = (question, fromHead) => {
+        cur = { question, recommendation: "", alternative: "" };
+        items.push(cur);
+        field = "question";
+        curFromHead = !!fromHead;
+      };
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        const inFence = fenced[i];
+        const m = inFence ? null : FIELD_RE.exec(line);
         if (m) {
           const f = m[1].toLowerCase();
           if (f === "question") {
-            cur = { question: m[2] || "", recommendation: "", alternative: "" };
-            items.push(cur);
-            field = "question";
+            // Fold into an item the heading rule just opened, so both shapes yield one item. Only
+            // then — two consecutive **Question** lines still open two items, as they always did.
+            if (curFromHead && !cur.recommendation && !cur.alternative) {
+              cur.question += (cur.question ? "\n\n" : "") + (m[2] || "");
+              field = "question";
+            } else {
+              open(m[2] || "", false);
+            }
           } else if (cur) {
             field = f;
             cur[f] = m[2] || "";
           } else {
             preamble.push(line); // stray Recommendation/Alternative before any Question — keep, don't drop
           }
+          continue;
+        }
+        const h = inFence ? null : ITEM_HEAD_RE.exec(line);
+        if (h && headStartsItem(i)) {
+          open(h[1], true);
           continue;
         }
         if (cur && field) cur[field] += "\n" + line;

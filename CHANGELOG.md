@@ -2,6 +2,21 @@
 
 ## 2026-08-23
 
+### dev-workflow v1.120.0 / mobpro v1.31.0 / dev-workflow-bundle v1.143.0
+
+- fix(dev-workflow): report the Step 10 recovery point on every path, never by silence
+  - § Propose commit plan named `<step10_entry_snapshot>` only "when § Collect changes set it", so a failed snapshot and a § Collect changes that never ran both rendered as nothing, and the run that hit the second one proposed a commit plan with no recovery point and nothing amiss. The report is now three branches with no silent one: the SHA and its restore command, or the failure line § Collect changes recorded — which that section now holds as `<step10_entry_snapshot_failure>` rather than only emitting once — or, when neither is available, a return to § Collect changes with the gate left unopened. Sub-step `d`'s survival-check skip says what an unset SHA now means, since it can no longer mean a skipped step.
+  - Category: `missing-branch`
+- feat(dev-workflow, mobpro): ask before committing frozen trees through a stashing pre-commit hook
+  - A boundary group's tree is frozen at what Step 5 recorded, so landing it leaves the rest of the working tree unstaged — and a hook that shelves that delta to reformat the staged content can fail to reapply its shelf and take the content with it. Nothing warned before the commits started; the existing Frozen-tree notice covers a different consequence. A gate now fires on the chain-present path with two or more groups when `git rev-parse --git-path hooks/pre-commit` resolves to an existing file — one probe covering every manager that installs a hook file there, since it honors `core.hooksPath`. A runner that fires hooks from git config alone leaves no file to find and does not open the gate; that miss leaves the run behaving as it did before, so it errs toward silence rather than toward a wrong answer. It offers keeping the frozen trees with that manager suppressed (a marker-to-prefix lookup, or the prefix the user supplies; only the named manager stands down, so hooks it does not own still run), dropping the chain so every hook runs against final content, or proceeding unchanged. Nothing is defaulted, and the third road is there because the probe also finds hooks that shelve nothing.
+  - Category: `missing-branch`
+- fix(mobpro): make the already-reviewed skip option skip what its name says
+  - Choosing it suppressed the crit round alone, leaving the full diff rendered in chat and the per-commit accept gate in place — heavier than not choosing it. It now suppresses both for the commits it covers: each renders its subject, body, files, and check/test line — the diff element alone is dropped — and lands with the commit-plan approval as the only confirmation. The carve-out in `interactive-commits.md` § Per-commit loop widened to match and stays bounded to groups taking the boundary-object derivation, so the tree skipped is the tree the junior already accepted at M6.
+  - Category: `wrong-default`
+- fix(dev-workflow, mobpro): state what separates one Decisions item from the next
+  - Both plan templates gave the per-item field shape without saying that the `**Question**` line is the item boundary the Step 4 / M5 visual gate splits on. A plan written with per-item headings therefore had each item's opening text folded into the previous item's `Alternative`, with no error anywhere. Both templates now say it, both self-checks check it, and the viewer's `parseDecisions` treats an unindented numbered bold-only line as an item start when a `**Question**` is the next non-blank line after it, so a plan written that way still renders as separate cards. Every other shape — an indented or unnumbered bold line, an ATX heading, a bold line followed by prose — keeps the old fold on purpose: splitting there truncates a Recommendation and carries its tail onto the next card, which is worse than the fold.
+  - Category: `missing-branch`
+
 ### dev-workflow v1.119.0 / mobpro v1.30.0 / dev-workflow-bundle v1.142.0
 
 - feat(dev-workflow, mobpro): let `plan_review` narrow Plan Review to project-rule compliance

@@ -2,6 +2,12 @@
 
 ## 2026-08-23
 
+### dev-workflow v1.121.0 / mobpro v1.32.0 / dev-workflow-bundle v1.144.0
+
+- feat(dev-workflow, mobpro)!: choose the plan review's shape per invocation, and retire the `plan_review` key
+  - **Default: rules-only** — the plan review now runs narrowed to `.claude/rules/` compliance unless you ask for more, and the way to get the full pass back is the new `--deep` flag on that invocation. There is no config equivalent: `plan_review` is removed and simply no longer read — a settings file that still carries it is ignored silently. `--fast` and `--deep` are the two ends of one run-mode axis (`fast` / `normal` / `deep`) replacing the former `fast_mode_active` boolean; passing both is a fatal error. Everything `--fast` skipped before it skips still, and the axis is expected to pick up further differences over time — a run mode names a general preference, not a fixed pair of skips. On a Trivial task the tier keeps turning the plan phase off, so `--deep` does not bring it back there; `code_review` stays a config key and no run mode touches it. Removing the key skips the usual deprecation-notice-and-wait lifecycle deliberately, at the maintainer's decision taken before the change was planned. **Downstream automation that syncs settings files does not read this file** — drop `plan_review` from any generated `dev-workflow` config alongside this upgrade.
+  - Category: `wrong-default`
+
 ### dev-workflow v1.120.0 / mobpro v1.31.0 / dev-workflow-bundle v1.143.0
 
 - fix(dev-workflow): report the Step 10 recovery point on every path, never by silence

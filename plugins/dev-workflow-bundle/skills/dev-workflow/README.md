@@ -86,7 +86,7 @@ After detection, each check_command is executed to verify it works, and `run-tes
 Settings are **merged** across layers with type-aware strategy:
 
 - **Scalar keys** (`reviewer`, `code_review`, etc.): higher layer wins (replaces). When a scalar key's value is a map (`subagent_model`), the whole map is replaced as a single value — there is no per-key cross-layer merge (an absent map key is not inherited from a lower layer; it falls to its built-in default)
-- **List keys** (`check_commands`): **appended** — lower-layer items first, then higher-layer items, duplicates removed. `test_commands` is always fixed to `["Skill(run-tests)"]` and excluded from merge
+- **List keys** (`check_commands`, `boundary_check_commands`): **appended** — lower-layer items first, then higher-layer items, duplicates removed. `test_commands` is always fixed to `["Skill(run-tests)"]` and excluded from merge
 - **`hooks`**: deep-merged — each sub-key (`on_complete`) is appended and deduplicated
 
 Keys absent from a higher layer inherit from lower layers. Setting a key to `null` or empty (`[]`, `{}`) explicitly clears the lower-layer value. Only specify keys you want to override or extend.
@@ -182,6 +182,7 @@ hooks:
 | `polish_prose` | bool | `true` | Whether the workflow's two `prose-polish` passes (Step 6.5 file-mode polish of changed files + Step 4 plan-body polish, the latter also covering the decomposition state file on the run that created it) run; Step 6.5 is still subject to the difficulty-skip matrix (default-on, opt-out) |
 | `custom_instructions` | string | (none) | Free-form instructions applied across all phases |
 | `check_commands` | list&lt;string&gt; | (none) | Static checks (lint / format / typecheck, etc.) |
+| `boundary_check_commands` | list&lt;string&gt; | (none) | Shell commands run as each Build order step's boundary object is recorded, so what they rewrite lands in that step's own tree — see the `boundary_check_commands` section below |
 | `test_commands` | list&lt;string&gt; | `["Skill(run-tests)"]` | Test execution (fixed) |
 | `hooks.on_complete` | list&lt;string&gt; | (none) | Hooks to run as Step 9 (immediately after Step 8.5 Deferred Verification, before Step 10 Interactive Commits when `interactive_commits: true`, otherwise before Completion) |
 | `self_retrospective.feedback` | string | (none) | Destination for Step 11.5 self-retrospective output (GitHub `owner/repo` or a local directory path). Unset = Step 11.5 is fully skipped |
@@ -330,6 +331,25 @@ check_commands:
   - "pnpm run typecheck"
 ```
 
+#### `boundary_check_commands`
+
+Shell commands run in order at the moment each Build order step's boundary object is recorded, while that step's paths are staged. Whatever a command rewrites is re-staged and carried into that step's own tree, instead of surfacing later as a change no step accounts for — a project's pre-commit hook runner is the motivating case, since Step 10 is otherwise the first place it ever runs.
+
+Default: none, so no command runs.
+
+A command listed here that also appears in `check_commands` runs twice: once per Build order step here, and again at the check/test gate — worth avoiding when the command is slow.
+
+The re-staging covers the paths that step already edited. Anything outside that set stays out of the tree and remains an uncommitted working-tree change — both a path a command creates, and an already-tracked file that step did not edit but a repo-wide command rewrote.
+
+```yaml
+boundary_check_commands:
+  - "lefthook run pre-commit"
+```
+
+Two limits on the scope. The key is read only where boundary objects exist, so `interactive_commits: false` leaves it unread. And a command outside the skill's `Bash(...)` grants may need a one-time permission approval on its first run.
+
+A non-zero exit does not stop the run: it is recorded as a one-line note, the command is fixed and re-run once, and the corrected content is staged again before the boundary is built from the index. `check_commands` at the check/test gate remains the one that stops the run.
+
 #### `test_commands`
 
 Always fixed to `["Skill(run-tests)"]`. The `run-tests` skill is generated and updated by `--init`. It spawns a sub-agent internally to execute tests and returns one of `SUCCESS` / `TEST_FAILED` / `EXECUTION_ERROR`.
@@ -429,6 +449,8 @@ check_commands:
   - "pnpm run lint:fix"
   - "pnpm run format"
   - "pnpm run typecheck"
+boundary_check_commands:
+  - "lefthook run pre-commit"
 test_commands:
   - "Skill(run-tests)"
 hooks:

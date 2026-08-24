@@ -33,7 +33,7 @@ Settings files (YAML frontmatter only, merged across layers):
 
 **Merge strategy per key type** (summary — the canonical operational definition, including the `null`/empty-clears and absent-inherits rules, is the **Step 1: Load Settings** sub-step 1 Overlay procedure, in [`references/step1-load-settings.md`](references/step1-load-settings.md) § Sub-step 1 — Overlay / merge procedure; keep the two in sync):
 - **Scalar** (`reviewer`, `code_review`, `subagent_model`, `implementation_executor`, `interactive_commits`, `commit_review_gate`, `polish_prose`, `custom_instructions`, `language`): higher layer wins (replaces) **when the key is present**; an absent key inherits from lower layers. The map-valued scalar `subagent_model` (`{<tier>: <model>}`) is the same class — a higher layer's map replaces the lower layer's wholesale (no per-key cross-layer merge), and an absent map key falls to its default at resolution time (`sonnet` for `trivial` / `simple`, inherit for `moderate` / `complex`)
-- **List** (`check_commands`): append — lower-layer items first, then higher-layer items, duplicates removed (keep first occurrence)
+- **List** (`check_commands`, `boundary_check_commands`): append — lower-layer items first, then higher-layer items, duplicates removed (keep first occurrence)
 - **List-replace** (`test_commands`): higher layer's list replaces lower layer's list as a whole (no item-level merge or dedup). Defaults to `["Skill(run-tests)"]` when unset
 - **`hooks`**: deep-merge at the `hooks` level — each sub-key (`on_complete`) is merged as a list (append, deduplicated)
 
@@ -56,6 +56,8 @@ check_commands:
   - "pnpm run lint:fix"
   - "pnpm run format"
   - "pnpm run typecheck"
+boundary_check_commands:          # default none; run as each Build order step's boundary is recorded
+  - "lefthook run pre-commit"
 test_commands:
   - "Skill(run-tests)"
 hooks:
@@ -82,6 +84,7 @@ Per-key detail is in [`references/configuration.md`](references/configuration.md
 - **custom_instructions**: Free-form development instructions applied across planning / implementation / review / tidy (`.claude/rules/` and explicit user requests take precedence). Optional.
 - **language**: Output language for this skill's user-facing prose (resolution: merged config → `~/.claude/settings.json` `language` → default `ja`). See [`references/localization.md`](references/localization.md) § Localization granularity. Its **Self-application** paragraph applies here too; a site with no language note of its own is **not** exempt.
 - **check_commands**: Static checks (lint / format / typecheck); all run in order during Step 7.
+- **boundary_check_commands**: Shell commands run in order as each Build order step's boundary object is recorded, so what they rewrite lands in that step's own tree (default none — no command runs).
 - **test_commands**: `Skill(<name>)` entries run sequentially during Step 7 (default `["Skill(run-tests)"]`).
 - **hooks.on_complete**: Skills (`Skill(<name>)`) or shell-command strings run as Step 9 (default none).
 - **self_retrospective.feedback**: Destination (GitHub `owner/repo`, or a local `/` / `~/` / `./` / `../` path) for the Step 11.5 bundle-skill improvement signal; unset → Step 11.5 is not registered.

@@ -24,13 +24,27 @@ To let the viewer show what changed across a revise round, the **previous** serv
 
 On the **first** launch the served file does not yet exist, so no prev is created and the launch omits `--prev`. `.plan-review.prev.md` is a workflow artifact covered by `SKILL.md` § Workflow artifacts (cross-step fixed exclusion) and removed in [`finish-phase.md`](finish-phase.md) § Completion's cleanup.
 
+## Figures layer
+
+Figures live outside the canonical plan document, in `.claude/plans/<slug>.figures.md`, so the plan's prose stays figure-free everywhere that document is read — Step 5's implementation walk, the Step 3 reviewer's payload, and the chat approval this gate degrades to. Only the served file carries them.
+
+**File format.** A sequence of blocks. Each opens with a `## <section name>` heading naming the plan section it belongs to — `Overview` / `Decisions` / `Build order`, the closed list of sections a figure may target — and holds that section's single figure with its caption. A heading naming a section the canonical document does not have is skipped with a one-line note; a repeated heading is a violation the compose step reports rather than merging.
+
+**Insertion position**, one per section: `Overview` — directly after the field bullets, before the next element; `Decisions` — after any leading prose, before the first `**Question**` line; `Build order` — before the numbered list.
+
+**Who writes it, and when.** Whoever runs this gate writes it, immediately before the first compose — never at Step 2, since a plan that never reaches a browser never needs figures. Later launches reuse the file as it stands; only a revise comment on a figure rewrites it (§ Procedure step 6). The authoring conventions — which notation, how many figures, the caption contract, the colour tokens, the SVG skeletons — are in [`plan-figures.md`](plan-figures.md); `Read` it at that point and not before.
+
+`.figures.md` is a workflow artifact covered by `SKILL.md` § Workflow artifacts (cross-step fixed exclusion) and removed in [`finish-phase.md`](finish-phase.md) § Completion's cleanup.
+
 ## Procedure
 
 1. **Resolve the serve.mjs path.** It lives at `<skill base directory>/scripts/plan-review/serve.mjs`, where `<skill base directory>` is the directory the harness reports as "Base directory for this skill" at this skill's invocation. **Do not hardcode an absolute path.**
 
 2. **Re-confirm reachability.** Run `printenv CLAUDE_CODE_REMOTE`; `true` means the served page never reaches the user — return **`fallback`** to Step 4 without launching. Any other value — including unset or empty — means local execution; continue.
 
-3. **Write the served plan file.** If `.claude/plans/<slug>.plan-review.md` **already exists** (a re-launch — e.g. a `rewrite-approach` re-entry), first `cp` it to `.claude/plans/<slug>.plan-review.prev.md` before overwriting (§ Prev snapshot, site (ii)). Then write the full plan body (the same content Step 4 sub-step 2 wrote to the canonical plan document `.claude/plans/<slug>.md`) to `.claude/plans/<slug>.plan-review.md`, where `<slug>` is the slug Step 4 sub-step 2 established. Write it **verbatim** — no block markers are inserted. This **served file** is the gate's transient working copy, distinct from the canonical `.claude/plans/<slug>.md`; during the revise loop only the served file is updated, and `.claude/plans/<slug>.md` is written from the served file's latest content only when the gate exits via `approve` or `rewrite-approach` (steps 6–7).
+3. **Compose the served plan file.** If `.claude/plans/<slug>.plan-review.md` **already exists** (any non-first launch), first `cp` it to `.claude/plans/<slug>.plan-review.prev.md` before overwriting (§ Prev snapshot). Then compose the served file from two inputs and `Write` it to `.claude/plans/<slug>.plan-review.md`, where `<slug>` is the slug Step 4 sub-step 2 established: the **canonical plan document** `.claude/plans/<slug>.md`, carried **verbatim** — no block markers are inserted — and the **figures file** `.claude/plans/<slug>.figures.md`, each of its blocks inserted at the position § Figures layer gives the section its heading names. When the figures file does not exist — the ordinary case for a plan with no figures — the served file is the canonical document verbatim and this step is a plain copy.
+
+   This **served file** is the gate's derived copy, and the canonical `.claude/plans/<slug>.md` is **never written from it**. Prose a revise round changes is applied to the canonical document itself (step 6), so that document is current at every moment of the loop, and each launch rebuilds the served file from it.
 
 4. **Launch the gate (background Bash).** First clear any stale URL file from a previous launch — `rm -f .claude/plans/<slug>.plan-review.url`, as its own foreground call so it stays inside the `Bash(rm -f .claude/plans/*)` grant. Then run `node "<skill base directory>/scripts/plan-review/serve.mjs" --plan ".claude/plans/<slug>.plan-review.md" --lang <resolved-language> --wait` as a **background Bash** command (`run_in_background: true`), substituting the workflow's resolved `language` for `<resolved-language>`, and emit a Progress Visibility status line in the same turn (e.g. "Launching the visual plan-review gate in your browser…"). **When `.claude/plans/<slug>.plan-review.prev.md` exists** (a re-launch where a prev snapshot was taken — § Prev snapshot), append `--prev ".claude/plans/<slug>.plan-review.prev.md"` so the viewer shows the diff; omit it on the first launch. Do **not** pass `--timeout`: the gate uses serve.mjs's 24h default. Pass `--timeout 0` only if truly no timeout (wait indefinitely) is wanted. Notes:
    - This is background **Bash**, **not** the `Agent` tool.

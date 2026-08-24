@@ -38,6 +38,12 @@ Heading tokens stay verbatim English on every `language`; the body prose is writ
 
 M3 sub-step 2's **Design-approach narration** states the chosen approach and its alternative before this document is written, so that fork is usually `Choices I made`'s first item.
 
+## Figures
+
+The plan document carries **no figures**. Where one would carry what prose cannot — and for a junior reader that is often — the figure belongs to the **figures layer** M5's visual gate merges into the copy it serves: `../dev-workflow/references/visual-plan-review.md` § Figures layer defines the file and the insertion positions, and `../dev-workflow/references/plan-figures.md` the authoring conventions. Neither is read at M3 (Design dialogue).
+
+The sections of this template a figure may target are `What we're building`, `Choices I made`, and `Build order` (closed list). The document must stand without the figures — on the chat path the junior sees prose alone — so never thin a passage expecting a figure to carry it.
+
 ## Review lens
 
 This stands in for `dev-workflow`'s `references/plan-authoring.md` § Step 3 (d) content-quality rubric. The `Decisions` (a)+(b) criterion that same substitution displaces is deliberately not carried over. **The mapping rule below binds whichever group you are reviewing**, not only the one holding category (d). The rest of the payload keeps its own wording, so read whatever your group's Reads column names through one mapping rule: wherever it prescribes surfacing something as a `Decisions` item, or points at `Overview`, `Test plan`, or `Risks`, substitute — respectively — `Choices I made`, `What we're building`, `How we'll check it works`, and `Watch-outs`. `Build order` needs no substitution. A `mobpro` plan has none of those four sections. The absence of the first three is never a finding and no finding may ask for one to be added; a remedy that would land in `Risks` lands in `Watch-outs`, which is created when a remedy needs it. `Choices I made` borrows `Decisions`' `**Question**` / `**Recommendation**` / `**Alternative**` field shape; only the shape is borrowed.

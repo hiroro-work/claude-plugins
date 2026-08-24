@@ -4,7 +4,7 @@ The procedure `SKILL.md` **M5 — Plan approval (USER GATE)** delegates here. **
 
 **Plan-body prose polish** (`Keep in sync with dev-workflow references/step4-finalize-plan.md's Plan-body prose polish paragraph.`). When `polish_prose` is `true` **and `run_mode` is not `fast`** (`SKILL.md` § Run modes), call `Skill(prose-polish)` in file mode before the approval surface below: `Files:` = `.claude/plans/<slug>.md` (written at M3 sub-step 3's plan authoring), plus `state_file_path` on the run whose M2 (Kickoff) wrote it — including the `../dev-workflow/references/task-decomposition-resume.md` § A step 3a recovery, which starts from `--resume` but continues in Normal sub-mode and re-binds the path once a decomposition is accepted — it stays `null` otherwise, and `Files:` then carries the plan document alone; `Language:` = the resolved language; no `Model:`. When either condition fails — `polish_prose` not `true`, or `run_mode == "fast"` — skip silently and append nothing to `fast_mode_skipped_steps`.
 
-Run it **before** sub-step 1 enters the visual gate, which copies its served file from the plan document.
+Run it **before** sub-step 1 enters the visual gate, which composes its served file from the plan document.
 
 An `error` verdict means prose-polish ran — note it in one line, present the un-polished plan, and append nothing. A `Skill()` call failure is the distinct availability signal: retry once, then skip and append `prose-polish unavailable (plan-body polish)` to `bundle_skills_unavailable`.
 

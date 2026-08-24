@@ -2,6 +2,13 @@
 
 ## 2026-08-24
 
+### dev-workflow v1.123.0 / mobpro v1.34.0 / dev-workflow-bundle v1.146.0
+
+- feat(dev-workflow, mobpro): show figures in the browser plan review, and keep the plan document prose-only
+  - The plan-approval gate now serves a **composed** copy: the canonical plan document plus a separate figures file, `.claude/plans/<slug>.figures.md`, whose blocks are merged into the sections they name. Figures therefore reach the browser without entering the document that Step 5's implementation walk, the plan reviewer, and the chat approval all read — so a diagram costs nothing on those paths. mermaid stays the default notation and inline SVG is available where automatic layout cannot express the point (position along an axis, a record grid); `references/plan-figures.md` holds the conventions and two skeletons, and is read only when figures are being written. A figure takes its colours from the viewer's tokens in `var(--token, #fallback)` form, is capped at one per section and three per plan, and must carry a one-sentence caption stating what it claims.
+  - **Behavior change**: the gate no longer writes the served copy back over the plan document. A revise round's comments are applied to the plan document itself the moment they arrive — figure comments to the figures file — so the document is current throughout the loop instead of only at approval, and a timeout mid-loop now degrades to a chat approval showing the applied comments rather than the pre-revise plan. The gate's approval surface says so before you choose.
+  - The plan viewer is retinted: a warm page ground distinct from the card surface, a green accent, and a full dark theme following `prefers-color-scheme` (highlight.js and mermaid included). Every colour it paints now comes from a token, so figures and chrome stay legible in both themes.
+
 ### dev-workflow v1.122.0 / mobpro v1.33.0 / dev-workflow-bundle v1.145.0
 
 - feat(dev-workflow, mobpro): run configured commands as each implementation step's boundary is recorded

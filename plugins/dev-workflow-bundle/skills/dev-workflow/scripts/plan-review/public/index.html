@@ -6,9 +6,15 @@
   <title>Plan Review — dev-workflow</title>
 
   <!-- highlight.js theme (cdnjs, pinned + SRI) -->
-  <link rel="stylesheet"
+  <link
+    rel="stylesheet"
     href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/github.min.css"
     integrity="sha512-0aPQyyeZrWj9sCA46UlmWgKOP0mUipLQ6OZXu8l4IcAmD2u31EPEy9VcIMvl7SoAaKe8bLXZhYoMaE/in+gcgA=="
+    crossorigin="anonymous" referrerpolicy="no-referrer">
+  <link
+    rel="stylesheet" media="(prefers-color-scheme: dark)"
+    href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/github-dark.min.css"
+    integrity="sha512-rO+olRTkcf304DQBxSWxln8JXCzTHlKnIdnMUwYvQa9/Jd4cQaNkItIUj6Z4nvW1dqK0SKXLbn9h4KwZTNtAyw=="
     crossorigin="anonymous" referrerpolicy="no-referrer">
 
   <!-- marked (UMD) + highlight.js (UMD): classic scripts run before the deferred module below,
@@ -24,28 +30,72 @@
 
   <style>
     :root {
-      --fg: #1f2328;
-      --muted: #59636e;
-      --border: #d1d9e0;
-      --accent: #0969da;
-      --bg: #ffffff;
-      --bg-soft: #f6f8fa;
+      /* Palette: warm, low-glare ground with a green accent (mirrors the eli5 artifact) */
+      --page-bg: #f1f4f0;      /* page ground — never the card surface */
+      --bg: #ffffff;           /* card / panel surface */
+      --bg-soft: #e7ece8;
+      --fg: #1a231f;
+      --muted: #5c6b64;
+      --border: #c8d3cd;
+      --accent: #0d6b5f;
+      --accent-soft: #d3e5df;
+      --accent-ink: #08453d;
+      --on-accent: #ffffff;   /* text on an --accent fill */
       --approve: #1a7f37;
-      --revise: #bc4c00;
+      --approve-bg: #dceee4;
+      --approve-border: #a9cdb8;
+      --revise: #8a5a12;
+      --revise-bg: #f4e7d8;
+      --revise-border: #dcc39a;
       --rec: var(--approve);
       --risk: var(--revise);
-      /* diff "changed" accent — amber, deliberately distinct from --accent (blue,
-         the base decision-card border), --approve (green), and --revise (orange) */
-      --changed: #9a6700;
-      --changed-bg: #fff8c5;
+      --risk-bg: var(--revise-bg);
+      --risk-border: var(--revise-border);
+      --switched-bg: #f7f2ea;
+      --hover: #dbe3dd;
+      /* diff "changed" accent — shares the revise hue (risk chrome does too, via --risk);
+         what separates a changed block is its left bar and badge, not its colour */
+      --changed: var(--revise);
+      --changed-bg: #f0e4cf;
+      --banner-border: #d9b85f;
+      --banner-fg: #6b4a12;
       --bar-h: 64px;
+      color-scheme: light;
+    }
+    /* Dark theme: same roles, re-toned. Every color above is redefined here, so no
+       rule outside this block may hardcode a hex. */
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --page-bg: #121815;
+        --bg: #1a231f;
+        --bg-soft: #222d28;
+        --fg: #e5ebe7;
+        --muted: #94a39b;
+        --border: #35443c;
+        --accent: #56c2ab;
+        --accent-soft: #21362f;
+        --accent-ink: #9fdccd;
+        --on-accent: #0d1a17;
+        --approve: #5fc47f;
+        --approve-bg: #1c3325;
+        --approve-border: #2f5c3f;
+        --revise: #d6a850;
+        --revise-bg: #33291a;
+        --revise-border: #5c4a27;
+        --switched-bg: #26201a;
+        --hover: #2c3a33;
+        --changed-bg: #33291a;
+        --banner-border: #5c4a27;
+        --banner-fg: #f0d9a8;
+        color-scheme: dark;
+      }
     }
     * { box-sizing: border-box; }
     body {
       margin: 0;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Sans", "Noto Sans JP", Meiryo, sans-serif;
       color: var(--fg);
-      background: var(--bg);
+      background: var(--page-bg);
       line-height: 1.7;
     }
     #app {
@@ -74,7 +124,7 @@
       border-radius: 999px; padding: 3px 12px;
     }
     .chip b { color: var(--muted); font-weight: 600; }
-    .chip.risk { background: #fff4ec; border-color: #f0c0a0; color: var(--risk); }
+    .chip.risk { background: var(--risk-bg); border-color: var(--risk-border); color: var(--risk); }
     .chip.risk b { color: var(--risk); }
     /* Scope is descriptive prose, not an enum — give it a labeled meta row that wraps,
        instead of cramming it into a fixed-shape pill like Difficulty / Risks */
@@ -118,15 +168,15 @@
     details.section > summary { padding: 12px 0; align-items: center; gap: 10px; font-weight: 600; }
     details.section > summary::before { font-size: 12px; }
     /* Context = the "why" framing; tint it so it reads as lead context, not a structural section */
-    details.section.is-context { background: var(--bg-soft); border-color: #c9d3dd; }
+    details.section.is-context { background: var(--bg-soft); border-color: var(--border); }
     details.section.is-context > summary .sec-title { color: var(--muted); }
-    details.section.is-context .sec-body { color: #2b333b; }
+    details.section.is-context .sec-body { color: var(--fg); }
     .sec-title { font-size: 15px; }
     .badge {
       font-size: 11px; font-weight: 700; border-radius: 999px;
       padding: 1px 8px; background: var(--bg-soft); color: var(--muted);
     }
-    .badge-risk { background: #fff4ec; color: var(--risk); }
+    .badge-risk { background: var(--risk-bg); color: var(--risk); }
     .sec-body { padding-top: 2px; }
     /* .step-body is inside .sec-body, so every .sec-body descendant rule already reaches it;
        this one needs naming because it is a direct-child selector. */
@@ -144,6 +194,10 @@
     .sec-body table { border-collapse: collapse; }
     .sec-body th, .sec-body td { border: 1px solid var(--border); padding: 4px 10px; }
     .sec-body .mermaid { background: var(--bg); text-align: center; margin: 10px 0; }
+    /* figures layer: a <figure> the gate merged in, carrying inline SVG */
+    .sec-body figure { margin: 12px 0; text-align: center; }
+    .sec-body figure svg { max-width: 100%; height: auto; }
+    .sec-body figcaption { font-size: 12px; color: var(--muted); margin-top: 6px; }
     /* Build order steps: the section sits in the must-review tier yet opens at N one-line
        headings. The disclosure triangle itself is shared with details.section above. */
     details.step > summary { align-items: baseline; gap: 8px; }
@@ -155,18 +209,18 @@
       border: 1px solid var(--border); border-left: 3px solid var(--accent);
       border-radius: 8px; padding: 10px 14px; margin: 10px 0; background: var(--bg);
     }
-    .decision-card.switched { border-left-color: var(--revise); background: #fffaf6; }
+    .decision-card.switched { border-left-color: var(--revise); background: var(--switched-bg); }
     .dc-q { font-weight: 600; margin-bottom: 8px; }
     .dc-q .dc-tag {
-      display: inline-block; font-size: 11px; font-weight: 700; color: #fff;
+      display: inline-block; font-size: 11px; font-weight: 700; color: var(--on-accent);
       background: var(--accent); border-radius: 4px; padding: 1px 7px; margin-right: 6px; vertical-align: 1px;
     }
     .decision-card.switched .dc-q .dc-tag { background: var(--revise); }
     .dc-rec, .dc-alt { font-size: 14px; border-radius: 6px; padding: 6px 10px; margin: 6px 0; }
-    .dc-rec { background: #eaf6ee; border: 1px solid #b4ddc0; }
+    .dc-rec { background: var(--approve-bg); border: 1px solid var(--approve-border); }
     .dc-alt { background: var(--bg-soft); border: 1px solid var(--border); color: var(--muted); }
     .decision-card.switched .dc-rec { background: var(--bg-soft); border-color: var(--border); color: var(--muted); }
-    .decision-card.switched .dc-alt { background: #fff0e6; border-color: #f0c0a0; color: var(--fg); }
+    .decision-card.switched .dc-alt { background: var(--revise-bg); border-color: var(--revise-border); color: var(--fg); }
     .dc-rec > :first-child, .dc-alt > :first-child { margin-top: 2px; }
     .dc-rec > :last-child, .dc-alt > :last-child { margin-bottom: 2px; }
     .dc-label {
@@ -182,7 +236,7 @@
        per-element comment model treats each paragraph / list item as its own target. The tint
        is a step deeper than --bg-soft so it stays visible inside the tinted Context section too. */
     .commentable { position: relative; border-radius: 6px; transition: background .12s; }
-    .commentable:hover { background: #e8edf3; }
+    .commentable:hover { background: var(--hover); }
     .cbtn {
       position: absolute; top: 0; right: -2px; opacity: 0;
       font-size: 12px; line-height: 1; border: 1px solid var(--border);
@@ -200,6 +254,7 @@
     .comment-input {
       display: block; width: 100%; min-height: 56px; margin: 6px 0 8px; padding: 8px;
       font: inherit; font-size: 13px; border: 1px solid var(--accent); border-radius: 6px; resize: vertical;
+      background: var(--bg); color: var(--fg);
     }
     .comment-input[hidden] { display: none; } /* the `display: block` above otherwise defeats the `hidden` attribute */
     /* diff mode: surfaced only on a revise re-launch (prevMarkdown present).
@@ -207,19 +262,19 @@
        so unchanged sections can stay collapsed and the eye goes to the edits. */
     #diff-banner {
       grid-column: 1 / -1; margin: 6px 0 0; padding: 8px 12px;
-      background: var(--changed-bg); border: 1px solid #eac54f; border-radius: 8px;
-      font-size: 13px; color: #6f4e00;
+      background: var(--changed-bg); border: 1px solid var(--banner-border); border-radius: 8px;
+      font-size: 13px; color: var(--banner-fg);
     }
     .badge-diff { background: var(--changed-bg); color: var(--changed); }
     /* changed block: inset left bar + faint tint; box-shadow survives the
        .commentable:hover background swap so the marker stays visible on hover.
-       Amber (--changed), not blue, so it never reads as the base card border. */
+       --changed, never --accent, so it never reads as the base card border. */
     .commentable.block-changed { background: var(--changed-bg); box-shadow: inset 3px 0 0 0 var(--changed); }
-    /* changed decision card: a thick amber left bar + faint amber wash, replacing
-       the base blue (--accent) left border, so "this Decision changed" reads at a
-       glance (far more legible than a thin outline). Scoped :not(.switched) so a
-       card toggled to its alternative still shows the orange .switched styling —
-       the active user action wins over the historical diff mark. */
+    /* changed decision card: a thick --changed left bar + faint wash, replacing the
+       base --accent left border, so "this Decision changed" reads at a glance (far
+       more legible than a thin outline). Scoped :not(.switched) so a card toggled to
+       its alternative still shows the .switched styling — the active user action
+       wins over the historical diff mark. */
     .decision-card.card-changed:not(.switched) {
       border-left: 5px solid var(--changed);
       background: var(--changed-bg);
@@ -242,13 +297,15 @@
     /* keyboard-shortcut hint: the decision bar's native controls drop out of Tab
        order when macOS Full Keyboard Access is off (Chrome mirrors that setting),
        so the a/r/↵ shortcuts are the reliable keyboard path — surface them here. */
-    #bar .kbd-hint { color: var(--muted); font-size: 12px; }
+    /* .apply-note says what "Request changes" does to the plan document, so the
+       choice is made with that in view */
+    #bar .kbd-hint, #bar .apply-note { color: var(--muted); font-size: 12px; }
     #bar .kbd-hint kbd {
       font: inherit; background: var(--bg-soft); border: 1px solid var(--border);
       border-radius: 4px; padding: 0 5px;
     }
     #send-btn {
-      font-size: 14px; font-weight: 600; color: #fff; background: var(--accent);
+      font-size: 14px; font-weight: 600; color: var(--on-accent); background: var(--accent);
       border: none; border-radius: 8px; padding: 8px 20px; cursor: pointer;
     }
     #send-btn:disabled { background: var(--border); color: var(--muted); cursor: not-allowed; }
@@ -278,6 +335,7 @@
     </div>
     <span class="count">Comments: <span id="comment-count">0</span></span>
     <span class="kbd-hint" id="kbd-hint"></span>
+    <span class="apply-note" id="apply-note"></span>
     <span class="spacer"></span>
     <span id="status"></span>
     <button id="send-btn" type="button" disabled>Send to Claude</button>
@@ -286,14 +344,19 @@
   <script type="module">
     import mermaid from "https://esm.sh/mermaid@11.15.0";
 
-    mermaid.initialize({ startOnLoad: false, theme: "default", securityLevel: "strict" });
+    // Read once: mermaid bakes its theme at initialize, so an OS theme flip mid-review leaves
+    // diagrams in the previous theme until the page is reloaded. Everything else follows the
+    // media query live.
+    const darkScheme = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    mermaid.initialize({ startOnLoad: false, theme: darkScheme ? "dark" : "default", securityLevel: "strict" });
 
-    // comments: id -> { text, excerpt } ; switches: id -> excerpt
+    // comments: id -> { text, excerpt, kind } ; switches: id -> excerpt
     const state = { decision: null, comments: new Map(), switches: new Map() };
     let SWITCH_MSG = "Switch this decision to its Alternative";
     // localized keyboard-shortcut hint — static developer-controlled markup (assigned
     // via innerHTML in init, like SWITCH_MSG); never holds user data, so not an XSS vector
     let KBD_HINT = "<kbd>a</kbd> approve · <kbd>r</kbd> request changes · <kbd>⌘/Ctrl+↵</kbd> send";
+    let APPLY_NOTE = "Requesting changes applies your comments to the plan document right away.";
 
     // diff mode (revise re-launch): populated by buildDiff() when prevMarkdown is present.
     //   sectionStatus:    id -> "new" | "changed" | "unchanged"
@@ -319,7 +382,7 @@
     // TABLE → wrapped are handled separately). Shared by attachElementComments
     // (renders comment affordances) and collectBlockTexts (read-only diff text),
     // so the two stay in sync.
-    const COMMENT_BLOCK_TAGS = ["P", "BLOCKQUOTE", "PRE", "H4", "H5", "H6"];
+    const COMMENT_BLOCK_TAGS = ["P", "BLOCKQUOTE", "PRE", "H4", "H5", "H6", "FIGURE"];
 
     // What the viewer knows about each plan section, in match-priority order: `match` lists title
     // prefixes (lowercased) that map to the type; `open` opens the section by default;
@@ -542,8 +605,11 @@
         const c = state.comments.get(id);
         const txt = c ? c.text.trim() : "";
         const excerpt = (c && c.excerpt) || state.switches.get(id) || "";
+        // kind tells the caller which source the anchored block came from, so it never
+        // has to infer that from the excerpt text; only a <figure> anchor is "figure".
+        const kind = (c && c.kind) || "prose";
         let body = switched ? SWITCH_MSG + (txt ? "\n\n" + txt : "") : txt;
-        if (body.trim()) out.push({ block: id, excerpt, body });
+        if (body.trim()) out.push({ block: id, excerpt, kind, body });
       }
       return out;
     }
@@ -554,9 +620,9 @@
       if (n > 0 && !state.decision) selectDecision("revise"); // commenting implies a revise
     }
 
-    function setComment(id, text, btn, excerpt) {
+    function setComment(id, text, btn, excerpt, kind) {
       const v = text.trim();
-      if (v) state.comments.set(id, { text, excerpt }); else state.comments.delete(id);
+      if (v) state.comments.set(id, { text, excerpt, kind: kind || "prose" }); else state.comments.delete(id);
       if (btn) btn.classList.toggle("has-comment", Boolean(v));
       onCommentsChanged();
     }
@@ -637,8 +703,8 @@
 
     // Wire a comment button + textarea pair: typing updates the comment state, clicking
     // toggles the textarea. Shared by the decision-card and per-element comment affordances.
-    function wireCommentToggle(btn, area, id, excerpt) {
-      area.addEventListener("input", () => setComment(id, area.value, btn, excerpt));
+    function wireCommentToggle(btn, area, id, excerpt, kind) {
+      area.addEventListener("input", () => setComment(id, area.value, btn, excerpt, kind));
       btn.addEventListener("click", (e) => { e.preventDefault(); area.hidden = !area.hidden; if (!area.hidden) area.focus(); });
     }
 
@@ -706,13 +772,14 @@
       el.classList.add("commentable");
       el.dataset.blockId = id;
       const excerpt = excerptOf(el.textContent);
+      const kind = el.tagName === "FIGURE" ? "figure" : "prose";
       const btn = document.createElement("button");
       btn.type = "button";
       btn.className = "cbtn";
       btn.title = "Comment on this";
       btn.textContent = "💬";
       const area = makeCommentArea("Comment on this…");
-      wireCommentToggle(btn, area, id, excerpt);
+      wireCommentToggle(btn, area, id, excerpt, kind);
       el.appendChild(btn);
       if (AREA_INSIDE.has(el.tagName)) el.appendChild(area);
       else el.insertAdjacentElement("afterend", area);
@@ -741,7 +808,7 @@
       // the 💬 button (which would otherwise pollute it).
       const prevSet = diff.prevBlockTexts.get(sectionId) || null;
       for (const t of targets) {
-        if (prevSet && !prevSet.has(normText(t.textContent))) t.classList.add("block-changed");
+        if (prevSet && !t.dataset.mermaidFigure && !prevSet.has(normText(t.textContent))) t.classList.add("block-changed");
         attachComment(t, `${sectionId}::${++n}`);
       }
     }
@@ -828,6 +895,7 @@
       const body = document.createElement("div");
       body.className = "sec-body";
       let isCards = false;
+      let preEl = null;
 
       if (section.type === "decisions") {
         const { items, preamble } = parseDecisions(section.body);
@@ -837,6 +905,7 @@
             const pre = document.createElement("div");
             pre.innerHTML = md(preamble);
             body.appendChild(pre);
+            preEl = pre;
           }
           // changed Decisions section: highlight cards whose signature is absent from prev
           const prevSigs = status === "changed" ? diff.prevDecisionSigs.get(section.id) : null;
@@ -851,7 +920,7 @@
         body.innerHTML = md(section.body); // shape-detection fallback: render as markdown
       }
       det.appendChild(body);
-      return { det, bodyEl: body, isCards };
+      return { det, bodyEl: body, isCards, preEl };
     }
 
     function highlightCode(root) {
@@ -867,7 +936,24 @@
         const div = document.createElement("div");
         div.className = "mermaid";
         div.textContent = code.textContent;
-        code.closest("pre").replaceWith(div);
+        const pre = code.closest("pre");
+        // Wrap the diagram — and the caption paragraph right after the fence, when there is
+        // one — in a <figure>, so a mermaid figure is the same commentable unit as an inline-SVG
+        // one and its comment carries kind:"figure" instead of routing as prose.
+        const fig = document.createElement("figure");
+        // The prev-plan side of the diff holds this figure as its fence source (a PRE), while the
+        // live side is this FIGURE carrying mermaid's injected CSS — they can never compare equal,
+        // so the block-changed test skips a figure carrying this flag.
+        fig.dataset.mermaidFigure = "1";
+        pre.replaceWith(fig);
+        fig.appendChild(div);
+        const cap = fig.nextElementSibling;
+        if (cap && cap.tagName === "P") {
+          const fc = document.createElement("figcaption");
+          while (cap.firstChild) fc.appendChild(cap.firstChild);
+          cap.remove();
+          fig.appendChild(fc);
+        }
         nodes.push(div);
       });
       if (nodes.length) {
@@ -890,8 +976,10 @@
         DIFF_BANNER = (n, removed) => `🔍 前回レビューから ${n} 個のセクションが変更・追加されました${removed ? `（削除 ${removed} 件）` : ""} — 変更箇所を以下にハイライト`;
         DIFF_BANNER_NONE = "🔍 前回レビューからセクションの変更はありません";
         KBD_HINT = "<kbd>a</kbd> 承認 · <kbd>r</kbd> 変更を依頼 · <kbd>⌘/Ctrl+↵</kbd> 送信";
+        APPLY_NOTE = "変更を依頼すると、コメントはその時点でプラン文書に反映されます。";
       }
       document.getElementById("kbd-hint").innerHTML = KBD_HINT;
+      document.getElementById("apply-note").textContent = APPLY_NOTE;
 
       let { preamble, sections } = parseSections(markdown);
       if (!sections.length) sections = [{ title: "Plan", type: "other", id: "plan", body: markdown }];
@@ -913,9 +1001,9 @@
 
       const bodyRefs = [];
       for (const s of sections) {
-        const { det, bodyEl, isCards } = renderSection(s);
+        const { det, bodyEl, isCards, preEl } = renderSection(s);
         planEl.appendChild(det);
-        bodyRefs.push({ bodyEl, section: s, isCards });
+        bodyRefs.push({ bodyEl, section: s, isCards, preEl });
       }
 
       // Run highlight + mermaid over the whole container first (mermaid replaces the
@@ -926,7 +1014,12 @@
       // Both passes stay inside the one section body they are handed, so the collapse's
       // must-run-after-comments ordering is per-section and needs no document-wide barrier.
       for (const r of bodyRefs) {
-        if (r.isCards) continue;
+        // A card section's cards carry their own comment affordances, but its preamble does not
+        // — and that is where a figure targeting this section lands, so walk it.
+        if (r.isCards) {
+          if (r.preEl) attachElementComments(r.preEl, r.section.id);
+          continue;
+        }
         attachElementComments(r.bodyEl, r.section.id);
         if (STEP_COLLAPSE_TYPES.has(r.section.type)) collapseBuildOrderSteps(r.bodyEl);
       }

@@ -335,16 +335,20 @@ check_commands:
 
 Shell commands run in order at the moment each Build order step's boundary object is recorded, while that step's paths are staged. Whatever a command rewrites is re-staged and carried into that step's own tree, instead of surfacing later as a change no step accounts for — a project's pre-commit hook runner is the motivating case, since Step 10 is otherwise the first place it ever runs.
 
-Default: none, so no command runs and the workflow behaves exactly as it did before this key existed.
+Default: none, so no command runs.
+
+A command listed here that also appears in `check_commands` runs twice: once per Build order step here, and again at the check/test gate — worth avoiding when the command is slow.
+
+The re-staging covers the paths that step already edited. Anything outside that set stays out of the tree and remains an uncommitted working-tree change — both a path a command creates, and an already-tracked file that step did not edit but a repo-wide command rewrote.
 
 ```yaml
 boundary_check_commands:
   - "lefthook run pre-commit"
 ```
 
-Two boundaries on the scope. The key is read only where boundary objects exist, so `interactive_commits: false` leaves it unread. And a command outside the skill's `Bash(...)` grants may need a one-time permission approval on its first run.
+Two limits on the scope. The key is read only where boundary objects exist, so `interactive_commits: false` leaves it unread. And a command outside the skill's `Bash(...)` grants may need a one-time permission approval on its first run.
 
-A non-zero exit does not stop the run: it is recorded as a one-line note, the command is fixed and re-run once, and the boundary is then built from whatever the working tree holds. `check_commands` at Step 7 remains the gate that stops the run.
+A non-zero exit does not stop the run: it is recorded as a one-line note, the command is fixed and re-run once, and the corrected content is staged again before the boundary is built from the index. `check_commands` at the check/test gate remains the one that stops the run.
 
 #### `test_commands`
 

@@ -72,9 +72,9 @@ Paired bilingual sample:
 
 ### Figures
 
-A plan body carries **no figures**. Where a flow, a state transition, or a branching structure is hard to follow in prose, the figure belongs to the **figures layer** that the visual plan-review gate merges into the copy it serves: [`visual-plan-review.md`](visual-plan-review.md) § Figures layer defines the file and the insertion positions, and [`plan-figures.md`](plan-figures.md) the authoring conventions. Neither is read at Step 2 — the gate writes the figures, at the point it knows a browser will show them. The sections of **this** template a figure may target are `Overview`, `Decisions`, and `Build order` (closed list); `plan-figures.md` § Budget holds the per-section and per-plan caps.
+A plan body carries **no figures**. Where one would carry what prose cannot ([`plan-figures.md`](plan-figures.md) § What a figure is for holds the criterion), the figure belongs to the **figures layer** that the visual plan-review gate merges into the copy it serves: [`visual-plan-review.md`](visual-plan-review.md) § Figures layer defines the file and the insertion positions, and [`plan-figures.md`](plan-figures.md) the authoring conventions. Neither is read at Step 2 (Create Plan). The sections of **this** template a figure may target are `Overview`, `Decisions`, and `Build order` (closed list).
 
-Two consequences for the body this file governs. It stays prose only, so every reader who never opens a browser — Step 5's implementation walk, the Step 3 reviewer, the chat approval — gets the whole plan. And the no-duplication rule runs the other way in the figures layer: a figure may restate prose the body already carries, because the body must stand without it.
+One consequence for the body this file governs: it must stand without the figures, since every reader who never opens a browser — Step 5's implementation walk, the Step 3 reviewer, the chat approval — sees prose alone. Never thin a passage expecting a figure to carry it.
 
 ### Sizing guidance
 

@@ -40,9 +40,9 @@ M3 sub-step 2's **Design-approach narration** states the chosen approach and its
 
 ## Figures
 
-The plan document carries **no figures**. Where a flow or a count is hard to follow in prose — and for a junior reader it often is — the figure belongs to the **figures layer** M5's visual gate merges into the copy it serves: `../dev-workflow/references/visual-plan-review.md` § Figures layer defines the file and the insertion positions, and `../dev-workflow/references/plan-figures.md` the authoring conventions (notation, caps, the caption contract, the colour tokens, the SVG skeletons). Neither is read at M3 — the gate writes the figures, at the point it knows a browser will show them.
+The plan document carries **no figures**. Where one would carry what prose cannot — and for a junior reader that is often — the figure belongs to the **figures layer** M5's visual gate merges into the copy it serves: `../dev-workflow/references/visual-plan-review.md` § Figures layer defines the file and the insertion positions, and `../dev-workflow/references/plan-figures.md` the authoring conventions. Neither is read at M3 (Design dialogue).
 
-The sections of this template a figure may target are `What we're building`, `Choices I made`, and `Build order` (closed list). The plan document stays prose only, so the junior gets the whole plan on the chat path too; and a figure may restate prose the document already carries, since the document has to stand without it.
+The sections of this template a figure may target are `What we're building`, `Choices I made`, and `Build order` (closed list). The document must stand without the figures — on the chat path the junior sees prose alone — so never thin a passage expecting a figure to carry it.
 
 ## Review lens
 

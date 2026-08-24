@@ -25,7 +25,8 @@
  * supplied and readable, /api/plan ships it as prevMarkdown so the browser can
  * highlight what changed since then (omitted / unreadable → no diff). --lang
  * controls only the language of browser-generated text (the "switch to
- * alternative" comment body and the diff banner); UI chrome stays English;
+ * alternative" comment body, the diff banner, the keyboard-shortcut hint, and
+ * the note saying what "request changes" does); UI chrome stays English;
  * default en.
  *
  * stdout contract: in --wait mode the ONLY bytes written to stdout are the final
@@ -198,7 +199,14 @@ function handleSubmit(req, res) {
               typeof c.body === "string" &&
               c.body.trim() !== "",
           )
-          .map((c) => ({ block: c.block, excerpt: typeof c.excerpt === "string" ? c.excerpt : "", body: c.body }))
+          // kind is normalized here rather than passed through: the caller routes on it, so a
+          // stale browser cache or a hand-rolled POST must not widen a two-value field.
+          .map((c) => ({
+            block: c.block,
+            excerpt: typeof c.excerpt === "string" ? c.excerpt : "",
+            kind: c.kind === "figure" ? "figure" : "prose",
+            body: c.body,
+          }))
       : [];
 
     const payload = { plan: planId, decision, submitted_at: new Date().toISOString(), comments };

@@ -2,8 +2,6 @@
 
 How a figure for the visual plan-review gate is authored. Read this **only** when writing `.claude/plans/<slug>.figures.md` — the point [`visual-plan-review.md`](visual-plan-review.md) § Figures layer names, immediately before the gate's first compose. That section owns the file format, the insertion positions, and the artifact's lifecycle; this file owns what goes inside a block.
 
-Unqualified `§ Configuration` / `§ Step N` references resolve to `SKILL.md`.
-
 ## What a figure is for
 
 A figure earns its place when a flow, a state transition, a branching structure, or a count is hard to hold in prose — the reader has to build the picture in their head to judge the plan. It does **not** earn its place by restating a list, decorating a section, or illustrating something the reader never has to judge.
@@ -15,9 +13,9 @@ Two rules follow from the figures layer being invisible to every non-browser rea
 
 ## Budget
 
-- **Sections that may carry a figure**: `Overview`, `Decisions`, `Build order`. No others — `Test plan` and `Risks / Unknowns` are skimmed, and a figure's cost is not repaid there.
+- **Which sections may carry a figure** is the calling skill's own closed list, in its plan-template file's § Figures. It holds the sections a reviewer has to judge; a section that is only skimmed does not repay a figure's cost.
 - **One figure per section, three per plan.** Both caps are hard. When a fourth figure looks necessary, the plan's Approach is doing too much at once.
-- **A caption is required**, one sentence, stating what the figure claims — not what it depicts. The caption is what a reader gets when the figure fails to render, so write it to stand alone. In an inline SVG it is the `<figcaption>`; under a mermaid fence it is the line directly below the closing fence.
+- **A caption is required**, one sentence, stating what the figure claims — not what it depicts. The caption is what a reader gets when the figure fails to render, so write it to stand alone. In an inline SVG it is the `<figcaption>`; under a mermaid fence it is the line directly below the closing fence — and omitting it there is not free, since the viewer takes whatever paragraph follows the fence as the caption and styles it as one.
 
 ## Notation
 
@@ -52,6 +50,8 @@ mermaid needs none of this — its own theme follows the viewer's light / dark s
 
 Two shapes cover most plan figures. Both are starting points: keep the structure, replace the labels, extend the row.
 
+**No blank line inside a `<figure>`.** A blank line ends an HTML block in Markdown, so anything after it in the same figure is escaped into the page as literal markup. Keep every figure's markup contiguous — the skeletons below are written that way.
+
 **Pipeline** — boxes and arrows, for "this becomes that, then that". Use it for a data path, a transformation chain, or a before / after pair of rows.
 
 ```html
@@ -60,17 +60,13 @@ Two shapes cover most plan figures. Both are starting points: keep the structure
   <rect x="8" y="20" width="240" height="80" rx="10" fill="var(--bg, #ffffff)" stroke="var(--border, #c8d3cd)"/>
   <text x="128" y="52" font-size="14" text-anchor="middle" fill="var(--fg, #1a231f)">first stage</text>
   <text x="128" y="74" font-size="12" text-anchor="middle" fill="var(--muted, #5c6b64)">what it holds</text>
-
   <path d="M262 60 H320" stroke="var(--accent, #0d6b5f)" stroke-width="2"/>
   <path d="M320 60 l-10 -5 v10 z" fill="var(--accent, #0d6b5f)"/>
-
   <rect x="334" y="20" width="240" height="80" rx="10" fill="var(--bg, #ffffff)" stroke="var(--accent, #0d6b5f)" stroke-dasharray="6 4"/>
   <text x="454" y="52" font-size="14" text-anchor="middle" fill="var(--fg, #1a231f)">second stage</text>
   <text x="454" y="74" font-size="12" text-anchor="middle" fill="var(--accent, #0d6b5f)">why it is the subject</text>
-
   <path d="M588 60 H646" stroke="var(--accent, #0d6b5f)" stroke-width="2"/>
   <path d="M646 60 l-10 -5 v10 z" fill="var(--accent, #0d6b5f)"/>
-
   <rect x="660" y="20" width="212" height="80" rx="10" fill="var(--bg-soft, #e7ece8)" stroke="var(--border, #c8d3cd)"/>
   <text x="766" y="65" font-size="14" text-anchor="middle" fill="var(--fg, #1a231f)">result</text>
 </svg>

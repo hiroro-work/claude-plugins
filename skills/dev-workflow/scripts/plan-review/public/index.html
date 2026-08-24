@@ -243,6 +243,8 @@
        order when macOS Full Keyboard Access is off (Chrome mirrors that setting),
        so the a/r/↵ shortcuts are the reliable keyboard path — surface them here. */
     #bar .kbd-hint { color: var(--muted); font-size: 12px; }
+    /* What "Request changes" does to the plan document — read before the choice is made */
+    #bar .apply-note { color: var(--muted); font-size: 12px; }
     #bar .kbd-hint kbd {
       font: inherit; background: var(--bg-soft); border: 1px solid var(--border);
       border-radius: 4px; padding: 0 5px;
@@ -278,6 +280,7 @@
     </div>
     <span class="count">Comments: <span id="comment-count">0</span></span>
     <span class="kbd-hint" id="kbd-hint"></span>
+    <span class="apply-note" id="apply-note"></span>
     <span class="spacer"></span>
     <span id="status"></span>
     <button id="send-btn" type="button" disabled>Send to Claude</button>
@@ -294,6 +297,7 @@
     // localized keyboard-shortcut hint — static developer-controlled markup (assigned
     // via innerHTML in init, like SWITCH_MSG); never holds user data, so not an XSS vector
     let KBD_HINT = "<kbd>a</kbd> approve · <kbd>r</kbd> request changes · <kbd>⌘/Ctrl+↵</kbd> send";
+    let APPLY_NOTE = "Requesting changes applies your comments to the plan document right away.";
 
     // diff mode (revise re-launch): populated by buildDiff() when prevMarkdown is present.
     //   sectionStatus:    id -> "new" | "changed" | "unchanged"
@@ -890,8 +894,10 @@
         DIFF_BANNER = (n, removed) => `🔍 前回レビューから ${n} 個のセクションが変更・追加されました${removed ? `（削除 ${removed} 件）` : ""} — 変更箇所を以下にハイライト`;
         DIFF_BANNER_NONE = "🔍 前回レビューからセクションの変更はありません";
         KBD_HINT = "<kbd>a</kbd> 承認 · <kbd>r</kbd> 変更を依頼 · <kbd>⌘/Ctrl+↵</kbd> 送信";
+        APPLY_NOTE = "変更を依頼すると、コメントはその時点でプラン文書に反映されます。";
       }
       document.getElementById("kbd-hint").innerHTML = KBD_HINT;
+      document.getElementById("apply-note").textContent = APPLY_NOTE;
 
       let { preamble, sections } = parseSections(markdown);
       if (!sections.length) sections = [{ title: "Plan", type: "other", id: "plan", body: markdown }];

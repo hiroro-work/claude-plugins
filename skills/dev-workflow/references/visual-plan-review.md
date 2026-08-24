@@ -20,10 +20,7 @@ The viewer (`scripts/plan-review/serve.mjs`) ships with this skill; this gate on
 
 ## Prev snapshot
 
-To let the viewer show what changed across a revise round, the **previous** served-file content is preserved as `.claude/plans/<slug>.plan-review.prev.md` and passed to the next launch via `--prev`. Discipline: **whenever you are about to overwrite or edit the served file (`.plan-review.md`) and it already exists, first `cp` it to `.plan-review.prev.md`.** There are exactly two such sites (closed list):
-
-- **(i)** in the **Decision mapping** step's `decision: "revise"` case, immediately before applying the block comments to the served file (the in-place `Edit`);
-- **(ii)** in the **Write the served plan file** step, immediately before the `Write`, when the served file already exists — i.e. any non-first launch, including a `rewrite-approach` re-entry.
+To let the viewer show what changed across a revise round, the **previous** served-file content is preserved as `.claude/plans/<slug>.plan-review.prev.md` and passed to the next launch via `--prev`. Discipline: **whenever you are about to write the served file (`.plan-review.md`) and it already exists, first `cp` it to `.plan-review.prev.md`.** There is exactly **one** such site: the **Compose the served plan file** step, immediately before the `Write`, when the served file already exists — i.e. any non-first launch, whether reached by a localized `revise` re-launch or a `rewrite-approach` re-entry. A revise round needs no site of its own: its comments land in the canonical plan document and the figures file, and the next launch's compose is what rebuilds the served file from them.
 
 On the **first** launch the served file does not yet exist, so no prev is created and the launch omits `--prev`. `.plan-review.prev.md` is a workflow artifact covered by `SKILL.md` § Workflow artifacts (cross-step fixed exclusion) and removed in [`finish-phase.md`](finish-phase.md) § Completion's cleanup.
 

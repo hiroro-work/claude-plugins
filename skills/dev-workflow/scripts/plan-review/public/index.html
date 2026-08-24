@@ -10,6 +10,10 @@
     href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/github.min.css"
     integrity="sha512-0aPQyyeZrWj9sCA46UlmWgKOP0mUipLQ6OZXu8l4IcAmD2u31EPEy9VcIMvl7SoAaKe8bLXZhYoMaE/in+gcgA=="
     crossorigin="anonymous" referrerpolicy="no-referrer">
+  <link
+    rel="stylesheet" media="(prefers-color-scheme: dark)"
+    href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/github-dark.min.css"
+    crossorigin="anonymous" referrerpolicy="no-referrer">
 
   <!-- marked (UMD) + highlight.js (UMD): classic scripts run before the deferred module below,
        so window.marked / window.hljs are ready when the render logic runs. -->
@@ -24,28 +28,69 @@
 
   <style>
     :root {
-      --fg: #1f2328;
-      --muted: #59636e;
-      --border: #d1d9e0;
-      --accent: #0969da;
-      --bg: #ffffff;
-      --bg-soft: #f6f8fa;
+      /* Palette: warm, low-glare ground with a green accent (mirrors the eli5 artifact) */
+      --page-bg: #f1f4f0;      /* page ground — never the card surface */
+      --bg: #ffffff;           /* card / panel surface */
+      --bg-soft: #e7ece8;
+      --fg: #1a231f;
+      --muted: #5c6b64;
+      --border: #c8d3cd;
+      --accent: #0d6b5f;
+      --accent-soft: #d3e5df;
+      --accent-ink: #08453d;
+      --on-accent: #ffffff;   /* text on an --accent fill */
       --approve: #1a7f37;
-      --revise: #bc4c00;
+      --approve-bg: #dceee4;
+      --approve-border: #a9cdb8;
+      --revise: #8a5a12;
+      --revise-bg: #f4e7d8;
+      --revise-border: #dcc39a;
       --rec: var(--approve);
       --risk: var(--revise);
-      /* diff "changed" accent — amber, deliberately distinct from --accent (blue,
-         the base decision-card border), --approve (green), and --revise (orange) */
-      --changed: #9a6700;
-      --changed-bg: #fff8c5;
+      --risk-bg: var(--revise-bg);
+      --risk-border: var(--revise-border);
+      --switched-bg: #f7f2ea;
+      /* diff "changed" accent — amber, deliberately distinct from --accent (green,
+         the base decision-card border), --approve (green), and --revise (brown) */
+      --changed: #8a5a12;
+      --changed-bg: #f0e4cf;
+      --changed-badge-bg: #d9b85f;
+      --changed-badge-fg: #6b4a12;
       --bar-h: 64px;
+    }
+    /* Dark theme: same roles, re-toned. Every color above is redefined here, so no
+       rule outside this block may hardcode a hex. */
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --page-bg: #121815;
+        --bg: #1a231f;
+        --bg-soft: #222d28;
+        --fg: #e5ebe7;
+        --muted: #94a39b;
+        --border: #35443c;
+        --accent: #56c2ab;
+        --accent-soft: #21362f;
+        --accent-ink: #9fdccd;
+        --on-accent: #0d1a17;
+        --approve: #5fc47f;
+        --approve-bg: #1c3325;
+        --approve-border: #2f5c3f;
+        --revise: #d6a850;
+        --revise-bg: #33291a;
+        --revise-border: #5c4a27;
+        --switched-bg: #26201a;
+        --changed: #d6a850;
+        --changed-bg: #33291a;
+        --changed-badge-bg: #5c4a27;
+        --changed-badge-fg: #f0d9a8;
+      }
     }
     * { box-sizing: border-box; }
     body {
       margin: 0;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Sans", "Noto Sans JP", Meiryo, sans-serif;
       color: var(--fg);
-      background: var(--bg);
+      background: var(--page-bg);
       line-height: 1.7;
     }
     #app {
@@ -74,7 +119,7 @@
       border-radius: 999px; padding: 3px 12px;
     }
     .chip b { color: var(--muted); font-weight: 600; }
-    .chip.risk { background: #fff4ec; border-color: #f0c0a0; color: var(--risk); }
+    .chip.risk { background: var(--risk-bg); border-color: var(--risk-border); color: var(--risk); }
     .chip.risk b { color: var(--risk); }
     /* Scope is descriptive prose, not an enum — give it a labeled meta row that wraps,
        instead of cramming it into a fixed-shape pill like Difficulty / Risks */
@@ -118,15 +163,15 @@
     details.section > summary { padding: 12px 0; align-items: center; gap: 10px; font-weight: 600; }
     details.section > summary::before { font-size: 12px; }
     /* Context = the "why" framing; tint it so it reads as lead context, not a structural section */
-    details.section.is-context { background: var(--bg-soft); border-color: #c9d3dd; }
+    details.section.is-context { background: var(--bg-soft); border-color: var(--border); }
     details.section.is-context > summary .sec-title { color: var(--muted); }
-    details.section.is-context .sec-body { color: #2b333b; }
+    details.section.is-context .sec-body { color: var(--fg); }
     .sec-title { font-size: 15px; }
     .badge {
       font-size: 11px; font-weight: 700; border-radius: 999px;
       padding: 1px 8px; background: var(--bg-soft); color: var(--muted);
     }
-    .badge-risk { background: #fff4ec; color: var(--risk); }
+    .badge-risk { background: var(--risk-bg); color: var(--risk); }
     .sec-body { padding-top: 2px; }
     /* .step-body is inside .sec-body, so every .sec-body descendant rule already reaches it;
        this one needs naming because it is a direct-child selector. */
@@ -144,6 +189,10 @@
     .sec-body table { border-collapse: collapse; }
     .sec-body th, .sec-body td { border: 1px solid var(--border); padding: 4px 10px; }
     .sec-body .mermaid { background: var(--bg); text-align: center; margin: 10px 0; }
+    /* figures layer: a <figure> the gate merged in, carrying inline SVG */
+    .sec-body figure { margin: 12px 0; text-align: center; }
+    .sec-body figure svg { max-width: 100%; height: auto; }
+    .sec-body figcaption { font-size: 12px; color: var(--muted); margin-top: 6px; }
     /* Build order steps: the section sits in the must-review tier yet opens at N one-line
        headings. The disclosure triangle itself is shared with details.section above. */
     details.step > summary { align-items: baseline; gap: 8px; }
@@ -155,18 +204,18 @@
       border: 1px solid var(--border); border-left: 3px solid var(--accent);
       border-radius: 8px; padding: 10px 14px; margin: 10px 0; background: var(--bg);
     }
-    .decision-card.switched { border-left-color: var(--revise); background: #fffaf6; }
+    .decision-card.switched { border-left-color: var(--revise); background: var(--switched-bg); }
     .dc-q { font-weight: 600; margin-bottom: 8px; }
     .dc-q .dc-tag {
-      display: inline-block; font-size: 11px; font-weight: 700; color: #fff;
+      display: inline-block; font-size: 11px; font-weight: 700; color: var(--on-accent);
       background: var(--accent); border-radius: 4px; padding: 1px 7px; margin-right: 6px; vertical-align: 1px;
     }
     .decision-card.switched .dc-q .dc-tag { background: var(--revise); }
     .dc-rec, .dc-alt { font-size: 14px; border-radius: 6px; padding: 6px 10px; margin: 6px 0; }
-    .dc-rec { background: #eaf6ee; border: 1px solid #b4ddc0; }
+    .dc-rec { background: var(--approve-bg); border: 1px solid var(--approve-border); }
     .dc-alt { background: var(--bg-soft); border: 1px solid var(--border); color: var(--muted); }
     .decision-card.switched .dc-rec { background: var(--bg-soft); border-color: var(--border); color: var(--muted); }
-    .decision-card.switched .dc-alt { background: #fff0e6; border-color: #f0c0a0; color: var(--fg); }
+    .decision-card.switched .dc-alt { background: var(--revise-bg); border-color: var(--revise-border); color: var(--fg); }
     .dc-rec > :first-child, .dc-alt > :first-child { margin-top: 2px; }
     .dc-rec > :last-child, .dc-alt > :last-child { margin-bottom: 2px; }
     .dc-label {
@@ -182,7 +231,7 @@
        per-element comment model treats each paragraph / list item as its own target. The tint
        is a step deeper than --bg-soft so it stays visible inside the tinted Context section too. */
     .commentable { position: relative; border-radius: 6px; transition: background .12s; }
-    .commentable:hover { background: #e8edf3; }
+    .commentable:hover { background: var(--bg-soft); }
     .cbtn {
       position: absolute; top: 0; right: -2px; opacity: 0;
       font-size: 12px; line-height: 1; border: 1px solid var(--border);
@@ -207,8 +256,8 @@
        so unchanged sections can stay collapsed and the eye goes to the edits. */
     #diff-banner {
       grid-column: 1 / -1; margin: 6px 0 0; padding: 8px 12px;
-      background: var(--changed-bg); border: 1px solid #eac54f; border-radius: 8px;
-      font-size: 13px; color: #6f4e00;
+      background: var(--changed-bg); border: 1px solid var(--changed-badge-bg); border-radius: 8px;
+      font-size: 13px; color: var(--changed-badge-fg);
     }
     .badge-diff { background: var(--changed-bg); color: var(--changed); }
     /* changed block: inset left bar + faint tint; box-shadow survives the
@@ -250,7 +299,7 @@
       border-radius: 4px; padding: 0 5px;
     }
     #send-btn {
-      font-size: 14px; font-weight: 600; color: #fff; background: var(--accent);
+      font-size: 14px; font-weight: 600; color: var(--on-accent); background: var(--accent);
       border: none; border-radius: 8px; padding: 8px 20px; cursor: pointer;
     }
     #send-btn:disabled { background: var(--border); color: var(--muted); cursor: not-allowed; }
@@ -289,7 +338,8 @@
   <script type="module">
     import mermaid from "https://esm.sh/mermaid@11.15.0";
 
-    mermaid.initialize({ startOnLoad: false, theme: "default", securityLevel: "strict" });
+    const darkScheme = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    mermaid.initialize({ startOnLoad: false, theme: darkScheme ? "dark" : "default", securityLevel: "strict" });
 
     // comments: id -> { text, excerpt } ; switches: id -> excerpt
     const state = { decision: null, comments: new Map(), switches: new Map() };
@@ -323,7 +373,7 @@
     // TABLE → wrapped are handled separately). Shared by attachElementComments
     // (renders comment affordances) and collectBlockTexts (read-only diff text),
     // so the two stay in sync.
-    const COMMENT_BLOCK_TAGS = ["P", "BLOCKQUOTE", "PRE", "H4", "H5", "H6"];
+    const COMMENT_BLOCK_TAGS = ["P", "BLOCKQUOTE", "PRE", "H4", "H5", "H6", "FIGURE"];
 
     // What the viewer knows about each plan section, in match-priority order: `match` lists title
     // prefixes (lowercased) that map to the type; `open` opens the section by default;

@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-08-26
+
+### dev-workflow v1.124.0 / mobpro v1.35.0 / dev-workflow-bundle v1.147.0
+
+- feat(dev-workflow, mobpro): keep the plan-review exchange on the page, and answer questions without editing the plan
+  - The browser plan-approval gate now carries a conversation log, `.claude/plans/<slug>.plan-review.thread.json`. Each round the viewer submits is appended there by the viewer itself, so your wording reaches the file without being transcribed; the gate fills in the reply and what it did with the comment. The next launch replays each exchange under the block it was anchored on, and replays every exchange again in a log panel at the end of the plan — so a reply is read where the comment was made instead of only in the terminal. An entry is placed by text rather than by position, and the gate re-points it when it edits the anchored block; one that no longer resolves appears in the log panel alone, marked as unanchored.
+  - A comment is now triaged before anything is applied: when the comment's own wording determines what to change and to what, the plan is edited; when it asks what something means or what a choice costs, it is answered and the plan is left alone. A comment doing both gets both, and an open reading is answered rather than guessed at. There is no comment type to pick in the viewer. A round that only answered still re-launches the gate, since the page is where the replies are read.
+  - A revise re-launch reuses the previous port and suppresses the browser launch, and the tab already open polls until the new process appears and reloads itself. Re-review therefore stays in one tab instead of opening a new one each round, and the gate URL is announced only on the first launch or when the port actually changes. A busy port is no longer a startup failure: it is retried once, then a random one is taken and a browser opened, since the open tab can no longer be reached.
+
 ## 2026-08-24
 
 ### dev-workflow v1.123.0 / mobpro v1.34.0 / dev-workflow-bundle v1.146.0

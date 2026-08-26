@@ -5,6 +5,7 @@
  * Transport only: serves the raw Markdown plan to a self-contained browser UI
  * on 127.0.0.1, then collects the browser's submit (block-level review comments
  * plus an approve/revise decision), writes it to <plan-basename>.comments.json,
+ * appends it as a round to the conversation thread <plan-basename>.thread.json,
  * writes the viewer URL to <plan-basename>.url at listen time (the port is
  * random, so a caller that backgrounded this process reads the URL from there),
  * and (in --wait mode) prints that same JSON to stdout and exits so the caller
@@ -25,9 +26,10 @@
  * supplied and readable, /api/plan ships it as prevMarkdown so the browser can
  * highlight what changed since then (omitted / unreadable → no diff). --lang
  * controls only the language of browser-generated text (the "switch to
- * alternative" comment body, the diff banner, the keyboard-shortcut hint, and
- * the note saying what "request changes" does); UI chrome stays English;
- * default en.
+ * alternative" comment body, the diff banner, the keyboard-shortcut hint, the
+ * note saying what "request changes" does, the conversation-thread labels, and
+ * the message shown while the page waits for the re-launch); UI chrome stays
+ * English; default en.
  *
  * stdout contract: in --wait mode the ONLY bytes written to stdout are the final
  * submit JSON (one line). Every progress / error message goes to stderr, so the
@@ -108,6 +110,46 @@ const lang = opts.lang === "ja" ? "ja" : "en"; // only "ja" / "en"; default en
 const planId = basename(planPath).replace(/\.md$/i, "");
 const commentsPath = join(dirname(planPath), `${planId}.comments.json`);
 const urlPath = join(dirname(planPath), `${planId}.url`);
+const threadPath = join(dirname(planPath), `${planId}.thread.json`);
+
+// Conversation log: the browser's comments plus the replies the caller writes back.
+// Absent on a first launch and non-fatal when unreadable or malformed — the viewer
+// simply renders no thread rather than the run losing its gate.
+const DISPOSITIONS = new Set(["answered", "revised", "both"]);
+const str = (v) => (typeof v === "string" ? v : "");
+
+// Normalized on the way in, the way handleSubmit normalizes on the way out: the caller
+// rewrites this file between launches, so a malformed round must not reach the browser.
+function normalizeRound(r, i) {
+  if (!r || !Array.isArray(r.entries)) return null;
+  return {
+    round: Number.isInteger(r.round) ? r.round : i + 1,
+    submitted_at: str(r.submitted_at),
+    entries: r.entries.filter(Boolean).map((e, j) => ({
+      id: str(e.id) || `r${i + 1}-c${j + 1}`,
+      block: str(e.block),
+      anchor: { section: str(e.anchor?.section), excerpt: str(e.anchor?.excerpt) },
+      kind: e.kind === "figure" ? "figure" : "prose",
+      body: str(e.body),
+      reply: typeof e.reply === "string" ? e.reply : null,
+      disposition: DISPOSITIONS.has(e.disposition) ? e.disposition : null,
+    })),
+  };
+}
+
+let thread = { plan: planId, rounds: [] };
+if (existsSync(threadPath)) {
+  try {
+    const parsed = JSON.parse(readFileSync(threadPath, "utf8"));
+    if (Array.isArray(parsed?.rounds)) {
+      const rounds = parsed.rounds.map(normalizeRound).filter(Boolean);
+      if (rounds.length !== parsed.rounds.length) log(`warning: ${threadPath} had ${parsed.rounds.length - rounds.length} malformed round(s) (dropped)`);
+      thread = { plan: planId, rounds };
+    } else log(`warning: ${threadPath} has no rounds array (thread ignored)`);
+  } catch (err) {
+    log(`warning: cannot read ${threadPath}: ${err.message} (thread ignored)`);
+  }
+}
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const publicDir = join(__dirname, "public");
@@ -116,7 +158,18 @@ const publicDir = join(__dirname, "public");
 // semantic block id (e.g. `decision-1`, `overview::2`); the server does not
 // enumerate those ids, so /api/plan ships the raw markdown verbatim.
 // prevMarkdown is the previous-launch plan (or null) for the browser-side diff.
-const planPayload = { id: planId, markdown: planSource, lang, prevMarkdown: prevSource };
+// `instance` is the reload signal: it changes on every process start, so a page that
+// polls across a restart sees a different value and reloads, while polling the same
+// (still-shutting-down) process never triggers one.
+const instance = `${process.pid}-${Date.now()}`;
+const planPayload = {
+  id: planId,
+  markdown: planSource,
+  lang,
+  prevMarkdown: prevSource,
+  thread: thread.rounds,
+  instance,
+};
 
 // --- HTTP server ---
 const MIME = {
@@ -141,7 +194,7 @@ function shutdown(code) {
 }
 
 function sendJson(res, code, obj) {
-  res.writeHead(code, { "content-type": "application/json; charset=utf-8" });
+  res.writeHead(code, { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" });
   res.end(JSON.stringify(obj));
 }
 
@@ -203,18 +256,47 @@ function handleSubmit(req, res) {
           // stale browser cache or a hand-rolled POST must not widen a two-value field.
           .map((c) => ({
             block: c.block,
+            section: typeof c.section === "string" ? c.section : "",
             excerpt: typeof c.excerpt === "string" ? c.excerpt : "",
             kind: c.kind === "figure" ? "figure" : "prose",
             body: c.body,
           }))
       : [];
 
-    const payload = { plan: planId, decision, submitted_at: new Date().toISOString(), comments };
+    const submitted_at = new Date().toISOString();
+    const payload = { plan: planId, decision, submitted_at, comments };
     try {
       writeFileSync(commentsPath, JSON.stringify(payload, null, 2) + "\n");
     } catch (err) {
       log(`error: cannot write ${commentsPath}: ${err.message}`);
       return sendJson(res, 500, { error: "write failed" });
+    }
+
+    // Append the round to the conversation thread. Only a revise carries work forward, and an
+    // approve's comments are advisory (§ Decision mapping), so neither an approve nor an
+    // empty revise opens a round. `reply` / `disposition` / `anchor` are the caller's to fill.
+    if (decision === "revise" && comments.length) {
+      const roundNo = thread.rounds.length + 1;
+      thread.rounds.push({
+        round: roundNo,
+        submitted_at,
+        entries: comments.map((c, i) => ({
+          id: `r${roundNo}-c${i + 1}`,
+          block: c.block,
+          anchor: { section: c.section, excerpt: c.excerpt },
+          kind: c.kind,
+          body: c.body,
+          reply: null,
+          disposition: null,
+        })),
+      });
+      try {
+        writeFileSync(threadPath, JSON.stringify(thread, null, 2) + "\n");
+      } catch (err) {
+        // Non-fatal: the submit itself is the gate's return value, and the comments file
+        // already holds this round verbatim.
+        log(`warning: cannot write ${threadPath}: ${err.message}`);
+      }
     }
     sendJson(res, 200, { ok: true });
     process.stdout.write(JSON.stringify(payload) + "\n"); // the gate's return value
@@ -226,6 +308,9 @@ function handleSubmit(req, res) {
 function handle(req, res) {
   const url = new URL(req.url, "http://127.0.0.1");
   if (req.method === "GET" && url.pathname === "/api/plan") return sendJson(res, 200, planPayload);
+  // The post-revise poll reads this rather than /api/plan: it runs every couple of seconds for
+  // as long as the caller takes, and the plan payload carries the whole document and thread.
+  if (req.method === "GET" && url.pathname === "/api/instance") return sendJson(res, 200, { instance });
   if (req.method === "POST" && url.pathname === "/api/submit") return handleSubmit(req, res);
   if (req.method === "GET") return serveStatic(res, url.pathname);
   res.writeHead(405);
@@ -247,11 +332,34 @@ function openBrowser(urlStr) {
 }
 
 server = createServer(handle);
+
+// Set when a busy --port forced a random one: the caller's already-open tab points at the
+// old port, so it can no longer reach this process and a browser has to open regardless.
+let openAnyway = false;
+let bindRetried = false;
+let portFellBack = false;
+
 server.on("error", (err) => {
+  if (err.code === "EADDRINUSE" && port !== 0 && !portFellBack) {
+    // A relaunch reuses the previous port, which that process may still be releasing.
+    // Exiting here would read to the caller as a startup failure and misfire its fallback.
+    if (!bindRetried) {
+      bindRetried = true;
+      log(`warning: port ${port} is busy — retrying once in 1s`);
+      setTimeout(() => server.listen(port, "127.0.0.1"), 1000);
+      return;
+    }
+    openAnyway = true;
+    portFellBack = true;
+    log(`warning: port ${port} still busy — falling back to a random port`);
+    server.listen(0, "127.0.0.1");
+    return;
+  }
   log(`error: server failed: ${err.message}`);
   process.exit(1);
 });
-server.listen(port, "127.0.0.1", () => {
+
+server.on("listening", () => {
   const urlStr = `http://127.0.0.1:${server.address().port}/`;
   log(`plan-review viewer listening on ${urlStr} (plan: ${planId})`);
   // Sidecar URL file: the port is random, so a caller that launched this in the
@@ -264,9 +372,11 @@ server.listen(port, "127.0.0.1", () => {
     log(`could not write ${urlPath}: ${err.message}`);
   }
   log(opts.wait ? "waiting for submit… (Ctrl-C to cancel)" : "running without --wait; will not auto-exit on submit");
-  if (opts["no-open"]) log(`open ${urlStr} in your browser`);
+  if (opts["no-open"] && !openAnyway) log(`open ${urlStr} in your browser`);
   else openBrowser(urlStr);
 });
+
+server.listen(port, "127.0.0.1");
 
 // timer arms only in --wait mode and when timeoutMs > 0 (0 = wait forever, no timer);
 // without --wait the process stays up until a signal.

@@ -257,6 +257,26 @@
       background: var(--bg); color: var(--fg);
     }
     .comment-input[hidden] { display: none; } /* the `display: block` above otherwise defeats the `hidden` attribute */
+    /* conversation thread: past rounds replayed under the block they were anchored on, and
+       replayed again in full in the log panel at the end of the plan. */
+    .thread { margin: 8px 0 4px; border-left: 3px solid var(--accent); padding-left: 10px; }
+    .th-item + .th-item { margin-top: 10px; }
+    .th-meta { font-size: 11px; color: var(--muted); letter-spacing: .02em; }
+    .th-body { white-space: pre-wrap; font-size: 13px; margin-top: 2px; }
+    .th-reply { font-size: 13px; margin-top: 4px; }
+    .th-reply > :first-child { margin-top: 0; }
+    .th-reply > :last-child { margin-bottom: 0; }
+    .th-badge {
+      display: inline-block; font-size: 11px; padding: 1px 7px; border-radius: 999px;
+      background: var(--accent-soft); color: var(--accent-ink); margin-right: 6px; white-space: nowrap;
+    }
+    .th-badge.pending { background: var(--changed-bg); color: var(--changed); }
+    .th-loose { color: var(--revise); font-size: 11px; }
+    #log { margin-top: 22px; border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; }
+    #log > summary { cursor: pointer; font-weight: 600; }
+    .log-round { margin-top: 12px; }
+    .log-round > h4 { margin: 0 0 6px; font-size: 12px; color: var(--muted); font-weight: 600; }
+    .log-where { font-size: 11px; color: var(--muted); }
     /* diff mode: surfaced only on a revise re-launch (prevMarkdown present).
        Badges + highlights mark what changed since the user's previous review,
        so unchanged sections can stay collapsed and the eye goes to the edits. */
@@ -356,7 +376,26 @@
     // localized keyboard-shortcut hint — static developer-controlled markup (assigned
     // via innerHTML in init, like SWITCH_MSG); never holds user data, so not an XSS vector
     let KBD_HINT = "<kbd>a</kbd> approve · <kbd>r</kbd> request changes · <kbd>⌘/Ctrl+↵</kbd> send";
-    let APPLY_NOTE = "Requesting changes applies your comments to the plan document right away.";
+    let APPLY_NOTE = "Requesting changes applies a comment to the plan document right away, or answers it here when it asks rather than asks for a change.";
+    // conversation-log labels, localized in init alongside SWITCH_MSG
+    let TH = {
+      you: "you",
+      round: (n) => `Round ${n}`,
+      log: (n) => `Conversation log (${n})`,
+      pending: "awaiting reply",
+      loose: "not anchored in the plan body",
+      where: (t) => `on: ${t}`,
+      disposition: { answered: "answered only", revised: "plan revised", both: "answered + revised" },
+    };
+    let POLL_MSG = "Claude is working on it — this page reloads itself when the plan updates.";
+    let POLL_GIVEUP_MSG = "No update for 30 minutes. Check your terminal — the review may have moved on without the browser.";
+    // The gate itself waits up to 24h, but a revise does not always come back here: an
+    // approach-level rewrite or a fallback to chat approval ends the run elsewhere. Stop
+    // promising a reload well before then and say so.
+    const POLL_GIVEUP_MS = 30 * 60 * 1000;
+    // Per-process token from /api/plan. A relaunch produces a different one, which is what the
+    // post-revise poll below watches for.
+    let INSTANCE = null;
 
     // diff mode (revise re-launch): populated by buildDiff() when prevMarkdown is present.
     //   sectionStatus:    id -> "new" | "changed" | "unchanged"
@@ -373,6 +412,25 @@
     const stripMd = (t) => (t || "").replace(/[*`]/g, "").trim();
     const normText = (t) => (t || "").replace(/\s+/g, " ").trim();
     const excerptOf = (t) => normText(t).slice(0, 40);
+    // One normal form for both sides of an anchor comparison. The browser's excerpt comes from
+    // rendered DOM text while the caller writes an anchor from Markdown source, so the markup
+    // the renderer already consumed has to come off before the two can be compared at all.
+    const anchorNorm = (t) =>
+      normText(String(t || "").replace(/!?\[([^\]]*)\]\([^)]*\)/g, "$1").replace(/[*_`~]/g, "")).toLowerCase();
+    // Tolerant on length: an anchor is a prefix of the block, or the block of the anchor once an
+    // edit shortened it. The floor keeps a near-empty block from matching everything.
+    const anchorMatches = (a, b) => {
+      if (!a || !b) return false;
+      const [short, long] = a.length <= b.length ? [a, b] : [b, a];
+      return short.length >= 8 && long.startsWith(short);
+    };
+    // The section a block id names. Both id forms encode it, so nothing has to be threaded
+    // through the comment-state calls; `decision-<n>` resolves against the section found in init.
+    const sectionOfBlockId = (id) => {
+      const b = String(id || "");
+      if (b.includes("::")) return b.slice(0, b.indexOf("::"));
+      return b.startsWith("decision-") ? DECISIONS_SECTION_ID : "";
+    };
     const HTML_ESCAPES = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" };
     const escapeHtml = (t) => (t || "").replace(/[&<>"]/g, (c) => HTML_ESCAPES[c]);
 
@@ -609,7 +667,7 @@
         // has to infer that from the excerpt text; only a <figure> anchor is "figure".
         const kind = (c && c.kind) || "prose";
         let body = switched ? SWITCH_MSG + (txt ? "\n\n" + txt : "") : txt;
-        if (body.trim()) out.push({ block: id, excerpt, kind, body });
+        if (body.trim()) out.push({ block: id, section: sectionOfBlockId(id), excerpt, kind, body });
       }
       return out;
     }
@@ -724,6 +782,7 @@
       const card = document.createElement("div");
       card.className = "decision-card";
       card.dataset.blockId = id;
+      card.dataset.anchorKey = anchorNorm(it.question);
 
       const q = document.createElement("div");
       q.className = "dc-q";
@@ -767,10 +826,22 @@
     // code blocks, blockquotes, sub-headings, and tables are commentable as whole blocks.
     // AREA_INSIDE = tags whose textarea is appended *inside* the element (valid flow content);
     // others receive it as a sibling (afterend). DIV is the synthetic table wrapper from below.
-    const AREA_INSIDE = new Set(["LI", "BLOCKQUOTE", "DIV"]);
+    const AREA_INSIDE = new Set(["LI", "BLOCKQUOTE", "DIV", "FIGURE"]);
+    // Put an affordance inside the block where the tag accepts flow content, beside it otherwise.
+    const placeAffordance = (el, node) => {
+      if (!AREA_INSIDE.has(el.tagName)) { el.insertAdjacentElement("afterend", node); return; }
+      // A <figcaption> is only valid as the figure's first or last child, so go in front of it.
+      const cap = el.tagName === "FIGURE" ? el.querySelector(":scope > figcaption") : null;
+      if (cap) el.insertBefore(node, cap);
+      else el.appendChild(node);
+    };
     function attachComment(el, id) {
       el.classList.add("commentable");
       el.dataset.blockId = id;
+      // Captured now, before collapseBuildOrderSteps strips the step separator and before the
+      // affordances below join the element — both would otherwise shift the text a thread entry
+      // is matched against.
+      el.dataset.anchorKey = anchorNorm(el.textContent);
       const excerpt = excerptOf(el.textContent);
       const kind = el.tagName === "FIGURE" ? "figure" : "prose";
       const btn = document.createElement("button");
@@ -781,8 +852,7 @@
       const area = makeCommentArea("Comment on this…");
       wireCommentToggle(btn, area, id, excerpt, kind);
       el.appendChild(btn);
-      if (AREA_INSIDE.has(el.tagName)) el.appendChild(area);
-      else el.insertAdjacentElement("afterend", area);
+      placeAffordance(el, area);
     }
 
     function attachElementComments(bodyEl, sectionId) {
@@ -967,16 +1037,153 @@
       }
     }
 
+    // --- conversation thread (rounds already submitted) ---
+    let THREAD = [];
+    let DECISIONS_SECTION_ID = "";
+    const threadBoxes = new Map();
+
+    // An entry written before `anchor` existed, or one whose anchor lost its section, still
+    // has its block id to fall back on.
+    const entrySection = (e) => (e.anchor && e.anchor.section) || sectionOfBlockId(e.block);
+
+    // Resolve an entry to the block it belongs under, or null to send it to the log alone.
+    // A figure resolves by section — § Figures layer allows one per section, and a figure's own
+    // text is an SVG's run-together labels or mermaid's injected CSS, neither of them an anchor.
+    function findAnchorTarget(e) {
+      const secId = entrySection(e);
+      if (!secId) return null;
+      const sec = document.getElementById(`sec-${secId}`);
+      if (!sec) return null;
+      if (e.kind === "figure") return sec.querySelector("figure");
+      const want = anchorNorm(e.anchor && e.anchor.excerpt);
+      const hits = [];
+      for (const el of sec.querySelectorAll("[data-anchor-key]")) {
+        if (anchorMatches(want, el.dataset.anchorKey)) hits.push(el);
+      }
+      // Exactly one, or none: drawing an ambiguous match under the wrong block reads as an
+      // answer to a question that was never asked there, which the log panel does not.
+      return hits.length === 1 ? hits[0] : null;
+    }
+
+    function threadItem(e, roundNo, opts) {
+      const item = document.createElement("div");
+      item.className = "th-item";
+      const meta = document.createElement("div");
+      meta.className = "th-meta";
+      meta.textContent = `${TH.round(roundNo)} · ${TH.you}`;
+      item.appendChild(meta);
+      if (opts && opts.where) {
+        const w = document.createElement("div");
+        w.className = "log-where";
+        w.textContent = TH.where(opts.where);
+        item.appendChild(w);
+      }
+      const body = document.createElement("div");
+      body.className = "th-body";
+      body.textContent = e.body || "";
+      item.appendChild(body);
+
+      const reply = document.createElement("div");
+      reply.className = "th-reply";
+      const head = document.createElement("div");
+      head.className = "th-meta";
+      const label = Object.prototype.hasOwnProperty.call(TH.disposition, e.disposition) ? TH.disposition[e.disposition] : null;
+      head.innerHTML =
+        (e.reply ? (label ? `<span class="th-badge">${escapeHtml(label)}</span>` : "")
+                 : `<span class="th-badge pending">${escapeHtml(TH.pending)}</span>`) + "Claude";
+      reply.appendChild(head);
+      if (e.reply) {
+        const b = document.createElement("div");
+        b.innerHTML = md(e.reply);
+        reply.appendChild(b);
+      }
+      item.appendChild(reply);
+
+      if (opts && opts.loose) {
+        const w = document.createElement("div");
+        w.className = "th-loose";
+        w.textContent = TH.loose;
+        item.appendChild(w);
+      }
+      return item;
+    }
+
+    function threadBox(target) {
+      let box = threadBoxes.get(target);
+      if (!box) {
+        box = document.createElement("div");
+        box.className = "thread";
+        placeAffordance(target, box);
+        threadBoxes.set(target, box);
+      }
+      return box;
+    }
+
+    // Replay each entry under its block where the anchor still resolves. Returns the ids that
+    // did not resolve, which the log below marks — the log carries every entry either way, so
+    // this pass duplicates rather than moves.
+    function renderThread() {
+      const loose = new Set();
+      for (const round of THREAD) {
+        for (const e of round.entries || []) {
+          const target = findAnchorTarget(e);
+          if (!target) { loose.add(e); continue; }
+          threadBox(target).appendChild(threadItem(e, round.round));
+        }
+      }
+      return loose;
+    }
+
+    // The complete record: every round, in order, whether or not it anchored in the body.
+    function renderLog(planEl, loose) {
+      const total = THREAD.reduce((n, r) => n + (r.entries || []).length, 0);
+      if (!total) return;
+      const det = document.createElement("details");
+      det.id = "log";
+      det.open = true;
+      const sum = document.createElement("summary");
+      sum.textContent = TH.log(total);
+      det.appendChild(sum);
+      for (const round of THREAD) {
+        const rd = document.createElement("div");
+        rd.className = "log-round";
+        const h = document.createElement("h4");
+        h.textContent = TH.round(round.round);
+        rd.appendChild(h);
+        for (const e of round.entries || []) {
+          rd.appendChild(threadItem(e, round.round, {
+            where: (e.anchor && e.anchor.excerpt) || e.block || "",
+            loose: loose.has(e),
+          }));
+        }
+        det.appendChild(rd);
+      }
+      planEl.appendChild(det);
+    }
+
     async function init() {
-      const res = await fetch("/api/plan");
+      const res = await fetch("/api/plan", { cache: "no-store" });
       if (!res.ok) throw new Error(`/api/plan HTTP ${res.status}`);
-      const { id, markdown, lang, prevMarkdown } = await res.json();
+      const { id, markdown, lang, prevMarkdown, thread, instance } = await res.json();
+      THREAD = Array.isArray(thread) ? thread : [];
+      INSTANCE = instance || null;
       if (lang === "ja") {
         SWITCH_MSG = "この Decision を Alternative に切り替える";
         DIFF_BANNER = (n, removed) => `🔍 前回レビューから ${n} 個のセクションが変更・追加されました${removed ? `（削除 ${removed} 件）` : ""} — 変更箇所を以下にハイライト`;
         DIFF_BANNER_NONE = "🔍 前回レビューからセクションの変更はありません";
         KBD_HINT = "<kbd>a</kbd> 承認 · <kbd>r</kbd> 変更を依頼 · <kbd>⌘/Ctrl+↵</kbd> 送信";
-        APPLY_NOTE = "変更を依頼すると、コメントはその時点でプラン文書に反映されます。";
+        APPLY_NOTE = "変更を依頼すると、コメントはその時点でプラン文書に反映されます。質問のコメントはプランを変えずにこのページ上で回答します。";
+        TH = {
+          you: "あなた",
+          round: (n) => `ラウンド ${n}`,
+          log: (n) => `会話ログ（${n} 件）`,
+          pending: "返答待ち",
+          loose: "本文中に位置を特定できませんでした",
+          where: (t) => `対象: ${t}`,
+          disposition: { answered: "回答のみ", revised: "プラン修正", both: "回答 + プラン修正" },
+        };
+        POLL_MSG = "Claude が対応中です。プランが更新されるとこのページは自動で読み直されます。";
+        POLL_GIVEUP_MSG = "30 分間更新がありませんでした。ターミナルを確認してください（レビューがブラウザを離れて進んでいる可能性があります）。";
       }
       document.getElementById("kbd-hint").innerHTML = KBD_HINT;
       document.getElementById("apply-note").textContent = APPLY_NOTE;
@@ -987,6 +1194,7 @@
       // diff mode: only on a revise re-launch where serve.mjs shipped a prev plan
       if (typeof prevMarkdown === "string" && prevMarkdown.trim()) buildDiff(prevMarkdown, sections);
 
+      DECISIONS_SECTION_ID = (sections.find((s) => s.type === "decisions") || {}).id || "";
       const ovSection = sections.find((s) => s.type === "overview");
       const ov = parseOverview(ovSection ? ovSection.body : "");
       const risksSection = sections.find((s) => s.type === "risks");
@@ -1023,6 +1231,10 @@
         attachElementComments(r.bodyEl, r.section.id);
         if (STEP_COLLAPSE_TYPES.has(r.section.type)) collapseBuildOrderSteps(r.bodyEl);
       }
+
+      // After the collapse, so a thread stays outside the <details> and remains visible on a
+      // collapsed Build order step. Matching reads the anchor key captured before it, not live text.
+      renderLog(planEl, renderThread());
     }
 
     document.querySelectorAll(".decision-radio").forEach((radio) => {
@@ -1053,6 +1265,30 @@
       else if (e.key === "r") { e.preventDefault(); selectDecision("revise"); }
     });
 
+    // Watch for the relaunched server. `instance` changes per process, so polling the old one
+    // while it shuts down returns the value already held and reloads nothing; a connection
+    // failure in between is the expected gap, not an error. /api/instance rather than /api/plan:
+    // this runs every couple of seconds for as long as the caller takes.
+    function startPolling() {
+      if (!INSTANCE) return; // nothing to compare against — a reload would fire on the first poll
+      const deadline = Date.now() + POLL_GIVEUP_MS;
+      const timer = setInterval(async () => {
+        if (Date.now() > deadline) {
+          clearInterval(timer);
+          document.getElementById("done").textContent = POLL_GIVEUP_MSG;
+          return;
+        }
+        try {
+          const r = await fetch("/api/instance", { cache: "no-store" });
+          if (!r.ok) return;
+          const j = await r.json();
+          if (j.instance && j.instance !== INSTANCE) location.reload();
+        } catch {
+          /* server down between launches — keep waiting */
+        }
+      }, 2000);
+    }
+
     let submitting = false; // re-entry guard: the button is disabled on click, but the keydown path is not
     async function submit() {
       if (submitting || !state.decision) return;
@@ -1072,9 +1308,16 @@
         // `submitting` stays true on success (not reset) — the "submitted" class added
         // here is the keydown guard's first early-return, so re-entry can't slip through.
         document.getElementById("app").classList.add("submitted");
-        document.getElementById("done").hidden = false;
+        const done = document.getElementById("done");
+        // Only a revise brings the gate back: the caller applies the comments and relaunches on
+        // the same port, so the tab waits here rather than closing the loop.
+        if (state.decision === "revise") {
+          done.textContent = POLL_MSG;
+          startPolling();
+        }
+        done.hidden = false;
         document.getElementById("bar").style.display = "none";
-        document.getElementById("done").scrollIntoView({ behavior: "smooth" });
+        done.scrollIntoView({ behavior: "smooth" });
       } catch (err) {
         submitting = false; // allow a retry after a failed POST
         sendBtn.disabled = false;

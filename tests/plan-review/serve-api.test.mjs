@@ -238,6 +238,12 @@ test("the static handler serves the viewer page, and nothing outside public/", a
   assert.equal(index.status, 200);
   assert.match(index.headers.get("content-type"), /text\/html/);
 
+  // The viewer page imports this as an ES module, which the browser refuses to
+  // run unless the server names it as JavaScript.
+  const parse = await fetch(`${server.base}/plan-parse.mjs`);
+  assert.equal(parse.status, 200);
+  assert.match(parse.headers.get("content-type"), /text\/javascript/);
+
   assert.equal((await fetch(`${server.base}/nope.css`)).status, 404);
 
   // `new URL` collapses `..` before the handler's containment guard sees it, so

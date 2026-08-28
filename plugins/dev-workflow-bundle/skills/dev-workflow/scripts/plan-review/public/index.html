@@ -607,6 +607,7 @@
       const { btn, area } = makeFreeComment(id, excerpt, "Comment on this decision");
       card.appendChild(btn);
       card.appendChild(area);
+      affordanceHead.set(card, btn);
       return card;
     }
 
@@ -616,6 +617,8 @@
     // AREA_INSIDE = tags whose textarea is appended *inside* the element (valid flow content);
     // others receive it as a sibling (afterend). DIV is the synthetic table wrapper from below.
     const AREA_INSIDE = new Set(["LI", "BLOCKQUOTE", "DIV", "FIGURE"]);
+    // Each commentable block's comment affordance, so a thread box can be placed above it.
+    const affordanceHead = new WeakMap();
     // Put an affordance inside the block where the tag accepts flow content, beside it otherwise.
     const placeAffordance = (el, node) => {
       if (!AREA_INSIDE.has(el.tagName)) { el.insertAdjacentElement("afterend", node); return; }
@@ -642,6 +645,9 @@
       wireCommentToggle(btn, area, id, excerpt, kind);
       el.appendChild(btn);
       placeAffordance(el, area);
+      // The textarea, not the button: only its parent distinguishes the two placeAffordance
+      // branches, which is what threadBox tests. The button is always inside the block.
+      affordanceHead.set(el, area);
     }
 
     function attachElementComments(bodyEl, sectionId) {
@@ -902,7 +908,12 @@
       if (!box) {
         box = document.createElement("div");
         box.className = "thread";
-        placeAffordance(target, box);
+        // Above the block's own comment input, so the history reads downward and the form sits
+        // last. Only when the input is a child of the block: the sibling-placed case already
+        // lands that way, and a moved input would drag the thread along with it.
+        const head = affordanceHead.get(target);
+        if (head && head.parentNode === target) target.insertBefore(box, head);
+        else placeAffordance(target, box);
         threadBoxes.set(target, box);
       }
       return box;

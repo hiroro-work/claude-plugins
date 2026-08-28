@@ -400,7 +400,7 @@ Mark `Step 8.5: Deferred Verification` as `completed`, then **`Read` [`reference
 
 ### Step 9: Completion Hooks
 
-**Defined in [`references/finish-phase.md`](references/finish-phase.md)**, loaded at the Step 8.5 (Deferred Verification) exit above — follow that file from top to bottom. If it is somehow not in context on arrival here (a compaction between that exit and this point), `Read` it now before proceeding.
+**Defined in [`references/finish-phase.md`](references/finish-phase.md)**, loaded at the Step 8.5 (Deferred Verification) exit above — follow that file from top to bottom. If it is not in context on arrival here — a compaction since that exit, or that exit's `Read` not having been performed — `Read` it now before proceeding. Judge that by whether the file's content is actually in context, not by whether a cause for its absence is known: every step from here to Completion is defined there and nowhere else, so running any of them from this file's pointers alone skips their procedures and their user gates.
 
 **Input contract** — the finish phase consumes the run's cross-step state, and every item of it is established before this boundary: the variables Step 1 sub-step 6's init table declares, as their writers left them, plus `bundle_skills_unavailable` from sub-step 3's ledger init; `<base-commit>` (Step 2) and `<slug>` (Step 4: Finalize Plan); `implementation_diff_paths` (Step 5 sub-step 9's implementation diff snapshot); the § Step 6 cross-layer review handoff ledger; the § Workflow artifacts (cross-step fixed exclusion) set; the resolved configuration; and the canonical state-file path from Step 1.5 (Task Decomposition) when a decomposition state file is in play. `landed_count` is the one exception — Step 10 initializes it on entry, inside the file.
 
@@ -410,7 +410,7 @@ Defined in [`references/finish-phase.md`](references/finish-phase.md), loaded at
 
 ### Step 11: Update Rules
 
-Defined in [`references/finish-phase.md`](references/finish-phase.md), loaded at § Step 9's pointer above.
+Defined in [`references/finish-phase.md`](references/finish-phase.md), loaded at § Step 9's pointer above. **This step opens on a user gate** — its **Confirm remaining steps** gate asks whether to run the rule-maintenance and retrospective steps at all, before any of their work begins. It is the finish phase's only *entry* gate; every other gate there fires part-way through a step's procedure, where arriving at the step at all means having read the procedure. Noted here because a step reached from a pointer alone shows no sign of a gate that precedes its work. `Source of truth:` that file's § Gates and its § Step 11's **Confirm remaining steps** paragraph; keep this notice in sync with them, and drop it if the gate ever stops being an entry gate.
 
 ### Step 11.5: Self-Retrospective
 

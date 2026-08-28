@@ -2,6 +2,12 @@
 
 ## 2026-08-28
 
+### dev-workflow v1.126.1 / dev-workflow-bundle v1.149.1
+
+- fix(dev-workflow): say on the Step 11 pointer that the step opens on a user gate
+  - `SKILL.md`'s Step 9 through Completion are one-line pointers into `references/finish-phase.md`, so a run that reaches them without that file in context has nothing telling it a gate exists. Step 11's **Confirm remaining steps** gate was the exposed one: it is the finish phase's only entry gate — every other gate there fires part-way through a procedure, which cannot be reached without reading it — and the only place `SKILL.md` named it was the Pre-completed row guard, a paragraph that applies on the express lane alone. Its pointer now says so on every lane.
+  - The Step 9 pointer's re-read backstop no longer reads as compaction-only. It names the skipped `Read` as the other cause and says to judge on whether the file is in context rather than on whether a cause is known.
+
 ### dev-workflow v1.126.0 / mobpro v1.37.0 / dev-workflow-bundle v1.149.0
 
 - feat(dev-workflow, mobpro): open a plan section on its figure, with the prose folded beneath it

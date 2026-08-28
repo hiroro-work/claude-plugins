@@ -2,6 +2,15 @@
 
 ## 2026-08-28
 
+### dev-workflow v1.127.0 / mobpro v1.38.0 / dev-workflow-bundle v1.150.0
+
+- feat(dev-workflow, mobpro): stop the commit gate showing content the quality gates already fixed
+  - Step 10 proposes one commit per Build order step from the snapshot Step 5 recorded when that step landed. Everything Steps 6–9 fixed afterwards went into the final commit, so reviewing an earlier commit meant reviewing code that was already corrected — and a comment on it could only be answered "already fixed in a later commit".
+  - The commit plan now runs a **Quality-gate supersession test**: it derives the paths those gates wrote after the chain was recorded, and the first commit whose own paths intersect them — plus every commit after it — is **refreshed**, built from that step's recorded tree with the gates' edits to its own paths folded in. The plan says which step the refresh starts at and which paths caused it.
+  - A refreshed commit still holds only the paths its Build order step wrote, so the per-step commit sequence survives. The residual blur is a path a gate **and** a later step both edited: that later edit rides into the earlier commit.
+  - The frozen-snapshot notice now covers every commit whose tree is fixed before the approving starts, refreshed ones included — a comment on one of those cannot be answered in place either. The stashing-`pre-commit`-hook gate no longer borrows that notice's trigger: its own risk applies to any plan holding two or more commits, on either grouping path.
+  - `mobpro`: a commit whose content the later gates changed is no longer offered under the already-reviewed skip, since the junior's per-unit approval no longer covers it.
+
 ### dev-workflow v1.126.1 / dev-workflow-bundle v1.149.1
 
 - fix(dev-workflow): say on the Step 11 pointer that the step opens on a user gate

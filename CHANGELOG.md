@@ -2,6 +2,13 @@
 
 ## 2026-08-28
 
+### dev-workflow v1.125.1 / dev-workflow-bundle v1.148.1
+
+- docs(dev-workflow): give `references/interactive-commits.md` section headings
+  - The file held its whole Step 10 procedure as one numbered list with no headings, so a reader building a section map from it got nothing back and was left to sample the top of a 46k-character file. Its preamble and its nine procedure steps are now headings, and the bodies are de-indented now that they are no longer list items. The instructions are unchanged; a step opener was re-headed wherever the bold label had been its grammatical subject, and the previously unnamed final step is now named.
+  - Each step heading reads `<name> (Procedure N)`: the name is what the rest of the tree cites the step by (`§ Collect changes`, `§ Propose commit plan`, `§ Per-commit loop`, and the rest), while the number is what the file's own prose cites. The number has to follow the name — a `N. ` prefix stops every one of those `§` references resolving.
+  - The preamble is under a heading too, so the deferred-bookkeeping step it carries — which has to run before the procedure collects the working tree — is reachable from the section map instead of only by reading past the title.
+
 ### dev-workflow v1.125.0 / mobpro v1.36.0 / dev-workflow-bundle v1.148.0
 
 - refactor(dev-workflow): move the plan viewer's plan parsing into its own module and cover it with tests

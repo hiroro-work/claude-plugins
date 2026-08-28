@@ -4,18 +4,37 @@ How a figure for the visual plan-review gate is authored. Read this **only** whe
 
 ## What a figure is for
 
-A figure earns its place when a flow, a state transition, a branching structure, or a count is hard to hold in prose — the reader has to build the picture in their head to judge the plan. It does **not** earn its place by restating a list, decorating a section, or illustrating something the reader never has to judge.
+**Every section that may carry a figure gets one by default.** The served page opens on the figure and folds the prose behind it (§ How the page shows a figure), so a section that arrives without one opens on prose alone — the reader is back to assembling the flow, the branching, or the count in their head. Author one per targetable section unless it would only restate a list, decorate the section, or illustrate something the reader never has to judge; a section that trips one of those ships without one.
 
 Two rules follow from the figures layer being invisible to every non-browser reader:
 
 - **Take every label, number, and relation from the canonical plan document.** A figure introduces no fact of its own. It is the one artifact in the plan that no reviewer and no self-check reads, so an invented number in a figure reaches the user unchallenged.
 - **Duplicating prose is fine here.** The canonical document has to stand without the figure, so the prose the figure re-expresses stays where it is. This inverts the cut rule the plan body follows ([`plan-authoring.md`](plan-authoring.md) § Sizing guidance).
 
+## How the page shows a figure
+
+The viewer folds a figure's own prose into a disclosure directly beneath it, closed to start, so the reader meets the figure first and clicks to read on. A section changed since the previous round opens on its own, so nothing edited is read past folded. The prose it folds is still carried in full, here and in the canonical document, which § What a figure is for's **Duplicating prose is fine here** bullet requires to stand on its own.
+
+Which prose folds follows the position the figure took ([`visual-plan-review.md`](visual-plan-review.md) § Figures layer's **Insertion position**): in a field-bullet section, the prose the figure sits among; in a decision-item section, the prose before the first item, the items themselves staying out so their toggles remain reachable; in any other prose section, all of its prose; in the **Build order**, none — its steps already open at their headings.
+
 ## Budget
 
 - **Which sections may carry a figure** is the calling skill's own closed list, in its plan-template file's § Figures. It holds the sections a reviewer has to judge; a section that is only skimmed does not repay a figure's cost.
-- **One figure per section, three per plan.** Both caps are hard. When a fourth figure looks necessary, the plan's Approach is doing too much at once.
-- **A caption is required**, one sentence, stating what the figure claims — not what it depicts. The caption is what a reader gets when the figure fails to render, so write it to stand alone. In an inline SVG it is the `<figcaption>`; under a mermaid fence it is the line directly below the closing fence — and omitting it there is not free, since the viewer takes whatever paragraph follows the fence as the caption and styles it as one.
+- **What each figure claims**, by what the section holds rather than by its name — keyed as [`visual-plan-review.md`](visual-plan-review.md) § Figures layer's **Insertion position** keys, over the shapes a targetable section takes, because the calling skills name these sections differently:
+  - a **field-bullet** section (dev-workflow's `Overview`) — the whole change in one picture: what stands now, what this plan moves, what the reader ends up with.
+  - a **decision-item** section — the fork: the options side by side and the one thing that separates them.
+  - the **Build order** — the sequence: which step rests on which, and where the work crosses from one file or layer to the next.
+  - any other **prose** section — what that section is there to settle. Where it is the plan's overview written as prose rather than field bullets (mobpro's `What we're building`), the field-bullet claim above is the one to write to.
+- **One figure per section, three per plan.** Both caps are hard. When one section looks like it needs a second figure, the plan's Approach is doing too much at once.
+- **A caption is required**, one sentence, stating what the figure claims — not what it depicts. The caption is what a reader gets when the figure fails to render, and it is also what stands beside the figure while the folded prose is still closed (§ How the page shows a figure), so write it to stand alone. In an inline SVG it is the `<figcaption>`; under a mermaid fence it is the line directly below the closing fence — and omitting it there is not free, since the viewer takes whatever paragraph follows the fence as the caption and styles it as one.
+
+## Wording
+
+A figure is read before the prose it sits above, by someone who has not yet read that prose. Write it to be understood on its own.
+
+- **Labels are short plain-language phrases** — around five words, a working ceiling rather than a measured one. A label that needs a clause belongs in the caption.
+- **Spell the thing, not its identifier.** A path, a config key, or a function name earns a place only where that name is itself what the figure is about; everywhere else, name what it does.
+- **Plain wording, sourced facts.** Rephrasing relaxes the vocabulary, never the provenance (§ What a figure is for's **Take every label, number, and relation from the canonical plan document** bullet).
 
 ## Notation
 

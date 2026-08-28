@@ -2,6 +2,12 @@
 
 ## 2026-08-28
 
+### dev-workflow v1.125.2 / dev-workflow-bundle v1.148.2
+
+- fix(dev-workflow): put the plan-review comment box below the block’s history
+  - In the visual plan-review gate, a block’s comment input was drawn above the conversation thread replayed under it, so reading a round and then replying meant scrolling down through the history and back up to the box. The thread is now inserted above the input, and the history reads downward with the box last.
+  - The ordering had been split by placement: blocks whose input is a sibling (paragraphs, code blocks) already drew the thread first, while blocks that hold the input inside them (list items, decision cards, figures, tables) drew it after. Both now go through the same rule.
+
 ### dev-workflow v1.125.1 / dev-workflow-bundle v1.148.1
 
 - docs(dev-workflow): give `references/interactive-commits.md` section headings

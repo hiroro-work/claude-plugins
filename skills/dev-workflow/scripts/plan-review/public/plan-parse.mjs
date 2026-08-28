@@ -2,8 +2,8 @@
 //
 // Everything here is free of the DOM, of `window`, and of module-level mutable
 // state, so `index.html` imports it in the browser and the Node tests import the
-// same file. Rendering, and the two collectors that need `marked` or a document,
-// stay in `index.html`.
+// same file. Rendering stays in `index.html`, and so do `collectBlockTexts` and
+// `attachElementComments`, which need `marked` or a document to walk.
 
 export const stripMd = (t) => (t || "").replace(/[*`]/g, "").trim();
 export const normText = (t) => (t || "").replace(/\s+/g, " ").trim();
@@ -22,8 +22,6 @@ export const anchorMatches = (a, b) => {
   return short.length >= 8 && long.startsWith(short);
 };
 // The section a block id names. Both id forms encode it, so nothing has to be threaded
-
-// The section a block id names. Both id forms encode it, so nothing has to be threaded
 // through the comment-state calls; `decision-<n>` resolves against the Decisions section
 // id the caller found in init.
 export const sectionOfBlockId = (id, decisionsSectionId) => {
@@ -37,12 +35,6 @@ export const escapeHtml = (t) => (t || "").replace(/[&<>"]/g, (c) => HTML_ESCAPE
 
 const FENCE_RE = /^\s*(`{3,}|~{3,})/;
 
-// Block-level tags that are commentable as whole blocks (UL/OL → per-LI and
-// TABLE → wrapped are handled separately). Shared by attachElementComments
-// (renders comment affordances) and collectBlockTexts (read-only diff text),
-// so the two stay in sync.
-export const COMMENT_BLOCK_TAGS = ["P", "BLOCKQUOTE", "PRE", "H4", "H5", "H6", "FIGURE"];
-
 // What the viewer knows about each plan section, in match-priority order: `match` lists title
 // prefixes (lowercased) that map to the type; `open` opens the section by default;
 // `collapseSteps` collapses each of the section's numbered steps to its bold heading. The
@@ -55,7 +47,7 @@ export const COMMENT_BLOCK_TAGS = ["P", "BLOCKQUOTE", "PRE", "H4", "H5", "H6", "
 // prefixes stop short of an apostrophe so straight vs. curly quotes cannot break the match.
 // mobpro's `Why this order` takes its own type rather than riding along with buildorder: it
 // wants the same open-by-default treatment but must not have its reasoning collapsed away.
-export const SECTION_TYPES = [
+const SECTION_TYPES = [
   { type: "overview", match: ["overview", "what we"], open: true },
   { type: "decisions", match: ["decision", "choices i made"], open: true },
   { type: "buildorder", match: ["build order"], open: true, collapseSteps: true },
@@ -209,6 +201,21 @@ export function parseDecisions(body) {
 export const decisionSig = (it) => normText(`${it.question} ${it.recommendation} ${it.alternative}`);
 const collectDecisionSigs = (body) => new Set(parseDecisions(body).items.map(decisionSig));
 
+// The diff-mode state, in its pre-revise form. index.html holds one of these
+// until buildDiff replaces it, so the shape is written here alone.
+//   sectionStatus:    id -> "new" | "changed" | "unchanged"
+//   prevBlockTexts:   id -> Set<normalized block text>         (changed sections only)
+//   prevDecisionSigs: id -> Set<normalized decision signature> (changed Decisions sections only)
+export function emptyDiff() {
+  return {
+    active: false,
+    sectionStatus: new Map(),
+    prevBlockTexts: new Map(),
+    prevDecisionSigs: new Map(),
+    changedCount: 0,
+    removedCount: 0,
+  };
+}
 
 // Compare current sections against the previous-launch plan; classify each
 // current section new/changed/unchanged and precompute per-section prev block
@@ -217,14 +224,7 @@ const collectDecisionSigs = (body) => new Set(parseDecisions(body).items.map(dec
 // needs a document and a Markdown renderer, which this module deliberately has
 // neither of.
 export function buildDiff(prevMarkdown, sections, collectBlockTexts) {
-  const diff = {
-    active: true,
-    sectionStatus: new Map(),
-    prevBlockTexts: new Map(),
-    prevDecisionSigs: new Map(),
-    changedCount: 0,
-    removedCount: 0,
-  };
+  const diff = emptyDiff();
   const prev = parseSections(prevMarkdown);
   const prevById = new Map(prev.sections.map((s) => [s.id, s]));
   let matched = 0; // current sections that map to a prev section (ids are unique)
@@ -241,5 +241,6 @@ export function buildDiff(prevMarkdown, sections, collectBlockTexts) {
     }
   }
   diff.removedCount = prev.sections.length - matched; // prev sections with no current counterpart
+  diff.active = true;
   return diff;
 }

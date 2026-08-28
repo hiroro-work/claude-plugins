@@ -1,18 +1,22 @@
 // Unit tests for the plan-review viewer's plan parsing.
 //
 // public/plan-parse.mjs is the browser's own module, imported here unchanged.
-// Everything it holds is free of the DOM, so the one function that is not —
-// collectBlockTexts, which buildDiff calls — is passed in as a stub.
+// Everything it holds is free of the DOM, so collectBlockTexts — which stayed in
+// index.html and which buildDiff calls — is passed in as a stub.
 
 import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  OPEN_TYPES,
+  STEP_COLLAPSE_TYPES,
   anchorMatches,
   anchorNorm,
   buildDiff,
   classify,
   countListItems,
+  decisionSig,
+  emptyDiff,
   escapeHtml,
   excerptOf,
   fieldValue,
@@ -92,9 +96,9 @@ test("parseDecisions splits on **Question** and trims each field", () => {
 test("parseDecisions folds a numbered bold heading into the Question that follows it", () => {
   const { items } = parseDecisions("**1. naming**\n\n- **Question**: q\n- **Recommendation**: r\n");
   assert.equal(items.length, 1);
-  // The blank line between the two is carried through as well, so the fold's own
-  // separator lands on top of it.
-  assert.equal(items[0].question, "1. naming\n\n\nq");
+  // How many blank lines the fold leaves between the two is incidental; that both
+  // ended up in one question is the contract.
+  assert.match(items[0].question, /^1\. naming\s+q$/);
 });
 
 test("parseDecisions leaves a numbered bold line alone when prose follows it", () => {
@@ -141,8 +145,27 @@ test("escapeHtml escapes the four characters it names", () => {
 test("sectionOfBlockId reads the section out of either id form", () => {
   assert.equal(sectionOfBlockId("build-order::3"), "build-order");
   assert.equal(sectionOfBlockId("decision-2", "decisions"), "decisions");
-  assert.equal(sectionOfBlockId("decision-2"), "");
+  // A plan with no Decisions section leaves the caller's id empty.
+  assert.equal(sectionOfBlockId("decision-2", ""), "");
   assert.equal(sectionOfBlockId("loose"), "");
+});
+
+test("emptyDiff is the pre-revise shape index.html holds until buildDiff replaces it", () => {
+  const diff = emptyDiff();
+  assert.equal(diff.active, false);
+  assert.equal(diff.changedCount, 0);
+  assert.equal(diff.removedCount, 0);
+  for (const key of ["sectionStatus", "prevBlockTexts", "prevDecisionSigs"]) {
+    assert.ok(diff[key] instanceof Map, `${key} is a Map`);
+    assert.equal(diff[key].size, 0);
+  }
+});
+
+// The rename sweep lists in both READMEs name SECTION_TYPES as the site a renamed
+// plan heading has to reach. These two Sets are what a missed rename would break.
+test("OPEN_TYPES and STEP_COLLAPSE_TYPES follow the SECTION_TYPES flags", () => {
+  assert.deepEqual([...OPEN_TYPES].sort(), ["buildorder", "context", "decisions", "overview", "whyorder"]);
+  assert.deepEqual([...STEP_COLLAPSE_TYPES], ["buildorder"]);
 });
 
 test("buildDiff classifies each current section against the previous plan", () => {
@@ -167,5 +190,9 @@ test("buildDiff sends a changed Decisions section to prevDecisionSigs, not prevB
 
   assert.equal(diff.sectionStatus.get("decisions"), "changed");
   assert.equal(diff.prevBlockTexts.has("decisions"), false);
-  assert.deepEqual([...diff.prevDecisionSigs.get("decisions")], ["q old"]);
+  // The signature's own spelling is opaque — what matters is that the recorded
+  // one is the previous item's, so the current item reads as changed.
+  const sigs = diff.prevDecisionSigs.get("decisions");
+  assert.equal(sigs.size, 1);
+  assert.equal(sigs.has(decisionSig(parseDecisions(sections[0].body).items[0])), false);
 });

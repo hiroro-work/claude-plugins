@@ -364,9 +364,9 @@
   <script type="module">
     import mermaid from "https://esm.sh/mermaid@11.15.0";
     import {
-      COMMENT_BLOCK_TAGS, OPEN_TYPES, STEP_COLLAPSE_TYPES,
-      anchorMatches, anchorNorm, buildDiff, countListItems, decisionSig, escapeHtml,
-      excerptOf, normText, parseDecisions, parseOverview, parseSections,
+      OPEN_TYPES, STEP_COLLAPSE_TYPES,
+      anchorMatches, anchorNorm, buildDiff, countListItems, decisionSig, emptyDiff,
+      escapeHtml, excerptOf, normText, parseDecisions, parseOverview, parseSections,
       sectionOfBlockId, stripMd,
     } from "./plan-parse.mjs";
 
@@ -403,11 +403,9 @@
     // post-revise poll below watches for.
     let INSTANCE = null;
 
-    // diff mode (revise re-launch): populated by buildDiff() when prevMarkdown is present.
-    //   sectionStatus:    id -> "new" | "changed" | "unchanged"
-    //   prevBlockTexts:   id -> Set<normalized block text>        (changed sections only)
-    //   prevDecisionSigs: id -> Set<normalized decision signature> (changed Decisions sections only)
-    const diff = { active: false, sectionStatus: new Map(), prevBlockTexts: new Map(), prevDecisionSigs: new Map(), changedCount: 0, removedCount: 0 };
+    // diff mode (revise re-launch): replaced by buildDiff() when prevMarkdown is
+    // present. plan-parse.mjs' emptyDiff() documents the fields.
+    let diff = emptyDiff();
     // localized diff-banner text (set from `lang` in init, like SWITCH_MSG); the
     // "Changed" / "New" badges stay English UI chrome and are not localized.
     let DIFF_BANNER = (n, removed) => `🔍 ${n} section${n === 1 ? "" : "s"} changed or added since your last review${removed ? `, ${removed} removed` : ""} — changes highlighted below`;
@@ -415,6 +413,12 @@
 
     const md = (t) => window.marked.parse(t || "");
     const mdInline = (t) => window.marked.parseInline(t || "");
+
+    // Block-level tags that are commentable as whole blocks (UL/OL → per-LI and
+    // TABLE → wrapped are handled separately). Shared by attachElementComments
+    // (renders comment affordances) and collectBlockTexts (read-only diff text),
+    // so the two stay in sync.
+    const COMMENT_BLOCK_TAGS = ["P", "BLOCKQUOTE", "PRE", "H4", "H5", "H6", "FIGURE"];
 
     // --- diff (revise re-launch) ---
     // Read-only mirror of attachElementComments' target selection: collect the
@@ -977,7 +981,7 @@
       if (!sections.length) sections = [{ title: "Plan", type: "other", id: "plan", body: markdown }];
 
       // diff mode: only on a revise re-launch where serve.mjs shipped a prev plan
-      if (typeof prevMarkdown === "string" && prevMarkdown.trim()) Object.assign(diff, buildDiff(prevMarkdown, sections, collectBlockTexts));
+      if (typeof prevMarkdown === "string" && prevMarkdown.trim()) diff = buildDiff(prevMarkdown, sections, collectBlockTexts);
 
       DECISIONS_SECTION_ID = (sections.find((s) => s.type === "decisions") || {}).id || "";
       const ovSection = sections.find((s) => s.type === "overview");

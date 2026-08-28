@@ -26,6 +26,8 @@ Claude Code用プラグインを公開するためのマーケットプレイス
 │       ├── agents/           # (エージェント依存プラグインのみ)
 │       │   └── <agent-name>.md
 │       └── README.md         # (任意)
+├── tests/                    # リポジトリ自身のテスト。*.test.mjs を Skill(run-node-tests) が実行する
+│   └── <feature>/
 ├── .claude/
 │   ├── commands/             # 開発用コマンド
 │   ├── skills/               # 開発・テスト用シンボリックリンク

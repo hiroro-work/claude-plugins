@@ -5,6 +5,7 @@ check_commands:
   - "! git ls-files --others --exclude-standard 'skills/**/*.stdout' 'skills/**/*.stderr' 'plugins/dev-workflow-bundle/skills/**/*.stdout' 'plugins/dev-workflow-bundle/skills/**/*.stderr' | grep -q ."
 test_commands:
   - "Skill(run-tests)"
+  - "Skill(run-node-tests)"
   - "Skill(verify-bundle-sync)"
   - "Skill(verify-skill-refs)"
 hooks:

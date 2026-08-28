@@ -2,6 +2,14 @@
 
 ## 2026-08-28
 
+### dev-workflow v1.126.0 / mobpro v1.37.0 / dev-workflow-bundle v1.149.0
+
+- feat(dev-workflow, mobpro): open a plan section on its figure, with the prose folded beneath it
+  - A figure is now expected in every section that may carry one, rather than only where prose could not hold the flow. The caps are unchanged — one per section, three per plan — so what changed is the bar for drawing one.
+  - The plan-review viewer folds a figure-bearing section's prose into a disclosure under the figure, closed to start, so the section opens on the picture and the text is one click away. A section the diff marks new or changed opens instead, as does one replaying an exchange from an earlier round. Build order is left alone — its steps already open at their headings — and a Decisions section's cards stay visible, so the Alternative toggle is never folded away.
+  - Nothing is removed anywhere. The canonical plan document and the served markdown both keep every word, so the readers who never open a browser — the implementation walk, the plan reviewer, the chat approval — are unaffected.
+  - Figure authoring gains a wording rule — short plain-language labels, names of things rather than their identifiers — and a per-section statement of what each figure should claim, keyed on what the section holds so mobpro's differently-named sections are covered by the same list. Facts still come from the plan document; only the vocabulary is relaxed.
+
 ### dev-workflow v1.125.2 / dev-workflow-bundle v1.148.2
 
 - fix(dev-workflow): put the plan-review comment box below the block’s history

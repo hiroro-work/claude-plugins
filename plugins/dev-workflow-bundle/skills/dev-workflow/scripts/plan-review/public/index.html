@@ -153,18 +153,22 @@
       margin: 12px 0; padding: 0 16px; background: var(--bg);
     }
     details.section[open] { padding-bottom: 8px; }
-    /* Disclosure affordance, shared by sections and by the Build order steps inside them
-       (details.step, collapsed by collapseBuildOrderSteps) — one glyph, one rotation. */
-    details.section > summary, details.step > summary {
+    /* Disclosure affordance, shared by sections, by the Build order steps inside them
+       (details.step, collapsed by collapseBuildOrderSteps), and by the prose a figure-bearing
+       section folds away (details.fold, foldProseUnderFigure) — one glyph, one rotation. */
+    details.section > summary, details.step > summary, details.fold > summary {
       cursor: pointer; list-style: none; display: flex;
     }
     details.section > summary::-webkit-details-marker,
-    details.step > summary::-webkit-details-marker { display: none; }
-    details.section > summary::before, details.step > summary::before {
+    details.step > summary::-webkit-details-marker,
+    details.fold > summary::-webkit-details-marker { display: none; }
+    details.section > summary::before, details.step > summary::before,
+    details.fold > summary::before {
       content: "▸"; color: var(--muted); transition: transform .12s;
     }
     details.section[open] > summary::before,
-    details.step[open] > summary::before { transform: rotate(90deg); }
+    details.step[open] > summary::before,
+    details.fold[open] > summary::before { transform: rotate(90deg); }
     details.section > summary { padding: 12px 0; align-items: center; gap: 10px; font-weight: 600; }
     details.section > summary::before { font-size: 12px; }
     /* Context = the "why" framing; tint it so it reads as lead context, not a structural section */
@@ -198,10 +202,15 @@
     .sec-body figure { margin: 12px 0; text-align: center; }
     .sec-body figure svg { max-width: 100%; height: auto; }
     .sec-body figcaption { font-size: 12px; color: var(--muted); margin-top: 6px; }
+    /* The prose a figure-bearing section folds away (foldProseUnderFigure). Its summary is a
+       quiet affordance, not a heading, so the figure stays the section's loudest element — the
+       layout it shares with a Build order step's summary is declared with that one below. */
+    details.fold > summary { font-size: 12px; color: var(--muted); padding: 4px 0; }
     /* Build order steps: the section sits in the must-review tier yet opens at N one-line
-       headings. The disclosure triangle itself is shared with details.section above. */
-    details.step > summary { align-items: baseline; gap: 8px; }
-    details.step > summary::before { font-size: 10px; }
+       headings. The figure fold wants the same quiet line, so the two share it. The disclosure
+       triangle itself is shared with details.section above. */
+    details.step > summary, details.fold > summary { align-items: baseline; gap: 8px; }
+    details.step > summary::before, details.fold > summary::before { font-size: 10px; }
     details.step > .step-body { padding: 2px 0 2px 18px; }
     .sec-body blockquote { border-left: 3px solid var(--border); margin: 8px 0; padding: 0 12px; color: var(--muted); }
     /* decision cards */
@@ -383,6 +392,8 @@
     // via innerHTML in init, like SWITCH_MSG); never holds user data, so not an XSS vector
     let KBD_HINT = "<kbd>a</kbd> approve · <kbd>r</kbd> request changes · <kbd>⌘/Ctrl+↵</kbd> send";
     let APPLY_NOTE = "Requesting changes applies a comment to the plan document right away, or answers it here when it asks rather than asks for a change.";
+    // summary of the disclosure a figure-bearing section's prose is folded into
+    let FOLD_LABEL = "Read the text";
     // conversation-log labels, localized in init alongside SWITCH_MSG
     let TH = {
       you: "you",
@@ -737,6 +748,40 @@
       }
     }
 
+    // Fold a figure-bearing container's prose into a disclosure beneath the figure, so it opens on
+    // the figure alone — plan-figures.md § How the page shows a figure holds what that buys and
+    // what it leaves untouched.
+    //
+    // Must run *after* attachElementComments, for the same two reasons collapseBuildOrderSteps
+    // gives: a block's comment input is by then its own child or its next sibling, so moving the
+    // block's run of children carries the input with it, and the text a thread entry matches
+    // against was captured before the affordances joined the element.
+    //
+    // Build order is excluded by the caller (STEP_COLLAPSE_TYPES) — its steps already open at
+    // their headings, and folding the list on top of that buries the section twice. A decisions
+    // section is excluded by its type, not by the shape it rendered as: the caller hands this its
+    // preamble container, where a figure targeting it lands, so the preamble's prose folds while
+    // the cards — which carry the Alternative toggle — stay outside and visible. Keying on the
+    // type matters because a decisions body that fails card detection renders as plain prose, and
+    // folding *that* would put every Question / Recommendation / Alternative behind one click.
+    function foldProseUnderFigure(bodyEl, open) {
+      // Bail before allocating: most sections carry no figure, three per plan being the cap.
+      if (!bodyEl.querySelector(":scope > figure")) return;
+      // Every figure stays out — one per section is the rule, and a second one buried behind a
+      // text label would be invisible, where left in place it merely reads as unfolded.
+      // A figure's own textarea is placed inside it (AREA_INSIDE), so every other child is prose.
+      const rest = Array.from(bodyEl.children).filter((c) => c.tagName !== "FIGURE");
+      if (!rest.length) return;
+      const det = document.createElement("details");
+      det.className = "fold";
+      det.open = open;
+      const sum = document.createElement("summary");
+      sum.textContent = FOLD_LABEL;
+      det.appendChild(sum);
+      for (const c of rest) det.appendChild(c);
+      bodyEl.appendChild(det); // after the figures, now the body's only other children
+    }
+
     function renderSection(section) {
       const det = document.createElement("details");
       det.className = "section" + (section.type === "context" ? " is-context" : "");
@@ -973,6 +1018,7 @@
         DIFF_BANNER_NONE = "🔍 前回レビューからセクションの変更はありません";
         KBD_HINT = "<kbd>a</kbd> 承認 · <kbd>r</kbd> 変更を依頼 · <kbd>⌘/Ctrl+↵</kbd> 送信";
         APPLY_NOTE = "変更を依頼すると、コメントはその時点でプラン文書に反映されます。質問のコメントはプランを変えずにこのページ上で回答します。";
+        FOLD_LABEL = "文章を読む";
         TH = {
           you: "あなた",
           round: (n) => `ラウンド ${n}`,
@@ -1022,19 +1068,34 @@
       // Both passes stay inside the one section body they are handed, so the collapse's
       // must-run-after-comments ordering is per-section and needs no document-wide barrier.
       for (const r of bodyRefs) {
-        // A card section's cards carry their own comment affordances, but its preamble does not
-        // — and that is where a figure targeting this section lands, so walk it.
+        // Folds start closed; a section the diff marks new or changed opens, so nothing edited
+        // since the previous round is read past folded.
+        const status = diff.sectionStatus.get(r.section.id);
+        const edited = status === "new" || status === "changed";
         if (r.isCards) {
-          if (r.preEl) attachElementComments(r.preEl, r.section.id);
+          // A card section's cards carry their own comment affordances and stay visible; its
+          // preamble does not, and that is where a figure targeting this section lands — so the
+          // preamble is both what to walk and the only prose there is to fold.
+          if (r.preEl) { attachElementComments(r.preEl, r.section.id); foldProseUnderFigure(r.preEl, edited); }
           continue;
         }
         attachElementComments(r.bodyEl, r.section.id);
         if (STEP_COLLAPSE_TYPES.has(r.section.type)) collapseBuildOrderSteps(r.bodyEl);
+        // A decisions section that did not resolve into cards renders as plain prose; folding it
+        // would hide the very items the gate exists to have judged.
+        else if (r.section.type !== "decisions") foldProseUnderFigure(r.bodyEl, edited);
       }
 
       // After the collapse, so a thread stays outside the <details> and remains visible on a
-      // collapsed Build order step. Matching reads the anchor key captured before it, not live text.
+      // collapsed Build order step. Matching reads the anchor key captured before it, not live
+      // text. A thread inside a fold is instead reopened by the sweep below.
       renderLog(planEl, renderThread());
+      // A fold holding a replayed exchange opens: the reply is the reason the page was
+      // re-launched, and the log panel repeats it but not under the block it answers.
+      for (const box of threadBoxes.values()) {
+        const fold = box.closest("details.fold");
+        if (fold) fold.open = true;
+      }
     }
 
     document.querySelectorAll(".decision-radio").forEach((radio) => {

@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-08-28
+
+### dev-workflow v1.125.0 / mobpro v1.36.0 / dev-workflow-bundle v1.148.0
+
+- refactor(dev-workflow): move the plan viewer's plan parsing into its own module and cover it with tests
+  - The plan-review viewer's parsing — section splitting, heading classification, Decisions item parsing, anchor normalization, and the revise-round diff — now lives in `scripts/plan-review/public/plan-parse.mjs` instead of inline in `index.html`. The page imports it, and the repository's Node test suite imports the same file, so the parsing the browser runs is the parsing under test. Rendering stays in `index.html`, and so do the two functions that need a document or a Markdown renderer to walk.
+  - `buildDiff` now returns a diff rather than writing into a module-level object, and takes its block collector as an argument; `sectionOfBlockId` takes the Decisions section id as its second argument instead of reading it from module scope. Both changes are confined to the viewer. `serve.mjs` now names `.mjs` as JavaScript, without which the browser refuses to run the module.
+  - The `SECTION_TYPES` prefix table moved with the parsing, so the plan-section rename sweep lists in dev-workflow's and mobpro's `README.md` now point at `plan-parse.mjs`.
+
 ## 2026-08-26
 
 ### dev-workflow v1.124.0 / mobpro v1.35.0 / dev-workflow-bundle v1.147.0

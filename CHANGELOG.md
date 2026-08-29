@@ -1,5 +1,28 @@
 # Changelog
 
+## 2026-08-29
+
+### dev-workflow v1.128.1 / dev-workflow-bundle v1.151.1
+
+- refactor(dev-workflow): tidy the plan-review scripts and cut their comments back to what a future edit needs
+  - The mermaid library now loads only once a plan turns out to have a diagram. It was a static import, which a module fetches and evaluates before any of its own code runs, so every launch — and every post-revise reload — waited on it even with no diagram on the page. It is also loaded inside the failure handler now, so a CDN that does not answer leaves the fences un-rendered instead of taking the whole render down.
+  - `plan-render.mjs` holds every localized string it writes, both languages, rather than the English defaults sitting inline and the Japanese ones two files away in `index.html`. Both surfaces now pass `LABELS[lang]` the same way.
+  - Which elements are review blocks is defined once in `index.html`, where the comment layer and the diff layer had each walked the rendered body with their own copy of the rule. A change to one could silently stop `block-changed` marks landing on the blocks that are actually commentable.
+  - `createRenderer` derives how a mermaid fence is held from whether the caller supplied a diagram hook, instead of taking that as a second option the caller had to keep in agreement with the first. A mismatched pair used to show the reader a diagram's source with nothing said about it.
+  - Smaller cleanups: one factory for a thread entry in `serve.mjs` (a round read off disk and one appended in-process must be the same record), the two flags carrying the port-fallback bit collapsed into one, the hero element taken from what `renderPlan` returns rather than re-found by the renderer's own shell id, and two duplicated CSS blocks merged.
+  - Comments across the five js/html files are cut roughly a quarter, keeping the ones whose loss would let an edit break something silently — ordering constraints, cross-file contracts, rename hazards, the artifact CSP's silent failures — and dropping restatements of the code and arguments against roads not taken.
+  - Category: `ambiguity`
+
+### dev-workflow v1.128.0 / mobpro v1.39.0 / dev-workflow-bundle v1.151.0
+
+- feat(dev-workflow, mobpro): rebuild the plan-review page around a whole-change picture, and give the same renderer a viewer-only output
+  - The page a plan is approved on now opens on one figure of the whole change, gives each section the visual form its content calls for (the Build order a numbered sequence, the Decisions its two options side by side, the Risks a list of cards), and says what a collapsed section is about on its own header line. The plan body is untouched by all of it: every paragraph stays reachable and stays commentable, and the comment anchoring the gate depends on is unchanged.
+  - New reserved figures heading `## Hero` carries that opening figure. It names no plan section, sits outside the three-per-plan cap, and is required of a mobpro plan and optional for dev-workflow — a plan without one simply opens on its header.
+  - The view splits into `public/plan-view.css` (styling) and `public/plan-render.mjs` (rendering), with the comment affordances, conversation thread, submit bar, and relaunch poll staying in `public/index.html`. `serve.mjs` is unchanged apart from its docblock.
+  - Syntax colours are now written from the page's own palette rather than loaded as a highlight.js theme stylesheet, and the three web fonts come from Google Fonts. Both are what an artifact host's content policy admits, which the next change needs.
+  - New `scripts/plan-review/export-plan-html.mjs` writes a plan out as a single self-contained viewer-only page from those same three files — no comment affordances, no submit bar, no request of its own, the plan's Markdown embedded, and every disclosure open. Nothing invokes it yet; its contract is in its own file header. `--standalone` wraps the output for opening locally.
+  - Category: `missing-branch`
+
 ## 2026-08-28
 
 ### dev-workflow v1.127.0 / mobpro v1.38.0 / dev-workflow-bundle v1.150.0

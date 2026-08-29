@@ -17,6 +17,9 @@ import {
   countListItems,
   decisionSig,
   emptyDiff,
+  preparePlan,
+  sectionGist,
+  splitPreamble,
   escapeHtml,
   excerptOf,
   fieldValue,
@@ -195,4 +198,70 @@ test("buildDiff sends a changed Decisions section to prevDecisionSigs, not prevB
   const sigs = diff.prevDecisionSigs.get("decisions");
   assert.equal(sigs.size, 1);
   assert.equal(sigs.has(decisionSig(parseDecisions(sections[0].body).items[0])), false);
+});
+
+// --- sectionGist: the one line a collapsed section shows beside its title ---
+
+test("sectionGist takes the first line of prose, list marker and markup stripped", () => {
+  assert.equal(sectionGist("- **Goal**: `x` を作る\n- more"), "Goal: x を作る");
+  assert.equal(sectionGist("1. **Step** — detail"), "Step — detail");
+});
+
+test("sectionGist skips headings, quotes, raw HTML, and anything inside a fence", () => {
+  assert.equal(sectionGist("#### sub\n> quoted\n<figure>x</figure>\nreal prose"), "real prose");
+  assert.equal(sectionGist("```\nnot prose\n```\nreal prose"), "real prose");
+  assert.equal(sectionGist("```\nonly a fence\n```"), "");
+  assert.equal(sectionGist(""), "");
+});
+
+test("sectionGist truncates with an ellipsis rather than wrapping the header", () => {
+  const gist = sectionGist("あ".repeat(400));
+  assert.equal(gist.length, 120);
+  assert.ok(gist.endsWith("…"));
+});
+
+// --- splitPreamble: the Hero block gets its own slot, everything else stays prose ---
+
+test("splitPreamble separates the Hero block from the rest of the preamble", () => {
+  const { prose, hero } = splitPreamble("lead\n\n## Hero\n<figure>H</figure>\n\n## Other\nkept");
+  assert.equal(hero, "<figure>H</figure>");
+  assert.ok(prose.includes("lead") && prose.includes("kept"));
+  assert.ok(!prose.includes("<figure>H</figure>"));
+});
+
+test("splitPreamble leaves hero empty when no such block exists, and ignores a fenced lookalike", () => {
+  assert.equal(splitPreamble("just prose").hero, "");
+  assert.equal(splitPreamble("just prose").prose, "just prose");
+  // A "## Hero" inside a fence is code the plan is quoting, not a figures block.
+  assert.equal(splitPreamble("```\n## Hero\nnot a hero\n```").hero, "");
+});
+
+// --- preparePlan: the one derivation both surfaces render from ---
+
+test("preparePlan derives the overview, the risk count, and the badge's itemCount", () => {
+  const model = preparePlan("### Overview\n- **Goal**: g\n- **Scope**: s\n\n### Risks\n- a\n- b\n- c\n", "slug-1");
+  assert.equal(model.id, "slug-1");
+  assert.equal(model.overview.goal, "g");
+  assert.equal(model.overview.scope, "s");
+  assert.equal(model.riskCount, 3);
+  assert.equal(model.sections.find((x) => x.type === "risks").itemCount, 3);
+});
+
+test("preparePlan falls back to one section for a plan with no headings", () => {
+  const model = preparePlan("no headings at all", "slug-2");
+  assert.deepEqual(model.sections.map((x) => x.id), ["plan"]);
+  assert.equal(model.sections[0].body, "no headings at all");
+  assert.equal(model.riskCount, 0);
+  // The fallback section already carries the whole document; leaving it in the preamble too
+  // would draw every word twice.
+  assert.equal(model.preamble, "");
+});
+
+test("splitPreamble keeps the first Hero block and drops a repeated one", () => {
+  const { prose, hero } = splitPreamble("lead\n\n## Hero\nfirst\n\n## Hero\nsecond");
+  assert.equal(hero, "first");
+  // Skipped means dropped, not demoted to prose — a second hero rendered as preamble text
+  // would put the same figure on the page twice.
+  assert.ok(!prose.includes("second"), "the repeated block leaked into the preamble");
+  assert.ok(prose.includes("lead"), "the leading prose was lost");
 });

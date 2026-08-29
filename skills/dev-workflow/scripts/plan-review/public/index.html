@@ -5,20 +5,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Plan Review — dev-workflow</title>
 
-  <!-- highlight.js theme (cdnjs, pinned + SRI) -->
+  <!-- Google Fonts is the one font host an artifact's CSP admits, so the export loads the
+       same faces from the same place. highlight.js' own themes are stylesheets, which that
+       CSP blocks silently, so the syntax colours live in plan-view.css instead. -->
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
     rel="stylesheet"
-    href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/github.min.css"
-    integrity="sha512-0aPQyyeZrWj9sCA46UlmWgKOP0mUipLQ6OZXu8l4IcAmD2u31EPEy9VcIMvl7SoAaKe8bLXZhYoMaE/in+gcgA=="
-    crossorigin="anonymous" referrerpolicy="no-referrer">
-  <link
-    rel="stylesheet" media="(prefers-color-scheme: dark)"
-    href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/github-dark.min.css"
-    integrity="sha512-rO+olRTkcf304DQBxSWxln8JXCzTHlKnIdnMUwYvQa9/Jd4cQaNkItIUj6Z4nvW1dqK0SKXLbn9h4KwZTNtAyw=="
-    crossorigin="anonymous" referrerpolicy="no-referrer">
+    href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600&family=Noto+Sans+JP:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Zen+Old+Mincho:wght@600&display=swap">
 
-  <!-- marked (UMD) + highlight.js (UMD): classic scripts run before the deferred module below,
-       so window.marked / window.hljs are ready when the render logic runs. -->
+  <!-- Classic scripts run before the deferred module below, so window.marked / window.hljs
+       are ready when the render logic runs. -->
   <script
     src="https://cdnjs.cloudflare.com/ajax/libs/marked/16.3.0/lib/marked.umd.min.js"
     integrity="sha512-V6rGY7jjOEUc7q5Ews8mMlretz1Vn2wLdMW/qgABLWunzsLfluM0FwHuGjGQ1lc8jO5vGpGIGFE+rTzB+63HdA=="
@@ -28,332 +24,12 @@
     integrity="sha512-EBLzUL8XLl+va/zAsmXwS7Z2B1F9HUHkZwyS/VKwh3S7T/U0nF4BaU29EP/ZSf6zgiIxYAnKLu6bJ8dqpmX5uw=="
     crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
-  <style>
-    :root {
-      /* Palette: warm, low-glare ground with a green accent (mirrors the eli5 artifact) */
-      --page-bg: #f1f4f0;      /* page ground — never the card surface */
-      --bg: #ffffff;           /* card / panel surface */
-      --bg-soft: #e7ece8;
-      --fg: #1a231f;
-      --muted: #5c6b64;
-      --border: #c8d3cd;
-      --accent: #0d6b5f;
-      --accent-soft: #d3e5df;
-      --accent-ink: #08453d;
-      --on-accent: #ffffff;   /* text on an --accent fill */
-      --approve: #1a7f37;
-      --approve-bg: #dceee4;
-      --approve-border: #a9cdb8;
-      --revise: #8a5a12;
-      --revise-bg: #f4e7d8;
-      --revise-border: #dcc39a;
-      --rec: var(--approve);
-      --risk: var(--revise);
-      --risk-bg: var(--revise-bg);
-      --risk-border: var(--revise-border);
-      --switched-bg: #f7f2ea;
-      --hover: #dbe3dd;
-      /* diff "changed" accent — shares the revise hue (risk chrome does too, via --risk);
-         what separates a changed block is its left bar and badge, not its colour */
-      --changed: var(--revise);
-      --changed-bg: #f0e4cf;
-      --banner-border: #d9b85f;
-      --banner-fg: #6b4a12;
-      --bar-h: 64px;
-      color-scheme: light;
-    }
-    /* Dark theme: same roles, re-toned. Every color above is redefined here, so no
-       rule outside this block may hardcode a hex. */
-    @media (prefers-color-scheme: dark) {
-      :root {
-        --page-bg: #121815;
-        --bg: #1a231f;
-        --bg-soft: #222d28;
-        --fg: #e5ebe7;
-        --muted: #94a39b;
-        --border: #35443c;
-        --accent: #56c2ab;
-        --accent-soft: #21362f;
-        --accent-ink: #9fdccd;
-        --on-accent: #0d1a17;
-        --approve: #5fc47f;
-        --approve-bg: #1c3325;
-        --approve-border: #2f5c3f;
-        --revise: #d6a850;
-        --revise-bg: #33291a;
-        --revise-border: #5c4a27;
-        --switched-bg: #26201a;
-        --hover: #2c3a33;
-        --changed-bg: #33291a;
-        --banner-border: #5c4a27;
-        --banner-fg: #f0d9a8;
-        color-scheme: dark;
-      }
-    }
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Sans", "Noto Sans JP", Meiryo, sans-serif;
-      color: var(--fg);
-      background: var(--page-bg);
-      line-height: 1.7;
-    }
-    #app {
-      display: grid;
-      grid-template-columns: 240px minmax(0, 1fr);
-      gap: 28px;
-      max-width: 1120px;
-      margin: 0 auto;
-      padding: 20px 24px calc(var(--bar-h) + 32px);
-    }
-    /* summary header */
-    header.plan-head {
-      grid-column: 1 / -1;
-      border-bottom: 1px solid var(--border);
-      padding-bottom: 14px;
-      margin-bottom: 4px;
-    }
-    header.plan-head .eyebrow { color: var(--muted); font-size: 12px; letter-spacing: .04em; text-transform: uppercase; }
-    header.plan-head h1 { font-size: 20px; margin: 2px 0 10px; line-height: 1.4; }
-    header.plan-head h1 code { font-size: 0.9em; }
-    #plan-chips { display: flex; flex-wrap: wrap; gap: 8px; }
-    .chip {
-      display: inline-flex; align-items: baseline; gap: 6px;
-      font-size: 12px; color: var(--fg);
-      background: var(--bg-soft); border: 1px solid var(--border);
-      border-radius: 999px; padding: 3px 12px;
-    }
-    .chip b { color: var(--muted); font-weight: 600; }
-    .chip.risk { background: var(--risk-bg); border-color: var(--risk-border); color: var(--risk); }
-    .chip.risk b { color: var(--risk); }
-    /* Scope is descriptive prose, not an enum — give it a labeled meta row that wraps,
-       instead of cramming it into a fixed-shape pill like Difficulty / Risks */
-    #plan-scope { margin-top: 8px; }
-    .meta-scope { display: flex; gap: 8px; align-items: baseline; font-size: 12px; line-height: 1.5; }
-    .meta-scope .meta-label {
-      flex: none; font-size: 10px; font-weight: 700; letter-spacing: .04em;
-      text-transform: uppercase; color: var(--muted); padding-top: 2px;
-    }
-    .meta-scope .meta-val { color: var(--fg); min-width: 0; }
-    /* section nav */
-    #toc {
-      position: sticky; top: 16px; align-self: start;
-      max-height: calc(100vh - 32px); overflow: auto;
-      font-size: 13px; border-right: 1px solid var(--border); padding-right: 14px;
-    }
-    #toc .toc-title { font-weight: 600; color: var(--muted); margin-bottom: 8px; }
-    #toc a { display: block; color: var(--muted); text-decoration: none; padding: 3px 0; }
-    #toc a:hover { color: var(--accent); }
-    /* main */
-    main#plan { min-width: 0; }
-    .preamble { color: var(--muted); font-size: 13px; margin: 0 0 12px; }
-    .preamble blockquote { border-left: 3px solid var(--border); margin: 0; padding: 2px 12px; }
-    details.section {
-      border: 1px solid var(--border); border-radius: 10px;
-      margin: 12px 0; padding: 0 16px; background: var(--bg);
-    }
-    details.section[open] { padding-bottom: 8px; }
-    /* Disclosure affordance, shared by sections, by the Build order steps inside them
-       (details.step, collapsed by collapseBuildOrderSteps), and by the prose a figure-bearing
-       section folds away (details.fold, foldProseUnderFigure) — one glyph, one rotation. */
-    details.section > summary, details.step > summary, details.fold > summary {
-      cursor: pointer; list-style: none; display: flex;
-    }
-    details.section > summary::-webkit-details-marker,
-    details.step > summary::-webkit-details-marker,
-    details.fold > summary::-webkit-details-marker { display: none; }
-    details.section > summary::before, details.step > summary::before,
-    details.fold > summary::before {
-      content: "▸"; color: var(--muted); transition: transform .12s;
-    }
-    details.section[open] > summary::before,
-    details.step[open] > summary::before,
-    details.fold[open] > summary::before { transform: rotate(90deg); }
-    details.section > summary { padding: 12px 0; align-items: center; gap: 10px; font-weight: 600; }
-    details.section > summary::before { font-size: 12px; }
-    /* Context = the "why" framing; tint it so it reads as lead context, not a structural section */
-    details.section.is-context { background: var(--bg-soft); border-color: var(--border); }
-    details.section.is-context > summary .sec-title { color: var(--muted); }
-    details.section.is-context .sec-body { color: var(--fg); }
-    .sec-title { font-size: 15px; }
-    .badge {
-      font-size: 11px; font-weight: 700; border-radius: 999px;
-      padding: 1px 8px; background: var(--bg-soft); color: var(--muted);
-    }
-    .badge-risk { background: var(--risk-bg); color: var(--risk); }
-    .sec-body { padding-top: 2px; }
-    /* .step-body is inside .sec-body, so every .sec-body descendant rule already reaches it;
-       this one needs naming because it is a direct-child selector. */
-    .sec-body > :first-child, .step-body > :first-child { margin-top: 4px; }
-    .sec-body h1 { font-size: 20px; }
-    .sec-body h2 { font-size: 17px; }
-    .sec-body h3, .sec-body h4 { font-size: 14px; }
-    .sec-body pre {
-      background: var(--bg-soft); border: 1px solid var(--border);
-      border-radius: 6px; padding: 12px; overflow: auto;
-    }
-    .sec-body code:not(pre code) {
-      background: var(--bg-soft); border-radius: 4px; padding: 1px 5px; font-size: 0.9em;
-    }
-    .sec-body table { border-collapse: collapse; }
-    .sec-body th, .sec-body td { border: 1px solid var(--border); padding: 4px 10px; }
-    .sec-body .mermaid { background: var(--bg); text-align: center; margin: 10px 0; }
-    /* figures layer: a <figure> the gate merged in, carrying inline SVG */
-    .sec-body figure { margin: 12px 0; text-align: center; }
-    .sec-body figure svg { max-width: 100%; height: auto; }
-    .sec-body figcaption { font-size: 12px; color: var(--muted); margin-top: 6px; }
-    /* The prose a figure-bearing section folds away (foldProseUnderFigure). Its summary is a
-       quiet affordance, not a heading, so the figure stays the section's loudest element — the
-       layout it shares with a Build order step's summary is declared with that one below. */
-    details.fold > summary { font-size: 12px; color: var(--muted); padding: 4px 0; }
-    /* Build order steps: the section sits in the must-review tier yet opens at N one-line
-       headings. The figure fold wants the same quiet line, so the two share it. The disclosure
-       triangle itself is shared with details.section above. */
-    details.step > summary, details.fold > summary { align-items: baseline; gap: 8px; }
-    details.step > summary::before, details.fold > summary::before { font-size: 10px; }
-    details.step > .step-body { padding: 2px 0 2px 18px; }
-    .sec-body blockquote { border-left: 3px solid var(--border); margin: 8px 0; padding: 0 12px; color: var(--muted); }
-    /* decision cards */
-    .decision-card {
-      border: 1px solid var(--border); border-left: 3px solid var(--accent);
-      border-radius: 8px; padding: 10px 14px; margin: 10px 0; background: var(--bg);
-    }
-    .decision-card.switched { border-left-color: var(--revise); background: var(--switched-bg); }
-    .dc-q { font-weight: 600; margin-bottom: 8px; }
-    .dc-q .dc-tag {
-      display: inline-block; font-size: 11px; font-weight: 700; color: var(--on-accent);
-      background: var(--accent); border-radius: 4px; padding: 1px 7px; margin-right: 6px; vertical-align: 1px;
-    }
-    .decision-card.switched .dc-q .dc-tag { background: var(--revise); }
-    .dc-rec, .dc-alt { font-size: 14px; border-radius: 6px; padding: 6px 10px; margin: 6px 0; }
-    .dc-rec { background: var(--approve-bg); border: 1px solid var(--approve-border); }
-    .dc-alt { background: var(--bg-soft); border: 1px solid var(--border); color: var(--muted); }
-    .decision-card.switched .dc-rec { background: var(--bg-soft); border-color: var(--border); color: var(--muted); }
-    .decision-card.switched .dc-alt { background: var(--revise-bg); border-color: var(--revise-border); color: var(--fg); }
-    .dc-rec > :first-child, .dc-alt > :first-child { margin-top: 2px; }
-    .dc-rec > :last-child, .dc-alt > :last-child { margin-bottom: 2px; }
-    .dc-label {
-      display: inline-block; font-size: 10px; font-weight: 700; letter-spacing: .04em;
-      text-transform: uppercase; color: var(--muted); margin-bottom: 2px;
-    }
-    .dc-rec .dc-label { color: var(--rec); }
-    .dc-toggle { display: flex; gap: 14px; margin: 8px 0 2px; font-size: 13px; }
-    .dc-toggle label { display: inline-flex; align-items: center; gap: 5px; cursor: pointer; color: var(--muted); }
-    .dc-toggle label:has(input:checked) { color: var(--fg); font-weight: 600; }
-    /* comment affordances */
-    /* Highlight the block under the cursor so the comment target's extent is obvious — the
-       per-element comment model treats each paragraph / list item as its own target. The tint
-       is a step deeper than --bg-soft so it stays visible inside the tinted Context section too. */
-    .commentable { position: relative; border-radius: 6px; transition: background .12s; }
-    .commentable:hover { background: var(--hover); }
-    .cbtn {
-      position: absolute; top: 0; right: -2px; opacity: 0;
-      font-size: 12px; line-height: 1; border: 1px solid var(--border);
-      background: var(--bg); border-radius: 6px; padding: 2px 6px; cursor: pointer;
-      transition: opacity .1s;
-    }
-    .commentable:hover > .cbtn, .cbtn.has-comment { opacity: 1; }
-    .cbtn.has-comment { border-color: var(--revise); }
-    .comment-btn {
-      font-size: 12px; color: var(--muted); background: none;
-      border: 1px solid var(--border); border-radius: 6px; padding: 2px 10px; cursor: pointer; margin-top: 6px;
-    }
-    .comment-btn:hover { color: var(--accent); border-color: var(--accent); }
-    .comment-btn.has-comment { color: var(--revise); border-color: var(--revise); font-weight: 600; }
-    .comment-input {
-      display: block; width: 100%; min-height: 56px; margin: 6px 0 8px; padding: 8px;
-      font: inherit; font-size: 13px; border: 1px solid var(--accent); border-radius: 6px; resize: vertical;
-      background: var(--bg); color: var(--fg);
-    }
-    .comment-input[hidden] { display: none; } /* the `display: block` above otherwise defeats the `hidden` attribute */
-    /* conversation thread: past rounds replayed under the block they were anchored on, and
-       replayed again in full in the log panel at the end of the plan. */
-    .thread { margin: 8px 0 4px; border-left: 3px solid var(--accent); padding-left: 10px; }
-    .th-item + .th-item { margin-top: 10px; }
-    .th-meta { font-size: 11px; color: var(--muted); letter-spacing: .02em; }
-    .th-body { white-space: pre-wrap; font-size: 13px; margin-top: 2px; }
-    .th-reply { font-size: 13px; margin-top: 4px; }
-    .th-reply > :first-child { margin-top: 0; }
-    .th-reply > :last-child { margin-bottom: 0; }
-    .th-badge {
-      display: inline-block; font-size: 11px; padding: 1px 7px; border-radius: 999px;
-      background: var(--accent-soft); color: var(--accent-ink); margin-right: 6px; white-space: nowrap;
-    }
-    .th-badge.pending { background: var(--changed-bg); color: var(--changed); }
-    .th-loose { color: var(--revise); font-size: 11px; }
-    #log { margin-top: 22px; border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; }
-    #log > summary { cursor: pointer; font-weight: 600; }
-    .log-round { margin-top: 12px; }
-    .log-round > h4 { margin: 0 0 6px; font-size: 12px; color: var(--muted); font-weight: 600; }
-    .log-where { font-size: 11px; color: var(--muted); }
-    /* diff mode: surfaced only on a revise re-launch (prevMarkdown present).
-       Badges + highlights mark what changed since the user's previous review,
-       so unchanged sections can stay collapsed and the eye goes to the edits. */
-    #diff-banner {
-      grid-column: 1 / -1; margin: 6px 0 0; padding: 8px 12px;
-      background: var(--changed-bg); border: 1px solid var(--banner-border); border-radius: 8px;
-      font-size: 13px; color: var(--banner-fg);
-    }
-    .badge-diff { background: var(--changed-bg); color: var(--changed); }
-    /* changed block: inset left bar + faint tint; box-shadow survives the
-       .commentable:hover background swap so the marker stays visible on hover.
-       --changed, never --accent, so it never reads as the base card border. */
-    .commentable.block-changed { background: var(--changed-bg); box-shadow: inset 3px 0 0 0 var(--changed); }
-    /* changed decision card: a thick --changed left bar + faint wash, replacing the
-       base --accent left border, so "this Decision changed" reads at a glance (far
-       more legible than a thin outline). Scoped :not(.switched) so a card toggled to
-       its alternative still shows the .switched styling — the active user action
-       wins over the historical diff mark. */
-    .decision-card.card-changed:not(.switched) {
-      border-left: 5px solid var(--changed);
-      background: var(--changed-bg);
-    }
-    /* sticky decision bar */
-    #bar {
-      position: fixed; left: 0; right: 0; bottom: 0; height: var(--bar-h);
-      display: flex; align-items: center; gap: 16px; padding: 0 24px;
-      background: var(--bg); border-top: 1px solid var(--border); box-shadow: 0 -2px 8px rgba(0,0,0,0.04);
-    }
-    #bar .decision { display: flex; gap: 8px; }
-    #bar label.choice {
-      display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--border);
-      border-radius: 8px; padding: 6px 14px; cursor: pointer; font-size: 14px;
-    }
-    #bar label.choice:has(input:checked).approve { border-color: var(--approve); color: var(--approve); font-weight: 600; }
-    #bar label.choice:has(input:checked).revise { border-color: var(--revise); color: var(--revise); font-weight: 600; }
-    #bar .spacer { flex: 1; }
-    #bar .count { color: var(--muted); font-size: 13px; }
-    /* keyboard-shortcut hint: the decision bar's native controls drop out of Tab
-       order when macOS Full Keyboard Access is off (Chrome mirrors that setting),
-       so the a/r/↵ shortcuts are the reliable keyboard path — surface them here. */
-    /* .apply-note says what "Request changes" does to the plan document, so the
-       choice is made with that in view */
-    #bar .kbd-hint, #bar .apply-note { color: var(--muted); font-size: 12px; }
-    #bar .kbd-hint kbd {
-      font: inherit; background: var(--bg-soft); border: 1px solid var(--border);
-      border-radius: 4px; padding: 0 5px;
-    }
-    #send-btn {
-      font-size: 14px; font-weight: 600; color: var(--on-accent); background: var(--accent);
-      border: none; border-radius: 8px; padding: 8px 20px; cursor: pointer;
-    }
-    #send-btn:disabled { background: var(--border); color: var(--muted); cursor: not-allowed; }
-    #status { color: var(--revise); font-size: 13px; }
-    #done { grid-column: 1 / -1; text-align: center; padding: 40px; font-size: 16px; color: var(--approve); }
-    #app.submitted main#plan, #app.submitted #toc { opacity: 0.5; pointer-events: none; }
-  </style>
+  <link rel="stylesheet" href="./plan-view.css">
 </head>
 <body>
+  <!-- The shell is inserted from plan-render.mjs' PLAN_SHELL_HTML, so this page and the
+       export cannot drift. #done is this page's own — the export has nothing to submit. -->
   <div id="app">
-    <header class="plan-head">
-      <div class="eyebrow">Plan Review — <span id="plan-id">…</span></div>
-      <h1 id="plan-title">…</h1>
-      <div id="plan-chips"></div>
-      <div id="plan-scope" class="meta-scope" hidden></div>
-      <div id="diff-banner" hidden></div>
-    </header>
-    <nav id="toc"><div class="toc-title">Sections</div></nav>
-    <main id="plan"></main>
     <div id="done" hidden>Submitted. Return to your terminal.</div>
   </div>
 
@@ -371,29 +47,22 @@
   </div>
 
   <script type="module">
-    import mermaid from "https://esm.sh/mermaid@11.15.0";
     import {
-      OPEN_TYPES, STEP_COLLAPSE_TYPES,
-      anchorMatches, anchorNorm, buildDiff, countListItems, decisionSig, emptyDiff,
-      escapeHtml, excerptOf, normText, parseDecisions, parseOverview, parseSections,
-      sectionOfBlockId, stripMd,
+      anchorMatches, anchorNorm, buildDiff, emptyDiff,
+      escapeHtml, excerptOf, normText, preparePlan,
+      sectionOfBlockId,
     } from "./plan-parse.mjs";
+    import { AFFORDANCE_ATTR, HERO_SECTION_ID, PLAN_SHELL_HTML, LABELS, createRenderer, md } from "./plan-render.mjs";
 
-    // Read once: mermaid bakes its theme at initialize, so an OS theme flip mid-review leaves
-    // diagrams in the previous theme until the page is reloaded. Everything else follows the
-    // media query live.
-    const darkScheme = window.matchMedia("(prefers-color-scheme: dark)").matches;
-    mermaid.initialize({ startOnLoad: false, theme: darkScheme ? "dark" : "default", securityLevel: "strict" });
+    // afterbegin, so the shell precedes the #done panel this page keeps last in #app.
+    document.getElementById("app").insertAdjacentHTML("afterbegin", PLAN_SHELL_HTML);
 
     // comments: id -> { text, excerpt, kind } ; switches: id -> excerpt
     const state = { decision: null, comments: new Map(), switches: new Map() };
     let SWITCH_MSG = "Switch this decision to its Alternative";
-    // localized keyboard-shortcut hint — static developer-controlled markup (assigned
-    // via innerHTML in init, like SWITCH_MSG); never holds user data, so not an XSS vector
+    // Assigned via innerHTML in init: developer-controlled markup, never user data.
     let KBD_HINT = "<kbd>a</kbd> approve · <kbd>r</kbd> request changes · <kbd>⌘/Ctrl+↵</kbd> send";
     let APPLY_NOTE = "Requesting changes applies a comment to the plan document right away, or answers it here when it asks rather than asks for a change.";
-    // summary of the disclosure a figure-bearing section's prose is folded into
-    let FOLD_LABEL = "Read the text";
     // conversation-log labels, localized in init alongside SWITCH_MSG
     let TH = {
       you: "you",
@@ -406,9 +75,8 @@
     };
     let POLL_MSG = "Claude is working on it — this page reloads itself when the plan updates.";
     let POLL_GIVEUP_MSG = "No update for 30 minutes. Check your terminal — the review may have moved on without the browser.";
-    // The gate itself waits up to 24h, but a revise does not always come back here: an
-    // approach-level rewrite or a fallback to chat approval ends the run elsewhere. Stop
-    // promising a reload well before then and say so.
+    // A revise does not always come back here (an approach-level rewrite or a fallback to
+    // chat approval ends the run elsewhere), so stop promising a reload well before 24h.
     const POLL_GIVEUP_MS = 30 * 60 * 1000;
     // Per-process token from /api/plan. A relaunch produces a different one, which is what the
     // post-revise poll below watches for.
@@ -417,41 +85,35 @@
     // diff mode (revise re-launch): replaced by buildDiff() when prevMarkdown is
     // present. plan-parse.mjs' emptyDiff() documents the fields.
     let diff = emptyDiff();
-    // localized diff-banner text (set from `lang` in init, like SWITCH_MSG); the
-    // "Changed" / "New" badges stay English UI chrome and are not localized.
-    let DIFF_BANNER = (n, removed) => `🔍 ${n} section${n === 1 ? "" : "s"} changed or added since your last review${removed ? `, ${removed} removed` : ""} — changes highlighted below`;
-    let DIFF_BANNER_NONE = "🔍 No section changes since your last review";
 
-    const md = (t) => window.marked.parse(t || "");
-    const mdInline = (t) => window.marked.parseInline(t || "");
-
-    // Block-level tags that are commentable as whole blocks (UL/OL → per-LI and
-    // TABLE → wrapped are handled separately). Shared by attachElementComments
-    // (renders comment affordances) and collectBlockTexts (read-only diff text),
-    // so the two stay in sync.
     const COMMENT_BLOCK_TAGS = ["P", "BLOCKQUOTE", "PRE", "H4", "H5", "H6", "FIGURE"];
 
-    // --- diff (revise re-launch) ---
-    // Read-only mirror of attachElementComments' target selection: collect the
-    // normalized text of each commentable block in a section body, WITHOUT the
-    // DOM mutation attachElementComments performs (table replaceWith, comment
-    // buttons, mermaid/highlight). Used only for prev-vs-current block diffing.
-    // Safe to read prev pre-highlight while current blocks are read post-highlight.js:
-    // normText collapses all whitespace and highlight.js only wraps tokens in spans
-    // (textContent unchanged), so identical source normalizes to the same string.
-    function collectBlockTexts(bodyMarkdown) {
-      const tmp = document.createElement("div");
-      tmp.innerHTML = md(bodyMarkdown);
-      const out = new Set();
-      for (const c of Array.from(tmp.children)) {
+    // The one place the review block is defined. Both the comment layer and the diff layer
+    // read this list, so a block can never be commentable without being diffable or the
+    // reverse. The child list is snapshotted first, so a caller free to mutate what it is
+    // handed (attachElementComments wraps each table) cannot disturb the walk.
+    function commentTargets(root) {
+      const out = [];
+      for (const c of Array.from(root.children)) {
         const tag = c.tagName;
         if (tag === "UL" || tag === "OL") {
-          for (const li of Array.from(c.children)) if (li.tagName === "LI") out.add(normText(li.textContent));
+          for (const li of Array.from(c.children)) if (li.tagName === "LI") out.push(li);
         } else if (tag === "TABLE" || COMMENT_BLOCK_TAGS.includes(tag)) {
-          out.add(normText(c.textContent));
+          out.push(c);
         }
       }
       return out;
+    }
+
+    // --- diff (revise re-launch) ---
+    // Each commentable block's normalized text, without the DOM mutation
+    // attachElementComments performs. Safe to read prev pre-highlight while current blocks
+    // are read post-highlight.js: normText collapses whitespace and highlight.js only wraps
+    // tokens in spans, so identical source normalizes to the same string.
+    function collectBlockTexts(bodyMarkdown) {
+      const tmp = document.createElement("div");
+      tmp.innerHTML = md(bodyMarkdown);
+      return new Set(commentTargets(tmp).map((t) => normText(t.textContent)));
     }
 
     // --- comment state ---
@@ -492,75 +154,24 @@
 
     function selectDecision(v) {
       state.decision = v;
-      // Each decision radio carries a distinct name (so it is its own single-member
-      // group — always a Tab stop, never collapsed out when the sibling is checked),
-      // so enforce mutual exclusivity here rather than relying on native grouping.
+      // Each radio has a distinct name, so it stays its own Tab stop rather than being
+      // collapsed out when the sibling is checked — hence exclusivity enforced here.
       document.querySelectorAll(".decision-radio").forEach((r) => { r.checked = (r.value === v); });
       document.getElementById("send-btn").disabled = false;
-    }
-
-    // --- rendering ---
-    function chip(label, value, cls) {
-      return `<span class="chip ${cls || ""}"><b>${escapeHtml(label)}</b> ${escapeHtml(value)}</span>`;
-    }
-
-    function renderHeader(ov, planId, riskCount) {
-      document.getElementById("plan-id").textContent = planId;
-      document.getElementById("plan-title").innerHTML = ov.goal ? mdInline(ov.goal) : escapeHtml(planId);
-      const chips = [];
-      if (ov.difficulty) chips.push(chip("Difficulty", stripMd(ov.difficulty)));
-      if (riskCount) chips.push(chip("Risks", String(riskCount), "risk"));
-      document.getElementById("plan-chips").innerHTML = chips.join("");
-      // Scope is descriptive (often a file list), so render it as a labeled meta row that wraps
-      // rather than a fixed-shape pill alongside the short enum chips above.
-      const scopeEl = document.getElementById("plan-scope");
-      if (ov.scope) {
-        scopeEl.innerHTML = `<span class="meta-label">Scope</span><span class="meta-val">${escapeHtml(stripMd(ov.scope))}</span>`;
-        scopeEl.hidden = false;
-      }
-    }
-
-    function renderDiffBanner() {
-      if (!diff.active) return;
-      const el = document.getElementById("diff-banner");
-      el.textContent = diff.changedCount ? DIFF_BANNER(diff.changedCount, diff.removedCount) : DIFF_BANNER_NONE;
-      el.hidden = false;
-    }
-
-    function renderNav(sections) {
-      const toc = document.getElementById("toc");
-      if (!sections.length) { toc.hidden = true; return; }
-      for (const s of sections) {
-        const a = document.createElement("a");
-        a.href = `#sec-${s.id}`;
-        a.textContent = s.title;
-        a.addEventListener("click", () => {
-          const det = document.getElementById(`sec-${s.id}`);
-          if (det) det.open = true;
-        });
-        toc.appendChild(a);
-      }
-    }
-
-    function renderPreamble(preamble, planEl) {
-      const kept = preamble.split("\n").filter((l) => !/^##\s/.test(l)).join("\n").trim();
-      if (!kept) return;
-      const div = document.createElement("div");
-      div.className = "preamble";
-      div.innerHTML = md(kept);
-      planEl.appendChild(div);
     }
 
     function makeCommentArea(placeholder) {
       const area = document.createElement("textarea");
       area.className = "comment-input";
+      // plan-render.mjs' collapseBuildOrderSteps leaves anything carrying this outside the
+      // disclosure it builds, so a collapsed Build order step stays commentable.
+      area.dataset[AFFORDANCE_ATTR] = "";
       area.placeholder = placeholder;
       area.hidden = true;
       return area;
     }
 
-    // Wire a comment button + textarea pair: typing updates the comment state, clicking
-    // toggles the textarea. Shared by the decision-card and per-element comment affordances.
+    // Shared by the decision-card and the per-element comment affordances.
     function wireCommentToggle(btn, area, id, excerpt, kind) {
       area.addEventListener("input", () => setComment(id, area.value, btn, excerpt, kind));
       btn.addEventListener("click", (e) => { e.preventDefault(); area.hidden = !area.hidden; if (!area.hidden) area.focus(); });
@@ -576,30 +187,10 @@
       return { btn, area };
     }
 
-    function renderDecisionCard(it, n) {
-      const id = `decision-${n}`;
-      const excerpt = excerptOf(it.question);
-      const card = document.createElement("div");
-      card.className = "decision-card";
-      card.dataset.blockId = id;
-      card.dataset.anchorKey = anchorNorm(it.question);
-
-      const q = document.createElement("div");
-      q.className = "dc-q";
-      q.innerHTML = `<span class="dc-tag">Decision ${n}</span>${mdInline(it.question)}`;
-      card.appendChild(q);
-
-      const rec = document.createElement("div");
-      rec.className = "dc-rec";
-      rec.innerHTML = `<span class="dc-label">Recommendation</span>${md(it.recommendation)}`;
-      card.appendChild(rec);
-
-      if (it.alternative) {
-        const alt = document.createElement("div");
-        alt.className = "dc-alt";
-        alt.innerHTML = `<span class="dc-label">Alternative</span>${md(it.alternative)}`;
-        card.appendChild(alt);
-
+    // A Decision card's interactive layer, handed to the renderer as a hook. The export
+    // passes no hook and gets the same card without it.
+    function decorateDecisionCard({ card, id, n, excerpt, hasAlternative }) {
+      if (hasAlternative) {
         const toggle = document.createElement("div");
         toggle.className = "dc-toggle";
         toggle.innerHTML =
@@ -614,19 +205,14 @@
         );
         card.appendChild(toggle);
       }
-
       const { btn, area } = makeFreeComment(id, excerpt, "Comment on this decision");
       card.appendChild(btn);
       card.appendChild(area);
       affordanceHead.set(card, btn);
-      return card;
     }
 
-    // Attach a hover comment affordance to each commentable block element in a rendered body.
-    // List items are commentable individually (Build order steps / Risks / Test items); paragraphs,
-    // code blocks, blockquotes, sub-headings, and tables are commentable as whole blocks.
-    // AREA_INSIDE = tags whose textarea is appended *inside* the element (valid flow content);
-    // others receive it as a sibling (afterend). DIV is the synthetic table wrapper from below.
+    // Tags whose textarea is appended *inside* the element, where that is valid flow content;
+    // every other block receives it as a sibling. DIV is the synthetic table wrapper below.
     const AREA_INSIDE = new Set(["LI", "BLOCKQUOTE", "DIV", "FIGURE"]);
     // Each commentable block's comment affordance, so a thread box can be placed above it.
     const affordanceHead = new WeakMap();
@@ -650,6 +236,7 @@
       const btn = document.createElement("button");
       btn.type = "button";
       btn.className = "cbtn";
+      btn.dataset[AFFORDANCE_ATTR] = "";
       btn.title = "Comment on this";
       btn.textContent = "💬";
       const area = makeCommentArea("Comment on this…");
@@ -663,20 +250,14 @@
 
     function attachElementComments(bodyEl, sectionId) {
       let n = 0;
-      const targets = [];
-      for (const c of Array.from(bodyEl.children)) {
-        const tag = c.tagName;
-        if (tag === "UL" || tag === "OL") {
-          for (const li of Array.from(c.children)) if (li.tagName === "LI") targets.push(li);
-        } else if (tag === "TABLE") {
-          const w = document.createElement("div");
-          c.replaceWith(w);
-          w.appendChild(c);
-          targets.push(w);
-        } else if (COMMENT_BLOCK_TAGS.includes(tag)) {
-          targets.push(c);
-        }
-      }
+      // A table gets a wrapper to carry the affordances, which a <table> itself cannot hold.
+      const targets = commentTargets(bodyEl).map((t) => {
+        if (t.tagName !== "TABLE") return t;
+        const w = document.createElement("div");
+        t.replaceWith(w);
+        w.appendChild(t);
+        return w;
+      });
       // prevBlockTexts holds an entry only for a "changed" non-decisions section
       // (see buildDiff), so this lookup alone selects which sections mark blocks: a
       // "new" section relies on its section badge (every block is new), an
@@ -689,196 +270,31 @@
       }
     }
 
-    // Collapse each Build order step to its bold heading, opening the detail on click — what lets
-    // the section sit in the must-review tier without opening at full length. The step shape is
-    // `N. **<heading>** — <detail>` (plan-authoring.md § Template); markdown puts that heading
-    // directly under the <li> in a tight list and inside a wrapping <p> in a loose one (blank
-    // lines between steps), and both are handled. A step that does not open with a bold heading,
-    // or carries nothing behind one, is left alone — graceful degradation for plans predating the
-    // shape.
-    //
-    // Must run *after* attachElementComments, for two reasons. The 💬 button and its textarea are
-    // by then direct children of the <li>, so draining the <li> up to the first affordance leaves
-    // them outside the nested <details> and a collapsed step stays commentable. And stripping the
-    // separator below rewrites a text node inside the <li>, which attachElementComments reads for
-    // the comment excerpt and for block-changed diff matching — run it first and every step reads
-    // as changed on a revise re-launch.
-    const STEP_SEP_RE = /^\s*[—–-]\s*/;
-    function collapseBuildOrderSteps(bodyEl) {
-      // First element child, but only when nothing except whitespace precedes it.
-      const leadEl = (el) => {
-        for (let n = el.firstChild; n; n = n.nextSibling) {
-          if (n.nodeType === 3) { if (n.data.trim()) return null; continue; }
-          return n.nodeType === 1 ? n : null;
-        }
-        return null;
-      };
-      const isAffordance = (n) =>
-        n.nodeType === 1 && (n.classList.contains("cbtn") || n.classList.contains("comment-input"));
-
-      // Safe to iterate the live collection: the loop only rearranges each <li>'s own children.
-      for (const ol of bodyEl.querySelectorAll(":scope > ol")) {
-        for (const li of ol.children) {
-          if (li.tagName !== "LI") continue;
-          const head = leadEl(li); // the <strong> in a tight list, the wrapping <p> in a loose one
-          const strong = head && head.tagName === "P" ? leadEl(head) : head;
-          if (!strong || strong.tagName !== "STRONG") continue;
-
-          const owner = strong.parentNode; // only needed to put the heading back on the skip path
-          const sep = strong.nextSibling; // the "— " between heading and detail, in either shape
-          const sum = document.createElement("summary");
-          sum.appendChild(strong); // detaching it leaves the <li> holding detail + affordances only
-          let hasDetail = false;
-          for (let n = li.firstChild; n && !isAffordance(n); n = n.nextSibling) {
-            if (n.textContent.replace(STEP_SEP_RE, "").trim()) { hasDetail = true; break; }
-          }
-          if (!hasDetail) { owner.insertBefore(strong, owner.firstChild); continue; }
-
-          const inner = document.createElement("div");
-          inner.className = "step-body";
-          while (li.firstChild && !isAffordance(li.firstChild)) inner.appendChild(li.firstChild);
-          // Drop the separator; it reads as a stray dash once heading and detail are split apart.
-          if (sep && sep.nodeType === 3) sep.data = sep.data.replace(STEP_SEP_RE, "");
-          const det = document.createElement("details");
-          det.className = "step";
-          det.appendChild(sum);
-          det.appendChild(inner);
-          li.insertBefore(det, li.firstChild);
-        }
-      }
-    }
-
-    // Fold a figure-bearing container's prose into a disclosure beneath the figure, so it opens on
-    // the figure alone — plan-figures.md § How the page shows a figure holds what that buys and
-    // what it leaves untouched.
-    //
-    // Must run *after* attachElementComments, for the same two reasons collapseBuildOrderSteps
-    // gives: a block's comment input is by then its own child or its next sibling, so moving the
-    // block's run of children carries the input with it, and the text a thread entry matches
-    // against was captured before the affordances joined the element.
-    //
-    // Build order is excluded by the caller (STEP_COLLAPSE_TYPES) — its steps already open at
-    // their headings, and folding the list on top of that buries the section twice. A decisions
-    // section is excluded by its type, not by the shape it rendered as: the caller hands this its
-    // preamble container, where a figure targeting it lands, so the preamble's prose folds while
-    // the cards — which carry the Alternative toggle — stay outside and visible. Keying on the
-    // type matters because a decisions body that fails card detection renders as plain prose, and
-    // folding *that* would put every Question / Recommendation / Alternative behind one click.
-    function foldProseUnderFigure(bodyEl, open) {
-      // Bail before allocating: most sections carry no figure, three per plan being the cap.
-      if (!bodyEl.querySelector(":scope > figure")) return;
-      // Every figure stays out — one per section is the rule, and a second one buried behind a
-      // text label would be invisible, where left in place it merely reads as unfolded.
-      // A figure's own textarea is placed inside it (AREA_INSIDE), so every other child is prose.
-      const rest = Array.from(bodyEl.children).filter((c) => c.tagName !== "FIGURE");
-      if (!rest.length) return;
-      const det = document.createElement("details");
-      det.className = "fold";
-      det.open = open;
-      const sum = document.createElement("summary");
-      sum.textContent = FOLD_LABEL;
-      det.appendChild(sum);
-      for (const c of rest) det.appendChild(c);
-      bodyEl.appendChild(det); // after the figures, now the body's only other children
-    }
-
-    function renderSection(section) {
-      const det = document.createElement("details");
-      det.className = "section" + (section.type === "context" ? " is-context" : "");
-      det.id = `sec-${section.id}`;
-      // status is null outside diff mode, else "new" | "changed" | "unchanged"
-      const status = diff.active ? (diff.sectionStatus.get(section.id) || "unchanged") : null;
-      // diff mode overrides the default-open set: open changed/new, collapse unchanged
-      if (status) det.open = (status === "new" || status === "changed");
-      else if (OPEN_TYPES.has(section.type)) det.open = true;
-
-      const sum = document.createElement("summary");
-      sum.innerHTML = `<span class="sec-title">${escapeHtml(section.title)}</span>`;
-      if (status === "new" || status === "changed") {
-        sum.innerHTML += ` <span class="badge badge-diff">${status === "new" ? "New" : "Changed"}</span>`;
-      }
-      if (section.type === "risks" && section.itemCount) {
-        sum.innerHTML += ` <span class="badge badge-risk">${section.itemCount}</span>`;
-      }
-      det.appendChild(sum);
-
-      const body = document.createElement("div");
-      body.className = "sec-body";
-      let isCards = false;
-      let preEl = null;
-
-      if (section.type === "decisions") {
-        const { items, preamble } = parseDecisions(section.body);
-        if (items.length) {
-          isCards = true;
-          if (preamble) {
-            const pre = document.createElement("div");
-            pre.innerHTML = md(preamble);
-            body.appendChild(pre);
-            preEl = pre;
-          }
-          // changed Decisions section: highlight cards whose signature is absent from prev
-          const prevSigs = status === "changed" ? diff.prevDecisionSigs.get(section.id) : null;
-          items.forEach((it, i) => {
-            const card = renderDecisionCard(it, i + 1);
-            if (prevSigs && !prevSigs.has(decisionSig(it))) card.classList.add("card-changed");
-            body.appendChild(card);
-          });
-        }
-      }
-      if (!isCards) {
-        body.innerHTML = md(section.body); // shape-detection fallback: render as markdown
-      }
-      det.appendChild(body);
-      return { det, bodyEl: body, isCards, preEl };
-    }
-
-    function highlightCode(root) {
-      root.querySelectorAll("pre code").forEach((el) => {
-        if (el.classList.contains("language-mermaid")) return; // rendered as a diagram instead
-        window.hljs.highlightElement(el);
-      });
-    }
-
-    async function renderMermaid(root) {
-      const nodes = [];
-      root.querySelectorAll("pre code.language-mermaid").forEach((code) => {
-        const div = document.createElement("div");
-        div.className = "mermaid";
-        div.textContent = code.textContent;
-        const pre = code.closest("pre");
-        // Wrap the diagram — and the caption paragraph right after the fence, when there is
-        // one — in a <figure>, so a mermaid figure is the same commentable unit as an inline-SVG
-        // one and its comment carries kind:"figure" instead of routing as prose.
-        const fig = document.createElement("figure");
-        // The prev-plan side of the diff holds this figure as its fence source (a PRE), while the
-        // live side is this FIGURE carrying mermaid's injected CSS — they can never compare equal,
-        // so the block-changed test skips a figure carrying this flag.
-        fig.dataset.mermaidFigure = "1";
-        pre.replaceWith(fig);
-        fig.appendChild(div);
-        const cap = fig.nextElementSibling;
-        if (cap && cap.tagName === "P") {
-          const fc = document.createElement("figcaption");
-          while (cap.firstChild) fc.appendChild(cap.firstChild);
-          cap.remove();
-          fig.appendChild(fc);
-        }
-        nodes.push(div);
-      });
-      if (nodes.length) {
-        try {
-          // suppressErrors keeps a single bad fence from aborting the batch — valid sibling
-          // fences still render; the failing one stays as its (un-rendered) source text.
-          await mermaid.run({ nodes, suppressErrors: true });
-        } catch (err) {
-          console.error("mermaid render error", err);
-        }
+    // The renderer's `renderDiagrams` hook. The library is this page's alone: an artifact
+    // host renders `<pre class="mermaid">` itself and the export loads nothing.
+    async function renderMermaid(nodes) {
+      if (!nodes.length) return;
+      try {
+        // Loaded lazily, inside both the guard and the try: a plan with no diagram never
+        // fetches it, and a CDN that does not answer leaves the fences un-rendered rather
+        // than taking the page.
+        const { default: mermaid } = await import("https://esm.sh/mermaid@11.15.0");
+        // Read once: mermaid bakes its theme at initialize, so an OS theme flip mid-review
+        // leaves diagrams in the previous theme until the page is reloaded.
+        const darkScheme = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        mermaid.initialize({ startOnLoad: false, theme: darkScheme ? "dark" : "default", securityLevel: "strict" });
+        // suppressErrors keeps a single bad fence from aborting the batch — valid sibling
+        // fences still render; the failing one stays as its (un-rendered) source text.
+        await mermaid.run({ nodes, suppressErrors: true });
+      } catch (err) {
+        console.error("mermaid render error", err);
       }
     }
 
     // --- conversation thread (rounds already submitted) ---
     let THREAD = [];
+    // As the renderer handed it back: its shell ids are not this page's to know.
+    let HERO_EL = null;
     let DECISIONS_SECTION_ID = "";
     const threadBoxes = new Map();
 
@@ -886,13 +302,16 @@
     // has its block id to fall back on.
     const entrySection = (e) => (e.anchor && e.anchor.section) || sectionOfBlockId(e.block, DECISIONS_SECTION_ID);
 
-    // Resolve an entry to the block it belongs under, or null to send it to the log alone.
-    // A figure resolves by section — § Figures layer allows one per section, and a figure's own
-    // text is an SVG's run-together labels or mermaid's injected CSS, neither of them an anchor.
+    // The block an entry belongs under, or null to send it to the log alone. A figure
+    // resolves by section — § Figures layer allows one each, and a figure's own text is an
+    // SVG's run-together labels or mermaid's injected CSS, neither of them an anchor.
     function findAnchorTarget(e) {
       const secId = entrySection(e);
       if (!secId) return null;
-      const sec = document.getElementById(`sec-${secId}`);
+      // The hero is the one "section" whose container is not a `sec-` element.
+      const sec = secId === HERO_SECTION_ID
+        ? HERO_EL
+        : document.getElementById(`sec-${secId}`);
       if (!sec) return null;
       if (e.kind === "figure") return sec.querySelector("figure");
       const want = anchorNorm(e.anchor && e.anchor.excerpt);
@@ -953,6 +372,7 @@
       if (!box) {
         box = document.createElement("div");
         box.className = "thread";
+        box.dataset[AFFORDANCE_ATTR] = "";
         // Above the block's own comment input, so the history reads downward and the form sits
         // last. Only when the input is a child of the block: the sibling-placed case already
         // lands that way, and a moved input would drag the thread along with it.
@@ -964,9 +384,8 @@
       return box;
     }
 
-    // Replay each entry under its block where the anchor still resolves. Returns the ids that
-    // did not resolve, which the log below marks — the log carries every entry either way, so
-    // this pass duplicates rather than moves.
+    // Replay each entry under its block where the anchor resolves, returning the ids that
+    // did not. The log carries every entry either way, so this pass duplicates, never moves.
     function renderThread() {
       const loose = new Set();
       for (const round of THREAD) {
@@ -1012,13 +431,13 @@
       const { id, markdown, lang, prevMarkdown, thread, instance } = await res.json();
       THREAD = Array.isArray(thread) ? thread : [];
       INSTANCE = instance || null;
+      // The stylesheet reads this to pick a line length: a ch-based measure is half a line
+      // in Japanese (plan-view.css, --measure).
+      document.documentElement.lang = lang === "ja" ? "ja" : "en";
       if (lang === "ja") {
         SWITCH_MSG = "この Decision を Alternative に切り替える";
-        DIFF_BANNER = (n, removed) => `🔍 前回レビューから ${n} 個のセクションが変更・追加されました${removed ? `（削除 ${removed} 件）` : ""} — 変更箇所を以下にハイライト`;
-        DIFF_BANNER_NONE = "🔍 前回レビューからセクションの変更はありません";
         KBD_HINT = "<kbd>a</kbd> 承認 · <kbd>r</kbd> 変更を依頼 · <kbd>⌘/Ctrl+↵</kbd> 送信";
         APPLY_NOTE = "変更を依頼すると、コメントはその時点でプラン文書に反映されます。質問のコメントはプランを変えずにこのページ上で回答します。";
-        FOLD_LABEL = "文章を読む";
         TH = {
           you: "あなた",
           round: (n) => `ラウンド ${n}`,
@@ -1034,57 +453,28 @@
       document.getElementById("kbd-hint").innerHTML = KBD_HINT;
       document.getElementById("apply-note").textContent = APPLY_NOTE;
 
-      let { preamble, sections } = parseSections(markdown);
-      if (!sections.length) sections = [{ title: "Plan", type: "other", id: "plan", body: markdown }];
+      const model = preparePlan(markdown, id);
+      const { sections } = model;
 
       // diff mode: only on a revise re-launch where serve.mjs shipped a prev plan
       if (typeof prevMarkdown === "string" && prevMarkdown.trim()) diff = buildDiff(prevMarkdown, sections, collectBlockTexts);
 
       DECISIONS_SECTION_ID = (sections.find((s) => s.type === "decisions") || {}).id || "";
-      const ovSection = sections.find((s) => s.type === "overview");
-      const ov = parseOverview(ovSection ? ovSection.body : "");
-      const risksSection = sections.find((s) => s.type === "risks");
-      const riskCount = risksSection ? countListItems(risksSection.body) : 0;
-      if (risksSection) risksSection.itemCount = riskCount; // reused by the section badge below
-      renderHeader(ov, id, riskCount);
-      renderDiffBanner();
-      renderNav(sections);
 
-      const planEl = document.getElementById("plan");
-      renderPreamble(preamble, planEl);
+      // Built here rather than at module scope because its labels come from `lang`.
+      const renderer = createRenderer({
+        // The "Changed" / "New" badges stay English UI chrome and are not localized.
+        labels: LABELS[lang] || LABELS.en,
+        diff,
+        hooks: {
+          decorateDecisionCard,
+          decorateSection: ({ bodyEl, section }) => attachElementComments(bodyEl, section.id),
+          renderDiagrams: renderMermaid,
+        },
+      });
 
-      const bodyRefs = [];
-      for (const s of sections) {
-        const { det, bodyEl, isCards, preEl } = renderSection(s);
-        planEl.appendChild(det);
-        bodyRefs.push({ bodyEl, section: s, isCards, preEl });
-      }
-
-      // Run highlight + mermaid over the whole container first (mermaid replaces the
-      // <pre> fence with a .mermaid div), then attach per-element comments so the comment
-      // affordances land on stable rendered blocks (decision cards carry their own).
-      highlightCode(planEl);
-      await renderMermaid(planEl);
-      // Both passes stay inside the one section body they are handed, so the collapse's
-      // must-run-after-comments ordering is per-section and needs no document-wide barrier.
-      for (const r of bodyRefs) {
-        // Folds start closed; a section the diff marks new or changed opens, so nothing edited
-        // since the previous round is read past folded.
-        const status = diff.sectionStatus.get(r.section.id);
-        const edited = status === "new" || status === "changed";
-        if (r.isCards) {
-          // A card section's cards carry their own comment affordances and stay visible; its
-          // preamble does not, and that is where a figure targeting this section lands — so the
-          // preamble is both what to walk and the only prose there is to fold.
-          if (r.preEl) { attachElementComments(r.preEl, r.section.id); foldProseUnderFigure(r.preEl, edited); }
-          continue;
-        }
-        attachElementComments(r.bodyEl, r.section.id);
-        if (STEP_COLLAPSE_TYPES.has(r.section.type)) collapseBuildOrderSteps(r.bodyEl);
-        // A decisions section that did not resolve into cards renders as plain prose; folding it
-        // would hide the very items the gate exists to have judged.
-        else if (r.section.type !== "decisions") foldProseUnderFigure(r.bodyEl, edited);
-      }
+      const { planEl, heroEl } = await renderer.renderPlan(model);
+      HERO_EL = heroEl;
 
       // After the collapse, so a thread stays outside the <details> and remains visible on a
       // collapsed Build order step. Matching reads the anchor key captured before it, not live
@@ -1104,9 +494,8 @@
 
     document.getElementById("send-btn").addEventListener("click", submit);
 
-    // Focus-independent keyboard shortcuts. macOS Full Keyboard Access (off by
-    // default) makes Chrome exclude the decision radios and Send button from Tab
-    // order, so a/r/⌘|Ctrl+Enter are the reliable keyboard path regardless.
+    // Focus-independent, because macOS Full Keyboard Access (off by default) makes Chrome
+    // drop the radios and Send button from Tab order.
     document.addEventListener("keydown", (e) => {
       if (e.isComposing) return;                                            // mid-IME (e.g. Japanese) — don't hijack
       if (document.getElementById("app").classList.contains("submitted")) return; // gate already sent
@@ -1127,9 +516,8 @@
     });
 
     // Watch for the relaunched server. `instance` changes per process, so polling the old one
-    // while it shuts down returns the value already held and reloads nothing; a connection
-    // failure in between is the expected gap, not an error. /api/instance rather than /api/plan:
-    // this runs every couple of seconds for as long as the caller takes.
+    // while it shuts down reloads nothing, and a connection failure in between is the expected
+    // gap. /api/instance rather than /api/plan: this runs for as long as the caller takes.
     function startPolling() {
       if (!INSTANCE) return; // nothing to compare against — a reload would fire on the first poll
       const deadline = Date.now() + POLL_GIVEUP_MS;
@@ -1170,8 +558,7 @@
         // here is the keydown guard's first early-return, so re-entry can't slip through.
         document.getElementById("app").classList.add("submitted");
         const done = document.getElementById("done");
-        // Only a revise brings the gate back: the caller applies the comments and relaunches on
-        // the same port, so the tab waits here rather than closing the loop.
+        // Only a revise brings the gate back, on the same port, so the tab waits here.
         if (state.decision === "revise") {
           done.textContent = POLL_MSG;
           startPolling();

@@ -1,0 +1,503 @@
+:root {
+  /* Palette: warm, low-glare ground with a green accent (mirrors the eli5 artifact) */
+  --page-bg: #eff2ee;      /* page ground — never the card surface */
+  --bg: #ffffff;           /* card / panel surface */
+  --bg-soft: #e6ebe7;
+  --fg: #16211c;
+  --muted: #5a6862;
+  --border: #cbd5cf;
+  --accent: #0c6155;
+  --accent-soft: #d7e7e1;
+  --accent-ink: #07443c;
+  --on-accent: #ffffff;   /* text on an --accent fill */
+  --approve: #1a7f37;
+  --approve-bg: #e2f0e7;
+  --approve-border: #a9cdb8;
+  --revise: #8a5a12;
+  --revise-bg: #f6ead9;
+  --revise-border: #dcc39a;
+  --rec: var(--approve);
+  --risk: var(--revise);
+  --risk-bg: var(--revise-bg);
+  --risk-border: var(--revise-border);
+  --switched-bg: #faf5ee;
+  --hover: #e2e9e4;
+  /* diff "changed" accent — its own hue, not the revise amber. Amber already carries two
+     other meanings on a block's left edge (a Risks card's stripe, via --risk, and the
+     request-changes chrome), so a changed risk and an unchanged one were the same 3px of the
+     same colour. A cool hue also says the right thing: amber is "something to act on",
+     this is "this moved since you last looked". */
+  --changed: #2c6e9b;
+  --changed-bg: #e4eff7;
+  --banner-border: #a9cadf;
+  --banner-fg: #1d4f72;
+  --bar-h: 64px;
+  /* Type roles. Not theme-dependent, so unlike the colours these are defined once.
+     Latin glyphs come from the first family, Japanese from the second — the display
+     role pairs a Latin serif with a Japanese mincho on purpose, against a gothic body. */
+  --font-display: "Newsreader", "Zen Old Mincho", ui-serif, Georgia, serif;
+  --font-body: "Noto Sans JP", -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Sans", Meiryo, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  color-scheme: light;
+}
+/* Dark theme: same roles, re-toned. Every color in :root is redefined here, so no
+   rule outside these blocks may hardcode a hex.
+   The token list is written twice on purpose. The viewer has three states: an
+   explicit light stamp, an explicit dark stamp, and no stamp at all (follow the
+   OS). A token defined behind only one of the two selectors below is unset in the
+   state the other one covers, which renders one theme text on the other theme
+   ground. Keep the two lists identical. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --page-bg: #101613;
+    --bg: #19221e;
+    --bg-soft: #212c27;
+    --fg: #e6ece8;
+    --muted: #93a29a;
+    --border: #33423a;
+    --accent: #5ac6ae;
+    --accent-soft: #1e332c;
+    --accent-ink: #a5dfd1;
+    --on-accent: #0c1916;
+    --approve: #63c882;
+    --approve-bg: #1b3324;
+    --approve-border: #2f5c3f;
+    --revise: #d8ab53;
+    --revise-bg: #33291a;
+    --revise-border: #5c4a27;
+    --switched-bg: #262019;
+    --hover: #2a3831;
+    --changed: #79b6dc;
+    --changed-bg: #172935;
+    --banner-border: #2e4c62;
+    --banner-fg: #bfdcf0;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+    --page-bg: #101613;
+    --bg: #19221e;
+    --bg-soft: #212c27;
+    --fg: #e6ece8;
+    --muted: #93a29a;
+    --border: #33423a;
+    --accent: #5ac6ae;
+    --accent-soft: #1e332c;
+    --accent-ink: #a5dfd1;
+    --on-accent: #0c1916;
+    --approve: #63c882;
+    --approve-bg: #1b3324;
+    --approve-border: #2f5c3f;
+    --revise: #d8ab53;
+    --revise-bg: #33291a;
+    --revise-border: #5c4a27;
+    --switched-bg: #262019;
+    --hover: #2a3831;
+    --changed: #79b6dc;
+    --changed-bg: #172935;
+    --banner-border: #2e4c62;
+    --banner-fg: #bfdcf0;
+    color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 15px;
+  color: var(--fg);
+  background: var(--page-bg);
+  line-height: 1.85;
+  -webkit-font-smoothing: antialiased;
+}
+#app {
+  display: grid;
+  grid-template-columns: 216px minmax(0, 1fr);
+  gap: 36px;
+  max-width: 1160px;
+  margin: 0 auto;
+  padding: 28px 28px calc(var(--bar-h) + 40px);
+}
+/* Below this the rail has no room to sit beside the plan; it becomes a strip above it. */
+@media (max-width: 900px) {
+  #app { grid-template-columns: minmax(0, 1fr); gap: 20px; padding: 20px 16px calc(var(--bar-h) + 40px); }
+  #toc { position: static; max-height: none; border-right: 0; padding-right: 0;
+         border-bottom: 1px solid var(--border); padding-bottom: 10px; }
+  #toc a { display: inline-block; margin-right: 14px; }
+}
+/* summary header */
+header.plan-head {
+  grid-column: 1 / -1;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 14px;
+  margin-bottom: 4px;
+}
+header.plan-head .eyebrow {
+  color: var(--muted); font-family: var(--font-mono); font-size: 11px;
+  letter-spacing: .08em; text-transform: uppercase;
+}
+header.plan-head h1 {
+  font-family: var(--font-display); font-weight: 600;
+  font-size: clamp(24px, 2.6vw, 31px); margin: 6px 0 14px; line-height: 1.35;
+  letter-spacing: -.005em; text-wrap: balance; max-width: 46ch;
+}
+header.plan-head h1 code { font-family: var(--font-mono); font-size: 0.78em; }
+#plan-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip {
+  display: inline-flex; align-items: baseline; gap: 7px;
+  font-family: var(--font-mono); font-size: 11px; letter-spacing: .01em; color: var(--fg);
+  background: var(--bg-soft); border: 1px solid var(--border);
+  border-radius: 999px; padding: 3px 11px;
+}
+.chip b { color: var(--muted); font-weight: 500; text-transform: uppercase; letter-spacing: .06em; font-size: 10px; }
+.chip.risk { background: var(--risk-bg); border-color: var(--risk-border); color: var(--risk); }
+.chip.risk b { color: var(--risk); }
+/* Scope is descriptive prose, not an enum — give it a labeled meta row that wraps,
+   instead of cramming it into a fixed-shape pill like Difficulty / Risks */
+.meta-scope { margin-top: 8px; display: flex; gap: 8px; align-items: baseline; font-size: 12px; line-height: 1.5; }
+.meta-scope .meta-label {
+  flex: none; font-family: var(--font-mono); font-size: 10px; font-weight: 500; letter-spacing: .06em;
+  text-transform: uppercase; color: var(--muted); padding-top: 3px;
+}
+.meta-scope .meta-val { min-width: 0; }
+/* The whole-change picture, above the plan and across both columns — the one thing a reader
+   who has never seen this plan meets first. Hidden and taking no space when the figures layer
+   carried no Hero block. */
+#hero {
+  grid-column: 1 / -1;
+  margin: 14px 0 2px; padding: 16px 18px;
+  border: 1px solid var(--border); border-radius: 12px; background: var(--bg);
+}
+#hero figure { margin: 0; text-align: center; }
+#hero svg { max-width: 100%; height: auto; }
+#hero figcaption {
+  margin-top: 10px; font-size: 13px; line-height: 1.6; color: var(--fg);
+  max-width: 60ch; margin-inline: auto; text-wrap: balance;
+}
+/* section nav */
+#toc {
+  position: sticky; top: 16px; align-self: start;
+  max-height: calc(100vh - 32px); overflow: auto;
+  font-size: 13px; border-right: 1px solid var(--border); padding-right: 14px;
+}
+#toc .toc-title {
+  font-family: var(--font-mono); font-size: 10px; font-weight: 500; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--muted); margin-bottom: 10px;
+}
+#toc a {
+  display: block; color: var(--muted); text-decoration: none;
+  padding: 5px 0 5px 12px; border-left: 2px solid transparent; line-height: 1.45;
+}
+#toc a:hover { color: var(--accent); border-left-color: var(--border); }
+#toc a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 3px; }
+/* main */
+main#plan { min-width: 0; }
+.preamble { color: var(--muted); font-size: 13px; margin: 0 0 12px; }
+.preamble blockquote { border-left: 3px solid var(--border); margin: 0; padding: 2px 12px; }
+details.section {
+  border: 1px solid var(--border); border-radius: 10px;
+  margin: 12px 0; padding: 0 16px; background: var(--bg);
+}
+details.section[open] { padding-bottom: 8px; }
+/* Disclosure affordance, shared by sections, by the Build order steps inside them
+   (details.step, collapsed by collapseBuildOrderSteps), and by the prose a figure-bearing
+   section folds away (details.fold, foldProseUnderFigure) — one glyph, one rotation. */
+details.section > summary, details.step > summary, details.fold > summary {
+  cursor: pointer; list-style: none; display: flex;
+}
+details.section > summary::-webkit-details-marker,
+details.step > summary::-webkit-details-marker,
+details.fold > summary::-webkit-details-marker { display: none; }
+details.section > summary::before, details.step > summary::before,
+details.fold > summary::before {
+  content: "▸"; color: var(--muted); transition: transform .12s;
+}
+details.section[open] > summary::before,
+details.step[open] > summary::before,
+details.fold[open] > summary::before { transform: rotate(90deg); }
+/* wrap, so the collapsed section's gist takes a row of its own under the title */
+details.section > summary { padding: 12px 0; align-items: center; gap: 4px 10px; font-weight: 600; flex-wrap: wrap; }
+details.section > summary::before { font-size: 12px; }
+/* Context = the "why" framing; tint it so it reads as lead context, not a structural section */
+details.section.is-context { background: var(--bg-soft); }
+details.section.is-context > summary .sec-title { color: var(--muted); }
+.sec-title {
+  font-family: var(--font-display); font-weight: 600; font-size: 18px;
+  letter-spacing: -.003em;
+}
+/* Progressive disclosure: a collapsed section says what it is about on its own header line,
+   and the copy disappears the moment the section opens, where the body carries the same
+   sentence in full. Nothing is moved out of the body to make this — a comment still anchors
+   on the paragraph this quotes. */
+.sec-gist {
+  flex: 1 1 100%; min-width: 0;
+  padding-left: 18px;  /* aligns the wrapped row under the title, past the disclosure glyph */
+  color: var(--muted); font-size: 12px; font-weight: 400; line-height: 1.5;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+details.section[open] > summary .sec-gist { display: none; }
+.badge {
+  font-size: 11px; font-weight: 700; border-radius: 999px;
+  padding: 1px 8px; background: var(--bg-soft); color: var(--muted);
+}
+.badge-risk { background: var(--risk-bg); color: var(--risk); }
+/* Running text near 65 characters. Wider than that and the eye loses the line on the way
+   back; the section card itself keeps its full width for tables, code, and figures.
+   `ch` is the width of a `0`, and a CJK glyph is about twice that, so the same cap holds
+   barely half a line of Japanese and wraps well inside the card. Japanese takes the card's
+   own width instead, which the page's 1160px cap already bounds to a readable line. The
+   language reaches this rule from the `lang` the served page sets on the document and the
+   exported page on `#app`. */
+:root { --measure: 68ch; }
+:lang(ja) { --measure: none; }
+.sec-body { padding-top: 2px; }
+.sec-body > p, .step-body > p, .sec-body > ul > li, .sec-body > ol > li,
+.dc-rec > p, .dc-alt > p { max-width: var(--measure); }
+/* .step-body is inside .sec-body, so every .sec-body descendant rule already reaches it;
+   this one needs naming because it is a direct-child selector. */
+.sec-body > :first-child, .step-body > :first-child { margin-top: 4px; }
+.sec-body h1 { font-size: 20px; }
+.sec-body h2 { font-size: 17px; }
+.sec-body h3, .sec-body h4 { font-size: 14px; }
+/* Syntax colours, from this page's own tokens. highlight.js ships themes as stylesheets and
+   an artifact host admits no external stylesheet at all, so the export would silently lose
+   them; written here, both surfaces get the same colours and they match the plan's palette. */
+.hljs-comment, .hljs-quote { color: var(--muted); font-style: italic; }
+.hljs-keyword, .hljs-selector-tag, .hljs-literal, .hljs-doctag { color: var(--accent); font-weight: 500; }
+.hljs-string, .hljs-regexp, .hljs-addition { color: var(--approve); }
+.hljs-number, .hljs-symbol, .hljs-bullet, .hljs-meta, .hljs-deletion { color: var(--revise); }
+.hljs-title, .hljs-name, .hljs-section, .hljs-selector-id, .hljs-selector-class { color: var(--fg); font-weight: 600; }
+.hljs-attr, .hljs-attribute, .hljs-variable, .hljs-template-variable, .hljs-type, .hljs-built_in { color: var(--accent-ink); }
+.hljs-emphasis { font-style: italic; }
+.hljs-strong { font-weight: 600; }
+#hero pre, .sec-body pre {
+  background: var(--bg-soft); border: 1px solid var(--border);
+  border-radius: 8px; padding: 12px 14px; overflow-x: auto;
+  font-family: var(--font-mono); font-size: 12.5px; line-height: 1.6;
+}
+/* the hero centres its figure content, which a code block must not inherit */
+#hero pre { text-align: left; }
+.sec-body code:not(pre code) {
+  font-family: var(--font-mono);
+  background: var(--bg-soft); border-radius: 4px; padding: 1px 5px; font-size: 0.82em;
+}
+.sec-body table { border-collapse: collapse; }
+.sec-body th, .sec-body td { border: 1px solid var(--border); padding: 4px 10px; }
+.sec-body .mermaid, #hero .mermaid { background: var(--bg); text-align: center; margin: 10px 0; }
+/* figures layer: a <figure> the gate merged in, carrying inline SVG */
+.sec-body figure { margin: 12px 0; text-align: center; }
+.sec-body figure svg { max-width: 100%; height: auto; }
+.sec-body figcaption { font-size: 12px; color: var(--muted); margin-top: 6px; }
+/* The prose a figure-bearing section folds away (foldProseUnderFigure). Its summary is a
+   quiet affordance, not a heading, so the figure stays the section's loudest element — the
+   layout it shares with a Build order step's summary is declared with that one below. */
+details.fold > summary { font-size: 12px; color: var(--muted); padding: 4px 0; }
+/* Build order steps: the section sits in the must-review tier yet opens at N one-line
+   headings. The figure fold wants the same quiet line, so the two share it. The disclosure
+   triangle itself is shared with details.section above. */
+details.step > summary, details.fold > summary { align-items: baseline; gap: 8px; }
+details.step > summary::before, details.fold > summary::before { font-size: 10px; }
+details.step > .step-body { padding: 2px 0 2px 18px; }
+.sec-body blockquote { border-left: 3px solid var(--border); margin: 8px 0; padding: 0 12px; color: var(--muted); }
+/* Per-section-type visual form, keyed on the type plan-parse.mjs classified (renderSection
+   writes it to data-section-type). `Source of truth: SECTION_TYPES in plan-parse.mjs; keep in
+   sync` — a type token renamed there silently drops the form here, with nothing to fail. Every rule here is styling alone: a comment anchors on the
+   block elements a section body renders, so none of these may wrap, reorder, or insert text
+   into them — the sequence markers below are pseudo-elements for exactly that reason. */
+
+/* Build order — the sequence made visible: a numbered disc per step, joined by a rail, so the
+   order the work lands in reads without opening a single step. */
+[data-section-type="buildorder"] .sec-body > ol {
+  list-style: none; counter-reset: step; padding-left: 0; margin: 6px 0;
+}
+[data-section-type="buildorder"] .sec-body > ol > li {
+  position: relative; padding: 3px 0 3px 34px; margin: 0;
+}
+[data-section-type="buildorder"] .sec-body > ol > li::before {
+  counter-increment: step; content: counter(step);
+  position: absolute; left: 0; top: 4px;
+  width: 22px; height: 22px; border-radius: 50%;
+  display: grid; place-items: center;
+  font-family: var(--font-mono); font-size: 11px; font-weight: 500;
+  background: var(--accent-soft); color: var(--accent-ink);
+}
+/* A changed step's left bar is painted under the disc, which is 22px wide and starts at the
+   same edge — so on a collapsed step the bar is invisible. Mark the disc instead: it is the
+   form this section already reads by. */
+[data-section-type="buildorder"] .sec-body > ol > li.block-changed::before {
+  background: var(--changed); color: var(--on-accent);
+}
+/* The rail between one disc and the next. Bottom is pulled past the item so it meets the
+   following disc whatever height the step opened to. */
+[data-section-type="buildorder"] .sec-body > ol > li:not(:last-child)::after {
+  content: ""; position: absolute; left: 11px; top: 30px; bottom: -4px;
+  width: 1px; background: var(--border);
+}
+
+/* Risks — one card per item, carrying the risk hue as a stripe rather than a fill, so a long
+   list stays readable. */
+[data-section-type="risks"] .sec-body > ul {
+  list-style: none; padding-left: 0; margin: 6px 0;
+  display: flex; flex-direction: column; gap: 8px;
+}
+[data-section-type="risks"] .sec-body > ul > li {
+  margin: 0; padding: 8px 12px 8px 14px;
+  border: 1px solid var(--border); border-left: 3px solid var(--risk); border-radius: 8px;
+  background: var(--bg);
+}
+
+/* decision cards — question across the top, the two options side by side beneath it, and
+   everything the caller appends (the toggle, the comment affordance) back across the full
+   width. A grid rather than a wrapper element, so the card's children stay where the
+   renderer put them. */
+.decision-card {
+  border: 1px solid var(--border); border-left: 3px solid var(--accent);
+  border-radius: 8px; padding: 10px 14px; margin: 10px 0; background: var(--bg);
+  display: grid; grid-template-columns: 1fr 1fr; gap: 0 12px; align-items: start;
+}
+.decision-card > .dc-q,
+.decision-card > .dc-toggle,
+.decision-card > .comment-btn,
+.decision-card > .comment-input,
+.decision-card > .thread { grid-column: 1 / -1; }
+.decision-card > .comment-btn { justify-self: start; }
+/* An Alternative is an optional field (plan-authoring.md § Template), and the card is a
+   two-column grid — so without one the Recommendation would sit in half a card. */
+.decision-card:not(:has(> .dc-alt)) > .dc-rec { grid-column: 1 / -1; }
+/* One column below the width where two 1fr columns stop holding a paragraph. */
+@media (max-width: 860px) {
+  .decision-card { grid-template-columns: 1fr; }
+}
+.decision-card.switched { border-left-color: var(--revise); background: var(--switched-bg); }
+.dc-q { font-weight: 600; margin-bottom: 8px; }
+.dc-q .dc-tag {
+  display: inline-block; font-size: 11px; font-weight: 700; color: var(--on-accent);
+  background: var(--accent); border-radius: 4px; padding: 1px 7px; margin-right: 6px; vertical-align: 1px;
+}
+.decision-card.switched .dc-q .dc-tag { background: var(--revise); }
+.dc-rec, .dc-alt { font-size: 14px; line-height: 1.8; border-radius: 8px; padding: 10px 12px; margin: 6px 0; }
+.dc-rec { background: var(--approve-bg); border: 1px solid var(--approve-border); }
+.dc-alt { background: var(--bg-soft); border: 1px solid var(--border); color: var(--muted); }
+.decision-card.switched .dc-rec { background: var(--bg-soft); border-color: var(--border); color: var(--muted); }
+.decision-card.switched .dc-alt { background: var(--revise-bg); border-color: var(--revise-border); color: var(--fg); }
+.dc-rec > :first-child, .dc-alt > :first-child { margin-top: 2px; }
+.dc-rec > :last-child, .dc-alt > :last-child { margin-bottom: 2px; }
+.dc-label {
+  display: inline-block; font-size: 10px; font-weight: 700; letter-spacing: .04em;
+  text-transform: uppercase; color: var(--muted); margin-bottom: 2px;
+}
+.dc-rec .dc-label { color: var(--rec); }
+.dc-toggle { display: flex; gap: 14px; margin: 8px 0 2px; font-size: 13px; }
+.dc-toggle label { display: inline-flex; align-items: center; gap: 5px; cursor: pointer; color: var(--muted); }
+.dc-toggle label:has(input:checked) { color: var(--fg); font-weight: 600; }
+/* comment affordances */
+/* Highlight the block under the cursor so the comment target's extent is obvious — the
+   per-element comment model treats each paragraph / list item as its own target. The tint
+   is a step deeper than --bg-soft so it stays visible inside the tinted Context section too. */
+.commentable { position: relative; border-radius: 6px; transition: background .12s; }
+.commentable:hover { background: var(--hover); }
+.cbtn {
+  position: absolute; top: 0; right: -2px; opacity: 0;
+  font-size: 12px; line-height: 1; border: 1px solid var(--border);
+  background: var(--bg); border-radius: 6px; padding: 2px 6px; cursor: pointer;
+  transition: opacity .1s;
+}
+.commentable:hover > .cbtn, .cbtn.has-comment { opacity: 1; }
+.cbtn.has-comment { border-color: var(--revise); }
+.comment-btn {
+  font-size: 12px; color: var(--muted); background: none;
+  border: 1px solid var(--border); border-radius: 6px; padding: 2px 10px; cursor: pointer; margin-top: 6px;
+}
+.comment-btn:hover { color: var(--accent); border-color: var(--accent); }
+.comment-btn.has-comment { color: var(--revise); border-color: var(--revise); font-weight: 600; }
+.comment-input {
+  display: block; width: 100%; min-height: 56px; margin: 6px 0 8px; padding: 8px;
+  font: inherit; font-size: 13px; border: 1px solid var(--accent); border-radius: 6px; resize: vertical;
+  background: var(--bg); color: var(--fg);
+}
+.comment-input[hidden] { display: none; } /* the `display: block` above otherwise defeats the `hidden` attribute */
+/* conversation thread: past rounds replayed under the block they were anchored on, and
+   replayed again in full in the log panel at the end of the plan. */
+.thread { margin: 8px 0 4px; border-left: 3px solid var(--accent); padding-left: 10px; }
+.th-item + .th-item { margin-top: 10px; }
+.th-meta { font-size: 11px; color: var(--muted); letter-spacing: .02em; }
+.th-body { white-space: pre-wrap; font-size: 13px; margin-top: 2px; }
+.th-reply { font-size: 13px; margin-top: 4px; }
+.th-reply > :first-child { margin-top: 0; }
+.th-reply > :last-child { margin-bottom: 0; }
+.th-badge {
+  display: inline-block; font-size: 11px; padding: 1px 7px; border-radius: 999px;
+  background: var(--accent-soft); color: var(--accent-ink); margin-right: 6px; white-space: nowrap;
+}
+.th-badge.pending { background: var(--changed-bg); color: var(--changed); }
+.th-loose { color: var(--revise); font-size: 11px; }
+#log { margin-top: 22px; border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; }
+#log > summary { cursor: pointer; font-weight: 600; }
+.log-round { margin-top: 12px; }
+.log-round > h4 { margin: 0 0 6px; font-size: 12px; color: var(--muted); font-weight: 600; }
+.log-where { font-size: 11px; color: var(--muted); }
+/* diff mode: surfaced only on a revise re-launch (prevMarkdown present).
+   Badges + highlights mark what changed since the user's previous review,
+   so unchanged sections can stay collapsed and the eye goes to the edits. */
+#diff-banner {
+  grid-column: 1 / -1; margin: 6px 0 0; padding: 8px 12px;
+  background: var(--changed-bg); border: 1px solid var(--banner-border); border-radius: 8px;
+  font-size: 13px; color: var(--banner-fg);
+}
+.badge-diff { background: var(--changed-bg); color: var(--changed); }
+/* changed block: an inset left bar and nothing else. A fill here reads as the page's own
+   ground the moment most blocks are changed — the ordinary case on a revise re-launch — and
+   the marker stops marking anything. box-shadow rather than a border survives the
+   .commentable:hover background swap, so the bar stays visible on hover; --changed rather
+   than --accent, so it never reads as the base card border. */
+.commentable.block-changed { box-shadow: inset 3px 0 0 0 var(--changed); padding-left: 10px; }
+/* changed decision card: a thick --changed left bar + faint wash, replacing the
+   base --accent left border, so "this Decision changed" reads at a glance (far
+   more legible than a thin outline). Scoped :not(.switched) so a card toggled to
+   its alternative still shows the .switched styling — the active user action
+   wins over the historical diff mark. */
+.decision-card.card-changed:not(.switched) {
+  border-left: 5px solid var(--changed);
+  background: var(--changed-bg);
+}
+/* sticky decision bar */
+#bar {
+  position: fixed; left: 0; right: 0; bottom: 0; height: var(--bar-h);
+  display: flex; align-items: center; gap: 16px; padding: 0 24px;
+  background: var(--bg); border-top: 1px solid var(--border); box-shadow: 0 -2px 8px rgba(0,0,0,0.04);
+}
+#bar .decision { display: flex; gap: 8px; }
+#bar label.choice {
+  display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--border);
+  border-radius: 8px; padding: 6px 14px; cursor: pointer; font-size: 14px;
+}
+#bar label.choice:has(input:checked).approve { border-color: var(--approve); color: var(--approve); font-weight: 600; }
+#bar label.choice:has(input:checked).revise { border-color: var(--revise); color: var(--revise); font-weight: 600; }
+#bar .spacer { flex: 1; }
+#bar .count { color: var(--muted); font-size: 13px; }
+/* keyboard-shortcut hint: the decision bar's native controls drop out of Tab
+   order when macOS Full Keyboard Access is off (Chrome mirrors that setting),
+   so the a/r/↵ shortcuts are the reliable keyboard path — surface them here. */
+/* .apply-note says what "Request changes" does to the plan document, so the
+   choice is made with that in view */
+#bar .kbd-hint, #bar .apply-note { color: var(--muted); font-size: 12px; }
+#bar .kbd-hint kbd {
+  font: inherit; background: var(--bg-soft); border: 1px solid var(--border);
+  border-radius: 4px; padding: 0 5px;
+}
+#send-btn {
+  font-size: 14px; font-weight: 600; color: var(--on-accent); background: var(--accent);
+  border: none; border-radius: 8px; padding: 8px 20px; cursor: pointer;
+}
+#send-btn:disabled { background: var(--border); color: var(--muted); cursor: not-allowed; }
+#status { color: var(--revise); font-size: 13px; }
+#done { grid-column: 1 / -1; text-align: center; padding: 40px; font-size: 16px; color: var(--approve); }
+/* #hero is a sibling of both and carries live comment affordances, so it dims too —
+   otherwise its 💬 button stays clickable for a round that has already been sent. */
+#app.submitted main#plan, #app.submitted #toc, #app.submitted #hero { opacity: 0.5; pointer-events: none; }
+
+/* Reduced motion: the only motion here is the disclosure triangle's rotation and the
+   commentable block's hover tint. Both are affordance feedback, so they stop rather than
+   slow down. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition-duration: 0s !important; animation-duration: 0s !important; }
+}

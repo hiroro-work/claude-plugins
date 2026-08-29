@@ -25,7 +25,8 @@ Which prose folds follows the position the figure took ([`visual-plan-review.md`
   - a **decision-item** section — the fork: the options side by side and the one thing that separates them.
   - the **Build order** — the sequence: which step rests on which, and where the work crosses from one file or layer to the next.
   - any other **prose** section — what that section is there to settle. Where it is the plan's overview written as prose rather than field bullets (mobpro's `What we're building`), the field-bullet claim above is the one to write to.
-- **One figure per section, three per plan.** Both caps are hard. When one section looks like it needs a second figure, the plan's Approach is doing too much at once.
+  - the **`## Hero`** block ([`visual-plan-review.md`](visual-plan-review.md) § Figures layer's **The one reserved heading — `## Hero`** paragraph) — what the whole change is, for a reader who knows nothing about it yet: what stands now, what this plan moves, what the reader ends up with. It is read before everything else on the page, so it may carry nothing that only makes sense once the plan has been read.
+- **One figure per section, three per plan.** Both caps are hard. When one section looks like it needs a second figure, the plan's Approach is doing too much at once. The `Hero` figure sits **outside** that count — the caps bound what a reader takes in per section, and the hero belongs to no section — so a plan carrying one holds the per-section figures plus the hero, and only ever one hero.
 - **A caption is required**, one sentence, stating what the figure claims — not what it depicts. The caption is what a reader gets when the figure fails to render, and it is also what stands beside the figure while the folded prose is still closed (§ How the page shows a figure), so write it to stand alone. In an inline SVG it is the `<figcaption>`; under a mermaid fence it is the line directly below the closing fence — and omitting it there is not free, since the viewer takes whatever paragraph follows the fence as the caption and styles it as one.
 
 ## Wording
@@ -48,18 +49,18 @@ Keep an SVG under 900 units wide, always with a `viewBox` and never a fixed `wid
 
 The served page is the figure's only host, so a figure takes its colours from the viewer's own tokens: **`var(--token, #fallback)` and nothing else — no bare hex.** The `var()` keeps the figure readable in both light and dark; the fallback keeps it visible when `.figures.md` is opened somewhere the viewer's stylesheet does not reach (an editor preview), where an unresolved `var()` would blank every shape.
 
-Tokens available to a figure (closed list — `Source of truth: scripts/plan-review/public/index.html`'s `:root` block; keep in sync, and add a token here only after it exists there in both the light and the dark definition):
+Tokens available to a figure — the **token names** are the closed list, and `Source of truth: scripts/plan-review/public/plan-view.css`'s `:root` block; add a name here only once it exists there in both the light and the dark definition. The **fallback** values are not held to that: they are only ever seen outside the viewer, so any readable hex in the right register does, and re-tuning the stylesheet's palette obliges nothing here.
 
 | Token | Fallback | Use |
 | --- | --- | --- |
 | `--bg` | `#ffffff` | a shape's fill — the surface a box sits on |
-| `--bg-soft` | `#e7ece8` | a secondary fill, for a box that is context rather than subject |
-| `--fg` | `#1a231f` | body text inside a figure |
-| `--muted` | `#5c6b64` | secondary text — units, annotations, an aside |
-| `--border` | `#c8d3cd` | a neutral stroke |
-| `--accent` | `#0d6b5f` | the subject: the path being explained, its stroke and its arrowheads |
-| `--accent-soft` | `#d3e5df` | a filled emphasis behind accent text |
-| `--accent-ink` | `#08453d` | text on `--accent-soft` |
+| `--bg-soft` | `#e6ebe7` | a secondary fill, for a box that is context rather than subject |
+| `--fg` | `#16211c` | body text inside a figure |
+| `--muted` | `#5a6862` | secondary text — units, annotations, an aside |
+| `--border` | `#cbd5cf` | a neutral stroke |
+| `--accent` | `#0c6155` | the subject: the path being explained, its stroke and its arrowheads |
+| `--accent-soft` | `#d7e7e1` | a filled emphasis behind accent text |
+| `--accent-ink` | `#07443c` | text on `--accent-soft` |
 | `--on-accent` | `#ffffff` | text on an `--accent` fill |
 | `--revise` | `#8a5a12` | the excluded / stopped / rejected case |
 
@@ -76,18 +77,18 @@ Two shapes cover most plan figures. Both are starting points: keep the structure
 ```html
 <figure>
 <svg viewBox="0 0 880 120" xmlns="http://www.w3.org/2000/svg" font-family="system-ui, sans-serif">
-  <rect x="8" y="20" width="240" height="80" rx="10" fill="var(--bg, #ffffff)" stroke="var(--border, #c8d3cd)"/>
-  <text x="128" y="52" font-size="14" text-anchor="middle" fill="var(--fg, #1a231f)">first stage</text>
-  <text x="128" y="74" font-size="12" text-anchor="middle" fill="var(--muted, #5c6b64)">what it holds</text>
-  <path d="M262 60 H320" stroke="var(--accent, #0d6b5f)" stroke-width="2"/>
-  <path d="M320 60 l-10 -5 v10 z" fill="var(--accent, #0d6b5f)"/>
-  <rect x="334" y="20" width="240" height="80" rx="10" fill="var(--bg, #ffffff)" stroke="var(--accent, #0d6b5f)" stroke-dasharray="6 4"/>
-  <text x="454" y="52" font-size="14" text-anchor="middle" fill="var(--fg, #1a231f)">second stage</text>
-  <text x="454" y="74" font-size="12" text-anchor="middle" fill="var(--accent, #0d6b5f)">why it is the subject</text>
-  <path d="M588 60 H646" stroke="var(--accent, #0d6b5f)" stroke-width="2"/>
-  <path d="M646 60 l-10 -5 v10 z" fill="var(--accent, #0d6b5f)"/>
-  <rect x="660" y="20" width="212" height="80" rx="10" fill="var(--bg-soft, #e7ece8)" stroke="var(--border, #c8d3cd)"/>
-  <text x="766" y="65" font-size="14" text-anchor="middle" fill="var(--fg, #1a231f)">result</text>
+  <rect x="8" y="20" width="240" height="80" rx="10" fill="var(--bg, #ffffff)" stroke="var(--border, #cbd5cf)"/>
+  <text x="128" y="52" font-size="14" text-anchor="middle" fill="var(--fg, #16211c)">first stage</text>
+  <text x="128" y="74" font-size="12" text-anchor="middle" fill="var(--muted, #5a6862)">what it holds</text>
+  <path d="M262 60 H320" stroke="var(--accent, #0c6155)" stroke-width="2"/>
+  <path d="M320 60 l-10 -5 v10 z" fill="var(--accent, #0c6155)"/>
+  <rect x="334" y="20" width="240" height="80" rx="10" fill="var(--bg, #ffffff)" stroke="var(--accent, #0c6155)" stroke-dasharray="6 4"/>
+  <text x="454" y="52" font-size="14" text-anchor="middle" fill="var(--fg, #16211c)">second stage</text>
+  <text x="454" y="74" font-size="12" text-anchor="middle" fill="var(--accent, #0c6155)">why it is the subject</text>
+  <path d="M588 60 H646" stroke="var(--accent, #0c6155)" stroke-width="2"/>
+  <path d="M646 60 l-10 -5 v10 z" fill="var(--accent, #0c6155)"/>
+  <rect x="660" y="20" width="212" height="80" rx="10" fill="var(--bg-soft, #e6ebe7)" stroke="var(--border, #cbd5cf)"/>
+  <text x="766" y="65" font-size="14" text-anchor="middle" fill="var(--fg, #16211c)">result</text>
 </svg>
 <figcaption>One sentence saying what the figure claims.</figcaption>
 </figure>
@@ -100,18 +101,18 @@ A dashed stroke marks the stage the plan is actually about; a `--bg-soft` fill m
 ```html
 <figure>
 <svg viewBox="0 0 880 150" xmlns="http://www.w3.org/2000/svg" font-family="system-ui, sans-serif">
-  <line x1="60" y1="60" x2="800" y2="60" stroke="var(--border, #c8d3cd)" stroke-width="2"/>
+  <line x1="60" y1="60" x2="800" y2="60" stroke="var(--border, #cbd5cf)" stroke-width="2"/>
   <g font-size="12" text-anchor="middle">
-    <circle cx="80" cy="60" r="9" fill="var(--accent, #0d6b5f)"/><text x="80" y="88" fill="var(--fg, #1a231f)">first</text>
-    <circle cx="260" cy="60" r="9" fill="var(--accent, #0d6b5f)"/><text x="260" y="88" fill="var(--fg, #1a231f)">next</text>
-    <circle cx="440" cy="60" r="9" fill="var(--accent, #0d6b5f)"/><text x="440" y="88" fill="var(--fg, #1a231f)">next</text>
-    <circle cx="620" cy="60" r="9" fill="var(--accent, #0d6b5f)"/><text x="620" y="88" fill="var(--fg, #1a231f)">last included</text>
+    <circle cx="80" cy="60" r="9" fill="var(--accent, #0c6155)"/><text x="80" y="88" fill="var(--fg, #16211c)">first</text>
+    <circle cx="260" cy="60" r="9" fill="var(--accent, #0c6155)"/><text x="260" y="88" fill="var(--fg, #16211c)">next</text>
+    <circle cx="440" cy="60" r="9" fill="var(--accent, #0c6155)"/><text x="440" y="88" fill="var(--fg, #16211c)">next</text>
+    <circle cx="620" cy="60" r="9" fill="var(--accent, #0c6155)"/><text x="620" y="88" fill="var(--fg, #16211c)">last included</text>
     <circle cx="780" cy="60" r="9" fill="var(--bg, #ffffff)" stroke="var(--revise, #8a5a12)" stroke-width="2"/><text x="780" y="88" fill="var(--revise, #8a5a12)">excluded</text>
   </g>
   <line x1="700" y1="30" x2="700" y2="100" stroke="var(--revise, #8a5a12)" stroke-dasharray="4 3"/>
   <text x="700" y="24" font-size="11" text-anchor="middle" fill="var(--revise, #8a5a12)">the boundary</text>
-  <rect x="60" y="112" width="120" height="28" rx="14" fill="var(--accent-soft, #d3e5df)"/>
-  <text x="120" y="131" font-size="13" text-anchor="middle" fill="var(--accent-ink, #08453d)">4 in total</text>
+  <rect x="60" y="112" width="120" height="28" rx="14" fill="var(--accent-soft, #d7e7e1)"/>
+  <text x="120" y="131" font-size="13" text-anchor="middle" fill="var(--accent-ink, #07443c)">4 in total</text>
 </svg>
 <figcaption>One sentence saying what the figure claims.</figcaption>
 </figure>

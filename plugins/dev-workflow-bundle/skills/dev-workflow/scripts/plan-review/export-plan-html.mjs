@@ -147,7 +147,9 @@ const headParts = [
 ];
 
 const bodyParts = [
-  `<div id="app"></div>`,
+  // `lang` here, not on `<html>`: the fragment has none, and plan-view.css picks the line
+  // length off it (--measure).
+  `<div id="app" lang="${lang}"></div>`,
   jsonBlock("plan-source", { id: planId, markdown: planMarkdown }),
   `<script src="${MARKED_SRC}" integrity="${MARKED_SRI}" crossorigin="anonymous" referrerpolicy="no-referrer"></script>`,
   `<script src="${HLJS_SRC}" integrity="${HLJS_SRI}" crossorigin="anonymous" referrerpolicy="no-referrer"></script>`,

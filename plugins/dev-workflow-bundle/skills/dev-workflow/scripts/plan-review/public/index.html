@@ -431,6 +431,9 @@
       const { id, markdown, lang, prevMarkdown, thread, instance } = await res.json();
       THREAD = Array.isArray(thread) ? thread : [];
       INSTANCE = instance || null;
+      // The stylesheet reads this to pick a line length: a ch-based measure is half a line
+      // in Japanese (plan-view.css, --measure).
+      document.documentElement.lang = lang === "ja" ? "ja" : "en";
       if (lang === "ja") {
         SWITCH_MSG = "この Decision を Alternative に切り替える";
         KBD_HINT = "<kbd>a</kbd> 承認 · <kbd>r</kbd> 変更を依頼 · <kbd>⌘/Ctrl+↵</kbd> 送信";

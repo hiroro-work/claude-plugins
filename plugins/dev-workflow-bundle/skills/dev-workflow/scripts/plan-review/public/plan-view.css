@@ -241,10 +241,17 @@ details.section[open] > summary .sec-gist { display: none; }
 }
 .badge-risk { background: var(--risk-bg); color: var(--risk); }
 /* Running text near 65 characters. Wider than that and the eye loses the line on the way
-   back; the section card itself keeps its full width for tables, code, and figures. */
+   back; the section card itself keeps its full width for tables, code, and figures.
+   `ch` is the width of a `0`, and a CJK glyph is about twice that, so the same cap holds
+   barely half a line of Japanese and wraps well inside the card. Japanese takes the card's
+   own width instead, which the page's 1160px cap already bounds to a readable line. The
+   language reaches this rule from the `lang` the served page sets on the document and the
+   exported page on `#app`. */
+:root { --measure: 68ch; }
+:lang(ja) { --measure: none; }
 .sec-body { padding-top: 2px; }
 .sec-body > p, .step-body > p, .sec-body > ul > li, .sec-body > ol > li,
-.dc-rec > p, .dc-alt > p { max-width: 68ch; }
+.dc-rec > p, .dc-alt > p { max-width: var(--measure); }
 /* .step-body is inside .sec-body, so every .sec-body descendant rule already reaches it;
    this one needs naming because it is a direct-child selector. */
 .sec-body > :first-child, .step-body > :first-child { margin-top: 4px; }

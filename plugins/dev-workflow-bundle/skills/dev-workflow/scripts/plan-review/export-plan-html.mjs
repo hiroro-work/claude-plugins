@@ -41,7 +41,7 @@ import { parseArgs } from "node:util";
 
 // plan-parse.mjs touches neither `window` nor `document` at module scope, so it imports
 // here rather than this file keeping a second escaping table.
-import { escapeHtml } from "./public/plan-parse.mjs";
+import { escapeHtml, stripFrontmatter } from "./public/plan-parse.mjs";
 
 const log = (...args) => console.error(...args);
 const die = (msg) => { log(`error: ${msg}`); process.exit(1); };
@@ -67,7 +67,9 @@ if (!opts.out) die("--out <path> is required");
 const planPath = resolve(opts.plan);
 let planMarkdown;
 try {
-  planMarkdown = readFileSync(planPath, "utf8");
+  // The page embeds this verbatim, so the plan document's YAML frontmatter has to come off
+  // here rather than at render time.
+  planMarkdown = stripFrontmatter(readFileSync(planPath, "utf8"));
 } catch (err) {
   die(`cannot read plan file ${planPath}: ${err.message}`);
 }

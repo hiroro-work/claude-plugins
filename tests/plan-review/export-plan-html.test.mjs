@@ -154,7 +154,7 @@ test("--standalone adds the skeleton, with the page content in the body", () => 
   assert.match(html, /^<!doctype html>/);
   assert.match(html, /<html lang="en">/);
   const body = html.slice(html.indexOf("<body>"));
-  assert.ok(body.includes('<div id="app"></div>'), "the app root is not in the body");
+  assert.match(body, /<div id="app"[^>]*><\/div>/, "the app root is not in the body");
   const head = html.slice(0, html.indexOf("</head>"));
   assert.ok(head.includes("<title>"), "the title is not in the head");
 });
@@ -165,6 +165,13 @@ test("--standalone adds the skeleton, with the page content in the body", () => 
 test("--lang picks the language of the page's own generated text", () => {
   assert.match(pageShell(exportPlan(["--lang", "ja"])), /labels: LABELS\["ja"\]/);
   assert.match(pageShell(exportPlan(["--lang", "en"])), /labels: LABELS\["en"\]/);
+});
+
+// The fragment carries no <html> of its own, so plan-view.css reads the language — and with it
+// the line length it sets — off the app root instead.
+test("--lang reaches the app root, which is where the stylesheet reads it", () => {
+  assert.match(exportPlan(["--lang", "ja"]), /<div id="app" lang="ja"><\/div>/);
+  assert.match(exportPlan(["--lang", "en"]), /<div id="app" lang="en"><\/div>/);
 });
 
 // The CSP-shaped assertions above all read the exporter's output, so nothing in this file
@@ -190,4 +197,18 @@ test("the gate page and the export pin the same CDN and font resources", () => {
   const hashes = (src) => [...src.matchAll(/sha512-[A-Za-z0-9+/=]+/g)].map((m) => m[0]).sort();
   assert.deepEqual(resources(exporterSrc), resources(indexHtml), "pinned resource URLs differ");
   assert.deepEqual(hashes(exporterSrc), hashes(indexHtml), "integrity hashes differ");
+});
+
+// The page carries the plan's Markdown verbatim in a JSON block, so a frontmatter left on it
+// would ship inside the published page even though nothing renders it.
+test("the plan's YAML frontmatter is not embedded in the exported page", () => {
+  const dir = mkdtempSync(join(tmpdir(), "plan-export-fm-"));
+  const planPath = join(dir, "sample-plan.plan-review.md");
+  const outPath = join(dir, "out.html");
+  writeFileSync(planPath, `---\nartifact_url: https://claude.ai/code/artifact/abc\n---\n${PLAN}`);
+  execFileSync(process.execPath, [exporter, "--plan", planPath, "--out", outPath], { stdio: "pipe" });
+  const html = readFileSync(outPath, "utf8");
+  assert.ok(!html.includes("artifact_url"), "the frontmatter reached the exported page");
+  assert.match(html, /### Overview/, "the plan body did not survive the strip");
+  rmSync(dir, { recursive: true, force: true });
 });

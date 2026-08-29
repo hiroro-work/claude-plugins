@@ -2,6 +2,15 @@
 
 ## 2026-08-29
 
+### dev-workflow v1.129.0 / mobpro v1.40.0 / dev-workflow-bundle v1.152.0
+
+- feat(dev-workflow, mobpro): publish an approved plan as a claude.ai artifact for the team to read
+  - **Default: disabled** — set `plan_artifact: "share"` (or `"review"`) in `.claude/dev-workflow.md` / `.claude/dev-workflow.local.md` to opt in per project. Publishing sends the plan's content outside the project, so nothing is published until a project asks for it.
+  - `share` publishes the approved plan once the approval settles — on every approval route, the ones that never open a browser included — and hands back the page's URL. The page is the viewer-only export of the same renderer the review gate uses, so what the team reads matches what the plan was approved on, figures included.
+  - `review` adds a gate after that publish: the workflow holds until you say the team has finished, reads the page's comment threads, takes what they ask for through the plan's existing revise loop, and republishes to the same URL. It waits on your word alone — no polling, no notification subscription.
+  - The page's URL is recorded in the plan document's YAML frontmatter, which survives the archive move at completion, so a later session updates the same page instead of opening a second one. A plan's frontmatter is stripped before the plan reaches either surface, so it is neither rendered nor carried in the published page's source.
+  - A failed export or publish is non-fatal: the run notes it and carries on to implementation. On `review` the note also says the team-review gate is being skipped, since there is nothing published to review.
+
 ### dev-workflow v1.128.1 / dev-workflow-bundle v1.151.1
 
 - refactor(dev-workflow): tidy the plan-review scripts and cut their comments back to what a future edit needs

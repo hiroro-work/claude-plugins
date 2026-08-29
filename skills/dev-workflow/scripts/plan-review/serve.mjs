@@ -28,6 +28,9 @@ import { basename, dirname, extname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import { spawn } from "node:child_process";
+// The plan document may open with YAML frontmatter the workflow writes. The viewer drops it
+// when rendering either way; stripping it here keeps it out of the response body too.
+import { stripFrontmatter } from "./public/plan-parse.mjs";
 
 const log = (...args) => console.error(...args); // all progress → stderr
 
@@ -62,7 +65,7 @@ if (!opts.plan) {
 const planPath = resolve(opts.plan);
 let planSource;
 try {
-  planSource = readFileSync(planPath, "utf8");
+  planSource = stripFrontmatter(readFileSync(planPath, "utf8"));
 } catch (err) {
   log(`error: cannot read plan file ${planPath}: ${err.message}`);
   process.exit(1);
@@ -72,7 +75,7 @@ try {
 let prevSource = null;
 if (opts.prev) {
   try {
-    prevSource = readFileSync(resolve(opts.prev), "utf8");
+    prevSource = stripFrontmatter(readFileSync(resolve(opts.prev), "utf8"));
   } catch (err) {
     log(`warning: cannot read --prev file ${opts.prev}: ${err.message} (diff disabled)`);
   }

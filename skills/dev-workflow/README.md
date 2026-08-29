@@ -180,6 +180,7 @@ hooks:
 | `commit_review_gate` | string | `diff` | Which surface a code-diff review renders on — `diff` (default; the existing chat-text presentation with the accept/adjust/cancel gate) or `crit` (opt-in; launches the external `crit` CLI scoped to just the reviewed files, falling back to `diff` when unavailable or unreachable). Step 10 applies it to each commit's diff, but is one consumer rather than the key's whole scope — see the `commit_review_gate` section below |
 | `implementation_executor` | string | `main` | Experimental, opt-in. Selects who executes Step 5 implementation work units — `main` (default), `subagent`, or one of `ask-claude` / `ask-codex` / `ask-gemini` / `ask-copilot` / `ask-agy`. Unsupported values fall back to `main`; see the `implementation_executor` section below |
 | `polish_prose` | bool | `true` | Whether the workflow's two `prose-polish` passes (Step 6.5 file-mode polish of changed files + Step 4 plan-body polish, the latter also covering the decomposition state file on the run that created it) run; Step 6.5 is still subject to the difficulty-skip matrix (default-on, opt-out) |
+| `plan_artifact` | string | `off` | Experimental, opt-in. Whether an approved plan is published as a claude.ai artifact for a team to read and comment on — `off` (default; nothing is published), `share` (publish and hand back the URL), `review` (publish, then wait for the team's review before implementation) |
 | `custom_instructions` | string | (none) | Free-form instructions applied across all phases |
 | `check_commands` | list&lt;string&gt; | (none) | Static checks (lint / format / typecheck, etc.) |
 | `boundary_check_commands` | list&lt;string&gt; | (none) | Shell commands run as each Build order step's boundary object is recorded, so what they rewrite lands in that step's own tree — see the `boundary_check_commands` section below |
@@ -309,6 +310,24 @@ Non-boolean values are ignored with a warning and fall back to `true`. To opt ou
 **Behavior change from v1.78.0**: the default flipped from `false` (opt-in) to `true` — projects that leave `polish_prose` unset now run both passes by default; set `polish_prose: false` to opt out. (History: v1.77.0 ran both passes unconditionally with no config flag; v1.78.0 gated them behind `polish_prose: true` defaulting to opt-in.)
 
 Note: the `polish_prose: false` skip is independent of whether the `prose-polish` skill is installed — a missing skill skips both passes for a separate reason (see the prose-polish entry under § Prerequisites).
+
+#### `plan_artifact`
+
+Controls whether an approved plan is published as a **claude.ai artifact** — a rendered, viewer-only copy of the plan a team can read and comment on — and whether the workflow then waits for that review. Nothing is published by default.
+
+- `off` (default): nothing is published; the workflow is unchanged
+- `share`: once the plan approval settles, the plan is published and its URL handed back in chat. It fires on every approval route, the ones that never open a browser included
+- `review`: `share`, plus a gate after it — the workflow holds until you say the team has finished, reads the page's comment threads, takes what they ask for through the plan's existing revise loop, and republishes to the same URL
+
+```yaml
+---
+plan_artifact: "share"
+---
+```
+
+The page's URL is recorded in the plan document's YAML frontmatter, which survives the archive move at completion, so a later session updates the same page instead of opening a second one. A failed export or publish is non-fatal — the run notes it and carries on to implementation.
+
+Publishing sends the plan's content outside the project, which is why the default withholds it. Values outside the three are ignored with a warning and fall back to `off`. To opt in for one project, set `plan_artifact: "share"` (or `"review"`) in `.claude/dev-workflow.md`; to opt in personally, set it in `~/.claude/dev-workflow.local.md` or `.claude/dev-workflow.local.md`.
 
 #### `custom_instructions`
 
@@ -721,6 +740,7 @@ To get the full benefit of dev-workflow, the following skills are recommended:
 | `commit_review_gate` is not a valid value | Warns and falls back to `diff` |
 | `implementation_executor` is not a valid value | Warns and falls back to `main` |
 | `polish_prose` is not a boolean | Warns and falls back to `true` |
+| `plan_artifact` is not a valid value | Warns and falls back to `off` |
 | `custom_instructions` is not a string | Warns and ignores |
 | `hooks.on_complete` has invalid format | Warns and ignores |
 | `check_commands` failure | Fix and retry (up to 3 times); if still failing, reports to user and stops |

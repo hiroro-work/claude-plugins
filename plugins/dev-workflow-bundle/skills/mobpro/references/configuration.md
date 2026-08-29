@@ -6,7 +6,7 @@
 
 These project-characteristic keys are read from `dev-workflow`'s three layers (`~/.claude/dev-workflow.local.md` → `.claude/dev-workflow.md` → `.claude/dev-workflow.local.md`) using the same per-class merge semantics as `dev-workflow` (see [`inline-defs.md`](inline-defs.md) § (a)). `mobpro` never writes to these files.
 
-`Keep this list and its Default column in sync with dev-workflow references/configuration.md — a key listed there belongs here when it governs a step mobpro also runs and is not carved out by § Not-adopted keys. The Default column is the only runtime source for the values in this table (SKILL.md § Runtime reads).` A key absent from all three layers resolves to its Default below. This closed list of 13 is complete:
+`Keep this list and its Default column in sync with dev-workflow references/configuration.md — a key listed there belongs here when it governs a step mobpro also runs and is not carved out by § Not-adopted keys. The Default column is the only runtime source for the values in this table (SKILL.md § Runtime reads).` A key absent from all three layers resolves to its Default below. This closed list of 14 is complete:
 
 | Key | Default | Used by |
 | --- | --- | --- |
@@ -19,6 +19,7 @@ These project-characteristic keys are read from `dev-workflow`'s three layers (`
 | `polish_prose` | `true` | M5 plan-body polish, M7 |
 | `interactive_commits` | `true` | M11 registration, M12 rule-update commit gate |
 | `commit_review_gate` | `diff` | M6 diff-review surface, M11 diff surface |
+| `plan_artifact` | `off` | M5 publish and team-review gate; accepted values are `off` / `share` / `review` |
 | `custom_instructions` | none (unset) | M3, M4, M6, M9 |
 | `hooks.on_complete` | none (unset) | M10 registration and execution |
 | `self_retrospective.feedback` | none (unset) | M12 |

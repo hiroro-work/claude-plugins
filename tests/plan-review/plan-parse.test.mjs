@@ -265,3 +265,19 @@ test("splitPreamble keeps the first Hero block and drops a repeated one", () => 
   assert.ok(!prose.includes("second"), "the repeated block leaked into the preamble");
   assert.ok(prose.includes("lead"), "the leading prose was lost");
 });
+
+test("YAML frontmatter is dropped, so its bookkeeping reaches no rendering surface", () => {
+  const md = "---\nartifact_url: https://claude.ai/code/artifact/abc\n---\n## Plan\n\n### Overview\n- **Goal**: g\n";
+  const { preamble, sections, body } = parseSections(md);
+  assert.ok(!preamble.includes("artifact_url"), "frontmatter leaked into the preamble");
+  assert.ok(!body.includes("artifact_url"), "frontmatter leaked into the returned body");
+  assert.deepEqual(sections.map((s) => s.title), ["Overview"]);
+});
+
+// The strip is start-anchored and non-greedy, so a plan opening on a thematic break must keep
+// everything between it and the next one.
+test("a leading thematic break is not mistaken for frontmatter", () => {
+  const md = "---\n\n### Overview\n- **Goal**: g\n\n---\n\n### Test plan\n- t\n";
+  const { sections } = parseSections(md);
+  assert.deepEqual(sections.map((s) => s.title), ["Overview", "Test plan"]);
+});

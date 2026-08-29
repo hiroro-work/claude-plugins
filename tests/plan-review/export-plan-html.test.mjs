@@ -154,7 +154,7 @@ test("--standalone adds the skeleton, with the page content in the body", () => 
   assert.match(html, /^<!doctype html>/);
   assert.match(html, /<html lang="en">/);
   const body = html.slice(html.indexOf("<body>"));
-  assert.ok(body.includes('<div id="app"></div>'), "the app root is not in the body");
+  assert.match(body, /<div id="app"[^>]*><\/div>/, "the app root is not in the body");
   const head = html.slice(0, html.indexOf("</head>"));
   assert.ok(head.includes("<title>"), "the title is not in the head");
 });
@@ -165,6 +165,13 @@ test("--standalone adds the skeleton, with the page content in the body", () => 
 test("--lang picks the language of the page's own generated text", () => {
   assert.match(pageShell(exportPlan(["--lang", "ja"])), /labels: LABELS\["ja"\]/);
   assert.match(pageShell(exportPlan(["--lang", "en"])), /labels: LABELS\["en"\]/);
+});
+
+// The fragment carries no <html> of its own, so plan-view.css reads the language — and with it
+// the line length it sets — off the app root instead.
+test("--lang reaches the app root, which is where the stylesheet reads it", () => {
+  assert.match(exportPlan(["--lang", "ja"]), /<div id="app" lang="ja"><\/div>/);
+  assert.match(exportPlan(["--lang", "en"]), /<div id="app" lang="en"><\/div>/);
 });
 
 // The CSP-shaped assertions above all read the exporter's output, so nothing in this file

@@ -1,9 +1,10 @@
 // Plan parsing for the plan-review viewer.
 //
 // Everything here is free of the DOM, of `window`, and of module-level mutable
-// state, so `index.html` imports it in the browser and the Node tests import the
-// same file. Rendering stays in `index.html`, and so do `collectBlockTexts` and
-// `attachElementComments`, which need `marked` or a document to walk.
+// state, so both browser surfaces import it and the Node tests import the same
+// file. Rendering lives in `plan-render.mjs`; `collectBlockTexts` and
+// `attachElementComments` stay in `index.html`, needing `marked` or a document to
+// walk.
 
 export const stripMd = (t) => (t || "").replace(/[*`]/g, "").trim();
 export const normText = (t) => (t || "").replace(/\s+/g, " ").trim();
@@ -33,7 +34,9 @@ export const sectionOfBlockId = (id, decisionsSectionId) => {
 const HTML_ESCAPES = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" };
 export const escapeHtml = (t) => (t || "").replace(/[&<>"]/g, (c) => HTML_ESCAPES[c]);
 
-const FENCE_RE = /^\s*(`{3,}|~{3,})/;
+// Exported because plan-render.mjs scans a section body for its first line of prose and
+// has to skip fences by the same rule the parser uses.
+export const FENCE_RE = /^\s*(`{3,}|~{3,})/;
 
 // What the viewer knows about each plan section, in match-priority order: `match` lists title
 // prefixes (lowercased) that map to the type; `open` opens the section by default;
@@ -196,6 +199,78 @@ export function parseDecisions(body) {
     it.alternative = it.alternative.trim();
   }
   return { items, preamble: preamble.join("\n").trim() };
+}
+
+const GIST_MAX = 120;
+
+// The one-line gist a collapsed section shows beside its title. Read from the section's
+// own Markdown rather than from its rendered body: the source has one unambiguous first
+// line of prose, where a card section's body holds several candidates. The viewer hides
+// this copy while the section is open, so nothing has to move out of the body.
+export function sectionGist(body) {
+  let inFence = false;
+  for (const raw of String(body || "").split("\n")) {
+    if (FENCE_RE.test(raw)) { inFence = !inFence; continue; }
+    if (inFence) continue;
+    const line = raw.trim();
+    if (!line || line.startsWith("#") || line.startsWith(">") || line.startsWith("<")) continue;
+    const text = stripMd(line.replace(/^(?:[-*+]|\d+[.)])\s+/, "")).replace(/\s+/g, " ").trim();
+    if (!text) continue;
+    return text.length > GIST_MAX ? text.slice(0, GIST_MAX - 1) + "…" : text;
+  }
+  return "";
+}
+
+// Everything the renderer needs about a plan, derived in one place. Both surfaces call
+// this rather than repeating the sequence: the empty-plan fallback section and the
+// itemCount the Risks badge reads are easy to get subtly different, and a second copy
+// would only be found by rendering both surfaces side by side.
+export function preparePlan(markdown, id) {
+  const { preamble: parsedPreamble, sections: parsed } = parseSections(markdown);
+  // With no headings at all, parseSections puts the whole document in the preamble and the
+  // fallback section below repeats it — so one of the two has to give, and it is the preamble.
+  const preamble = parsed.length ? parsedPreamble : "";
+  const sections = parsed.length
+    ? parsed
+    : [{ title: "Plan", type: "other", id: "plan", body: markdown }];
+  const overviewSection = sections.find((s) => s.type === "overview");
+  const overview = parseOverview(overviewSection ? overviewSection.body : "");
+  const risksSection = sections.find((s) => s.type === "risks");
+  const riskCount = risksSection ? countListItems(risksSection.body) : 0;
+  if (risksSection) risksSection.itemCount = riskCount; // the section badge reads it back
+  return { id, preamble, sections, overview, riskCount };
+}
+
+// The preamble is everything before the plan's first section heading, and the figures
+// layer's `## Hero` block lands there (visual-plan-review.md § Figures layer). Split it so
+// the viewer can put that block in its own slot: `hero` is the Hero block's Markdown, and
+// `prose` is everything else with the block headings taken off — the shape the preamble had
+// before Hero existed, so a heading naming anything else keeps its old disposition.
+export function splitPreamble(preamble) {
+  const lines = String(preamble || "").split("\n");
+  const prose = [];
+  const hero = [];
+  const skipped = []; // a repeated Hero block's lines go here and are dropped
+  let target = prose;
+  let inFence = false;
+  let heroSeen = false;
+  for (const line of lines) {
+    if (FENCE_RE.test(line)) inFence = !inFence;
+    const h = !inFence && /^##\s+(.+?)\s*$/.exec(line);
+    if (h) {
+      // A repeated heading keeps the first block and skips the rest — the disposition
+      // visual-plan-review.md § Figures layer's File format gives. Skipped means dropped,
+      // not demoted to prose: a second hero rendered as preamble text is the same figure
+      // twice on the page, which is what the first-wins rule exists to prevent.
+      const isHero = h[1].trim() === "Hero";
+      if (isHero && heroSeen) { target = skipped; continue; }
+      if (isHero) { heroSeen = true; target = hero; continue; }
+      target = prose;
+      continue;
+    }
+    target.push(line);
+  }
+  return { prose: prose.join("\n").trim(), hero: hero.join("\n").trim() };
 }
 
 export const decisionSig = (it) => normText(`${it.question} ${it.recommendation} ${it.alternative}`);

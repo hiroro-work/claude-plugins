@@ -11,13 +11,16 @@
  * and (in --wait mode) prints that same JSON to stdout and exits so the caller
  * can parse it as the gate's return value.
  *
- * Plan structure is parsed and rendered entirely browser-side (public/index.html
- * builds the summary header, collapsible sections, Decision cards, per-element
- * comment affordances, and mermaid diagrams). This server does not segment the
- * plan; it ships the raw markdown and is agnostic to the plan schema.
+ * Plan structure is parsed and rendered entirely browser-side: public/plan-parse.mjs
+ * splits and classifies the markdown, public/plan-render.mjs draws it (summary header,
+ * hero slot, collapsible sections, Decision cards) with public/plan-view.css, and
+ * public/index.html adds the interactive layer (per-element comment affordances,
+ * conversation thread, submit bar, mermaid). This server does not segment the plan;
+ * it ships the raw markdown and is agnostic to the plan schema.
  *
  * Node built-ins only (no node_modules). The browser-side renderers
- * (marked / highlight.js / mermaid) load from CDN inside public/index.html.
+ * (marked / highlight.js / mermaid) and the web fonts load from pinned CDNs, declared in
+ * public/index.html.
  *
  * Usage:
  *   node serve.mjs --plan <path> [--prev <path>] [--lang <ja|en>] [--wait] [--port <n>] [--no-open] [--timeout <sec>]

@@ -42,7 +42,7 @@ M3 sub-step 2's **Design-approach narration** states the chosen approach and its
 
 The plan document carries **no figures**. Each figure belongs instead to the **figures layer** M5's visual gate merges into the copy it serves — one per targetable section by default, which for a junior reader is the point: `../dev-workflow/references/visual-plan-review.md` § Figures layer defines the file and the insertion positions, and `../dev-workflow/references/plan-figures.md` the authoring conventions, including its § How the page shows a figure. Neither is read at M3 (Design dialogue).
 
-The sections of this template a figure may target are `What we're building`, `Choices I made`, and `Build order` (closed list). The document must stand without the figures — on the chat path the junior sees prose alone — so never thin a passage expecting a figure to carry it.
+The sections of this template a figure may target are `What we're building`, `Choices I made`, and `Build order` (closed list), alongside the reserved `Hero` block (`../dev-workflow/references/visual-plan-review.md` § Figures layer's **The one reserved heading — `## Hero`** paragraph), which names no section. **Write the `Hero` block on every plan**: it is the picture of what the whole change is, and a junior reading a plan for the first time needs it before any section makes sense. The document must stand without the figures — on the chat path the junior sees prose alone — so never thin a passage expecting a figure to carry it.
 
 ## Review lens
 

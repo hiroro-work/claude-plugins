@@ -11,11 +11,11 @@ A learning-oriented development workflow. The AI is always the driver — it wri
 ## Usage
 
 ```text
-/mobpro [--fast|--deep] <task>                  # Execute a learning session (Normal sub-mode)
-/mobpro --resume <state-file> [--fast|--deep]   # Resume a subtask from a decomposition state file
+/mobpro [--fast|--deep] [--artifact <value>] <task>                # Execute a learning session (Normal sub-mode)
+/mobpro --resume <state-file> [--fast|--deep] [--artifact <value>] # Resume a subtask from a decomposition state file
 ```
 
-There is no `--init`, no `--executor`, and no difficulty assessment (see [`references/configuration.md`](references/configuration.md)). The run-mode flags `--fast` / `--deep` are the only modifiers it takes (§ Run modes).
+There is no `--init`, no `--executor`, and no difficulty assessment (see [`references/configuration.md`](references/configuration.md)). It takes two modifiers: the run-mode flags `--fast` / `--deep` (§ Run modes), and `--artifact <value>`, which overrides the resolved `plan_artifact` for that run alone ([`references/configuration.md`](references/configuration.md) § Resolution procedure step 1.5).
 
 ## Relationship to dev-workflow
 
@@ -153,7 +153,7 @@ This skill's procedure dispatches subagents, so invoking the skill **is** the re
 
 ## M1 — Load settings
 
-1. **Resolve settings**: read [`references/configuration.md`](references/configuration.md) § Resolution procedure and follow it from top to bottom. Resolve `run_mode` here too — it comes from this invocation's flags rather than from any of those files (§ Run modes) — and initialize `fast_mode_skipped_steps = []` alongside it.
+1. **Resolve settings**: read [`references/configuration.md`](references/configuration.md) § Resolution procedure and follow it from top to bottom, applying its step 1.5 `--artifact` override to the `plan_artifact` that step 1 resolved. Resolve `run_mode` here too — it comes from this invocation's flags rather than from any of those files (§ Run modes) — and initialize `fast_mode_skipped_steps = []` alongside it.
 2. Read `../dev-workflow/references/prerequisites.md`. Probe the resolved reviewer with a one-word `ping`; on failure retry once; on persistent failure present that file's three-option fallback prompt (switch reviewer / self-review / pause at the gate). Failure is the criterion that file's § Prerequisite skills' **Cleanup skill** bullet states for every callee: a `Skill()` call that returns is a pass, and the probe does not additionally verify that a review would run. Initialize `bundle_skills_unavailable = []` (append discipline per that file).
 3. Derive `plan_review_enabled` / `plan_review_scope` from `run_mode` per § Run modes, and resolve `code_review_enabled` from config `code_review` (a boolean, default on; a non-boolean warns and falls back to on, per [`references/configuration.md`](references/configuration.md) § Resolution procedure step 1). `Source of truth for the run-mode derivation: dev-workflow references/step1-load-settings.md § Sub-step 4 — review-phase resolution; keep in sync.` **No difficulty-based lowering** — nothing turns a phase off on the workflow's own initiative. **A configured `code_review: false` is honored**: it turns the code phase off (M9's code review — that step's own entry condition below). The preceding rule forbids the workflow *deciding* to drop a gate; a configured `false` is the user's own declaration, as is the run mode the caller selected. When `run_mode == "fast"`, append the record § Run modes' M4 row defines to `fast_mode_skipped_steps`. `code_review_enabled` is untouched — of the two review phases the axis reaches the plan one only (§ Run modes).
 4. Register all phases with the Task tools (`TodoWrite` fallback where Task tools are unavailable) in one upfront burst: the M1–M13 rows. **When neither is on the current tool surface**, register nothing — here or at M6 sub-step 1's per-unit sub-rows — and instead name the current phase in prose at each M-step boundary, and the unit within it at each M6 boundary: treat every later instruction that marks a row, registers one, or resolves one by subject as satisfied by that prose, and carry the remaining-phase state in context. Subject each row per § Phase naming in user-facing output (`M6 — Implementation loop`), keeping the identifier so later instructions can resolve rows by subject. Conditional omissions — a phase that will not exist on this run gets no `TaskCreate` at all (exactly three): omit `M2` in Resume sub-mode (the row only — M2's Resume path still runs, it just has nothing to register there); omit `M10` when `hooks.on_complete` is unset; omit `M11` when `interactive_commits` is false. `M12` is always one row.

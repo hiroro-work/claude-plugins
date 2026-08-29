@@ -5,18 +5,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Plan Review — dev-workflow</title>
 
-  <!-- Type. Google Fonts is the one font host an artifact's CSP admits, so the viewer-only
-       export loads the same three faces from the same place and both surfaces set type
-       identically. highlight.js' own themes are deliberately NOT loaded: they are
-       stylesheets, which that CSP blocks outright and silently, so the syntax colours live
-       in plan-view.css instead. -->
+  <!-- Google Fonts is the one font host an artifact's CSP admits, so the export loads the
+       same faces from the same place. highlight.js' own themes are stylesheets, which that
+       CSP blocks silently, so the syntax colours live in plan-view.css instead. -->
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
     rel="stylesheet"
     href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600&family=Noto+Sans+JP:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Zen+Old+Mincho:wght@600&display=swap">
 
-  <!-- marked (UMD) + highlight.js (UMD): classic scripts run before the deferred module below,
-       so window.marked / window.hljs are ready when the render logic runs. -->
+  <!-- Classic scripts run before the deferred module below, so window.marked / window.hljs
+       are ready when the render logic runs. -->
   <script
     src="https://cdnjs.cloudflare.com/ajax/libs/marked/16.3.0/lib/marked.umd.min.js"
     integrity="sha512-V6rGY7jjOEUc7q5Ews8mMlretz1Vn2wLdMW/qgABLWunzsLfluM0FwHuGjGQ1lc8jO5vGpGIGFE+rTzB+63HdA=="
@@ -29,9 +27,8 @@
   <link rel="stylesheet" href="./plan-view.css">
 </head>
 <body>
-  <!-- The header / nav / main shell is inserted here from plan-render.mjs'
-       PLAN_SHELL_HTML, so this page and the viewer-only export cannot drift.
-       #done is this page's own — the export has nothing to submit. -->
+  <!-- The shell is inserted from plan-render.mjs' PLAN_SHELL_HTML, so this page and the
+       export cannot drift. #done is this page's own — the export has nothing to submit. -->
   <div id="app">
     <div id="done" hidden>Submitted. Return to your terminal.</div>
   </div>
@@ -50,7 +47,6 @@
   </div>
 
   <script type="module">
-    import mermaid from "https://esm.sh/mermaid@11.15.0";
     import {
       anchorMatches, anchorNorm, buildDiff, emptyDiff,
       escapeHtml, excerptOf, normText, preparePlan,
@@ -58,25 +54,15 @@
     } from "./plan-parse.mjs";
     import { AFFORDANCE_ATTR, HERO_SECTION_ID, PLAN_SHELL_HTML, LABELS, createRenderer, md } from "./plan-render.mjs";
 
-    // Read once: mermaid bakes its theme at initialize, so an OS theme flip mid-review leaves
-    // diagrams in the previous theme until the page is reloaded. Everything else follows the
-    // media query live.
-    const darkScheme = window.matchMedia("(prefers-color-scheme: dark)").matches;
-    mermaid.initialize({ startOnLoad: false, theme: darkScheme ? "dark" : "default", securityLevel: "strict" });
-
     // afterbegin, so the shell precedes the #done panel this page keeps last in #app.
     document.getElementById("app").insertAdjacentHTML("afterbegin", PLAN_SHELL_HTML);
 
     // comments: id -> { text, excerpt, kind } ; switches: id -> excerpt
     const state = { decision: null, comments: new Map(), switches: new Map() };
     let SWITCH_MSG = "Switch this decision to its Alternative";
-    // localized keyboard-shortcut hint — static developer-controlled markup (assigned
-    // via innerHTML in init, like SWITCH_MSG); never holds user data, so not an XSS vector
+    // Assigned via innerHTML in init: developer-controlled markup, never user data.
     let KBD_HINT = "<kbd>a</kbd> approve · <kbd>r</kbd> request changes · <kbd>⌘/Ctrl+↵</kbd> send";
     let APPLY_NOTE = "Requesting changes applies a comment to the plan document right away, or answers it here when it asks rather than asks for a change.";
-    // Localized strings for the renderer. Empty on English: plan-render.mjs' own defaults
-    // are the English text, so only a localized run has anything to say here.
-    let RENDER_LABELS = {};
     // conversation-log labels, localized in init alongside SWITCH_MSG
     let TH = {
       you: "you",
@@ -89,9 +75,8 @@
     };
     let POLL_MSG = "Claude is working on it — this page reloads itself when the plan updates.";
     let POLL_GIVEUP_MSG = "No update for 30 minutes. Check your terminal — the review may have moved on without the browser.";
-    // The gate itself waits up to 24h, but a revise does not always come back here: an
-    // approach-level rewrite or a fallback to chat approval ends the run elsewhere. Stop
-    // promising a reload well before then and say so.
+    // A revise does not always come back here (an approach-level rewrite or a fallback to
+    // chat approval ends the run elsewhere), so stop promising a reload well before 24h.
     const POLL_GIVEUP_MS = 30 * 60 * 1000;
     // Per-process token from /api/plan. A relaunch produces a different one, which is what the
     // post-revise poll below watches for.
@@ -101,33 +86,34 @@
     // present. plan-parse.mjs' emptyDiff() documents the fields.
     let diff = emptyDiff();
 
-    // Block-level tags that are commentable as whole blocks (UL/OL → per-LI and
-    // TABLE → wrapped are handled separately). Shared by attachElementComments
-    // (renders comment affordances) and collectBlockTexts (read-only diff text),
-    // so the two stay in sync.
     const COMMENT_BLOCK_TAGS = ["P", "BLOCKQUOTE", "PRE", "H4", "H5", "H6", "FIGURE"];
 
-    // --- diff (revise re-launch) ---
-    // Read-only mirror of attachElementComments' target selection: collect the
-    // normalized text of each commentable block in a section body, WITHOUT the
-    // DOM mutation attachElementComments performs (table replaceWith, comment
-    // buttons, mermaid/highlight). Used only for prev-vs-current block diffing.
-    // Safe to read prev pre-highlight while current blocks are read post-highlight.js:
-    // normText collapses all whitespace and highlight.js only wraps tokens in spans
-    // (textContent unchanged), so identical source normalizes to the same string.
-    function collectBlockTexts(bodyMarkdown) {
-      const tmp = document.createElement("div");
-      tmp.innerHTML = md(bodyMarkdown);
-      const out = new Set();
-      for (const c of Array.from(tmp.children)) {
+    // The one place the review block is defined. Both the comment layer and the diff layer
+    // read this list, so a block can never be commentable without being diffable or the
+    // reverse. The child list is snapshotted first, so a caller free to mutate what it is
+    // handed (attachElementComments wraps each table) cannot disturb the walk.
+    function commentTargets(root) {
+      const out = [];
+      for (const c of Array.from(root.children)) {
         const tag = c.tagName;
         if (tag === "UL" || tag === "OL") {
-          for (const li of Array.from(c.children)) if (li.tagName === "LI") out.add(normText(li.textContent));
+          for (const li of Array.from(c.children)) if (li.tagName === "LI") out.push(li);
         } else if (tag === "TABLE" || COMMENT_BLOCK_TAGS.includes(tag)) {
-          out.add(normText(c.textContent));
+          out.push(c);
         }
       }
       return out;
+    }
+
+    // --- diff (revise re-launch) ---
+    // Each commentable block's normalized text, without the DOM mutation
+    // attachElementComments performs. Safe to read prev pre-highlight while current blocks
+    // are read post-highlight.js: normText collapses whitespace and highlight.js only wraps
+    // tokens in spans, so identical source normalizes to the same string.
+    function collectBlockTexts(bodyMarkdown) {
+      const tmp = document.createElement("div");
+      tmp.innerHTML = md(bodyMarkdown);
+      return new Set(commentTargets(tmp).map((t) => normText(t.textContent)));
     }
 
     // --- comment state ---
@@ -168,9 +154,8 @@
 
     function selectDecision(v) {
       state.decision = v;
-      // Each decision radio carries a distinct name (so it is its own single-member
-      // group — always a Tab stop, never collapsed out when the sibling is checked),
-      // so enforce mutual exclusivity here rather than relying on native grouping.
+      // Each radio has a distinct name, so it stays its own Tab stop rather than being
+      // collapsed out when the sibling is checked — hence exclusivity enforced here.
       document.querySelectorAll(".decision-radio").forEach((r) => { r.checked = (r.value === v); });
       document.getElementById("send-btn").disabled = false;
     }
@@ -186,8 +171,7 @@
       return area;
     }
 
-    // Wire a comment button + textarea pair: typing updates the comment state, clicking
-    // toggles the textarea. Shared by the decision-card and per-element comment affordances.
+    // Shared by the decision-card and the per-element comment affordances.
     function wireCommentToggle(btn, area, id, excerpt, kind) {
       area.addEventListener("input", () => setComment(id, area.value, btn, excerpt, kind));
       btn.addEventListener("click", (e) => { e.preventDefault(); area.hidden = !area.hidden; if (!area.hidden) area.focus(); });
@@ -203,10 +187,8 @@
       return { btn, area };
     }
 
-    // The interactive layer of a Decision card, handed to the renderer as a hook: the
-    // Recommendation/Alternative toggle (only where there is an alternative to switch to)
-    // and the card's own free-text comment. The viewer-only export passes no hook and gets
-    // the same card without them.
+    // A Decision card's interactive layer, handed to the renderer as a hook. The export
+    // passes no hook and gets the same card without it.
     function decorateDecisionCard({ card, id, n, excerpt, hasAlternative }) {
       if (hasAlternative) {
         const toggle = document.createElement("div");
@@ -229,11 +211,8 @@
       affordanceHead.set(card, btn);
     }
 
-    // Attach a hover comment affordance to each commentable block element in a rendered body.
-    // List items are commentable individually (Build order steps / Risks / Test items); paragraphs,
-    // code blocks, blockquotes, sub-headings, and tables are commentable as whole blocks.
-    // AREA_INSIDE = tags whose textarea is appended *inside* the element (valid flow content);
-    // others receive it as a sibling (afterend). DIV is the synthetic table wrapper from below.
+    // Tags whose textarea is appended *inside* the element, where that is valid flow content;
+    // every other block receives it as a sibling. DIV is the synthetic table wrapper below.
     const AREA_INSIDE = new Set(["LI", "BLOCKQUOTE", "DIV", "FIGURE"]);
     // Each commentable block's comment affordance, so a thread box can be placed above it.
     const affordanceHead = new WeakMap();
@@ -271,20 +250,14 @@
 
     function attachElementComments(bodyEl, sectionId) {
       let n = 0;
-      const targets = [];
-      for (const c of Array.from(bodyEl.children)) {
-        const tag = c.tagName;
-        if (tag === "UL" || tag === "OL") {
-          for (const li of Array.from(c.children)) if (li.tagName === "LI") targets.push(li);
-        } else if (tag === "TABLE") {
-          const w = document.createElement("div");
-          c.replaceWith(w);
-          w.appendChild(c);
-          targets.push(w);
-        } else if (COMMENT_BLOCK_TAGS.includes(tag)) {
-          targets.push(c);
-        }
-      }
+      // A table gets a wrapper to carry the affordances, which a <table> itself cannot hold.
+      const targets = commentTargets(bodyEl).map((t) => {
+        if (t.tagName !== "TABLE") return t;
+        const w = document.createElement("div");
+        t.replaceWith(w);
+        w.appendChild(t);
+        return w;
+      });
       // prevBlockTexts holds an entry only for a "changed" non-decisions section
       // (see buildDiff), so this lookup alone selects which sections mark blocks: a
       // "new" section relies on its section badge (every block is new), an
@@ -297,12 +270,19 @@
       }
     }
 
-    // Render the diagram sources the renderer wrapped into figures. Handed to it as the
-    // `renderDiagrams` hook: the library is this page's alone, since an artifact host
-    // renders `<pre class="mermaid">` itself and the viewer-only export loads nothing.
+    // The renderer's `renderDiagrams` hook. The library is this page's alone: an artifact
+    // host renders `<pre class="mermaid">` itself and the export loads nothing.
     async function renderMermaid(nodes) {
       if (!nodes.length) return;
       try {
+        // Loaded lazily, inside both the guard and the try: a plan with no diagram never
+        // fetches it, and a CDN that does not answer leaves the fences un-rendered rather
+        // than taking the page.
+        const { default: mermaid } = await import("https://esm.sh/mermaid@11.15.0");
+        // Read once: mermaid bakes its theme at initialize, so an OS theme flip mid-review
+        // leaves diagrams in the previous theme until the page is reloaded.
+        const darkScheme = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        mermaid.initialize({ startOnLoad: false, theme: darkScheme ? "dark" : "default", securityLevel: "strict" });
         // suppressErrors keeps a single bad fence from aborting the batch — valid sibling
         // fences still render; the failing one stays as its (un-rendered) source text.
         await mermaid.run({ nodes, suppressErrors: true });
@@ -313,6 +293,8 @@
 
     // --- conversation thread (rounds already submitted) ---
     let THREAD = [];
+    // As the renderer handed it back: its shell ids are not this page's to know.
+    let HERO_EL = null;
     let DECISIONS_SECTION_ID = "";
     const threadBoxes = new Map();
 
@@ -320,17 +302,15 @@
     // has its block id to fall back on.
     const entrySection = (e) => (e.anchor && e.anchor.section) || sectionOfBlockId(e.block, DECISIONS_SECTION_ID);
 
-    // Resolve an entry to the block it belongs under, or null to send it to the log alone.
-    // A figure resolves by section — § Figures layer allows one per section, and a figure's own
-    // text is an SVG's run-together labels or mermaid's injected CSS, neither of them an anchor.
+    // The block an entry belongs under, or null to send it to the log alone. A figure
+    // resolves by section — § Figures layer allows one each, and a figure's own text is an
+    // SVG's run-together labels or mermaid's injected CSS, neither of them an anchor.
     function findAnchorTarget(e) {
       const secId = entrySection(e);
       if (!secId) return null;
-      // The hero slot sits above the plan rather than inside it, so it is the one "section"
-      // whose container is not a `sec-` element. A real section slugging to `hero` wins, so a
-      // plan that happens to have one titled that keeps its own comments.
+      // The hero is the one "section" whose container is not a `sec-` element.
       const sec = secId === HERO_SECTION_ID
-        ? document.getElementById("hero")
+        ? HERO_EL
         : document.getElementById(`sec-${secId}`);
       if (!sec) return null;
       if (e.kind === "figure") return sec.querySelector("figure");
@@ -404,9 +384,8 @@
       return box;
     }
 
-    // Replay each entry under its block where the anchor still resolves. Returns the ids that
-    // did not resolve, which the log below marks — the log carries every entry either way, so
-    // this pass duplicates rather than moves.
+    // Replay each entry under its block where the anchor resolves, returning the ids that
+    // did not. The log carries every entry either way, so this pass duplicates, never moves.
     function renderThread() {
       const loose = new Set();
       for (const round of THREAD) {
@@ -454,12 +433,6 @@
       INSTANCE = instance || null;
       if (lang === "ja") {
         SWITCH_MSG = "この Decision を Alternative に切り替える";
-        // The "Changed" / "New" badges stay English UI chrome and are not localized.
-        RENDER_LABELS = {
-          ...LABELS.ja,
-          diffBanner: (n, removed) => `🔍 前回レビューから ${n} 個のセクションが変更・追加されました${removed ? `（削除 ${removed} 件）` : ""} — 変更箇所を以下にハイライト`,
-          diffBannerNone: "🔍 前回レビューからセクションの変更はありません",
-        };
         KBD_HINT = "<kbd>a</kbd> 承認 · <kbd>r</kbd> 変更を依頼 · <kbd>⌘/Ctrl+↵</kbd> 送信";
         APPLY_NOTE = "変更を依頼すると、コメントはその時点でプラン文書に反映されます。質問のコメントはプランを変えずにこのページ上で回答します。";
         TH = {
@@ -485,12 +458,11 @@
 
       DECISIONS_SECTION_ID = (sections.find((s) => s.type === "decisions") || {}).id || "";
 
-      // The renderer draws the plan; the hooks below are this page's interactive layer.
-      // It is built here rather than at module scope because its labels come from `lang`.
+      // Built here rather than at module scope because its labels come from `lang`.
       const renderer = createRenderer({
-        labels: RENDER_LABELS,
+        // The "Changed" / "New" badges stay English UI chrome and are not localized.
+        labels: LABELS[lang] || LABELS.en,
         diff,
-        mermaidTag: "div",
         hooks: {
           decorateDecisionCard,
           decorateSection: ({ bodyEl, section }) => attachElementComments(bodyEl, section.id),
@@ -498,7 +470,8 @@
         },
       });
 
-      const { planEl } = await renderer.renderPlan(model);
+      const { planEl, heroEl } = await renderer.renderPlan(model);
+      HERO_EL = heroEl;
 
       // After the collapse, so a thread stays outside the <details> and remains visible on a
       // collapsed Build order step. Matching reads the anchor key captured before it, not live
@@ -518,9 +491,8 @@
 
     document.getElementById("send-btn").addEventListener("click", submit);
 
-    // Focus-independent keyboard shortcuts. macOS Full Keyboard Access (off by
-    // default) makes Chrome exclude the decision radios and Send button from Tab
-    // order, so a/r/⌘|Ctrl+Enter are the reliable keyboard path regardless.
+    // Focus-independent, because macOS Full Keyboard Access (off by default) makes Chrome
+    // drop the radios and Send button from Tab order.
     document.addEventListener("keydown", (e) => {
       if (e.isComposing) return;                                            // mid-IME (e.g. Japanese) — don't hijack
       if (document.getElementById("app").classList.contains("submitted")) return; // gate already sent
@@ -541,9 +513,8 @@
     });
 
     // Watch for the relaunched server. `instance` changes per process, so polling the old one
-    // while it shuts down returns the value already held and reloads nothing; a connection
-    // failure in between is the expected gap, not an error. /api/instance rather than /api/plan:
-    // this runs every couple of seconds for as long as the caller takes.
+    // while it shuts down reloads nothing, and a connection failure in between is the expected
+    // gap. /api/instance rather than /api/plan: this runs for as long as the caller takes.
     function startPolling() {
       if (!INSTANCE) return; // nothing to compare against — a reload would fire on the first poll
       const deadline = Date.now() + POLL_GIVEUP_MS;
@@ -584,8 +555,7 @@
         // here is the keydown guard's first early-return, so re-entry can't slip through.
         document.getElementById("app").classList.add("submitted");
         const done = document.getElementById("done");
-        // Only a revise brings the gate back: the caller applies the comments and relaunches on
-        // the same port, so the tab waits here rather than closing the loop.
+        // Only a revise brings the gate back, on the same port, so the tab waits here.
         if (state.decision === "revise") {
           done.textContent = POLL_MSG;
           startPolling();

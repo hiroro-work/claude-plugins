@@ -2,6 +2,17 @@
 
 ## 2026-08-29
 
+### dev-workflow v1.128.1 / dev-workflow-bundle v1.151.1
+
+- refactor(dev-workflow): tidy the plan-review scripts and cut their comments back to what a future edit needs
+  - The mermaid library now loads only once a plan turns out to have a diagram. It was a static import, which a module fetches and evaluates before any of its own code runs, so every launch — and every post-revise reload — waited on it even with no diagram on the page. It is also loaded inside the failure handler now, so a CDN that does not answer leaves the fences un-rendered instead of taking the whole render down.
+  - `plan-render.mjs` holds every localized string it writes, both languages, rather than the English defaults sitting inline and the Japanese ones two files away in `index.html`. Both surfaces now pass `LABELS[lang]` the same way.
+  - Which elements are review blocks is defined once in `index.html`, where the comment layer and the diff layer had each walked the rendered body with their own copy of the rule. A change to one could silently stop `block-changed` marks landing on the blocks that are actually commentable.
+  - `createRenderer` derives how a mermaid fence is held from whether the caller supplied a diagram hook, instead of taking that as a second option the caller had to keep in agreement with the first. A mismatched pair used to show the reader a diagram's source with nothing said about it.
+  - Smaller cleanups: one factory for a thread entry in `serve.mjs` (a round read off disk and one appended in-process must be the same record), the two flags carrying the port-fallback bit collapsed into one, the hero element taken from what `renderPlan` returns rather than re-found by the renderer's own shell id, and two duplicated CSS blocks merged.
+  - Comments across the five js/html files are cut roughly a quarter, keeping the ones whose loss would let an edit break something silently — ordering constraints, cross-file contracts, rename hazards, the artifact CSP's silent failures — and dropping restatements of the code and arguments against roads not taken.
+  - Category: `ambiguity`
+
 ### dev-workflow v1.128.0 / mobpro v1.39.0 / dev-workflow-bundle v1.151.0
 
 - feat(dev-workflow, mobpro): rebuild the plan-review page around a whole-change picture, and give the same renderer a viewer-only output

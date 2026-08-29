@@ -1,46 +1,44 @@
 // Plan rendering for the plan-review viewer.
 //
-// Everything here turns a parsed plan into DOM and nothing here reads or writes
-// review state, so both surfaces render from this one file: `index.html` builds
-// the interactive gate on top of it, and `export-plan-html.mjs` inlines it into a
-// viewer-only page. Interaction is supplied by the caller as `hooks` — a caller
-// that passes none gets the same structure with no affordances in it.
+// Turns a parsed plan into DOM and reads no review state, so both surfaces render from
+// here: `index.html` builds the interactive gate on top, `export-plan-html.mjs` inlines
+// it into a viewer-only page. Interaction arrives as `hooks`.
 //
-// What deliberately stays in `index.html`: block-id assignment and excerpt
-// capture (`attachElementComments`), the comment and thread widgets, the submit
-// bar, the relaunch poll, and the mermaid library call. Those hold the comment
-// anchoring contract that `references/visual-plan-review.md` specifies, and
-// moving them here would put the contract in two places.
+// The comment-anchoring contract `references/visual-plan-review.md` specifies stays in
+// `index.html` (block ids, excerpt capture, the widgets, the mermaid library call);
+// moving any of it here would put that contract in two places.
 //
-// `export-plan-html.mjs` inlines this file by deleting one leading named-braces
-// import of `./plan-parse.mjs`. Keep the imports in that one shape — a second
-// import statement, a namespace form, or one further down the file breaks the
-// export with no signal on this side.
+// `export-plan-html.mjs` inlines this file by deleting one leading named-braces import
+// of `./plan-parse.mjs`. Keep the imports in that shape — a second import statement, a
+// namespace form, or one further down the file breaks the export with no signal here.
 
 import {
-  FENCE_RE, OPEN_TYPES, STEP_COLLAPSE_TYPES,
+  OPEN_TYPES, STEP_COLLAPSE_TYPES,
   anchorNorm, decisionSig, emptyDiff, escapeHtml, excerptOf, parseDecisions,
   sectionGist, splitPreamble, stripMd,
 } from "./plan-parse.mjs";
 
-// The strings this file localizes, in one place, so neither surface keeps a copy of the
-// text. A surface passes `labels: LABELS[lang]`.
+// Every string this file localizes, so neither surface keeps a copy. Pass `LABELS[lang]`.
 export const LABELS = {
-  en: { foldLabel: "Read the text" },
-  ja: { foldLabel: "文章を読む" },
+  en: {
+    foldLabel: "Read the text",
+    diffBanner: (n, removed) => `🔍 ${n} section${n === 1 ? "" : "s"} changed or added since your last review${removed ? `, ${removed} removed` : ""} — changes highlighted below`,
+    diffBannerNone: "🔍 No section changes since your last review",
+  },
+  ja: {
+    foldLabel: "文章を読む",
+    diffBanner: (n, removed) => `🔍 前回レビューから ${n} 個のセクションが変更・追加されました${removed ? `（削除 ${removed} 件）` : ""} — 変更箇所を以下にハイライト`,
+    diffBannerNone: "🔍 前回レビューからセクションの変更はありません",
+  },
 };
 
-// Exported so a caller that renders Markdown of its own — a conversation reply, say —
-// parses it with the same options as the plan body.
+// Exported so a caller rendering Markdown of its own uses the plan body's options.
 export const md = (t) => window.marked.parse(t || "");
-export const mdInline = (t) => window.marked.parseInline(t || "");
+const mdInline = (t) => window.marked.parseInline(t || "");
 
-// The shell both surfaces render into. Held here rather than in each surface's
-// markup because `renderHeader` writes to these ids by name, so a surface whose
-// shell drifted would silently render a plan with no header.
-// The section id the hero slot's comments carry. Leading underscore on purpose: `slugify`
-// strips every character outside [a-z0-9-], so no plan section can ever mint this id and
-// collide with the slot. visual-plan-review.md § Figures layer pins it as the contract.
+// The section id the hero slot's comments carry. The leading underscore is load-bearing:
+// `slugify` strips every character outside [a-z0-9-], so no plan section can mint this id
+// and collide with the slot. visual-plan-review.md § Figures layer pins it as the contract.
 export const HERO_SECTION_ID = "_hero";
 
 export const PLAN_SHELL_HTML = `<header class="plan-head">
@@ -54,15 +52,13 @@ export const PLAN_SHELL_HTML = `<header class="plan-head">
 <nav id="toc"><div class="toc-title">Sections</div></nav>
 <main id="plan"></main>`;
 
-// The step separator in `N. **<heading>** — <detail>`; dropped once the heading
-// and the detail are split apart, where it reads as a stray dash.
+// The separator in `N. **<heading>** — <detail>`, a stray dash once the two are split.
 const STEP_SEP_RE = /^\s*[—–-]\s*/;
 
-// A caller stamps this on anything it appends *to a commentable block*, so
-// collapseBuildOrderSteps can leave those elements outside the disclosure it builds without
-// this file knowing what any particular caller's widgets are called. Exported because a
-// rename on only one side drains the affordances into the disclosure — a collapsed Build
-// order step would hide its own comment box, with no error and no failing test.
+// A caller stamps this on anything it appends to a commentable block, so
+// collapseBuildOrderSteps can leave those elements outside the disclosure it builds.
+// Renaming it on one side only drains the affordances into the disclosure — a collapsed
+// Build order step hides its own comment box, with no error and no failing test.
 export const AFFORDANCE_ATTR = "affordance";
 
 function chip(label, value, cls) {
@@ -72,25 +68,26 @@ function chip(label, value, cls) {
 /**
  * @param {object} [env]
  * @param {{foldLabel?: string, diffBanner?: (n: number, removed: number) => string, diffBannerNone?: string}} [env.labels]
- *   Localized strings. Everything else this file writes is UI chrome and stays English.
+ *   Localized strings, normally `LABELS[lang]`. Merged over `LABELS.en`, so a partial table
+ *   keeps English for whatever it leaves out. Everything else this file writes is UI chrome
+ *   and stays English.
  * @param {object} [env.diff] plan-parse.mjs' diff state; an inactive one renders no diff chrome.
  * @param {boolean} [env.forceOpen] Open every disclosure. The viewer-only page has no
  *   diff to mark what changed, so nothing there may start folded away.
- * @param {{decorateSection?: Function, decorateDecisionCard?: Function}} [env.hooks]
- * @param {string} env.mermaidTag Tag to hold a mermaid diagram's source: `div` where a
- *   library renders it, `pre` where the host renders `<pre class="mermaid">` itself. Required —
- *   the wrong one here shows the reader a diagram's source instead of the diagram.
+ * @param {{decorateSection?: Function, decorateDecisionCard?: Function, renderDiagrams?: Function}} [env.hooks]
+ *   `renderDiagrams` also decides how a mermaid fence is held: with one, a `div` for the
+ *   caller's library to render into; without, the `<pre class="mermaid">` an artifact host
+ *   renders itself. Derived rather than passed, because a mismatched pair would show the
+ *   reader a diagram's source instead of the diagram and say nothing about it.
  */
 export function createRenderer(env = {}) {
-  const labels = env.labels || {};
-  const foldLabel = labels.foldLabel || LABELS.en.foldLabel;
-  const diffBanner = labels.diffBanner || ((n, removed) => `🔍 ${n} section${n === 1 ? "" : "s"} changed or added since your last review${removed ? `, ${removed} removed` : ""} — changes highlighted below`);
-  const diffBannerNone = labels.diffBannerNone || "🔍 No section changes since your last review";
+  const labels = { ...LABELS.en, ...(env.labels || {}) };
+  const { foldLabel, diffBanner, diffBannerNone } = labels;
   const diff = env.diff || emptyDiff();
   const forceOpen = Boolean(env.forceOpen);
   const hooks = env.hooks || {};
-  const mermaidTag = env.mermaidTag;
-  if (!mermaidTag) throw new Error("createRenderer: env.mermaidTag is required (\"div\" or \"pre\")");
+  const decorateSection = hooks.decorateSection || (() => {});
+  const mermaidTag = hooks.renderDiagrams ? "div" : "pre";
 
   function renderHeader(ov, planId, riskCount) {
     document.getElementById("plan-id").textContent = planId;
@@ -99,8 +96,7 @@ export function createRenderer(env = {}) {
     if (ov.difficulty) chips.push(chip("Difficulty", stripMd(ov.difficulty)));
     if (riskCount) chips.push(chip("Risks", String(riskCount), "risk"));
     document.getElementById("plan-chips").innerHTML = chips.join("");
-    // Scope is descriptive (often a file list), so render it as a labeled meta row that wraps
-    // rather than a fixed-shape pill alongside the short enum chips above.
+    // Scope is descriptive prose, so it gets a meta row that wraps, not a fixed-shape pill.
     const scopeEl = document.getElementById("plan-scope");
     if (ov.scope) {
       scopeEl.innerHTML = `<span class="meta-label">Scope</span><span class="meta-val">${escapeHtml(stripMd(ov.scope))}</span>`;
@@ -138,11 +134,9 @@ export function createRenderer(env = {}) {
     planEl.appendChild(div);
   }
 
-  // The figures layer's `## Hero` block, in the slot above the plan — the whole-change
-  // picture, keyed on that block rather than on where a figure happened to sit, so a
-  // heading naming anything else keeps the disposition it always had. A plan with no such
-  // block leaves the slot hidden and taking no space: the figure is required of mobpro and
-  // optional for dev-workflow.
+  // The figures layer's `## Hero` block, in the slot above the plan. Keyed on that block
+  // rather than on where a figure happened to sit. A plan with none leaves the slot hidden
+  // and taking no space — the figure is required of mobpro and optional for dev-workflow.
   function renderHero(heroMarkdown) {
     const hero = document.getElementById("hero");
     if (!hero || !heroMarkdown) return null;
@@ -152,8 +146,7 @@ export function createRenderer(env = {}) {
     return hero;
   }
 
-  // A Decision item as question + recommendation + alternative panels. The
-  // Alternative toggle and the comment affordance are the caller's, added through
+  // The Alternative toggle and the comment affordance are the caller's, added through
   // `hooks.decorateDecisionCard` — the card renders complete without them.
   function renderDecisionCard(it, n) {
     const id = `decision-${n}`;
@@ -190,9 +183,8 @@ export function createRenderer(env = {}) {
     const det = document.createElement("details");
     det.className = "section" + (section.type === "context" ? " is-context" : "");
     det.id = `sec-${section.id}`;
-    // The section's classified type, so the stylesheet can give each kind its own visual
-    // form (the Build order a sequence, Risks a list of cards) without any of them needing
-    // a wrapper element around the blocks a comment anchors on.
+    // The classified type, so the stylesheet can give each kind its own form without a
+    // wrapper element around the blocks a comment anchors on.
     det.dataset.sectionType = section.type;
     // status is null outside diff mode, else "new" | "changed" | "unchanged"
     const status = diff.active ? (diff.sectionStatus.get(section.id) || "unchanged") : null;
@@ -252,12 +244,9 @@ export function createRenderer(env = {}) {
     });
   }
 
-  // Turn each mermaid fence into a <figure> holding the diagram source, lifting the
-  // paragraph right after the fence into its caption — so a mermaid figure is the same
-  // commentable unit as an inline-SVG one and its comment carries kind:"figure" rather
-  // than routing as prose. Returns the source nodes, which a caller that loads a mermaid
-  // library then renders; a host that renders `<pre class="mermaid">` itself needs nothing
-  // further.
+  // Each mermaid fence becomes a <figure>, the paragraph after it becoming the caption, so
+  // a mermaid figure is the same commentable unit as an inline-SVG one and its comment
+  // carries kind:"figure". Returns the source nodes for a caller with a library to render.
   function wrapMermaidFigures(root) {
     const nodes = [];
     root.querySelectorAll("pre code.language-mermaid").forEach((code) => {
@@ -284,20 +273,17 @@ export function createRenderer(env = {}) {
     return nodes;
   }
 
-  // Collapse each Build order step to its bold heading, opening the detail on click — what lets
-  // the section sit in the must-review tier without opening at full length. The step shape is
-  // `N. **<heading>** — <detail>` (plan-authoring.md § Template); markdown puts that heading
-  // directly under the <li> in a tight list and inside a wrapping <p> in a loose one (blank
-  // lines between steps), and both are handled. A step that does not open with a bold heading,
-  // or carries nothing behind one, is left alone — graceful degradation for plans predating the
-  // shape.
+  // Collapse each Build order step to its bold heading, so the section can sit in the
+  // must-review tier without opening at full length. The shape is `N. **<heading>** —
+  // <detail>` (plan-authoring.md § Template); markdown puts the heading directly under the
+  // <li> in a tight list and inside a <p> in a loose one, and both are handled. A step
+  // without a bold heading is left alone.
   //
-  // Must run *after* the caller's `decorateSection`, for two reasons. The comment affordances
-  // are by then direct children of the <li>, so draining the <li> up to the first affordance
-  // leaves them outside the nested <details> and a collapsed step stays commentable. And
-  // stripping the separator below rewrites a text node inside the <li>, which the caller reads
-  // for the comment excerpt and for block-changed diff matching — run it first and every step
-  // reads as changed on a revise re-launch.
+  // Must run *after* the caller's `decorateSection`, for two reasons. The affordances are by
+  // then children of the <li>, so draining it up to the first affordance leaves them outside
+  // the nested <details> and a collapsed step stays commentable. And stripping the separator
+  // rewrites a text node the caller already read for the excerpt and for block-changed
+  // matching — run it first and every step reads as changed on a revise re-launch.
   function collapseBuildOrderSteps(bodyEl) {
     // First element child, but only when nothing except whitespace precedes it.
     const leadEl = (el) => {
@@ -342,28 +328,21 @@ export function createRenderer(env = {}) {
     }
   }
 
-  // Fold a figure-bearing container's prose into a disclosure beneath the figure, so it opens on
-  // the figure alone — plan-figures.md § How the page shows a figure holds what that buys and
-  // what it leaves untouched.
+  // Fold a figure-bearing container's prose beneath the figure, so the section opens on the
+  // figure alone (plan-figures.md § How the page shows a figure).
   //
   // Must run *after* the caller's `decorateSection`, for the same two reasons
-  // collapseBuildOrderSteps gives: a block's comment input is by then its own child or its next
-  // sibling, so moving the block's run of children carries the input with it, and the text a
-  // thread entry matches against was captured before the affordances joined the element.
+  // collapseBuildOrderSteps gives.
   //
-  // Build order is excluded by the caller (STEP_COLLAPSE_TYPES) — its steps already open at
-  // their headings, and folding the list on top of that buries the section twice. A decisions
-  // section is excluded by its type, not by the shape it rendered as: the caller hands this its
-  // preamble container, where a figure targeting it lands, so the preamble's prose folds while
-  // the cards — which carry the Alternative toggle — stay outside and visible. Keying on the
-  // type matters because a decisions body that fails card detection renders as plain prose, and
-  // folding *that* would put every Question / Recommendation / Alternative behind one click.
+  // Two exclusions, both the caller's: Build order, whose steps already open at their
+  // headings, and decisions, excluded by *type* rather than by the shape it rendered as — a
+  // decisions body that fails card detection renders as plain prose, and folding that would
+  // put every Question / Recommendation / Alternative behind one click.
   function foldProseUnderFigure(bodyEl, open) {
     // Bail before allocating: most sections carry no figure, three per plan being the cap.
     if (!bodyEl.querySelector(":scope > figure")) return;
-    // Every figure stays out — one per section is the rule, and a second one buried behind a
-    // text label would be invisible, where left in place it merely reads as unfolded.
-    // A figure's own textarea is placed inside it (AREA_INSIDE), so every other child is prose.
+    // Every figure stays out: one per section is the rule, and a second buried behind a text
+    // label would be invisible. A figure's own textarea sits inside it (AREA_INSIDE).
     const rest = Array.from(bodyEl.children).filter((c) => c.tagName !== "FIGURE");
     if (!rest.length) return;
     const det = document.createElement("details");
@@ -376,10 +355,9 @@ export function createRenderer(env = {}) {
     bodyEl.appendChild(det); // after the figures, now the body's only other children
   }
 
-  // The whole render walk, in the one order that holds. Both surfaces call this
-  // rather than sequencing the pieces themselves: the ordering constraints
-  // collapseBuildOrderSteps and foldProseUnderFigure document are what a
-  // second copy of this loop would drift away from.
+  // The whole render walk, in the one order that holds. Both surfaces call this rather than
+  // sequencing the pieces: the ordering constraints collapseBuildOrderSteps and
+  // foldProseUnderFigure document are what a second copy of this loop would drift from.
   async function renderPlan({ id, preamble, sections, overview, riskCount }) {
     renderHeader(overview, id, riskCount);
     renderDiffBanner();
@@ -397,10 +375,9 @@ export function createRenderer(env = {}) {
       bodyRefs.push({ ...r, section: s });
     }
 
-    // Highlight and diagram-wrap first (a mermaid fence becomes a figure), then decorate, so
-    // the caller's affordances land on stable rendered blocks. The hero is in scope here and
-    // not walked separately: mermaid is the figures layer's default notation, so a hero
-    // written as a fence is only a figure once this pass has run.
+    // Highlight and diagram-wrap before decorating, so the caller's affordances land on
+    // stable blocks. The hero is in scope here and not walked separately: a hero written as
+    // a mermaid fence is only a figure once this pass has run.
     const drawn = [planEl, heroEl].filter(Boolean);
     const mermaidNodes = [];
     for (const root of drawn) {
@@ -410,7 +387,7 @@ export function createRenderer(env = {}) {
     if (hooks.renderDiagrams) await hooks.renderDiagrams(mermaidNodes);
     // The hero is a commentable figure like any other, so the caller decorates it too — the
     // gate's staleness contract rests on a revise comment being able to land on a figure.
-    if (heroEl && hooks.decorateSection) hooks.decorateSection({ bodyEl: heroEl, section: { id: HERO_SECTION_ID, type: "hero" } });
+    if (heroEl) decorateSection({ bodyEl: heroEl, section: { id: HERO_SECTION_ID, type: "hero" } });
 
     // Both passes stay inside the one section body they are handed, so the collapse's
     // must-run-after-decorate ordering is per-section and needs no document-wide barrier.
@@ -424,12 +401,12 @@ export function createRenderer(env = {}) {
         // does not, and that is where a figure targeting this section lands — so the preamble
         // is both what to walk and the only prose there is to fold.
         if (r.preEl) {
-          if (hooks.decorateSection) hooks.decorateSection({ bodyEl: r.preEl, section: r.section });
+          decorateSection({ bodyEl: r.preEl, section: r.section });
           foldProseUnderFigure(r.preEl, edited);
         }
         continue;
       }
-      if (hooks.decorateSection) hooks.decorateSection({ bodyEl: r.bodyEl, section: r.section });
+      decorateSection({ bodyEl: r.bodyEl, section: r.section });
       if (STEP_COLLAPSE_TYPES.has(r.section.type)) collapseBuildOrderSteps(r.bodyEl);
       // A decisions section that did not resolve into cards renders as plain prose; folding it
       // would hide the very items the gate exists to have judged.

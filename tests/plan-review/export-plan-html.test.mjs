@@ -136,10 +136,13 @@ test("both theme states are styled, neither only behind a media query", () => {
   assert.ok(shell.includes('[data-theme="light"]'), "the OS-preference block is not guarded against an explicit light choice");
 });
 
+// The renderer holds a mermaid fence in whichever tag follows from the caller's own
+// diagram hook, so the absence of that hook here is what makes the host render the fence.
 test("mermaid renders through the host, so no diagram library is loaded", () => {
   const shell = pageShell(exportPlan());
   assert.equal(/mermaid[^"]*\.js/i.test(shell), false, "a mermaid library is loaded");
-  assert.ok(shell.includes('mermaidTag: "pre"'), "diagrams are not emitted as <pre class=\"mermaid\">");
+  assert.equal(shell.includes("renderDiagrams:"), false,
+    "the export claims a diagram renderer it has no library for");
 });
 
 test("nothing is folded away, since the page cannot say what changed", () => {

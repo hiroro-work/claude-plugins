@@ -1,18 +1,15 @@
 // Plan parsing for the plan-review viewer.
 //
-// Everything here is free of the DOM, of `window`, and of module-level mutable
-// state, so both browser surfaces import it and the Node tests import the same
-// file. Rendering lives in `plan-render.mjs`; `collectBlockTexts` and
-// `attachElementComments` stay in `index.html`, needing `marked` or a document to
-// walk.
+// Free of the DOM, of `window`, and of module-level mutable state, so both browser
+// surfaces and the Node tests import this same file. Keep it that way. Rendering lives
+// in `plan-render.mjs`; the walks needing `marked` or a document stay in `index.html`.
 
 export const stripMd = (t) => (t || "").replace(/[*`]/g, "").trim();
 export const normText = (t) => (t || "").replace(/\s+/g, " ").trim();
 export const excerptOf = (t) => normText(t).slice(0, 40);
 
-// One normal form for both sides of an anchor comparison. The browser's excerpt comes from
-// rendered DOM text while the caller writes an anchor from Markdown source, so the markup
-// the renderer already consumed has to come off before the two can be compared at all.
+// One normal form for both sides of an anchor comparison: the browser's excerpt is rendered
+// DOM text while the caller writes its anchor from Markdown source.
 export const anchorNorm = (t) =>
   normText(String(t || "").replace(/!?\[([^\]]*)\]\([^)]*\)/g, "$1").replace(/[*_`~]/g, "")).toLowerCase();
 // Tolerant on length: an anchor is a prefix of the block, or the block of the anchor once an
@@ -22,9 +19,8 @@ export const anchorMatches = (a, b) => {
   const [short, long] = a.length <= b.length ? [a, b] : [b, a];
   return short.length >= 8 && long.startsWith(short);
 };
-// The section a block id names. Both id forms encode it, so nothing has to be threaded
-// through the comment-state calls; `decision-<n>` resolves against the Decisions section
-// id the caller found in init.
+// The section a block id names — both id forms encode it, so nothing has to be threaded
+// through the comment-state calls.
 export const sectionOfBlockId = (id, decisionsSectionId) => {
   const b = String(id || "");
   if (b.includes("::")) return b.slice(0, b.indexOf("::"));
@@ -34,22 +30,15 @@ export const sectionOfBlockId = (id, decisionsSectionId) => {
 const HTML_ESCAPES = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" };
 export const escapeHtml = (t) => (t || "").replace(/[&<>"]/g, (c) => HTML_ESCAPES[c]);
 
-// Exported because plan-render.mjs scans a section body for its first line of prose and
-// has to skip fences by the same rule the parser uses.
-export const FENCE_RE = /^\s*(`{3,}|~{3,})/;
+// One rule for every line walk in this file that has to know whether it is inside a fence.
+const FENCE_RE = /^\s*(`{3,}|~{3,})/;
 
-// What the viewer knows about each plan section, in match-priority order: `match` lists title
-// prefixes (lowercased) that map to the type; `open` opens the section by default;
-// `collapseSteps` collapses each of the section's numbered steps to its bold heading. The
-// Decisions/Risks render paths key off `type` below.
-// Both skills' plan formats share the `Build order` heading; the remaining alternate prefixes
-// in each list are mobpro's own heading names. Source of truth for the shared prefix:
-// dev-workflow's `references/plan-authoring.md` § Template (mobpro's references/plan-shape.md follows it);
-// mobpro's own headings are defined in that file. Keep in sync either way — a
-// heading renamed upstream and not here silently returns that plan to all-collapsed. Those
-// prefixes stop short of an apostrophe so straight vs. curly quotes cannot break the match.
-// mobpro's `Why this order` takes its own type rather than riding along with buildorder: it
-// wants the same open-by-default treatment but must not have its reasoning collapsed away.
+// What the viewer knows about each plan section, in match-priority order.
+//
+// The title prefixes come from dev-workflow's `references/plan-authoring.md` § Template and
+// from mobpro's `references/plan-shape.md`, which follows it. Keep in sync both ways — a
+// heading renamed upstream and not here silently returns that plan to all-collapsed. Each
+// prefix stops short of an apostrophe, so straight vs. curly quotes cannot break the match.
 const SECTION_TYPES = [
   { type: "overview", match: ["overview", "what we"], open: true },
   { type: "decisions", match: ["decision", "choices i made"], open: true },
@@ -72,8 +61,8 @@ export function slugify(title) {
   return (title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "")) || "section";
 }
 
-// Split the plan into level-3 (###) sections, tracking fenced code so a ### inside a
-// code block is not mistaken for a heading. Content before the first ### is the preamble.
+// Split into level-3 (###) sections, tracking fenced code so a ### inside a code block is
+// not mistaken for a heading. Content before the first ### is the preamble.
 export function parseSections(markdown) {
   const lines = markdown.split(/\r?\n/);
   const sections = [];
@@ -132,11 +121,8 @@ export function countListItems(body) {
 export function parseDecisions(body) {
   const FIELD_RE = /^\s*(?:[-*]\s+)?\*\*(Question|Recommendation|Alternative)\*\*\s*[:：]?\s*(.*)$/;
   // An unindented numbered bold-only line ("**1. title**") starts an item, but only when a
-  // **Question** is the next non-blank line after it. Both guards keep the rule from ever splitting
-  // a field body: an indented or unnumbered bold line, any ATX heading, and a bold line followed by
-  // prose all stay body text, because splitting there truncates a Recommendation and carries its
-  // tail onto the next card. Everything outside that one shape keeps the old fold — the template
-  // statement is the real fix; this is only the net under it.
+  // **Question** is the next non-blank line. Both guards matter: splitting anywhere else
+  // truncates a Recommendation and carries its tail onto the next card.
   const ITEM_HEAD_RE = /^\*\*(\d+[.)]\s*\S.*?)\*\*\s*$/;
   const items = [];
   const preamble = [];
@@ -203,10 +189,9 @@ export function parseDecisions(body) {
 
 const GIST_MAX = 120;
 
-// The one-line gist a collapsed section shows beside its title. Read from the section's
-// own Markdown rather than from its rendered body: the source has one unambiguous first
-// line of prose, where a card section's body holds several candidates. The viewer hides
-// this copy while the section is open, so nothing has to move out of the body.
+// The one-line gist a collapsed section shows beside its title. Read from Markdown rather
+// than the rendered body: the source has one unambiguous first line of prose, where a card
+// section's body holds several candidates.
 export function sectionGist(body) {
   let inFence = false;
   for (const raw of String(body || "").split("\n")) {
@@ -221,10 +206,8 @@ export function sectionGist(body) {
   return "";
 }
 
-// Everything the renderer needs about a plan, derived in one place. Both surfaces call
-// this rather than repeating the sequence: the empty-plan fallback section and the
-// itemCount the Risks badge reads are easy to get subtly different, and a second copy
-// would only be found by rendering both surfaces side by side.
+// Everything the renderer needs about a plan, derived in one place — a second copy of this
+// sequence would only be caught by rendering both surfaces side by side.
 export function preparePlan(markdown, id) {
   const { preamble: parsedPreamble, sections: parsed } = parseSections(markdown);
   // With no headings at all, parseSections puts the whole document in the preamble and the
@@ -241,11 +224,9 @@ export function preparePlan(markdown, id) {
   return { id, preamble, sections, overview, riskCount };
 }
 
-// The preamble is everything before the plan's first section heading, and the figures
-// layer's `## Hero` block lands there (visual-plan-review.md § Figures layer). Split it so
-// the viewer can put that block in its own slot: `hero` is the Hero block's Markdown, and
-// `prose` is everything else with the block headings taken off — the shape the preamble had
-// before Hero existed, so a heading naming anything else keeps its old disposition.
+// The figures layer's `## Hero` block lands in the preamble (visual-plan-review.md
+// § Figures layer). Split it out so the viewer can give it its own slot; `prose` is
+// everything else with the block headings taken off, as the preamble was before Hero.
 export function splitPreamble(preamble) {
   const lines = String(preamble || "").split("\n");
   const prose = [];
@@ -258,10 +239,8 @@ export function splitPreamble(preamble) {
     if (FENCE_RE.test(line)) inFence = !inFence;
     const h = !inFence && /^##\s+(.+?)\s*$/.exec(line);
     if (h) {
-      // A repeated heading keeps the first block and skips the rest — the disposition
-      // visual-plan-review.md § Figures layer's File format gives. Skipped means dropped,
-      // not demoted to prose: a second hero rendered as preamble text is the same figure
-      // twice on the page, which is what the first-wins rule exists to prevent.
+      // First wins, per visual-plan-review.md § Figures layer's File format. Skipped means
+      // dropped, not demoted to prose — that would put the same figure on the page twice.
       const isHero = h[1].trim() === "Hero";
       if (isHero && heroSeen) { target = skipped; continue; }
       if (isHero) { heroSeen = true; target = hero; continue; }
@@ -292,12 +271,10 @@ export function emptyDiff() {
   };
 }
 
-// Compare current sections against the previous-launch plan; classify each
-// current section new/changed/unchanged and precompute per-section prev block
-// sets for the changed ones. Section identity is the slug id from parseSections.
-// `collectBlockTexts` is passed in because collecting a section's block texts
-// needs a document and a Markdown renderer, which this module deliberately has
-// neither of.
+// Classify each current section new/changed/unchanged against the previous-launch plan and
+// precompute prev block sets for the changed ones. `collectBlockTexts` is passed in because
+// collecting block texts needs a document and a Markdown renderer, which this module has
+// neither of by design.
 export function buildDiff(prevMarkdown, sections, collectBlockTexts) {
   const diff = emptyDiff();
   const prev = parseSections(prevMarkdown);

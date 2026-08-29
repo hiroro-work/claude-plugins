@@ -153,13 +153,12 @@ header.plan-head h1 code { font-family: var(--font-mono); font-size: 0.78em; }
 .chip.risk b { color: var(--risk); }
 /* Scope is descriptive prose, not an enum — give it a labeled meta row that wraps,
    instead of cramming it into a fixed-shape pill like Difficulty / Risks */
-#plan-scope { margin-top: 8px; }
-.meta-scope { display: flex; gap: 8px; align-items: baseline; font-size: 12px; line-height: 1.5; }
+.meta-scope { margin-top: 8px; display: flex; gap: 8px; align-items: baseline; font-size: 12px; line-height: 1.5; }
 .meta-scope .meta-label {
   flex: none; font-family: var(--font-mono); font-size: 10px; font-weight: 500; letter-spacing: .06em;
   text-transform: uppercase; color: var(--muted); padding-top: 3px;
 }
-.meta-scope .meta-val { color: var(--fg); min-width: 0; }
+.meta-scope .meta-val { min-width: 0; }
 /* The whole-change picture, above the plan and across both columns — the one thing a reader
    who has never seen this plan meets first. Hidden and taking no space when the figures layer
    carried no Hero block. */
@@ -219,9 +218,8 @@ details.fold[open] > summary::before { transform: rotate(90deg); }
 details.section > summary { padding: 12px 0; align-items: center; gap: 4px 10px; font-weight: 600; flex-wrap: wrap; }
 details.section > summary::before { font-size: 12px; }
 /* Context = the "why" framing; tint it so it reads as lead context, not a structural section */
-details.section.is-context { background: var(--bg-soft); border-color: var(--border); }
+details.section.is-context { background: var(--bg-soft); }
 details.section.is-context > summary .sec-title { color: var(--muted); }
-details.section.is-context .sec-body { color: var(--fg); }
 .sec-title {
   font-family: var(--font-display); font-weight: 600; font-size: 18px;
   letter-spacing: -.003em;
@@ -264,16 +262,13 @@ details.section[open] > summary .sec-gist { display: none; }
 .hljs-attr, .hljs-attribute, .hljs-variable, .hljs-template-variable, .hljs-type, .hljs-built_in { color: var(--accent-ink); }
 .hljs-emphasis { font-style: italic; }
 .hljs-strong { font-weight: 600; }
-#hero pre {
-  background: var(--bg-soft); border: 1px solid var(--border);
-  border-radius: 8px; padding: 12px 14px; overflow-x: auto;
-  font-family: var(--font-mono); font-size: 12.5px; line-height: 1.6; text-align: left;
-}
-.sec-body pre {
+#hero pre, .sec-body pre {
   background: var(--bg-soft); border: 1px solid var(--border);
   border-radius: 8px; padding: 12px 14px; overflow-x: auto;
   font-family: var(--font-mono); font-size: 12.5px; line-height: 1.6;
 }
+/* the hero centres its figure content, which a code block must not inherit */
+#hero pre { text-align: left; }
 .sec-body code:not(pre code) {
   font-family: var(--font-mono);
   background: var(--bg-soft); border-radius: 4px; padding: 1px 5px; font-size: 0.82em;

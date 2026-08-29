@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-08-29
+
+### dev-workflow v1.128.0 / mobpro v1.39.0 / dev-workflow-bundle v1.151.0
+
+- feat(dev-workflow, mobpro): rebuild the plan-review page around a whole-change picture, and give the same renderer a viewer-only output
+  - The page a plan is approved on now opens on one figure of the whole change, gives each section the visual form its content calls for (the Build order a numbered sequence, the Decisions its two options side by side, the Risks a list of cards), and says what a collapsed section is about on its own header line. The plan body is untouched by all of it: every paragraph stays reachable and stays commentable, and the comment anchoring the gate depends on is unchanged.
+  - New reserved figures heading `## Hero` carries that opening figure. It names no plan section, sits outside the three-per-plan cap, and is required of a mobpro plan and optional for dev-workflow — a plan without one simply opens on its header.
+  - The view splits into `public/plan-view.css` (styling) and `public/plan-render.mjs` (rendering), with the comment affordances, conversation thread, submit bar, and relaunch poll staying in `public/index.html`. `serve.mjs` is unchanged apart from its docblock.
+  - Syntax colours are now written from the page's own palette rather than loaded as a highlight.js theme stylesheet, and the three web fonts come from Google Fonts. Both are what an artifact host's content policy admits, which the next change needs.
+  - New `scripts/plan-review/export-plan-html.mjs` writes a plan out as a single self-contained viewer-only page from those same three files — no comment affordances, no submit bar, no request of its own, the plan's Markdown embedded, and every disclosure open. Nothing invokes it yet; its contract is in its own file header. `--standalone` wraps the output for opening locally.
+  - Category: `missing-branch`
+
 ## 2026-08-28
 
 ### dev-workflow v1.127.0 / mobpro v1.38.0 / dev-workflow-bundle v1.150.0

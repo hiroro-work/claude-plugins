@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-08-30
+
+### dev-workflow v1.130.0 / mobpro v1.41.0 / dev-workflow-bundle v1.153.0
+
+- feat(dev-workflow, mobpro): override `plan_artifact` per run with `--artifact <value>`
+  - `--artifact off` holds the plan back on a project configured for `share` or `review`, and `--artifact share` / `--artifact review` publishes on a project that normally does not, with `review` additionally holding the run for the team's review before implementation. The flag takes the same three values as the config key and applies to that run alone; nothing is written back to the config files.
+  - It is an invocation modifier on the same terms as `--executor`. It is ignored under `--init`, and an invalid or unsupported value warns and leaves the config-resolved value in effect.
+  - `mobpro` takes it too. Its fallback-key list and defaults are unchanged, since the flag is not a config layer.
+
 ## 2026-08-29
 
 ### dev-workflow v1.129.0 / mobpro v1.40.0 / dev-workflow-bundle v1.152.0

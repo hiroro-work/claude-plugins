@@ -63,8 +63,16 @@ export function slugify(title) {
 
 // Split into level-3 (###) sections, tracking fenced code so a ### inside a code block is
 // not mistaken for a heading. Content before the first ### is the preamble.
+// A plan document may open with YAML frontmatter the workflow writes — not plan content, and
+// it would otherwise render as the preamble's first paragraph. The lookahead demands a YAML key
+// on the first line: without it a plan opening on a `---` thematic break loses everything up to
+// the next one.
+const FRONTMATTER_RE = /^---\r?\n(?=[A-Za-z_][\w.-]*[ \t]*:)[\s\S]*?\r?\n---[ \t]*\r?\n/;
+export const stripFrontmatter = (t) => String(t || "").replace(FRONTMATTER_RE, "");
+
 export function parseSections(markdown) {
-  const lines = markdown.split(/\r?\n/);
+  const body = stripFrontmatter(markdown);
+  const lines = body.split(/\r?\n/);
   const sections = [];
   const preamble = [];
   let cur = null;
@@ -87,7 +95,9 @@ export function parseSections(markdown) {
     else preamble.push(line);
   }
   for (const s of sections) s.body = s.lines.join("\n").trim();
-  return { preamble: preamble.join("\n").trim(), sections };
+  // `body` goes back out so a caller needing the stripped source does not strip a second
+  // time — a second pass would eat the span between two `---` thematic breaks.
+  return { preamble: preamble.join("\n").trim(), sections, body };
 }
 
 export function fieldValue(body, label) {
@@ -209,13 +219,13 @@ export function sectionGist(body) {
 // Everything the renderer needs about a plan, derived in one place — a second copy of this
 // sequence would only be caught by rendering both surfaces side by side.
 export function preparePlan(markdown, id) {
-  const { preamble: parsedPreamble, sections: parsed } = parseSections(markdown);
+  const { preamble: parsedPreamble, sections: parsed, body } = parseSections(markdown);
   // With no headings at all, parseSections puts the whole document in the preamble and the
   // fallback section below repeats it — so one of the two has to give, and it is the preamble.
   const preamble = parsed.length ? parsedPreamble : "";
   const sections = parsed.length
     ? parsed
-    : [{ title: "Plan", type: "other", id: "plan", body: markdown }];
+    : [{ title: "Plan", type: "other", id: "plan", body }];
   const overviewSection = sections.find((s) => s.type === "overview");
   const overview = parseOverview(overviewSection ? overviewSection.body : "");
   const risksSection = sections.find((s) => s.type === "risks");

@@ -198,3 +198,17 @@ test("the gate page and the export pin the same CDN and font resources", () => {
   assert.deepEqual(resources(exporterSrc), resources(indexHtml), "pinned resource URLs differ");
   assert.deepEqual(hashes(exporterSrc), hashes(indexHtml), "integrity hashes differ");
 });
+
+// The page carries the plan's Markdown verbatim in a JSON block, so a frontmatter left on it
+// would ship inside the published page even though nothing renders it.
+test("the plan's YAML frontmatter is not embedded in the exported page", () => {
+  const dir = mkdtempSync(join(tmpdir(), "plan-export-fm-"));
+  const planPath = join(dir, "sample-plan.plan-review.md");
+  const outPath = join(dir, "out.html");
+  writeFileSync(planPath, `---\nartifact_url: https://claude.ai/code/artifact/abc\n---\n${PLAN}`);
+  execFileSync(process.execPath, [exporter, "--plan", planPath, "--out", outPath], { stdio: "pipe" });
+  const html = readFileSync(outPath, "utf8");
+  assert.ok(!html.includes("artifact_url"), "the frontmatter reached the exported page");
+  assert.match(html, /### Overview/, "the plan body did not survive the strip");
+  rmSync(dir, { recursive: true, force: true });
+});

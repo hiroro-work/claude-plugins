@@ -95,7 +95,7 @@ Skip this step if `workability_retrospective.enabled` is not `true` (Step 1 did 
 
 ### Completion
 
-**Derived staging artifact cleanup**: before reporting summary, delete this run's per-agent staging documents (`<slug>-agent-*.md`), the Step 4 visual-gate served / comments / URL / thread / prev / figures files, and the Step 11 rule-candidates file via **two separate `rm -f` commands** (fixed-name files first, the agent-staging glob last with `|| true`), never touching the main plan document (`<slug>.md`) or any decomposition state file. The full procedure is in [`references/completion.md`](completion.md) § Derived staging artifact cleanup; `Read` it and follow it.
+**Derived staging artifact cleanup**: before reporting summary, delete this run's per-agent staging documents (`<slug>-agent-*.md`), the Step 4 visual-gate served / comments / URL / thread / prev / figures files, the Step 4 plan-artifact HTML export, and the Step 11 rule-candidates file via **two separate `rm -f` commands** (fixed-name files first, the agent-staging glob last with `|| true`), never touching the main plan document (`<slug>.md`) or any decomposition state file. The full procedure is in [`references/completion.md`](completion.md) § Derived staging artifact cleanup; `Read` it and follow it.
 
 Report summary: tasks completed, files modified, test results, review outcomes, rules updated. Output in the resolved `language` following [`references/localization.md`](localization.md) § Localization granularity.
 

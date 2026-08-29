@@ -71,7 +71,7 @@ Each user-judgment gate that presents structured content (a plan body, a remaini
 - Step 8 unresolved-findings decision
 - Step 11.6 workability-candidate disposition gate
 
-The other user-gates listed in `SKILL.md` § No-Stall Principle and its tail-scoped continuation in [`finish-phase.md`](finish-phase.md) § Gates (Step 1.5 dialogues, Step 7 scope-drift stop, Step 10 stashing-hook incompatibility / commit-plan approval / per-commit accept / fold-or-defer / ambiguous-adjust clarifier gates, the Step 11 confirm-remaining-steps entry gate, the Step 11 rule-update commit gate, Completion subtask PR URL prompt) do not emit a preamble.
+The other user-gates listed in `SKILL.md` § No-Stall Principle and its tail-scoped continuation in [`finish-phase.md`](finish-phase.md) § Gates (Step 1.5 dialogues, the Step 4 team-review gate, Step 7 scope-drift stop, Step 10 stashing-hook incompatibility / commit-plan approval / per-commit accept / fold-or-defer / ambiguous-adjust clarifier gates, the Step 11 confirm-remaining-steps entry gate, the Step 11 rule-update commit gate, Completion subtask PR URL prompt) do not emit a preamble.
 
 **Format constraints (closed list):**
 
@@ -107,7 +107,7 @@ When the structured content has only one item (a single remaining violation in S
 
 Step 4's **chat approval** — the surface the visual gate degrades to — uses a **two-tier presentation**. **Scope**: the chat output sequence below is chat-only; the two bullets between here and it name both surfaces. Step 7.5 and Step 8 do **not** use this protocol — they present preamble + content directly.
 
-- **Plan document** (`.claude/plans/<slug>.md`, written by Step 4 sub-step 2 before either surface runs) = the **full** plan body: the `> Review guide` line (omitted on the express lane — `references/step2-create-plan.md` § Compact plan template) + Overview → Decisions → Build order → Test plan → Risks/Unknowns, in template order.
+- **Plan document** (`.claude/plans/<slug>.md`, written by Step 4 sub-step 2 before either surface runs) = an optional **YAML frontmatter block** of workflow bookkeeping (currently `artifact_url` alone, written by Step 4 sub-step 4's plan-artifact publish) above the **full** plan body. Every writer of this document preserves the block and replaces the body beneath it; every renderer drops it, so it reaches no approval surface. The body is: the `> Review guide` line (omitted on the express lane — `references/step2-create-plan.md` § Compact plan template) + Overview → Decisions → Build order → Test plan → Risks/Unknowns, in template order.
 - **Chat presentation** = a **condensed** view (the must-review tier, with `Build order` cut to its step headings), closed by a pointer to the plan document.
 
 **Chat output sequence (Step 4 only):**

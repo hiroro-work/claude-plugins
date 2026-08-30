@@ -136,13 +136,21 @@ test("both theme states are styled, neither only behind a media query", () => {
   assert.ok(shell.includes('[data-theme="light"]'), "the OS-preference block is not guarded against an explicit light choice");
 });
 
-// The renderer holds a mermaid fence in whichever tag follows from the caller's own
-// diagram hook, so the absence of that hook here is what makes the host render the fence.
-test("mermaid renders through the host, so no diagram library is loaded", () => {
+// The renderer holds a mermaid fence in whichever tag follows from the caller's own diagram
+// hook, so the hook is also what keeps the fence out of the host's reach. A page that declared
+// the hook without shipping a library would leave every diagram as unrendered source.
+// Both literals are asserted whole rather than by pattern. A wildcard version with a wildcard
+// hash would stay green through a bump that forgot the hash — and a refused script is silent,
+// so every diagram on both surfaces would vanish with nothing failing. Spelling them out makes
+// a bump edit this test, which is where the two get noticed together.
+const MERMAID_SRC = "https://cdnjs.cloudflare.com/ajax/libs/mermaid/11.15.0/mermaid.min.js";
+const MERMAID_SRI = "sha512-HH52omhHpZF6RfVnGiQwYgYm4H/ya2xsZYLl5xJ4+tLfX+rN4+8zF7V/H/KLeicPrKZYi1g6iBmVkk2AhXTGlg==";
+
+test("the page draws its own diagrams, from a pinned cdnjs mermaid", () => {
   const shell = pageShell(exportPlan());
-  assert.equal(/mermaid[^"]*\.js/i.test(shell), false, "a mermaid library is loaded");
-  assert.equal(shell.includes("renderDiagrams:"), false,
-    "the export claims a diagram renderer it has no library for");
+  assert.ok(shell.includes("renderDiagrams:"), "no diagram hook, so the host renders the fence");
+  assert.ok(shell.includes(MERMAID_SRC), "the pinned cdnjs mermaid is not loaded");
+  assert.ok(shell.includes(MERMAID_SRI), "the pinned mermaid SRI is absent");
 });
 
 // The bootstrap's own createRenderer call. plan-render.mjs is inlined whole, so a bare grep
@@ -206,11 +214,12 @@ test("the gate takes neither surface flag, so its DOM is unchanged", () => {
 });
 
 // The CSP-shaped assertions above all read the exporter's output, so nothing in this file
-// constrains the gate page's own external references. esm.sh is gate-only and deliberate.
+// constrains the gate page's own external references. The gate is served from localhost and
+// is under no CSP of its own, so the set below is a convention rather than an enforced limit.
 test("the gate page's external references stay within the hosts it is allowed", () => {
   const indexHtml = readFileSync(
     join(repoRoot, "skills", "dev-workflow", "scripts", "plan-review", "public", "index.html"), "utf8");
-  const allowed = new Set(["cdnjs.cloudflare.com", "fonts.googleapis.com", "fonts.gstatic.com", "esm.sh"]);
+  const allowed = new Set(["cdnjs.cloudflare.com", "fonts.googleapis.com", "fonts.gstatic.com"]);
   const hosts = [...indexHtml.matchAll(/(?:src|href)="https:\/\/([^/"]+)/g)].map((m) => m[1]);
   const unexpected = [...new Set(hosts)].filter((h) => !allowed.has(h));
   assert.deepEqual(unexpected, [], `unexpected external host(s): ${unexpected.join(", ")}`);
@@ -219,6 +228,8 @@ test("the gate page's external references stay within the hosts it is allowed", 
 // The exporter cannot read index.html's <script>/<link> tags — they are static markup, not
 // data — so the two carry the same pinned URLs and hashes by hand. Only the exporter's copy
 // is checked above; without this, index.html could go stale or unpinned with the suite green.
+// Mermaid is absent from both sides and so out of this pair's reach: it is loaded at runtime
+// from the plan-render.mjs both surfaces share, where there is only one copy to keep.
 test("the gate page and the export pin the same CDN and font resources", () => {
   const indexHtml = readFileSync(
     join(repoRoot, "skills", "dev-workflow", "scripts", "plan-review", "public", "index.html"), "utf8");

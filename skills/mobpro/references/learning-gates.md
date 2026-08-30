@@ -24,7 +24,7 @@ When `check_commands` or `test_commands` fails, the AI does not stop to hand the
 
 Before dispatching `rules-review` and the code reviewer, the AI states where it expects findings to land, naming the specific spots and why they are exposed. **Order the prediction with what this run wrote first** ahead of any prediction about pre-existing assets. Name the checks about to run, then one clause per predicted spot in that order. When no pre-existing asset is worth predicting, name only this run's text rather than adding a negative prediction.
 
-When `code_review_enabled` is `false` the code reviewer is not dispatched, so name only the rules-compliance check (`m9-rules-code-review.md` § **Pre-review prediction narration**). After the reviews return, cross-check the prediction against the actual findings, **acknowledging what the prediction got right before naming what it missed**. This narration fires only on M9's primary pass (`SKILL.md` § Learning-Stop Principle's "Primary-pass rule" paragraph).
+Name only the checks this run actually dispatches (`m9-rules-code-review.md` sub-step 1): the code reviewer is not dispatched when `code_review_enabled` is `false`, and the rules-compliance check is not dispatched on the express lane. When neither is left, there is nothing to predict — take the one-line report `SKILL.md` M9's "Entry condition — the step is entered on every run" paragraph defines instead of narrating. After the reviews return, cross-check the prediction against the actual findings, **acknowledging what the prediction got right before naming what it missed**. This narration fires only on M9's primary pass (`SKILL.md` § Learning-Stop Principle's "Primary-pass rule" paragraph).
 
 ## § D. Explanation length discipline
 

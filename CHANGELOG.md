@@ -2,6 +2,13 @@
 
 ## 2026-08-30
 
+### mobpro v1.44.0 / dev-workflow-bundle v1.159.0
+
+- feat(mobpro): assess the task's difficulty and scale the quality gates to it, the way `dev-workflow` already does
+  - **Behavior change** — a trivial or simple task no longer runs every gate. `mobpro` now resolves a difficulty tier at M2 (Kickoff), the same judgement `dev-workflow` makes, and an express-lane task skips M7 (Tidy + prose polish), M9's rules-compliance half, and M12's rule-update sub-phase; a Trivial one additionally skips M4 (Plan review) and M9's code-review half. There is no setting to turn this off, matching `dev-workflow`.
+  - **Nothing a junior takes part in scales down.** The M3 plan-building checkpoints, every M6 per-unit diff review, the M5 plan approval — browser gate included, at every tier — the M8 checks and tests, and the M11 commit approvals all fire whatever the tier. That boundary is the whole point of the change: a small task now gets a shorter session, not a thinner one, which is what lets `mobpro` stay the right tool for a small change in code the junior has not read before.
+  - The tier only ever rises. Two checkpoints re-assess it — M3 once the plan is drafted, M6 once every unit has landed — and a strictly higher assessment returns the skipped steps to the run.
+
 ### dev-workflow v1.135.0 / mobpro v1.43.0 / dev-workflow-bundle v1.158.0
 
 - fix(dev-workflow, mobpro): stop review findings from growing code comments, and default implementation to writing none

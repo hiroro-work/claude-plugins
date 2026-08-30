@@ -113,9 +113,6 @@ function chip(label, value, cls) {
  * @param {{foldLabel?: string, atAGlanceTitle?: string, diffBanner?: (n: number, removed: number) => string, diffBannerNone?: string}} [env.labels]
  *   Normally `LABELS[lang]`; merged over `LABELS.en`. Everything else here is English UI chrome.
  * @param {object} [env.diff] plan-parse.mjs' diff state; an inactive one renders no diff chrome.
- * @param {true|"sections"} [env.forceOpen] Which disclosures open regardless of the diff:
- *   `true` every one, `"sections"` the sections alone. Any other value, absent included,
- *   forces nothing open.
  * @param {boolean} [env.atAGlance] One-line-per-Decision digest above the plan. Off on the gate.
  * @param {{decorateSection?: Function, decorateDecisionCard?: Function, renderDiagrams?: Function}} [env.hooks]
  *   `renderDiagrams` also picks the mermaid holder — `div` with a library, `<pre class="mermaid">`
@@ -125,8 +122,6 @@ export function createRenderer(env = {}) {
   const labels = { ...LABELS.en, ...(env.labels || {}) };
   const { foldLabel, atAGlanceTitle, diffBanner, diffBannerNone } = labels;
   const diff = env.diff || emptyDiff();
-  const forceOpenSections = env.forceOpen === true || env.forceOpen === "sections";
-  const forceOpenAll = env.forceOpen === true;
   const atAGlance = Boolean(env.atAGlance);
   const hooks = env.hooks || {};
   const decorateSection = hooks.decorateSection || (() => {});
@@ -255,8 +250,7 @@ export function createRenderer(env = {}) {
     det.dataset.sectionType = section.type;
     const status = diff.active ? (diff.sectionStatus.get(section.id) || "unchanged") : null;
     // diff mode overrides the default-open set: open changed/new, collapse unchanged
-    if (forceOpenSections) det.open = true;
-    else if (status) det.open = (status === "new" || status === "changed");
+    if (status) det.open = (status === "new" || status === "changed");
     else if (OPEN_TYPES.has(section.type)) det.open = true;
 
     const sum = document.createElement("summary");
@@ -383,7 +377,6 @@ export function createRenderer(env = {}) {
         if (sep && sep.nodeType === 3) sep.data = sep.data.replace(STEP_SEP_RE, "");
         const det = document.createElement("details");
         det.className = "step";
-        if (forceOpenAll) det.open = true;
         det.appendChild(sum);
         det.appendChild(inner);
         li.insertBefore(det, li.firstChild);
@@ -407,7 +400,7 @@ export function createRenderer(env = {}) {
     if (!rest.length) return;
     const det = document.createElement("details");
     det.className = "fold";
-    det.open = forceOpenAll || open;
+    det.open = open;
     const sum = document.createElement("summary");
     sum.textContent = foldLabel;
     det.appendChild(sum);

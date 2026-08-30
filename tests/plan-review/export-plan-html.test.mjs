@@ -156,15 +156,21 @@ test("the page draws its own diagrams, from a pinned cdnjs mermaid", () => {
 // The bootstrap's own createRenderer call. plan-render.mjs is inlined whole, so a bare grep
 // over the page would read that file's jsdoc and comments as if they were the call — the same
 // reason the --lang test below asserts on this line rather than on the label text.
-const bootstrapCall = (html) => pageShell(html).match(/const renderer = createRenderer\(\{[\s\S]*?\n\s*\}\);/)[0];
+const rendererCall = (source) => source.match(/const renderer = createRenderer\(\{[\s\S]*?\n\s*\}\);/)[0];
+const bootstrapCall = (html) => rendererCall(pageShell(html));
 
-// The section is the unit that must not hide: with no diff, nothing on this page can tell the
-// reader which section moved. A step and a fold keep a visible heading either way, so holding
-// those open too would only hand a skimming reader the plan at full length.
-test("every section opens, while steps and prose folds stay closed at their headings", () => {
-  const call = bootstrapCall(exportPlan());
-  assert.ok(call.includes('forceOpen: "sections"'));
-  assert.equal(call.includes("forceOpen: true"), false, "the page still forces every disclosure open");
+// Comments and nested groups come out first, so only the top level's own keys are left.
+const optionKeys = (source) => {
+  let body = rendererCall(source)
+    .replace(/^[\s\S]*?createRenderer\(\{/, "").replace(/\}\);$/, "").replace(/\/\/[^\n]*/g, "");
+  for (let prev; body !== prev; ) { prev = body; body = body.replace(/\{[^{}]*\}/g, ""); }
+  return body.split(",").map((s) => s.split(":")[0].trim()).filter(Boolean).sort();
+};
+
+// The whole option set, not the absence of one name: an override under any other name would
+// unfold the plan to full length again just as silently.
+test("no open/close override, so the reference sections arrive closed", () => {
+  assert.deepEqual(optionKeys(pageShell(exportPlan())), ["atAGlance", "hooks", "labels"]);
 });
 
 test("the at-a-glance digest is on, so the page opens on the Decisions", () => {
@@ -202,15 +208,12 @@ test("--lang reaches the app root, which is where the stylesheet reads it", () =
   assert.match(exportPlan(["--lang", "en"]), /<div id="app" lang="en"><\/div>/);
 });
 
-// Both surface flags are opt-in so the gate's DOM stays exactly as its comment-anchoring
-// contract expects. Nothing else pins that: turning either on at the gate would ship the
-// export's chrome into the review surface with the rest of this suite still green.
-test("the gate takes neither surface flag, so its DOM is unchanged", () => {
+// A surface flag here would ship the export's chrome into the review surface, whose DOM the
+// comment-anchoring contract is written against, with the rest of this suite still green.
+test("the gate takes no surface flag, so its DOM is unchanged", () => {
   const indexHtml = readFileSync(
     join(repoRoot, "skills", "dev-workflow", "scripts", "plan-review", "public", "index.html"), "utf8");
-  const call = indexHtml.match(/const renderer = createRenderer\(\{[\s\S]*?\n\s*\}\);/)[0];
-  assert.equal(/\bforceOpen\b/.test(call), false, "the gate forces disclosures open");
-  assert.equal(/\batAGlance\b/.test(call), false, "the gate renders the at-a-glance digest");
+  assert.deepEqual(optionKeys(indexHtml), ["diff", "hooks", "labels"]);
 });
 
 // The CSP-shaped assertions above all read the exporter's output, so nothing in this file

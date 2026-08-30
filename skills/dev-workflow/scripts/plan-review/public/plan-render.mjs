@@ -1,8 +1,6 @@
 // Plan rendering for the plan-review viewer.
 //
-// Turns a parsed plan into DOM and reads no review state, so both surfaces render from
-// here: `index.html` builds the interactive gate on top, `export-plan-html.mjs` inlines
-// it into a viewer-only page. Interaction arrives as `hooks`.
+// Reads no review state, so both surfaces render from here; interaction arrives as `hooks`.
 //
 // The comment-anchoring contract `references/visual-plan-review.md` specifies stays in
 // `index.html` (block ids, excerpt capture, the widgets, the mermaid library call);
@@ -14,7 +12,8 @@
 
 import {
   OPEN_TYPES, STEP_COLLAPSE_TYPES,
-  anchorNorm, decisionSig, emptyDiff, escapeHtml, excerptOf, parseDecisions,
+  anchorNorm, buildDecisionDigest, decisionBlockId, decisionSig, emptyDiff, escapeHtml,
+  excerptOf, parseDecisions,
   sectionGist, splitPreamble, stripMd,
 } from "./plan-parse.mjs";
 
@@ -22,11 +21,13 @@ import {
 export const LABELS = {
   en: {
     foldLabel: "Read the text",
+    atAGlanceTitle: "Decisions at a glance",
     diffBanner: (n, removed) => `🔍 ${n} section${n === 1 ? "" : "s"} changed or added since your last review${removed ? `, ${removed} removed` : ""} — changes highlighted below`,
     diffBannerNone: "🔍 No section changes since your last review",
   },
   ja: {
     foldLabel: "文章を読む",
+    atAGlanceTitle: "決定事項の一覧",
     diffBanner: (n, removed) => `🔍 前回レビューから ${n} 個のセクションが変更・追加されました${removed ? `（削除 ${removed} 件）` : ""} — 変更箇所を以下にハイライト`,
     diffBannerNone: "🔍 前回レビューからセクションの変更はありません",
   },
@@ -49,16 +50,16 @@ export const PLAN_SHELL_HTML = `<header class="plan-head">
   <div id="diff-banner" hidden></div>
 </header>
 <section id="hero" hidden></section>
+<section id="at-a-glance" hidden></section>
 <nav id="toc"><div class="toc-title">Sections</div></nav>
 <main id="plan"></main>`;
 
 // The separator in `N. **<heading>** — <detail>`, a stray dash once the two are split.
 const STEP_SEP_RE = /^\s*[—–-]\s*/;
 
-// A caller stamps this on anything it appends to a commentable block, so
-// collapseBuildOrderSteps can leave those elements outside the disclosure it builds.
-// Renaming it on one side only drains the affordances into the disclosure — a collapsed
-// Build order step hides its own comment box, with no error and no failing test.
+// Stamped by callers on anything appended to a commentable block; collapseBuildOrderSteps
+// leaves those outside its disclosure. Rename on one side only and a collapsed Build order
+// step hides its own comment box, with no error and no failing test.
 export const AFFORDANCE_ATTR = "affordance";
 
 function chip(label, value, cls) {
@@ -67,24 +68,24 @@ function chip(label, value, cls) {
 
 /**
  * @param {object} [env]
- * @param {{foldLabel?: string, diffBanner?: (n: number, removed: number) => string, diffBannerNone?: string}} [env.labels]
- *   Localized strings, normally `LABELS[lang]`. Merged over `LABELS.en`, so a partial table
- *   keeps English for whatever it leaves out. Everything else this file writes is UI chrome
- *   and stays English.
+ * @param {{foldLabel?: string, atAGlanceTitle?: string, diffBanner?: (n: number, removed: number) => string, diffBannerNone?: string}} [env.labels]
+ *   Normally `LABELS[lang]`; merged over `LABELS.en`. Everything else here is English UI chrome.
  * @param {object} [env.diff] plan-parse.mjs' diff state; an inactive one renders no diff chrome.
- * @param {boolean} [env.forceOpen] Open every disclosure. The viewer-only page has no
- *   diff to mark what changed, so nothing there may start folded away.
+ * @param {true|"sections"} [env.forceOpen] Which disclosures open regardless of the diff:
+ *   `true` every one, `"sections"` the sections alone. Any other value, absent included,
+ *   forces nothing open.
+ * @param {boolean} [env.atAGlance] One-line-per-Decision digest above the plan. Off on the gate.
  * @param {{decorateSection?: Function, decorateDecisionCard?: Function, renderDiagrams?: Function}} [env.hooks]
- *   `renderDiagrams` also decides how a mermaid fence is held: with one, a `div` for the
- *   caller's library to render into; without, the `<pre class="mermaid">` an artifact host
- *   renders itself. Derived rather than passed, because a mismatched pair would show the
- *   reader a diagram's source instead of the diagram and say nothing about it.
+ *   `renderDiagrams` also picks the mermaid holder — `div` with a library, `<pre class="mermaid">`
+ *   without. Derived, not passed: a mismatched pair silently shows a diagram's source.
  */
 export function createRenderer(env = {}) {
   const labels = { ...LABELS.en, ...(env.labels || {}) };
-  const { foldLabel, diffBanner, diffBannerNone } = labels;
+  const { foldLabel, atAGlanceTitle, diffBanner, diffBannerNone } = labels;
   const diff = env.diff || emptyDiff();
-  const forceOpen = Boolean(env.forceOpen);
+  const forceOpenSections = env.forceOpen === true || env.forceOpen === "sections";
+  const forceOpenAll = env.forceOpen === true;
+  const atAGlance = Boolean(env.atAGlance);
   const hooks = env.hooks || {};
   const decorateSection = hooks.decorateSection || (() => {});
   const mermaidTag = hooks.renderDiagrams ? "div" : "pre";
@@ -96,7 +97,6 @@ export function createRenderer(env = {}) {
     if (ov.difficulty) chips.push(chip("Difficulty", stripMd(ov.difficulty)));
     if (riskCount) chips.push(chip("Risks", String(riskCount), "risk"));
     document.getElementById("plan-chips").innerHTML = chips.join("");
-    // Scope is descriptive prose, so it gets a meta row that wraps, not a fixed-shape pill.
     const scopeEl = document.getElementById("plan-scope");
     if (ov.scope) {
       scopeEl.innerHTML = `<span class="meta-label">Scope</span><span class="meta-val">${escapeHtml(stripMd(ov.scope))}</span>`;
@@ -134,9 +134,8 @@ export function createRenderer(env = {}) {
     planEl.appendChild(div);
   }
 
-  // The figures layer's `## Hero` block, in the slot above the plan. Keyed on that block
-  // rather than on where a figure happened to sit. A plan with none leaves the slot hidden
-  // and taking no space — the figure is required of mobpro and optional for dev-workflow.
+  // Keyed on the figures layer's `## Hero` block, not on where a figure happened to sit.
+  // A plan with none leaves the slot hidden and taking no space.
   function renderHero(heroMarkdown) {
     const hero = document.getElementById("hero");
     if (!hero || !heroMarkdown) return null;
@@ -146,13 +145,19 @@ export function createRenderer(env = {}) {
     return hero;
   }
 
-  // The Alternative toggle and the comment affordance are the caller's, added through
-  // `hooks.decorateDecisionCard` — the card renders complete without them.
-  function renderDecisionCard(it, n) {
-    const id = `decision-${n}`;
+  // Only one decisions section's cards may carry `decision-<n>` as an element id — every such
+  // section numbers from 1. The first, so the digest's links land on the cards it listed.
+  let idClaimingSectionId = null;
+
+  // Toggle and comment affordance are the caller's, via `hooks.decorateDecisionCard`.
+  function renderDecisionCard(it, n, claimId) {
+    const id = decisionBlockId(n);
     const excerpt = excerptOf(it.question);
     const card = document.createElement("div");
     card.className = "decision-card";
+    // An id so the digest's `href="#decision-N"` lands; comment anchoring compares block text
+    // and never reads it. data-block-id is the routing key and goes on every card regardless.
+    if (claimId) card.id = id;
     card.dataset.blockId = id;
     card.dataset.anchorKey = anchorNorm(it.question);
 
@@ -179,6 +184,26 @@ export function createRenderer(env = {}) {
     return card;
   }
 
+  // Every Decision on one line, linking into its card.
+  function renderAtAGlance(sections) {
+    if (!atAGlance) return;
+    const el = document.getElementById("at-a-glance");
+    if (!el) return;
+    const digest = buildDecisionDigest(sections);
+    if (!digest) return;
+    const rows = digest.items.map((it) => {
+      const rec = it.recommendation
+        ? `<span class="ag-rec">${escapeHtml(it.recommendation)}</span>`
+        : "";
+      // Escaped text, not inline markdown: a question carrying a link would nest an anchor.
+      return `<li class="ag-row"><a class="ag-link" href="#${decisionBlockId(it.n)}">`
+        + `<span class="ag-tag">Decision ${it.n}</span>`
+        + `<span class="ag-q">${escapeHtml(it.question)}</span></a>${rec}</li>`;
+    }).join("");
+    el.innerHTML = `<div class="ag-title">${escapeHtml(atAGlanceTitle)}</div><ol class="ag-list">${rows}</ol>`;
+    el.hidden = false;
+  }
+
   function renderSection(section) {
     const det = document.createElement("details");
     det.className = "section" + (section.type === "context" ? " is-context" : "");
@@ -186,10 +211,9 @@ export function createRenderer(env = {}) {
     // The classified type, so the stylesheet can give each kind its own form without a
     // wrapper element around the blocks a comment anchors on.
     det.dataset.sectionType = section.type;
-    // status is null outside diff mode, else "new" | "changed" | "unchanged"
     const status = diff.active ? (diff.sectionStatus.get(section.id) || "unchanged") : null;
     // diff mode overrides the default-open set: open changed/new, collapse unchanged
-    if (forceOpen) det.open = true;
+    if (forceOpenSections) det.open = true;
     else if (status) det.open = (status === "new" || status === "changed");
     else if (OPEN_TYPES.has(section.type)) det.open = true;
 
@@ -221,10 +245,10 @@ export function createRenderer(env = {}) {
           body.appendChild(pre);
           preEl = pre;
         }
-        // changed Decisions section: highlight cards whose signature is absent from prev
         const prevSigs = status === "changed" ? diff.prevDecisionSigs.get(section.id) : null;
+        const claimIds = section.id === idClaimingSectionId;
         items.forEach((it, i) => {
-          const card = renderDecisionCard(it, i + 1);
+          const card = renderDecisionCard(it, i + 1, claimIds);
           if (prevSigs && !prevSigs.has(decisionSig(it))) card.classList.add("card-changed");
           body.appendChild(card);
         });
@@ -273,11 +297,9 @@ export function createRenderer(env = {}) {
     return nodes;
   }
 
-  // Collapse each Build order step to its bold heading, so the section can sit in the
-  // must-review tier without opening at full length. The shape is `N. **<heading>** —
-  // <detail>` (plan-authoring.md § Template); markdown puts the heading directly under the
-  // <li> in a tight list and inside a <p> in a loose one, and both are handled. A step
-  // without a bold heading is left alone.
+  // Collapse each Build order step to its bold heading. Shape is `N. **<heading>** — <detail>`
+  // (plan-authoring.md § Template); the heading sits under the <li> in a tight list and in a <p>
+  // in a loose one. A step without a bold heading is left alone.
   //
   // Must run *after* the caller's `decorateSection`, for two reasons. The affordances are by
   // then children of the <li>, so draining it up to the first affordance leaves them outside
@@ -316,11 +338,10 @@ export function createRenderer(env = {}) {
         const inner = document.createElement("div");
         inner.className = "step-body";
         while (li.firstChild && !isAffordance(li.firstChild)) inner.appendChild(li.firstChild);
-        // Drop the separator; it reads as a stray dash once heading and detail are split apart.
         if (sep && sep.nodeType === 3) sep.data = sep.data.replace(STEP_SEP_RE, "");
         const det = document.createElement("details");
         det.className = "step";
-        if (forceOpen) det.open = true;
+        if (forceOpenAll) det.open = true;
         det.appendChild(sum);
         det.appendChild(inner);
         li.insertBefore(det, li.firstChild);
@@ -334,12 +355,9 @@ export function createRenderer(env = {}) {
   // Must run *after* the caller's `decorateSection`, for the same two reasons
   // collapseBuildOrderSteps gives.
   //
-  // Two exclusions, both the caller's: Build order, whose steps already open at their
-  // headings, and decisions, excluded by *type* rather than by the shape it rendered as — a
-  // decisions body that fails card detection renders as plain prose, and folding that would
-  // put every Question / Recommendation / Alternative behind one click.
+  // Two exclusions, both the caller's: Build order (its steps already open at headings) and
+  // decisions, excluded by *type*, not by rendered shape.
   function foldProseUnderFigure(bodyEl, open) {
-    // Bail before allocating: most sections carry no figure, three per plan being the cap.
     if (!bodyEl.querySelector(":scope > figure")) return;
     // Every figure stays out: one per section is the rule, and a second buried behind a text
     // label would be invisible. A figure's own textarea sits inside it (AREA_INSIDE).
@@ -347,19 +365,20 @@ export function createRenderer(env = {}) {
     if (!rest.length) return;
     const det = document.createElement("details");
     det.className = "fold";
-    det.open = forceOpen || open;
+    det.open = forceOpenAll || open;
     const sum = document.createElement("summary");
     sum.textContent = foldLabel;
     det.appendChild(sum);
     for (const c of rest) det.appendChild(c);
-    bodyEl.appendChild(det); // after the figures, now the body's only other children
+    bodyEl.appendChild(det);
   }
 
-  // The whole render walk, in the one order that holds. Both surfaces call this rather than
-  // sequencing the pieces: the ordering constraints collapseBuildOrderSteps and
-  // foldProseUnderFigure document are what a second copy of this loop would drift from.
+  // The whole walk, in the one order that holds — both surfaces call this rather than
+  // sequencing the pieces, so the two collapse passes' ordering constraints can't drift.
   async function renderPlan({ id, preamble, sections, overview, riskCount }) {
+    idClaimingSectionId = (sections.find((s) => s.type === "decisions") || {}).id ?? null;
     renderHeader(overview, id, riskCount);
+    renderAtAGlance(sections);
     renderDiffBanner();
     renderNav(sections);
 
@@ -389,17 +408,16 @@ export function createRenderer(env = {}) {
     // gate's staleness contract rests on a revise comment being able to land on a figure.
     if (heroEl) decorateSection({ bodyEl: heroEl, section: { id: HERO_SECTION_ID, type: "hero" } });
 
-    // Both passes stay inside the one section body they are handed, so the collapse's
-    // must-run-after-decorate ordering is per-section and needs no document-wide barrier.
+    // Both passes stay inside one section body, so the ordering is per-section — no barrier
+    // needed.
     for (const r of bodyRefs) {
       // Folds start closed; a section the diff marks new or changed opens, so nothing edited
       // since the previous round is read past folded.
       const status = diff.sectionStatus.get(r.section.id);
       const edited = status === "new" || status === "changed";
       if (r.isCards) {
-        // A card section's cards carry their own affordances and stay visible; its preamble
-        // does not, and that is where a figure targeting this section lands — so the preamble
-        // is both what to walk and the only prose there is to fold.
+        // Cards carry their own affordances; the preamble does not, and is where a section's
+        // figure lands — so it is both what to walk and the only prose to fold.
         if (r.preEl) {
           decorateSection({ bodyEl: r.preEl, section: r.section });
           foldProseUnderFigure(r.preEl, edited);

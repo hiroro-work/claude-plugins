@@ -12,7 +12,9 @@ import {
   STEP_COLLAPSE_TYPES,
   anchorMatches,
   anchorNorm,
+  buildDecisionDigest,
   buildDiff,
+  decisionBlockId,
   classify,
   countListItems,
   decisionSig,
@@ -201,6 +203,50 @@ test("buildDiff sends a changed Decisions section to prevDecisionSigs, not prevB
 });
 
 // --- sectionGist: the one line a collapsed section shows beside its title ---
+
+test("buildDecisionDigest gives one row per Decision, numbered as the cards are", () => {
+  const { sections } = parseSections(
+    "### Decisions\n\n- **Question**: どちらの `env` にするか\n- **Recommendation**: artifact だけに出す。理由はこう\n\n- **Question**: 2 問目\n- **Recommendation**: 2 つ目の答え\n");
+  const digest = buildDecisionDigest(sections);
+  // The row's number is what names the card it links to, through the shared id helper.
+  assert.deepEqual(digest.items.map((it) => decisionBlockId(it.n)), ["decision-1", "decision-2"]);
+  // stripped of markup and normalized, the way sectionGist leaves a section's first line
+  assert.equal(digest.items[0].question, "どちらの env にするか");
+  assert.equal(digest.items[0].recommendation, "artifact だけに出す。理由はこう");
+});
+
+test("buildDecisionDigest returns null when the plan has no Decisions section", () => {
+  const { sections } = parseSections("### Overview\n\n- **Goal**: something\n");
+  assert.equal(buildDecisionDigest(sections), null);
+});
+
+// A Decisions section whose body never resolves into cards renders as plain prose, and the
+// digest has nothing to link to — the same disposition as having no section at all.
+test("buildDecisionDigest returns null when card detection finds no items", () => {
+  const { sections } = parseSections("### Decisions\n\nNo user decisions were required.\n");
+  assert.equal(sections[0].type, "decisions");
+  assert.equal(buildDecisionDigest(sections), null);
+});
+
+// sectionGist skips a line opening on `#`, `>`, or `<`, which would leave the row showing a
+// bare number. excerptOf takes the line as it stands instead.
+test("buildDecisionDigest falls back to a raw excerpt when the gist comes out empty", () => {
+  const { sections } = parseSections(
+    "### Decisions\n\n- **Question**: > quoted question\n- **Recommendation**: # heading-shaped answer\n");
+  const [row] = buildDecisionDigest(sections).items;
+  assert.equal(row.question, "> quoted question");
+  assert.equal(row.recommendation, "# heading-shaped answer");
+});
+
+// The renderer numbers each decisions section's cards from 1 of its own, so a second section
+// offers no unambiguous card for a row to link to. The digest covers the first alone.
+test("buildDecisionDigest digests the first Decisions section only", () => {
+  const { sections } = parseSections(
+    "### Decisions\n\n- **Question**: first\n- **Recommendation**: a\n\n"
+    + "### Decisions again\n\n- **Question**: second\n- **Recommendation**: b\n");
+  assert.deepEqual(sections.map((s) => s.type), ["decisions", "decisions"]);
+  assert.deepEqual(buildDecisionDigest(sections).items.map((it) => it.question), ["first"]);
+});
 
 test("sectionGist takes the first line of prose, list marker and markup stripped", () => {
   assert.equal(sectionGist("- **Goal**: `x` を作る\n- more"), "Goal: x を作る");

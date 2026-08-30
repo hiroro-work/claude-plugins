@@ -5,16 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Plan Review — dev-workflow</title>
 
-  <!-- Google Fonts is the one font host an artifact's CSP admits, so the export loads the
-       same faces from the same place. highlight.js' own themes are stylesheets, which that
-       CSP blocks silently, so the syntax colours live in plan-view.css instead. -->
+  <!-- Google Fonts is the one font host the artifact CSP admits, so the export uses the same
+       faces. highlight.js themes are stylesheets the CSP blocks silently — see plan-view.css. -->
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
     rel="stylesheet"
     href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600&family=Noto+Sans+JP:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Zen+Old+Mincho:wght@600&display=swap">
 
-  <!-- Classic scripts run before the deferred module below, so window.marked / window.hljs
-       are ready when the render logic runs. -->
+  <!-- Classic scripts run before the deferred module, so window.marked / window.hljs exist. -->
   <script
     src="https://cdnjs.cloudflare.com/ajax/libs/marked/16.3.0/lib/marked.umd.min.js"
     integrity="sha512-V6rGY7jjOEUc7q5Ews8mMlretz1Vn2wLdMW/qgABLWunzsLfluM0FwHuGjGQ1lc8jO5vGpGIGFE+rTzB+63HdA=="
@@ -27,8 +25,7 @@
   <link rel="stylesheet" href="./plan-view.css">
 </head>
 <body>
-  <!-- The shell is inserted from plan-render.mjs' PLAN_SHELL_HTML, so this page and the
-       export cannot drift. #done is this page's own — the export has nothing to submit. -->
+  <!-- Shell comes from PLAN_SHELL_HTML so the two surfaces can't drift; #done is ours alone. -->
   <div id="app">
     <div id="done" hidden>Submitted. Return to your terminal.</div>
   </div>
@@ -75,23 +72,19 @@
     };
     let POLL_MSG = "Claude is working on it — this page reloads itself when the plan updates.";
     let POLL_GIVEUP_MSG = "No update for 30 minutes. Check your terminal — the review may have moved on without the browser.";
-    // A revise does not always come back here (an approach-level rewrite or a fallback to
-    // chat approval ends the run elsewhere), so stop promising a reload well before 24h.
+    // A revise does not always come back here, so stop promising a reload well before 24h.
     const POLL_GIVEUP_MS = 30 * 60 * 1000;
-    // Per-process token from /api/plan. A relaunch produces a different one, which is what the
-    // post-revise poll below watches for.
+    // Per-process token; a relaunch changes it, which is what the poll below watches for.
     let INSTANCE = null;
 
-    // diff mode (revise re-launch): replaced by buildDiff() when prevMarkdown is
-    // present. plan-parse.mjs' emptyDiff() documents the fields.
+    // Replaced by buildDiff() when prevMarkdown is present; emptyDiff() documents the fields.
     let diff = emptyDiff();
 
     const COMMENT_BLOCK_TAGS = ["P", "BLOCKQUOTE", "PRE", "H4", "H5", "H6", "FIGURE"];
 
-    // The one place the review block is defined. Both the comment layer and the diff layer
-    // read this list, so a block can never be commentable without being diffable or the
-    // reverse. The child list is snapshotted first, so a caller free to mutate what it is
-    // handed (attachElementComments wraps each table) cannot disturb the walk.
+    // The one definition of a review block — comment layer and diff layer both read it, so a
+    // block is never commentable without being diffable. Children are snapshotted first so a
+    // mutating caller (attachElementComments wraps tables) cannot disturb the walk.
     function commentTargets(root) {
       const out = [];
       for (const c of Array.from(root.children)) {
@@ -105,18 +98,14 @@
       return out;
     }
 
-    // --- diff (revise re-launch) ---
-    // Each commentable block's normalized text, without the DOM mutation
-    // attachElementComments performs. Safe to read prev pre-highlight while current blocks
-    // are read post-highlight.js: normText collapses whitespace and highlight.js only wraps
-    // tokens in spans, so identical source normalizes to the same string.
+    // Safe to read prev pre-highlight against current post-highlight: normText collapses
+    // whitespace and highlight.js only wraps tokens in spans, so both normalize the same.
     function collectBlockTexts(bodyMarkdown) {
       const tmp = document.createElement("div");
       tmp.innerHTML = md(bodyMarkdown);
       return new Set(commentTargets(tmp).map((t) => normText(t.textContent)));
     }
 
-    // --- comment state ---
     function effectiveComments() {
       const ids = new Set([...state.comments.keys(), ...state.switches.keys()]);
       const out = [];
@@ -171,7 +160,6 @@
       return area;
     }
 
-    // Shared by the decision-card and the per-element comment affordances.
     function wireCommentToggle(btn, area, id, excerpt, kind) {
       area.addEventListener("input", () => setComment(id, area.value, btn, excerpt, kind));
       btn.addEventListener("click", (e) => { e.preventDefault(); area.hidden = !area.hidden; if (!area.hidden) area.focus(); });
@@ -187,8 +175,7 @@
       return { btn, area };
     }
 
-    // A Decision card's interactive layer, handed to the renderer as a hook. The export
-    // passes no hook and gets the same card without it.
+    // The card's interactive layer, passed as a hook; the export passes none.
     function decorateDecisionCard({ card, id, n, excerpt, hasAlternative }) {
       if (hasAlternative) {
         const toggle = document.createElement("div");
@@ -227,9 +214,8 @@
     function attachComment(el, id) {
       el.classList.add("commentable");
       el.dataset.blockId = id;
-      // Captured now, before collapseBuildOrderSteps strips the step separator and before the
-      // affordances below join the element — both would otherwise shift the text a thread entry
-      // is matched against.
+      // Captured before collapseBuildOrderSteps strips the separator and before the affordances
+      // join — either would shift the text a thread entry matches against.
       el.dataset.anchorKey = anchorNorm(el.textContent);
       const excerpt = excerptOf(el.textContent);
       const kind = el.tagName === "FIGURE" ? "figure" : "prose";
@@ -258,11 +244,9 @@
         w.appendChild(t);
         return w;
       });
-      // prevBlockTexts holds an entry only for a "changed" non-decisions section
-      // (see buildDiff), so this lookup alone selects which sections mark blocks: a
-      // "new" section relies on its section badge (every block is new), an
-      // "unchanged" one has no entry. Read textContent before attachComment appends
-      // the 💬 button (which would otherwise pollute it).
+      // prevBlockTexts has an entry only for a "changed" non-decisions section, so this lookup
+      // alone selects which sections mark blocks. Read textContent before attachComment appends
+      // the 💬 button, which would pollute it.
       const prevSet = diff.prevBlockTexts.get(sectionId) || null;
       for (const t of targets) {
         if (prevSet && !t.dataset.mermaidFigure && !prevSet.has(normText(t.textContent))) t.classList.add("block-changed");
@@ -270,28 +254,24 @@
       }
     }
 
-    // The renderer's `renderDiagrams` hook. The library is this page's alone: an artifact
-    // host renders `<pre class="mermaid">` itself and the export loads nothing.
+    // The `renderDiagrams` hook. The library is this page's alone — the export loads none.
     async function renderMermaid(nodes) {
       if (!nodes.length) return;
       try {
-        // Loaded lazily, inside both the guard and the try: a plan with no diagram never
-        // fetches it, and a CDN that does not answer leaves the fences un-rendered rather
-        // than taking the page.
+        // Lazy, inside both the guard and the try: no diagram means no fetch, and a dead CDN
+        // leaves fences un-rendered rather than taking the page.
         const { default: mermaid } = await import("https://esm.sh/mermaid@11.15.0");
         // Read once: mermaid bakes its theme at initialize, so an OS theme flip mid-review
         // leaves diagrams in the previous theme until the page is reloaded.
         const darkScheme = window.matchMedia("(prefers-color-scheme: dark)").matches;
         mermaid.initialize({ startOnLoad: false, theme: darkScheme ? "dark" : "default", securityLevel: "strict" });
-        // suppressErrors keeps a single bad fence from aborting the batch — valid sibling
-        // fences still render; the failing one stays as its (un-rendered) source text.
+        // suppressErrors keeps one bad fence from aborting the batch.
         await mermaid.run({ nodes, suppressErrors: true });
       } catch (err) {
         console.error("mermaid render error", err);
       }
     }
 
-    // --- conversation thread (rounds already submitted) ---
     let THREAD = [];
     // As the renderer handed it back: its shell ids are not this page's to know.
     let HERO_EL = null;
@@ -302,9 +282,8 @@
     // has its block id to fall back on.
     const entrySection = (e) => (e.anchor && e.anchor.section) || sectionOfBlockId(e.block, DECISIONS_SECTION_ID);
 
-    // The block an entry belongs under, or null to send it to the log alone. A figure
-    // resolves by section — § Figures layer allows one each, and a figure's own text is an
-    // SVG's run-together labels or mermaid's injected CSS, neither of them an anchor.
+    // Null sends the entry to the log alone. A figure resolves by section (one per section),
+    // since its own text is SVG labels or mermaid's injected CSS — neither an anchor.
     function findAnchorTarget(e) {
       const secId = entrySection(e);
       if (!secId) return null;
@@ -319,8 +298,7 @@
       for (const el of sec.querySelectorAll("[data-anchor-key]")) {
         if (anchorMatches(want, el.dataset.anchorKey)) hits.push(el);
       }
-      // Exactly one, or none: drawing an ambiguous match under the wrong block reads as an
-      // answer to a question that was never asked there, which the log panel does not.
+      // Exactly one, or none — an ambiguous match under the wrong block misreads as an answer.
       return hits.length === 1 ? hits[0] : null;
     }
 
@@ -373,9 +351,8 @@
         box = document.createElement("div");
         box.className = "thread";
         box.dataset[AFFORDANCE_ATTR] = "";
-        // Above the block's own comment input, so the history reads downward and the form sits
-        // last. Only when the input is a child of the block: the sibling-placed case already
-        // lands that way, and a moved input would drag the thread along with it.
+        // Above the block's own input, but only when that input is a child: the sibling case
+        // already lands right, and moving it would drag the thread along.
         const head = affordanceHead.get(target);
         if (head && head.parentNode === target) target.insertBefore(box, head);
         else placeAffordance(target, box);
@@ -384,8 +361,7 @@
       return box;
     }
 
-    // Replay each entry under its block where the anchor resolves, returning the ids that
-    // did not. The log carries every entry either way, so this pass duplicates, never moves.
+    // The log carries every entry either way, so this pass duplicates, never moves.
     function renderThread() {
       const loose = new Set();
       for (const round of THREAD) {
@@ -398,7 +374,6 @@
       return loose;
     }
 
-    // The complete record: every round, in order, whether or not it anchored in the body.
     function renderLog(planEl, loose) {
       const total = THREAD.reduce((n, r) => n + (r.entries || []).length, 0);
       if (!total) return;
@@ -431,8 +406,7 @@
       const { id, markdown, lang, prevMarkdown, thread, instance } = await res.json();
       THREAD = Array.isArray(thread) ? thread : [];
       INSTANCE = instance || null;
-      // The stylesheet reads this to pick a line length: a ch-based measure is half a line
-      // in Japanese (plan-view.css, --measure).
+      // plan-view.css reads this for --measure (a ch measure is half a line in Japanese).
       document.documentElement.lang = lang === "ja" ? "ja" : "en";
       if (lang === "ja") {
         SWITCH_MSG = "この Decision を Alternative に切り替える";
@@ -456,7 +430,6 @@
       const model = preparePlan(markdown, id);
       const { sections } = model;
 
-      // diff mode: only on a revise re-launch where serve.mjs shipped a prev plan
       if (typeof prevMarkdown === "string" && prevMarkdown.trim()) diff = buildDiff(prevMarkdown, sections, collectBlockTexts);
 
       DECISIONS_SECTION_ID = (sections.find((s) => s.type === "decisions") || {}).id || "";
@@ -476,12 +449,10 @@
       const { planEl, heroEl } = await renderer.renderPlan(model);
       HERO_EL = heroEl;
 
-      // After the collapse, so a thread stays outside the <details> and remains visible on a
-      // collapsed Build order step. Matching reads the anchor key captured before it, not live
-      // text. A thread inside a fold is instead reopened by the sweep below.
+      // After the collapse, so a thread stays outside the <details> and visible on a collapsed
+      // step; matching reads the anchor key captured before it, not live text.
       renderLog(planEl, renderThread());
-      // A fold holding a replayed exchange opens: the reply is the reason the page was
-      // re-launched, and the log panel repeats it but not under the block it answers.
+      // A fold holding a replayed exchange opens — the reply is why the page was re-launched.
       for (const box of threadBoxes.values()) {
         const fold = box.closest("details.fold");
         if (fold) fold.open = true;
@@ -515,9 +486,8 @@
       else if (e.key === "r") { e.preventDefault(); selectDecision("revise"); }
     });
 
-    // Watch for the relaunched server. `instance` changes per process, so polling the old one
-    // while it shuts down reloads nothing, and a connection failure in between is the expected
-    // gap. /api/instance rather than /api/plan: this runs for as long as the caller takes.
+    // `instance` changes per process, so polling the old one while it shuts down reloads
+    // nothing and a connection failure in between is the expected gap.
     function startPolling() {
       if (!INSTANCE) return; // nothing to compare against — a reload would fire on the first poll
       const deadline = Date.now() + POLL_GIVEUP_MS;

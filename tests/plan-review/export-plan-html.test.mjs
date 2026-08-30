@@ -145,8 +145,28 @@ test("mermaid renders through the host, so no diagram library is loaded", () => 
     "the export claims a diagram renderer it has no library for");
 });
 
-test("nothing is folded away, since the page cannot say what changed", () => {
-  assert.ok(pageShell(exportPlan()).includes("forceOpen: true"));
+// The bootstrap's own createRenderer call. plan-render.mjs is inlined whole, so a bare grep
+// over the page would read that file's jsdoc and comments as if they were the call — the same
+// reason the --lang test below asserts on this line rather than on the label text.
+const bootstrapCall = (html) => pageShell(html).match(/const renderer = createRenderer\(\{[\s\S]*?\n\s*\}\);/)[0];
+
+// The section is the unit that must not hide: with no diff, nothing on this page can tell the
+// reader which section moved. A step and a fold keep a visible heading either way, so holding
+// those open too would only hand a skimming reader the plan at full length.
+test("every section opens, while steps and prose folds stay closed at their headings", () => {
+  const call = bootstrapCall(exportPlan());
+  assert.ok(call.includes('forceOpen: "sections"'));
+  assert.equal(call.includes("forceOpen: true"), false, "the page still forces every disclosure open");
+});
+
+test("the at-a-glance digest is on, so the page opens on the Decisions", () => {
+  assert.ok(bootstrapCall(exportPlan()).includes("atAGlance: true"));
+});
+
+// The renderer returns silently when the slot is absent, and this page can show the reader no
+// error — so the flag assertion above would keep passing over a digest that renders nowhere.
+test("the digest's slot travels with the page", () => {
+  assert.match(pageShell(exportPlan()), /id="at-a-glance"/);
 });
 
 test("--standalone adds the skeleton, with the page content in the body", () => {
@@ -172,6 +192,17 @@ test("--lang picks the language of the page's own generated text", () => {
 test("--lang reaches the app root, which is where the stylesheet reads it", () => {
   assert.match(exportPlan(["--lang", "ja"]), /<div id="app" lang="ja"><\/div>/);
   assert.match(exportPlan(["--lang", "en"]), /<div id="app" lang="en"><\/div>/);
+});
+
+// Both surface flags are opt-in so the gate's DOM stays exactly as its comment-anchoring
+// contract expects. Nothing else pins that: turning either on at the gate would ship the
+// export's chrome into the review surface with the rest of this suite still green.
+test("the gate takes neither surface flag, so its DOM is unchanged", () => {
+  const indexHtml = readFileSync(
+    join(repoRoot, "skills", "dev-workflow", "scripts", "plan-review", "public", "index.html"), "utf8");
+  const call = indexHtml.match(/const renderer = createRenderer\(\{[\s\S]*?\n\s*\}\);/)[0];
+  assert.equal(/\bforceOpen\b/.test(call), false, "the gate forces disclosures open");
+  assert.equal(/\batAGlance\b/.test(call), false, "the gate renders the at-a-glance digest");
 });
 
 // The CSP-shaped assertions above all read the exporter's output, so nothing in this file

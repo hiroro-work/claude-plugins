@@ -110,11 +110,10 @@ const bootstrap = `
     const PLAN = JSON.parse(document.getElementById("plan-source").textContent);
     document.getElementById("app").insertAdjacentHTML("afterbegin", PLAN_SHELL_HTML);
 
-    // Sections open because no diff here can say which one changed; a step and a fold keep a
-    // visible heading, so those stay closed.
+    // No open/close override: the section classifier's own default holds, the same one the
+    // gate renders under.
     const renderer = createRenderer({
       labels: LABELS[${JSON.stringify(lang)}],
-      forceOpen: "sections",
       atAGlance: true,
       hooks: { renderDiagrams: renderMermaidDiagrams },
     });

@@ -3,8 +3,10 @@
 // Reads no review state, so both surfaces render from here; interaction arrives as `hooks`.
 //
 // The comment-anchoring contract `references/visual-plan-review.md` specifies stays in
-// `index.html` (block ids, excerpt capture, the widgets, the mermaid library call);
-// moving any of it here would put that contract in two places.
+// `index.html` (block ids, excerpt capture, the widgets); moving any of it here would put
+// that contract in two places. The mermaid loader is the opposite case and lives here:
+// both surfaces draw diagrams at runtime, and one copy is what keeps them on one pinned
+// version. The static marked / highlight.js tags stay duplicated: a test guards that pair.
 //
 // `export-plan-html.mjs` inlines this file by deleting one leading named-braces import
 // of `./plan-parse.mjs`. Keep the imports in that shape — a second import statement, a
@@ -41,6 +43,46 @@ const mdInline = (t) => window.marked.parseInline(t || "");
 // `slugify` strips every character outside [a-z0-9-], so no plan section can mint this id
 // and collide with the slot. visual-plan-review.md § Figures layer pins it as the contract.
 export const HERO_SECTION_ID = "_hero";
+
+// Held here rather than in either page, so the two surfaces cannot land on different
+// versions. cdnjs ships this build as a classic script assigning globalThis.mermaid, not as
+// a module, hence the tag below rather than an import().
+const MERMAID_SRC = "https://cdnjs.cloudflare.com/ajax/libs/mermaid/11.15.0/mermaid.min.js";
+const MERMAID_SRI = "sha512-HH52omhHpZF6RfVnGiQwYgYm4H/ya2xsZYLl5xJ4+tLfX+rN4+8zF7V/H/KLeicPrKZYi1g6iBmVkk2AhXTGlg==";
+
+// Left to an artifact host, a diagram is drawn in the host's own theme, which knows nothing
+// of this page's palette.
+export async function renderMermaidDiagrams(nodes) {
+  if (!nodes.length) return;
+  try {
+    // Lazy, inside both the guard and the try: no diagram means no fetch, and a dead CDN
+    // leaves fences un-rendered rather than taking the page.
+    await new Promise((resolve, reject) => {
+      const tag = document.createElement("script");
+      tag.src = MERMAID_SRC;
+      tag.integrity = MERMAID_SRI;
+      tag.crossOrigin = "anonymous";
+      tag.referrerPolicy = "no-referrer";
+      tag.onload = resolve;
+      tag.onerror = () => reject(new Error("mermaid did not load"));
+      document.head.appendChild(tag);
+    });
+    // The three states the stylesheet answers: an explicit choice is stamped on the root, and
+    // only an unstamped page follows the OS. Read once — mermaid bakes its theme at
+    // initialize, so a flip mid-read leaves diagrams in the previous theme.
+    const stamped = document.documentElement.dataset.theme;
+    const darkScheme = stamped === "dark"
+      || (stamped !== "light" && window.matchMedia("(prefers-color-scheme: dark)").matches);
+    globalThis.mermaid.initialize({ startOnLoad: false, theme: darkScheme ? "dark" : "default", securityLevel: "strict" });
+    // suppressErrors keeps one bad fence from aborting the batch.
+    await globalThis.mermaid.run({ nodes, suppressErrors: true });
+  } catch (err) {
+    // The stylesheet gives the holder no `white-space`, so the un-rendered fence would
+    // otherwise collapse into one centred run-on line.
+    for (const node of nodes) node.style.whiteSpace = "pre-wrap";
+    console.error("mermaid render error", err);
+  }
+}
 
 export const PLAN_SHELL_HTML = `<header class="plan-head">
   <div class="eyebrow">Plan Review — <span id="plan-id">…</span></div>
@@ -280,7 +322,7 @@ export function createRenderer(env = {}) {
       const pre = code.closest("pre");
       const fig = document.createElement("figure");
       // The prev-plan side of the diff holds this figure as its fence source (a PRE), while the
-      // live side is this FIGURE carrying mermaid's injected CSS — they can never compare equal,
+      // live side is this FIGURE, which also carries the caption — they can never compare equal,
       // so the block-changed test skips a figure carrying this flag.
       fig.dataset.mermaidFigure = "1";
       pre.replaceWith(fig);
@@ -403,7 +445,11 @@ export function createRenderer(env = {}) {
       highlightCode(root);
       mermaidNodes.push(...wrapMermaidFigures(root));
     }
-    if (hooks.renderDiagrams) await hooks.renderDiagrams(mermaidNodes);
+    // Started here but awaited at the end: the hook runs synchronously up to its own first
+    // await (the library fetch), so the collapse passes below complete before a diagram is
+    // drawn — while a multi-megabyte fetch overlaps them instead of holding the page open
+    // and unfolded until it lands.
+    const diagrams = hooks.renderDiagrams ? hooks.renderDiagrams(mermaidNodes) : null;
     // The hero is a commentable figure like any other, so the caller decorates it too — the
     // gate's staleness contract rests on a revise comment being able to land on a figure.
     if (heroEl) decorateSection({ bodyEl: heroEl, section: { id: HERO_SECTION_ID, type: "hero" } });
@@ -430,6 +476,7 @@ export function createRenderer(env = {}) {
       // would hide the very items the gate exists to have judged.
       else if (r.section.type !== "decisions") foldProseUnderFigure(r.bodyEl, edited);
     }
+    if (diagrams) await diagrams;
     return { planEl, heroEl };
   }
 

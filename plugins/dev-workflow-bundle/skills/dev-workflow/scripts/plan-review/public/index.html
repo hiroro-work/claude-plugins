@@ -49,7 +49,7 @@
       escapeHtml, excerptOf, normText, preparePlan,
       sectionOfBlockId,
     } from "./plan-parse.mjs";
-    import { AFFORDANCE_ATTR, HERO_SECTION_ID, PLAN_SHELL_HTML, LABELS, createRenderer, md } from "./plan-render.mjs";
+    import { AFFORDANCE_ATTR, HERO_SECTION_ID, PLAN_SHELL_HTML, LABELS, createRenderer, md, renderMermaidDiagrams } from "./plan-render.mjs";
 
     // afterbegin, so the shell precedes the #done panel this page keeps last in #app.
     document.getElementById("app").insertAdjacentHTML("afterbegin", PLAN_SHELL_HTML);
@@ -254,24 +254,6 @@
       }
     }
 
-    // The `renderDiagrams` hook. The library is this page's alone — the export loads none.
-    async function renderMermaid(nodes) {
-      if (!nodes.length) return;
-      try {
-        // Lazy, inside both the guard and the try: no diagram means no fetch, and a dead CDN
-        // leaves fences un-rendered rather than taking the page.
-        const { default: mermaid } = await import("https://esm.sh/mermaid@11.15.0");
-        // Read once: mermaid bakes its theme at initialize, so an OS theme flip mid-review
-        // leaves diagrams in the previous theme until the page is reloaded.
-        const darkScheme = window.matchMedia("(prefers-color-scheme: dark)").matches;
-        mermaid.initialize({ startOnLoad: false, theme: darkScheme ? "dark" : "default", securityLevel: "strict" });
-        // suppressErrors keeps one bad fence from aborting the batch.
-        await mermaid.run({ nodes, suppressErrors: true });
-      } catch (err) {
-        console.error("mermaid render error", err);
-      }
-    }
-
     let THREAD = [];
     // As the renderer handed it back: its shell ids are not this page's to know.
     let HERO_EL = null;
@@ -283,7 +265,7 @@
     const entrySection = (e) => (e.anchor && e.anchor.section) || sectionOfBlockId(e.block, DECISIONS_SECTION_ID);
 
     // Null sends the entry to the log alone. A figure resolves by section (one per section),
-    // since its own text is SVG labels or mermaid's injected CSS — neither an anchor.
+    // since its own text is SVG labels or a mermaid fence's source — neither an anchor.
     function findAnchorTarget(e) {
       const secId = entrySection(e);
       if (!secId) return null;
@@ -442,7 +424,7 @@
         hooks: {
           decorateDecisionCard,
           decorateSection: ({ bodyEl, section }) => attachElementComments(bodyEl, section.id),
-          renderDiagrams: renderMermaid,
+          renderDiagrams: renderMermaidDiagrams,
         },
       });
 

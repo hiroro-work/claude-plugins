@@ -2,6 +2,13 @@
 
 ## 2026-08-30
 
+### dev-workflow v1.133.0 / dev-workflow-bundle v1.156.0
+
+- fix(dev-workflow): draw a published plan page's mermaid diagrams on the page itself
+  - A diagram on a page published through `plan_artifact` was left to the artifact host to render, and the host knows nothing of the page's palette — dark grey nodes on a light ground, unreadable either way. The page now loads mermaid itself, from a version-pinned cdnjs build with an integrity hash, and draws in the theme the reader is actually looking at: the choice they made, or their OS preference when they made none. Inline-SVG figures were never affected.
+  - The library is fetched only on a page that has a diagram, its download overlaps the rest of the render rather than holding the page open and unfolded, and a failed fetch leaves each diagram's caption and source text in place rather than taking the page down.
+  - The local approval gate now loads the same pinned build instead of its own copy from another host. Its rendering is unchanged — same version, same theme call — but the two surfaces can no longer drift onto different mermaid versions.
+
 ### dev-workflow v1.132.0 / mobpro v1.42.0 / dev-workflow-bundle v1.155.0
 
 - fix(dev-workflow): keep the figures on a plan page republished after a team review

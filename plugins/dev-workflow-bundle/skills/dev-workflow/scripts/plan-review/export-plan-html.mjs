@@ -8,8 +8,8 @@
  * Default output is a fragment: the artifact host supplies the skeleton and forbids the
  * file writing its own. `--standalone` adds it, for local viewing.
  *
- * Only cdnjs scripts + Google Fonts: the artifact CSP blocks anything else silently.
- * Mermaid goes out as `<pre class="mermaid">` for the host, so no diagram library loads.
+ * Only cdnjs scripts + Google Fonts: the artifact CSP blocks anything else silently. Mermaid
+ * comes from there too, rather than being left to the artifact host to draw.
  *
  * Node built-ins only (no node_modules).
  *
@@ -112,12 +112,11 @@ const bootstrap = `
 
     // Sections open because no diff here can say which one changed; a step and a fold keep a
     // visible heading, so those stay closed.
-    // No renderDiagrams hook: this page loads no mermaid library, so the renderer leaves each
-    // diagram as the <pre class="mermaid"> an artifact host renders itself.
     const renderer = createRenderer({
       labels: LABELS[${JSON.stringify(lang)}],
       forceOpen: "sections",
       atAGlance: true,
+      hooks: { renderDiagrams: renderMermaidDiagrams },
     });
 
     // No error UI here — at least keep the failure attributable.

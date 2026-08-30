@@ -2,6 +2,13 @@
 
 ## 2026-08-30
 
+### dev-workflow v1.132.0 / mobpro v1.42.0 / dev-workflow-bundle v1.155.0
+
+- fix(dev-workflow): keep the figures on a plan page republished after a team review
+  - Plan changes a team's comments call for now go back through the browser approval gate, whichever surface the original approval ended on. The gate stays the only writer of the served copy and the figures layer, so the republished page keeps its figures instead of falling back to the figure-free plan document.
+  - The figures layer is re-checked on that return, since edits applied to the plan outside the gate can leave a figure showing a label or a count that has changed.
+  - The figures are still dropped where the gate cannot run at all — a cloud session, a launch failure. That case now says so in one line rather than dropping them silently.
+
 ### dev-workflow v1.131.0 / dev-workflow-bundle v1.154.0
 
 - feat(dev-workflow): open the published plan page on an at-a-glance digest of the Decisions

@@ -15,7 +15,7 @@ The tier selects one of two lanes. **express** = Trivial or Simple; **full** = M
 | Step 2 Simplicity self-audit | `references/simplicity-self-audit-express.md` alone | that file plus `references/simplicity-self-audit.md` |
 | Steps skipped outright | the four in § Difficulty-skip matrix | none |
 | Step 3 (Plan Review) / Step 8 (Code Review) | skipped on Trivial only | run, subject to the run mode for the plan phase (§ Resolution procedure step 2) |
-| Step 4 (Finalize Plan) approval surface | chat approval on Trivial only — `references/visual-plan-review.md` is not read | the visual gate |
+| Step 4 (Finalize Plan) approval surface | chat approval on Trivial only — `references/visual-plan-review.md` is not read *for the approval itself*; a `plan_artifact: review` run still reaches it from `references/plan-artifact.md` § Team-review gate step 3 | the visual gate |
 
 Resume sub-mode always reads `references/task-decomposition-resume.md` § A. Resume sub-mode. On the **full lane in Normal sub-mode** the ordering runs the other way: the tier was assessed against the whole request, and when § B then decomposes and hands subtask 1 to this same invocation, that subtask keeps the parent request's tier.
 

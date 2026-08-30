@@ -2,6 +2,17 @@
 
 ## 2026-08-30
 
+### dev-workflow v1.131.0 / dev-workflow-bundle v1.154.0
+
+- feat(dev-workflow): open the published plan page on an at-a-glance digest of the Decisions
+  - The viewer-only page exported for a `plan_artifact` publish now opens on one line per Decision — the question and the head of its recommendation — each linking to that decision's card. Every line is cut from the plan's own text, so the page stays a rendering of the plan document.
+  - A plan with no Decisions section, or one whose Decisions do not resolve into cards, shows no block at all.
+  - The local approval gate is unchanged.
+- feat(dev-workflow): fold Build order steps on the published plan page
+  - The published page now opens each section, while a Build order step and a figure's prose fold stay closed at their own headings, one click away. It previously held every disclosure open.
+- fix(dev-workflow): keep a wide table inside its own scroll box on both plan-review surfaces
+  - A table wider than the column used to scroll the whole page sideways. It now scrolls within itself, and a narrow table is no longer stretched to fill the width.
+
 ### dev-workflow v1.130.0 / mobpro v1.41.0 / dev-workflow-bundle v1.153.0
 
 - feat(dev-workflow, mobpro): override `plan_artifact` per run with `--artifact <value>`

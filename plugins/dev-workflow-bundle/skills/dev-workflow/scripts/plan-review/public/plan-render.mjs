@@ -14,7 +14,8 @@
 
 import {
   OPEN_TYPES, STEP_COLLAPSE_TYPES,
-  anchorNorm, decisionSig, emptyDiff, escapeHtml, excerptOf, parseDecisions,
+  anchorNorm, buildDecisionDigest, decisionBlockId, decisionSig, emptyDiff, escapeHtml,
+  excerptOf, parseDecisions,
   sectionGist, splitPreamble, stripMd,
 } from "./plan-parse.mjs";
 
@@ -22,11 +23,13 @@ import {
 export const LABELS = {
   en: {
     foldLabel: "Read the text",
+    atAGlanceTitle: "Decisions at a glance",
     diffBanner: (n, removed) => `🔍 ${n} section${n === 1 ? "" : "s"} changed or added since your last review${removed ? `, ${removed} removed` : ""} — changes highlighted below`,
     diffBannerNone: "🔍 No section changes since your last review",
   },
   ja: {
     foldLabel: "文章を読む",
+    atAGlanceTitle: "決定事項の一覧",
     diffBanner: (n, removed) => `🔍 前回レビューから ${n} 個のセクションが変更・追加されました${removed ? `（削除 ${removed} 件）` : ""} — 変更箇所を以下にハイライト`,
     diffBannerNone: "🔍 前回レビューからセクションの変更はありません",
   },
@@ -49,6 +52,7 @@ export const PLAN_SHELL_HTML = `<header class="plan-head">
   <div id="diff-banner" hidden></div>
 </header>
 <section id="hero" hidden></section>
+<section id="at-a-glance" hidden></section>
 <nav id="toc"><div class="toc-title">Sections</div></nav>
 <main id="plan"></main>`;
 
@@ -67,13 +71,20 @@ function chip(label, value, cls) {
 
 /**
  * @param {object} [env]
- * @param {{foldLabel?: string, diffBanner?: (n: number, removed: number) => string, diffBannerNone?: string}} [env.labels]
+ * @param {{foldLabel?: string, atAGlanceTitle?: string, diffBanner?: (n: number, removed: number) => string, diffBannerNone?: string}} [env.labels]
  *   Localized strings, normally `LABELS[lang]`. Merged over `LABELS.en`, so a partial table
  *   keeps English for whatever it leaves out. Everything else this file writes is UI chrome
  *   and stays English.
  * @param {object} [env.diff] plan-parse.mjs' diff state; an inactive one renders no diff chrome.
- * @param {boolean} [env.forceOpen] Open every disclosure. The viewer-only page has no
- *   diff to mark what changed, so nothing there may start folded away.
+ * @param {true|"sections"} [env.forceOpen] Which disclosures open regardless of the diff.
+ *   `true` opens every one; `"sections"` opens the section disclosures alone, leaving a Build
+ *   order step and a figure's prose fold closed at their own visible headings. Anything else,
+ *   this key absent included, forces nothing open. The viewer-only page has no diff to mark
+ *   what changed, so no *section* there may start folded away — but a step and a fold each
+ *   keep a heading the reader can see and click, which is why they are not held open too.
+ * @param {boolean} [env.atAGlance] Open the page on a one-line-per-Decision digest linking
+ *   into the cards. Off by default: the gate has a diff and a revise loop instead, and adding
+ *   DOM there would put its comment anchoring at risk for no gain.
  * @param {{decorateSection?: Function, decorateDecisionCard?: Function, renderDiagrams?: Function}} [env.hooks]
  *   `renderDiagrams` also decides how a mermaid fence is held: with one, a `div` for the
  *   caller's library to render into; without, the `<pre class="mermaid">` an artifact host
@@ -82,9 +93,11 @@ function chip(label, value, cls) {
  */
 export function createRenderer(env = {}) {
   const labels = { ...LABELS.en, ...(env.labels || {}) };
-  const { foldLabel, diffBanner, diffBannerNone } = labels;
+  const { foldLabel, atAGlanceTitle, diffBanner, diffBannerNone } = labels;
   const diff = env.diff || emptyDiff();
-  const forceOpen = Boolean(env.forceOpen);
+  const forceOpenSections = env.forceOpen === true || env.forceOpen === "sections";
+  const forceOpenAll = env.forceOpen === true;
+  const atAGlance = Boolean(env.atAGlance);
   const hooks = env.hooks || {};
   const decorateSection = hooks.decorateSection || (() => {});
   const mermaidTag = hooks.renderDiagrams ? "div" : "pre";
@@ -146,13 +159,23 @@ export function createRenderer(env = {}) {
     return hero;
   }
 
+  // Which decisions section's cards may claim the `decision-<n>` ids as element ids. Every
+  // decisions section numbers its cards from 1, so only one of them can: the first, which is
+  // also the one buildDecisionDigest covers, so the digest's links land on the cards it listed.
+  let idClaimingSectionId = null;
+
   // The Alternative toggle and the comment affordance are the caller's, added through
   // `hooks.decorateDecisionCard` — the card renders complete without them.
-  function renderDecisionCard(it, n) {
-    const id = `decision-${n}`;
+  function renderDecisionCard(it, n, claimId) {
+    const id = decisionBlockId(n);
     const excerpt = excerptOf(it.question);
     const card = document.createElement("div");
     card.className = "decision-card";
+    // Same value as data-block-id, carried as an id as well so the at-a-glance digest's
+    // `href="#decision-N"` has somewhere to land. Comment anchoring compares block text, so
+    // an added attribute changes nothing it reads. data-block-id goes on every card either
+    // way — it is the routing key, and it was never document-unique.
+    if (claimId) card.id = id;
     card.dataset.blockId = id;
     card.dataset.anchorKey = anchorNorm(it.question);
 
@@ -179,6 +202,30 @@ export function createRenderer(env = {}) {
     return card;
   }
 
+  // The opening digest: every Decision on one line, linking into its card. Deterministic —
+  // each line is text the plan already carries, cut down by buildDecisionDigest, never
+  // rephrased. A plan with no Decisions leaves the slot hidden and taking no space, the same
+  // way renderHero leaves its own.
+  function renderAtAGlance(sections) {
+    if (!atAGlance) return;
+    const el = document.getElementById("at-a-glance");
+    if (!el) return;
+    const digest = buildDecisionDigest(sections);
+    if (!digest) return;
+    const rows = digest.items.map((it) => {
+      const rec = it.recommendation
+        ? `<span class="ag-rec">${escapeHtml(it.recommendation)}</span>`
+        : "";
+      // Plain escaped text rather than inline markdown: a question carrying a link would
+      // otherwise nest an anchor inside this row's own anchor.
+      return `<li class="ag-row"><a class="ag-link" href="#${decisionBlockId(it.n)}">`
+        + `<span class="ag-tag">Decision ${it.n}</span>`
+        + `<span class="ag-q">${escapeHtml(it.question)}</span></a>${rec}</li>`;
+    }).join("");
+    el.innerHTML = `<div class="ag-title">${escapeHtml(atAGlanceTitle)}</div><ol class="ag-list">${rows}</ol>`;
+    el.hidden = false;
+  }
+
   function renderSection(section) {
     const det = document.createElement("details");
     det.className = "section" + (section.type === "context" ? " is-context" : "");
@@ -189,7 +236,7 @@ export function createRenderer(env = {}) {
     // status is null outside diff mode, else "new" | "changed" | "unchanged"
     const status = diff.active ? (diff.sectionStatus.get(section.id) || "unchanged") : null;
     // diff mode overrides the default-open set: open changed/new, collapse unchanged
-    if (forceOpen) det.open = true;
+    if (forceOpenSections) det.open = true;
     else if (status) det.open = (status === "new" || status === "changed");
     else if (OPEN_TYPES.has(section.type)) det.open = true;
 
@@ -223,8 +270,9 @@ export function createRenderer(env = {}) {
         }
         // changed Decisions section: highlight cards whose signature is absent from prev
         const prevSigs = status === "changed" ? diff.prevDecisionSigs.get(section.id) : null;
+        const claimIds = section.id === idClaimingSectionId;
         items.forEach((it, i) => {
-          const card = renderDecisionCard(it, i + 1);
+          const card = renderDecisionCard(it, i + 1, claimIds);
           if (prevSigs && !prevSigs.has(decisionSig(it))) card.classList.add("card-changed");
           body.appendChild(card);
         });
@@ -320,7 +368,7 @@ export function createRenderer(env = {}) {
         if (sep && sep.nodeType === 3) sep.data = sep.data.replace(STEP_SEP_RE, "");
         const det = document.createElement("details");
         det.className = "step";
-        if (forceOpen) det.open = true;
+        if (forceOpenAll) det.open = true;
         det.appendChild(sum);
         det.appendChild(inner);
         li.insertBefore(det, li.firstChild);
@@ -347,7 +395,7 @@ export function createRenderer(env = {}) {
     if (!rest.length) return;
     const det = document.createElement("details");
     det.className = "fold";
-    det.open = forceOpen || open;
+    det.open = forceOpenAll || open;
     const sum = document.createElement("summary");
     sum.textContent = foldLabel;
     det.appendChild(sum);
@@ -359,7 +407,9 @@ export function createRenderer(env = {}) {
   // sequencing the pieces: the ordering constraints collapseBuildOrderSteps and
   // foldProseUnderFigure document are what a second copy of this loop would drift from.
   async function renderPlan({ id, preamble, sections, overview, riskCount }) {
+    idClaimingSectionId = (sections.find((s) => s.type === "decisions") || {}).id ?? null;
     renderHeader(overview, id, riskCount);
+    renderAtAGlance(sections);
     renderDiffBanner();
     renderNav(sections);
 

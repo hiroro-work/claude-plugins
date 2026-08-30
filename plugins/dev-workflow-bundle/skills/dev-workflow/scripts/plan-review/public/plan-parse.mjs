@@ -19,12 +19,18 @@ export const anchorMatches = (a, b) => {
   const [short, long] = a.length <= b.length ? [a, b] : [b, a];
   return short.length >= 8 && long.startsWith(short);
 };
+// The id a Decision's card carries, which the digest's in-page link targets and
+// sectionOfBlockId reads back. Written once: a scheme changed at only one of those sites
+// would break block-id routing with nothing to fail.
+const DECISION_ID_PREFIX = "decision-";
+export const decisionBlockId = (n) => `${DECISION_ID_PREFIX}${n}`;
+
 // The section a block id names — both id forms encode it, so nothing has to be threaded
 // through the comment-state calls.
 export const sectionOfBlockId = (id, decisionsSectionId) => {
   const b = String(id || "");
   if (b.includes("::")) return b.slice(0, b.indexOf("::"));
-  return b.startsWith("decision-") ? (decisionsSectionId || "") : "";
+  return b.startsWith(DECISION_ID_PREFIX) ? (decisionsSectionId || "") : "";
 };
 
 const HTML_ESCAPES = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" };
@@ -198,6 +204,9 @@ export function parseDecisions(body) {
 }
 
 const GIST_MAX = 120;
+// One line's worth, marked when it was cut. Shared, so a gist and the digest's fallback below
+// it are cut to the same length and say so the same way.
+const capGist = (t) => (t.length > GIST_MAX ? t.slice(0, GIST_MAX - 1) + "…" : t);
 
 // The one-line gist a collapsed section shows beside its title. Read from Markdown rather
 // than the rendered body: the source has one unambiguous first line of prose, where a card
@@ -211,9 +220,27 @@ export function sectionGist(body) {
     if (!line || line.startsWith("#") || line.startsWith(">") || line.startsWith("<")) continue;
     const text = stripMd(line.replace(/^(?:[-*+]|\d+[.)])\s+/, "")).replace(/\s+/g, " ").trim();
     if (!text) continue;
-    return text.length > GIST_MAX ? text.slice(0, GIST_MAX - 1) + "…" : text;
+    return capGist(text);
   }
   return "";
+}
+
+// The at-a-glance digest: one row per Decision, for the viewer-only page's opening block.
+// Row `n` is card `n` of the **first** decisions section — the renderer numbers every such
+// section's cards from 1, so a plan with two offers no unambiguous card to link a row to.
+// capGist catches a field whose every line sectionGist skips (one opening on `#`, `>`, `<`).
+export function buildDecisionDigest(sections) {
+  const sec = (sections || []).find((s) => s.type === "decisions");
+  if (!sec) return null;
+  const { items } = parseDecisions(sec.body || "");
+  if (!items.length) return null;
+  return {
+    items: items.map((it, i) => ({
+      n: i + 1,
+      question: sectionGist(it.question) || capGist(normText(it.question)),
+      recommendation: sectionGist(it.recommendation) || capGist(normText(it.recommendation)),
+    })),
+  };
 }
 
 // Everything the renderer needs about a plan, derived in one place — a second copy of this

@@ -122,14 +122,19 @@ const bootstrap = `
     const PLAN = JSON.parse(document.getElementById("plan-source").textContent);
     document.getElementById("app").insertAdjacentHTML("afterbegin", PLAN_SHELL_HTML);
 
-    // Every disclosure opens. This page carries no diff, so nothing here can say which
-    // section changed — and a reader who cannot be told that must not have anything
-    // folded away from them.
+    // Every section opens. This page carries no diff, so nothing here can say which section
+    // changed, and a reader who cannot be told that must not have a whole section folded away
+    // from them. A Build order step and a figure's prose fold stay closed: each keeps its own
+    // heading in view, so the reader can see what is there and open the ones they want,
+    // instead of meeting the plan at full length.
+    // The at-a-glance digest is this page's alone — the gate has a diff and a revise loop, and
+    // this page has a reader who is skimming.
     // No renderDiagrams hook: this page loads no mermaid library, so the renderer leaves each
     // diagram as the <pre class="mermaid"> an artifact host renders itself.
     const renderer = createRenderer({
       labels: LABELS[${JSON.stringify(lang)}],
-      forceOpen: true,
+      forceOpen: "sections",
+      atAGlance: true,
     });
 
     // Nothing here can show the reader an error, so at least keep the failure attributable

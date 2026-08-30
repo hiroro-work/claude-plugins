@@ -159,10 +159,11 @@ header.plan-head h1 code { font-family: var(--font-mono); font-size: 0.78em; }
   text-transform: uppercase; color: var(--muted); padding-top: 3px;
 }
 .meta-scope .meta-val { min-width: 0; }
-/* The whole-change picture, above the plan and across both columns — the one thing a reader
-   who has never seen this plan meets first. Hidden and taking no space when the figures layer
-   carried no Hero block. */
-#hero {
+/* The two slots above the plan, across both columns: the hero — the whole-change picture, the
+   one thing a reader who has never seen this plan meets first — and the digest below it. Each
+   is hidden and takes no space when the plan gave it nothing to show. They share one box;
+   only the padding differs. */
+#hero, #at-a-glance {
   grid-column: 1 / -1;
   margin: 14px 0 2px; padding: 16px 18px;
   border: 1px solid var(--border); border-radius: 12px; background: var(--bg);
@@ -173,13 +174,39 @@ header.plan-head h1 code { font-family: var(--font-mono); font-size: 0.78em; }
   margin-top: 10px; font-size: 13px; line-height: 1.6; color: var(--fg);
   max-width: 60ch; margin-inline: auto; text-wrap: balance;
 }
+/* The opening digest of the plan's Decisions, on the viewer-only page — directly beneath the
+   hero, whose box it shares above. No `display` is declared on the slot itself: the renderer
+   hides it with the `hidden` attribute when a plan has no Decisions, and a `display` here
+   would override that and leave an empty box behind. */
+#at-a-glance { padding: 14px 18px; }
+/* The numbers are the Decision numbers, carried in each row's own tag, so the list marker
+   would only repeat them a second time in a different style. */
+.ag-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.ag-row { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; min-width: 0; }
+.ag-link {
+  display: inline-flex; align-items: baseline; gap: 8px; min-width: 0;
+  color: var(--fg); text-decoration: none; border-radius: 4px;
+}
+.ag-link:hover .ag-q { color: var(--accent); text-decoration: underline; }
+.ag-link:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.ag-tag {
+  flex: none; font-family: var(--font-mono); font-size: 10px; font-weight: 500;
+  letter-spacing: .04em; text-transform: uppercase; color: var(--accent-ink);
+  background: var(--accent-soft); border-radius: 999px; padding: 2px 8px;
+}
+.ag-q { font-size: 14px; line-height: 1.55; }
+/* The recommendation trails the question rather than sitting under it: one line per Decision
+   is the whole point of the block. */
+.ag-rec { font-size: 12.5px; line-height: 1.55; color: var(--muted); min-width: 0; }
+.ag-rec::before { content: "→ "; color: var(--accent); }
 /* section nav */
 #toc {
   position: sticky; top: 16px; align-self: start;
   max-height: calc(100vh - 32px); overflow: auto;
   font-size: 13px; border-right: 1px solid var(--border); padding-right: 14px;
 }
-#toc .toc-title {
+/* The eyebrow label over a rail or a slot. Shared, so the two cannot drift apart. */
+#toc .toc-title, .ag-title {
   font-family: var(--font-mono); font-size: 10px; font-weight: 500; letter-spacing: .08em;
   text-transform: uppercase; color: var(--muted); margin-bottom: 10px;
 }
@@ -496,7 +523,8 @@ details.step > .step-body { padding: 2px 0 2px 18px; }
 #done { grid-column: 1 / -1; text-align: center; padding: 40px; font-size: 16px; color: var(--approve); }
 /* #hero is a sibling of both and carries live comment affordances, so it dims too —
    otherwise its 💬 button stays clickable for a round that has already been sent. */
-#app.submitted main#plan, #app.submitted #toc, #app.submitted #hero { opacity: 0.5; pointer-events: none; }
+#app.submitted main#plan, #app.submitted #toc, #app.submitted #hero,
+#app.submitted #at-a-glance { opacity: 0.5; pointer-events: none; }
 
 /* Reduced motion: the only motion here is the disclosure triangle's rotation and the
    commentable block's hover tint. Both are affordance feedback, so they stop rather than

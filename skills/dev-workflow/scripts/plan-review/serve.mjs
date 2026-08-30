@@ -6,8 +6,7 @@
  * submit into <plan-basename>.comments.json, appends it as a round to
  * <plan-basename>.thread.json, and writes the viewer URL to <plan-basename>.url at
  * listen time (the port is random, so a caller that backgrounded this reads it there).
- * The plan is parsed and rendered browser-side; this server is agnostic to the plan
- * schema. Node built-ins only (no node_modules).
+ * Node built-ins only (no node_modules).
  *
  * Usage:
  *   node serve.mjs --plan <path> [--prev <path>] [--lang <ja|en>] [--wait] [--port <n>] [--no-open] [--timeout <sec>]
@@ -28,8 +27,7 @@ import { basename, dirname, extname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import { spawn } from "node:child_process";
-// The plan document may open with YAML frontmatter the workflow writes. The viewer drops it
-// when rendering either way; stripping it here keeps it out of the response body too.
+// The viewer drops frontmatter anyway; stripping here keeps it out of the response body too.
 import { stripFrontmatter } from "./public/plan-parse.mjs";
 
 const log = (...args) => console.error(...args); // all progress → stderr
@@ -38,7 +36,6 @@ const log = (...args) => console.error(...args); // all progress → stderr
 const DEFAULT_TIMEOUT_SEC = 86400;
 const MAX_BODY_BYTES = 5_000_000;
 
-// --- parse args ---
 let opts;
 try {
   ({ values: opts } = parseArgs({
@@ -87,10 +84,9 @@ const intOrDefault = (raw, def, min) => {
 };
 const timeoutMs = intOrDefault(opts.timeout, DEFAULT_TIMEOUT_SEC, 0) * 1000; // 0 = no timeout (wait indefinitely)
 const port = intOrDefault(opts.port, 0, 0); // 0 = random free port
-const lang = opts.lang === "ja" ? "ja" : "en"; // only "ja" / "en"; default en
+const lang = opts.lang === "ja" ? "ja" : "en";
 
-// id token = plan basename with the .md extension stripped; the /api/plan `id`
-// and the comments.json `plan` field both use this exact token.
+// This exact token is both /api/plan's `id` and comments.json's `plan` field.
 const planId = basename(planPath).replace(/\.md$/i, "");
 const commentsPath = join(dirname(planPath), `${planId}.comments.json`);
 const urlPath = join(dirname(planPath), `${planId}.url`);
@@ -101,9 +97,8 @@ const threadPath = join(dirname(planPath), `${planId}.thread.json`);
 const DISPOSITIONS = new Set(["answered", "revised", "both"]);
 const str = (v) => (typeof v === "string" ? v : "");
 
-// One shape for a thread entry: a round read back off disk and a round this process
-// appends must be the same record, or a rename reaches only half of them. The caller
-// rewrites the thread file between launches, so nothing here may trust its contents.
+// Rounds read off disk and rounds appended here must be one shape, or a rename reaches
+// only half. The caller rewrites this file between launches — trust nothing in it.
 function makeEntry(e, fallbackId) {
   return {
     id: str(e.id) || fallbackId,
@@ -142,9 +137,8 @@ if (existsSync(threadPath)) {
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const publicDir = join(__dirname, "public");
 
-// `instance` is the reload signal: it changes on every process start, so a page polling
-// across a restart sees a different value and reloads, while polling the same
-// (still-shutting-down) process never triggers one.
+// Reload signal: changes per process start, so a page polling across a restart reloads
+// and one polling the still-shutting-down process does not.
 const instance = `${process.pid}-${Date.now()}`;
 const planPayload = {
   id: planId,
@@ -155,7 +149,6 @@ const planPayload = {
   instance,
 };
 
-// --- HTTP server ---
 const MIME = {
   ".html": "text/html; charset=utf-8",
   ".css": "text/css; charset=utf-8",
@@ -224,8 +217,7 @@ function handleSubmit(req, res) {
       return sendJson(res, 400, { error: "decision must be 'approve' or 'revise'" });
     }
 
-    // Block ids are browser-assigned semantic ids the server does not enumerate, so any
-    // non-empty string is accepted; the caller resolves the id + excerpt.
+    // Block ids are browser-assigned and not enumerable here, so any non-empty string passes.
     const comments = Array.isArray(body.comments)
       ? body.comments
           .filter(
@@ -236,8 +228,7 @@ function handleSubmit(req, res) {
               typeof c.body === "string" &&
               c.body.trim() !== "",
           )
-          // kind is normalized here rather than passed through: the caller routes on it, so a
-          // stale browser cache or a hand-rolled POST must not widen a two-value field.
+          // Normalized, not passed through: the caller routes on `kind`, so keep it two-valued.
           .map((c) => ({
             block: c.block,
             section: str(c.section),
@@ -271,8 +262,8 @@ function handleSubmit(req, res) {
       try {
         writeFileSync(threadPath, JSON.stringify(thread, null, 2) + "\n");
       } catch (err) {
-        // Non-fatal: the submit itself is the gate's return value, and the comments file
-        // already holds this round verbatim.
+        // Non-fatal: the submit is the gate's return value and comments.json already holds
+        // this round.
         log(`warning: cannot write ${threadPath}: ${err.message}`);
       }
     }
@@ -286,8 +277,7 @@ function handleSubmit(req, res) {
 function handle(req, res) {
   const url = new URL(req.url, "http://127.0.0.1");
   if (req.method === "GET" && url.pathname === "/api/plan") return sendJson(res, 200, planPayload);
-  // The post-revise poll reads this rather than /api/plan: it runs every couple of seconds for
-  // as long as the caller takes, and the plan payload carries the whole document and thread.
+  // The post-revise poll hits this, not /api/plan: it runs for as long as the caller takes.
   if (req.method === "GET" && url.pathname === "/api/instance") return sendJson(res, 200, { instance });
   if (req.method === "POST" && url.pathname === "/api/submit") return handleSubmit(req, res);
   if (req.method === "GET") return serveStatic(res, url.pathname);
@@ -338,9 +328,8 @@ server.on("error", (err) => {
 server.on("listening", () => {
   const urlStr = `http://127.0.0.1:${server.address().port}/`;
   log(`plan-review viewer listening on ${urlStr} (plan: ${planId})`);
-  // The port is random, so a backgrounded caller reads the URL here. Written before the
-  // browser launch is attempted, so it is readable whether or not the browser opens.
-  // Failing to write it is non-fatal.
+  // Written before the browser launch so a backgrounded caller can read it either way;
+  // failing to write is non-fatal.
   try {
     writeFileSync(urlPath, `${urlStr}\n`, "utf8");
   } catch (err) {
@@ -353,8 +342,6 @@ server.on("listening", () => {
 
 server.listen(port, "127.0.0.1");
 
-// timer arms only in --wait mode and when timeoutMs > 0 (0 = wait forever, no timer);
-// without --wait the process stays up until a signal.
 if (opts.wait && timeoutMs > 0) {
   timer = setTimeout(() => {
     log(`error: timed out after ${timeoutMs / 1000}s with no submit`);

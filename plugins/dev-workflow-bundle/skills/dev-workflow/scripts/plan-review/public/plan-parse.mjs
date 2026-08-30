@@ -1,8 +1,7 @@
 // Plan parsing for the plan-review viewer.
 //
-// Free of the DOM, of `window`, and of module-level mutable state, so both browser
-// surfaces and the Node tests import this same file. Keep it that way. Rendering lives
-// in `plan-render.mjs`; the walks needing `marked` or a document stay in `index.html`.
+// DOM-free, window-free, no module-level mutable state, so the browser surfaces and the
+// Node tests share this file. Keep it that way; walks needing `marked` stay in index.html.
 
 export const stripMd = (t) => (t || "").replace(/[*`]/g, "").trim();
 export const normText = (t) => (t || "").replace(/\s+/g, " ").trim();
@@ -25,8 +24,7 @@ export const anchorMatches = (a, b) => {
 const DECISION_ID_PREFIX = "decision-";
 export const decisionBlockId = (n) => `${DECISION_ID_PREFIX}${n}`;
 
-// The section a block id names — both id forms encode it, so nothing has to be threaded
-// through the comment-state calls.
+// Both id forms encode their section, so nothing is threaded through comment-state calls.
 export const sectionOfBlockId = (id, decisionsSectionId) => {
   const b = String(id || "");
   if (b.includes("::")) return b.slice(0, b.indexOf("::"));
@@ -39,12 +37,9 @@ export const escapeHtml = (t) => (t || "").replace(/[&<>"]/g, (c) => HTML_ESCAPE
 // One rule for every line walk in this file that has to know whether it is inside a fence.
 const FENCE_RE = /^\s*(`{3,}|~{3,})/;
 
-// What the viewer knows about each plan section, in match-priority order.
-//
-// The title prefixes come from dev-workflow's `references/plan-authoring.md` § Template and
-// from mobpro's `references/plan-shape.md`, which follows it. Keep in sync both ways — a
-// heading renamed upstream and not here silently returns that plan to all-collapsed. Each
-// prefix stops short of an apostrophe, so straight vs. curly quotes cannot break the match.
+// Match-priority order. Prefixes come from plan-authoring.md § Template and plan-shape.md;
+// keep in sync both ways — a heading renamed upstream silently all-collapses that plan.
+// Each prefix stops short of an apostrophe, so straight vs. curly quotes cannot break it.
 const SECTION_TYPES = [
   { type: "overview", match: ["overview", "what we"], open: true },
   { type: "decisions", match: ["decision", "choices i made"], open: true },
@@ -67,12 +62,8 @@ export function slugify(title) {
   return (title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "")) || "section";
 }
 
-// Split into level-3 (###) sections, tracking fenced code so a ### inside a code block is
-// not mistaken for a heading. Content before the first ### is the preamble.
-// A plan document may open with YAML frontmatter the workflow writes — not plan content, and
-// it would otherwise render as the preamble's first paragraph. The lookahead demands a YAML key
-// on the first line: without it a plan opening on a `---` thematic break loses everything up to
-// the next one.
+// The lookahead demands a YAML key on line 1: without it, a plan opening on a `---`
+// thematic break loses everything up to the next one.
 const FRONTMATTER_RE = /^---\r?\n(?=[A-Za-z_][\w.-]*[ \t]*:)[\s\S]*?\r?\n---[ \t]*\r?\n/;
 export const stripFrontmatter = (t) => String(t || "").replace(FRONTMATTER_RE, "");
 
@@ -101,8 +92,7 @@ export function parseSections(markdown) {
     else preamble.push(line);
   }
   for (const s of sections) s.body = s.lines.join("\n").trim();
-  // `body` goes back out so a caller needing the stripped source does not strip a second
-  // time — a second pass would eat the span between two `---` thematic breaks.
+  // Returned so a caller does not strip twice — a second pass eats the span between two `---`.
   return { preamble: preamble.join("\n").trim(), sections, body };
 }
 
@@ -132,13 +122,10 @@ export function countListItems(body) {
   return n;
 }
 
-// Split the Decisions body into items by the **Question** marker; capture each item's
-// question / recommendation / alternative raw text for card rendering.
 export function parseDecisions(body) {
   const FIELD_RE = /^\s*(?:[-*]\s+)?\*\*(Question|Recommendation|Alternative)\*\*\s*[:：]?\s*(.*)$/;
-  // An unindented numbered bold-only line ("**1. title**") starts an item, but only when a
-  // **Question** is the next non-blank line. Both guards matter: splitting anywhere else
-  // truncates a Recommendation and carries its tail onto the next card.
+  // Only starts an item when a **Question** is the next non-blank line — splitting elsewhere
+  // truncates a Recommendation onto the next card.
   const ITEM_HEAD_RE = /^\*\*(\d+[.)]\s*\S.*?)\*\*\s*$/;
   const items = [];
   const preamble = [];
@@ -204,8 +191,7 @@ export function parseDecisions(body) {
 }
 
 const GIST_MAX = 120;
-// One line's worth, marked when it was cut. Shared, so a gist and the digest's fallback below
-// it are cut to the same length and say so the same way.
+// Shared, so a gist and the digest's fallback cut at the same length and mark it the same way.
 const capGist = (t) => (t.length > GIST_MAX ? t.slice(0, GIST_MAX - 1) + "…" : t);
 
 // The one-line gist a collapsed section shows beside its title. Read from Markdown rather
@@ -225,10 +211,8 @@ export function sectionGist(body) {
   return "";
 }
 
-// The at-a-glance digest: one row per Decision, for the viewer-only page's opening block.
-// Row `n` is card `n` of the **first** decisions section — the renderer numbers every such
-// section's cards from 1, so a plan with two offers no unambiguous card to link a row to.
-// capGist catches a field whose every line sectionGist skips (one opening on `#`, `>`, `<`).
+// Row `n` is card `n` of the **first** decisions section: every such section numbers from 1,
+// so a plan with two has no unambiguous target. capGist catches fields sectionGist skips.
 export function buildDecisionDigest(sections) {
   const sec = (sections || []).find((s) => s.type === "decisions");
   if (!sec) return null;
@@ -243,12 +227,10 @@ export function buildDecisionDigest(sections) {
   };
 }
 
-// Everything the renderer needs about a plan, derived in one place — a second copy of this
-// sequence would only be caught by rendering both surfaces side by side.
+// One derivation for both surfaces; a second copy would only show up side by side.
 export function preparePlan(markdown, id) {
   const { preamble: parsedPreamble, sections: parsed, body } = parseSections(markdown);
-  // With no headings at all, parseSections puts the whole document in the preamble and the
-  // fallback section below repeats it — so one of the two has to give, and it is the preamble.
+  // With no headings, the preamble and the fallback section would both hold the whole document.
   const preamble = parsed.length ? parsedPreamble : "";
   const sections = parsed.length
     ? parsed
@@ -292,8 +274,7 @@ export function splitPreamble(preamble) {
 export const decisionSig = (it) => normText(`${it.question} ${it.recommendation} ${it.alternative}`);
 const collectDecisionSigs = (body) => new Set(parseDecisions(body).items.map(decisionSig));
 
-// The diff-mode state, in its pre-revise form. index.html holds one of these
-// until buildDiff replaces it, so the shape is written here alone.
+// Shape written here alone; index.html holds one until buildDiff replaces it.
 //   sectionStatus:    id -> "new" | "changed" | "unchanged"
 //   prevBlockTexts:   id -> Set<normalized block text>         (changed sections only)
 //   prevDecisionSigs: id -> Set<normalized decision signature> (changed Decisions sections only)
@@ -308,15 +289,13 @@ export function emptyDiff() {
   };
 }
 
-// Classify each current section new/changed/unchanged against the previous-launch plan and
-// precompute prev block sets for the changed ones. `collectBlockTexts` is passed in because
-// collecting block texts needs a document and a Markdown renderer, which this module has
-// neither of by design.
+// `collectBlockTexts` is injected: it needs a document and a Markdown renderer, which this
+// module has neither of by design.
 export function buildDiff(prevMarkdown, sections, collectBlockTexts) {
   const diff = emptyDiff();
   const prev = parseSections(prevMarkdown);
   const prevById = new Map(prev.sections.map((s) => [s.id, s]));
-  let matched = 0; // current sections that map to a prev section (ids are unique)
+  let matched = 0;
   for (const s of sections) {
     const p = prevById.get(s.id);
     if (!p) { diff.sectionStatus.set(s.id, "new"); diff.changedCount++; continue; }

@@ -22,31 +22,24 @@
   --risk-border: var(--revise-border);
   --switched-bg: #faf5ee;
   --hover: #e2e9e4;
-  /* diff "changed" accent — its own hue, not the revise amber. Amber already carries two
-     other meanings on a block's left edge (a Risks card's stripe, via --risk, and the
-     request-changes chrome), so a changed risk and an unchanged one were the same 3px of the
-     same colour. A cool hue also says the right thing: amber is "something to act on",
-     this is "this moved since you last looked". */
+  /* Its own hue, not --revise amber: amber already marks a Risks stripe and request-changes
+     chrome, so a changed risk and an unchanged one read as the same 3px. */
   --changed: #2c6e9b;
   --changed-bg: #e4eff7;
   --banner-border: #a9cadf;
   --banner-fg: #1d4f72;
   --bar-h: 64px;
-  /* Type roles. Not theme-dependent, so unlike the colours these are defined once.
-     Latin glyphs come from the first family, Japanese from the second — the display
-     role pairs a Latin serif with a Japanese mincho on purpose, against a gothic body. */
+  /* Theme-independent, so defined once. First family covers Latin, second Japanese — the
+     display role pairs a Latin serif with a mincho on purpose. */
   --font-display: "Newsreader", "Zen Old Mincho", ui-serif, Georgia, serif;
   --font-body: "Noto Sans JP", -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Sans", Meiryo, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
   color-scheme: light;
 }
-/* Dark theme: same roles, re-toned. Every color in :root is redefined here, so no
-   rule outside these blocks may hardcode a hex.
-   The token list is written twice on purpose. The viewer has three states: an
-   explicit light stamp, an explicit dark stamp, and no stamp at all (follow the
-   OS). A token defined behind only one of the two selectors below is unset in the
-   state the other one covers, which renders one theme text on the other theme
-   ground. Keep the two lists identical. */
+/* Every :root color is redefined here, so no rule outside these blocks may hardcode a hex.
+   The list is written twice on purpose: the viewer has three states (light stamp, dark
+   stamp, no stamp = follow OS), and a token behind only one selector is unset in the state
+   the other covers — one theme's text on the other's ground. Keep the two lists identical. */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --page-bg: #101613;
@@ -124,7 +117,6 @@ body {
          border-bottom: 1px solid var(--border); padding-bottom: 10px; }
   #toc a { display: inline-block; margin-right: 14px; }
 }
-/* summary header */
 header.plan-head {
   grid-column: 1 / -1;
   border-bottom: 1px solid var(--border);
@@ -159,10 +151,7 @@ header.plan-head h1 code { font-family: var(--font-mono); font-size: 0.78em; }
   text-transform: uppercase; color: var(--muted); padding-top: 3px;
 }
 .meta-scope .meta-val { min-width: 0; }
-/* The two slots above the plan, across both columns: the hero — the whole-change picture, the
-   one thing a reader who has never seen this plan meets first — and the digest below it. Each
-   is hidden and takes no space when the plan gave it nothing to show. They share one box;
-   only the padding differs. */
+/* Hero and digest share one box across both columns; only the padding differs. */
 #hero, #at-a-glance {
   grid-column: 1 / -1;
   margin: 14px 0 2px; padding: 16px 18px;
@@ -174,13 +163,9 @@ header.plan-head h1 code { font-family: var(--font-mono); font-size: 0.78em; }
   margin-top: 10px; font-size: 13px; line-height: 1.6; color: var(--fg);
   max-width: 60ch; margin-inline: auto; text-wrap: balance;
 }
-/* The opening digest of the plan's Decisions, on the viewer-only page — directly beneath the
-   hero, whose box it shares above. No `display` is declared on the slot itself: the renderer
-   hides it with the `hidden` attribute when a plan has no Decisions, and a `display` here
-   would override that and leave an empty box behind. */
+/* No `display` here — it would override the renderer's `hidden`, leaving an empty box. */
 #at-a-glance { padding: 14px 18px; }
-/* The numbers are the Decision numbers, carried in each row's own tag, so the list marker
-   would only repeat them a second time in a different style. */
+/* No list marker: each row's tag already carries the Decision number. */
 .ag-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
 .ag-row { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; min-width: 0; }
 .ag-link {
@@ -195,11 +180,9 @@ header.plan-head h1 code { font-family: var(--font-mono); font-size: 0.78em; }
   background: var(--accent-soft); border-radius: 999px; padding: 2px 8px;
 }
 .ag-q { font-size: 14px; line-height: 1.55; }
-/* The recommendation trails the question rather than sitting under it: one line per Decision
-   is the whole point of the block. */
+/* Trailing the question rather than under it: one line per Decision is the point. */
 .ag-rec { font-size: 12.5px; line-height: 1.55; color: var(--muted); min-width: 0; }
 .ag-rec::before { content: "→ "; color: var(--accent); }
-/* section nav */
 #toc {
   position: sticky; top: 16px; align-self: start;
   max-height: calc(100vh - 32px); overflow: auto;
@@ -216,7 +199,6 @@ header.plan-head h1 code { font-family: var(--font-mono); font-size: 0.78em; }
 }
 #toc a:hover { color: var(--accent); border-left-color: var(--border); }
 #toc a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 3px; }
-/* main */
 main#plan { min-width: 0; }
 .preamble { color: var(--muted); font-size: 13px; margin: 0 0 12px; }
 .preamble blockquote { border-left: 3px solid var(--border); margin: 0; padding: 2px 12px; }
@@ -225,9 +207,7 @@ details.section {
   margin: 12px 0; padding: 0 16px; background: var(--bg);
 }
 details.section[open] { padding-bottom: 8px; }
-/* Disclosure affordance, shared by sections, by the Build order steps inside them
-   (details.step, collapsed by collapseBuildOrderSteps), and by the prose a figure-bearing
-   section folds away (details.fold, foldProseUnderFigure) — one glyph, one rotation. */
+/* One glyph and rotation shared by details.section, details.step, and details.fold. */
 details.section > summary, details.step > summary, details.fold > summary {
   cursor: pointer; list-style: none; display: flex;
 }
@@ -251,10 +231,8 @@ details.section.is-context > summary .sec-title { color: var(--muted); }
   font-family: var(--font-display); font-weight: 600; font-size: 18px;
   letter-spacing: -.003em;
 }
-/* Progressive disclosure: a collapsed section says what it is about on its own header line,
-   and the copy disappears the moment the section opens, where the body carries the same
-   sentence in full. Nothing is moved out of the body to make this — a comment still anchors
-   on the paragraph this quotes. */
+/* Duplicated from the body, never moved out of it — a comment still anchors on the
+   paragraph this quotes. */
 .sec-gist {
   flex: 1 1 100%; min-width: 0;
   padding-left: 18px;  /* aligns the wrapped row under the title, past the disclosure glyph */
@@ -267,27 +245,21 @@ details.section[open] > summary .sec-gist { display: none; }
   padding: 1px 8px; background: var(--bg-soft); color: var(--muted);
 }
 .badge-risk { background: var(--risk-bg); color: var(--risk); }
-/* Running text near 65 characters. Wider than that and the eye loses the line on the way
-   back; the section card itself keeps its full width for tables, code, and figures.
-   `ch` is the width of a `0`, and a CJK glyph is about twice that, so the same cap holds
-   barely half a line of Japanese and wraps well inside the card. Japanese takes the card's
-   own width instead, which the page's 1160px cap already bounds to a readable line. The
-   language reaches this rule from the `lang` the served page sets on the document and the
-   exported page on `#app`. */
+/* `ch` is the width of a `0` and a CJK glyph is about twice that, so this cap holds barely
+   half a line of Japanese — hence `none` for :lang(ja), bounded by the page's 1160px cap.
+   The `lang` comes from the document (served) or #app (exported). */
 :root { --measure: 68ch; }
 :lang(ja) { --measure: none; }
 .sec-body { padding-top: 2px; }
 .sec-body > p, .step-body > p, .sec-body > ul > li, .sec-body > ol > li,
 .dc-rec > p, .dc-alt > p { max-width: var(--measure); }
-/* .step-body is inside .sec-body, so every .sec-body descendant rule already reaches it;
-   this one needs naming because it is a direct-child selector. */
+/* Named separately only because this is a direct-child selector. */
 .sec-body > :first-child, .step-body > :first-child { margin-top: 4px; }
 .sec-body h1 { font-size: 20px; }
 .sec-body h2 { font-size: 17px; }
 .sec-body h3, .sec-body h4 { font-size: 14px; }
-/* Syntax colours, from this page's own tokens. highlight.js ships themes as stylesheets and
-   an artifact host admits no external stylesheet at all, so the export would silently lose
-   them; written here, both surfaces get the same colours and they match the plan's palette. */
+/* highlight.js themes are stylesheets, which the artifact CSP blocks silently — so the
+   colours live here, from this page's own tokens. */
 .hljs-comment, .hljs-quote { color: var(--muted); font-style: italic; }
 .hljs-keyword, .hljs-selector-tag, .hljs-literal, .hljs-doctag { color: var(--accent); font-weight: 500; }
 .hljs-string, .hljs-regexp, .hljs-addition { color: var(--approve); }
@@ -307,9 +279,8 @@ details.section[open] > summary .sec-gist { display: none; }
   font-family: var(--font-mono);
   background: var(--bg-soft); border-radius: 4px; padding: 1px 5px; font-size: 0.82em;
 }
-/* A wide table scrolls inside itself instead of dragging the whole page sideways. `display:
-   block` is what gives the table its own scroll box; the rows and cells keep their table
-   layout inside it. `max-width` stops a narrow table from being stretched by the block. */
+/* `display: block` gives a wide table its own scroll box instead of dragging the page
+   sideways; `max-width` stops a narrow one from being stretched to fill it. */
 .sec-body table, #hero table, .preamble table { display: block; max-width: max-content; overflow-x: auto; border-collapse: collapse; }
 .sec-body th, .sec-body td, #hero th, #hero td, .preamble th, .preamble td { border: 1px solid var(--border); padding: 4px 10px; }
 .sec-body .mermaid, #hero .mermaid { background: var(--bg); text-align: center; margin: 10px 0; }
@@ -317,25 +288,18 @@ details.section[open] > summary .sec-gist { display: none; }
 .sec-body figure { margin: 12px 0; text-align: center; }
 .sec-body figure svg { max-width: 100%; height: auto; }
 .sec-body figcaption { font-size: 12px; color: var(--muted); margin-top: 6px; }
-/* The prose a figure-bearing section folds away (foldProseUnderFigure). Its summary is a
-   quiet affordance, not a heading, so the figure stays the section's loudest element — the
-   layout it shares with a Build order step's summary is declared with that one below. */
+/* A quiet affordance, not a heading, so the figure stays loudest. Shared layout below. */
 details.fold > summary { font-size: 12px; color: var(--muted); padding: 4px 0; }
-/* Build order steps: the section sits in the must-review tier yet opens at N one-line
-   headings. The figure fold wants the same quiet line, so the two share it. The disclosure
-   triangle itself is shared with details.section above. */
+/* Shared with details.fold; the triangle itself comes from details.section above. */
 details.step > summary, details.fold > summary { align-items: baseline; gap: 8px; }
 details.step > summary::before, details.fold > summary::before { font-size: 10px; }
 details.step > .step-body { padding: 2px 0 2px 18px; }
 .sec-body blockquote { border-left: 3px solid var(--border); margin: 8px 0; padding: 0 12px; color: var(--muted); }
-/* Per-section-type visual form, keyed on the type plan-parse.mjs classified (renderSection
-   writes it to data-section-type). `Source of truth: SECTION_TYPES in plan-parse.mjs; keep in
-   sync` — a type token renamed there silently drops the form here, with nothing to fail. Every rule here is styling alone: a comment anchors on the
-   block elements a section body renders, so none of these may wrap, reorder, or insert text
-   into them — the sequence markers below are pseudo-elements for exactly that reason. */
+/* Keyed on data-section-type. `Source of truth: SECTION_TYPES in plan-parse.mjs; keep in
+   sync` — a rename there silently drops the form here, with nothing to fail. Styling only:
+   no rule may wrap, reorder, or insert text into a block a comment anchors on. */
 
-/* Build order — the sequence made visible: a numbered disc per step, joined by a rail, so the
-   order the work lands in reads without opening a single step. */
+/* Build order: a numbered disc per step, joined by a rail. */
 [data-section-type="buildorder"] .sec-body > ol {
   list-style: none; counter-reset: step; padding-left: 0; margin: 6px 0;
 }
@@ -350,21 +314,17 @@ details.step > .step-body { padding: 2px 0 2px 18px; }
   font-family: var(--font-mono); font-size: 11px; font-weight: 500;
   background: var(--accent-soft); color: var(--accent-ink);
 }
-/* A changed step's left bar is painted under the disc, which is 22px wide and starts at the
-   same edge — so on a collapsed step the bar is invisible. Mark the disc instead: it is the
-   form this section already reads by. */
+/* The 22px disc covers the left bar at the same edge, so mark the disc instead. */
 [data-section-type="buildorder"] .sec-body > ol > li.block-changed::before {
   background: var(--changed); color: var(--on-accent);
 }
-/* The rail between one disc and the next. Bottom is pulled past the item so it meets the
-   following disc whatever height the step opened to. */
+/* Bottom pulled past the item so the rail meets the next disc at any step height. */
 [data-section-type="buildorder"] .sec-body > ol > li:not(:last-child)::after {
   content: ""; position: absolute; left: 11px; top: 30px; bottom: -4px;
   width: 1px; background: var(--border);
 }
 
-/* Risks — one card per item, carrying the risk hue as a stripe rather than a fill, so a long
-   list stays readable. */
+/* Stripe rather than fill, so a long list stays readable. */
 [data-section-type="risks"] .sec-body > ul {
   list-style: none; padding-left: 0; margin: 6px 0;
   display: flex; flex-direction: column; gap: 8px;
@@ -375,10 +335,7 @@ details.step > .step-body { padding: 2px 0 2px 18px; }
   background: var(--bg);
 }
 
-/* decision cards — question across the top, the two options side by side beneath it, and
-   everything the caller appends (the toggle, the comment affordance) back across the full
-   width. A grid rather than a wrapper element, so the card's children stay where the
-   renderer put them. */
+/* A grid, not a wrapper element, so the card's children stay where the renderer put them. */
 .decision-card {
   border: 1px solid var(--border); border-left: 3px solid var(--accent);
   border-radius: 8px; padding: 10px 14px; margin: 10px 0; background: var(--bg);
@@ -419,10 +376,8 @@ details.step > .step-body { padding: 2px 0 2px 18px; }
 .dc-toggle { display: flex; gap: 14px; margin: 8px 0 2px; font-size: 13px; }
 .dc-toggle label { display: inline-flex; align-items: center; gap: 5px; cursor: pointer; color: var(--muted); }
 .dc-toggle label:has(input:checked) { color: var(--fg); font-weight: 600; }
-/* comment affordances */
-/* Highlight the block under the cursor so the comment target's extent is obvious — the
-   per-element comment model treats each paragraph / list item as its own target. The tint
-   is a step deeper than --bg-soft so it stays visible inside the tinted Context section too. */
+/* Shows the comment target's extent. A step deeper than --bg-soft so it stays visible
+   inside the tinted Context section. */
 .commentable { position: relative; border-radius: 6px; transition: background .12s; }
 .commentable:hover { background: var(--hover); }
 .cbtn {
@@ -445,8 +400,7 @@ details.step > .step-body { padding: 2px 0 2px 18px; }
   background: var(--bg); color: var(--fg);
 }
 .comment-input[hidden] { display: none; } /* the `display: block` above otherwise defeats the `hidden` attribute */
-/* conversation thread: past rounds replayed under the block they were anchored on, and
-   replayed again in full in the log panel at the end of the plan. */
+/* Past rounds, replayed under their anchor block and again in the log panel. */
 .thread { margin: 8px 0 4px; border-left: 3px solid var(--accent); padding-left: 10px; }
 .th-item + .th-item { margin-top: 10px; }
 .th-meta { font-size: 11px; color: var(--muted); letter-spacing: .02em; }
@@ -465,31 +419,22 @@ details.step > .step-body { padding: 2px 0 2px 18px; }
 .log-round { margin-top: 12px; }
 .log-round > h4 { margin: 0 0 6px; font-size: 12px; color: var(--muted); font-weight: 600; }
 .log-where { font-size: 11px; color: var(--muted); }
-/* diff mode: surfaced only on a revise re-launch (prevMarkdown present).
-   Badges + highlights mark what changed since the user's previous review,
-   so unchanged sections can stay collapsed and the eye goes to the edits. */
+/* Diff mode: only on a revise re-launch (prevMarkdown present). */
 #diff-banner {
   grid-column: 1 / -1; margin: 6px 0 0; padding: 8px 12px;
   background: var(--changed-bg); border: 1px solid var(--banner-border); border-radius: 8px;
   font-size: 13px; color: var(--banner-fg);
 }
 .badge-diff { background: var(--changed-bg); color: var(--changed); }
-/* changed block: an inset left bar and nothing else. A fill here reads as the page's own
-   ground the moment most blocks are changed — the ordinary case on a revise re-launch — and
-   the marker stops marking anything. box-shadow rather than a border survives the
-   .commentable:hover background swap, so the bar stays visible on hover; --changed rather
-   than --accent, so it never reads as the base card border. */
+/* Bar, not fill: most blocks are changed on a revise re-launch, and a fill stops marking
+   anything. box-shadow survives the .commentable:hover background swap. */
 .commentable.block-changed { box-shadow: inset 3px 0 0 0 var(--changed); padding-left: 10px; }
-/* changed decision card: a thick --changed left bar + faint wash, replacing the
-   base --accent left border, so "this Decision changed" reads at a glance (far
-   more legible than a thin outline). Scoped :not(.switched) so a card toggled to
-   its alternative still shows the .switched styling — the active user action
-   wins over the historical diff mark. */
+/* :not(.switched) so a card toggled to its alternative keeps the .switched styling — the
+   active user action wins over the historical diff mark. */
 .decision-card.card-changed:not(.switched) {
   border-left: 5px solid var(--changed);
   background: var(--changed-bg);
 }
-/* sticky decision bar */
 #bar {
   position: fixed; left: 0; right: 0; bottom: 0; height: var(--bar-h);
   display: flex; align-items: center; gap: 16px; padding: 0 24px;
@@ -504,11 +449,8 @@ details.step > .step-body { padding: 2px 0 2px 18px; }
 #bar label.choice:has(input:checked).revise { border-color: var(--revise); color: var(--revise); font-weight: 600; }
 #bar .spacer { flex: 1; }
 #bar .count { color: var(--muted); font-size: 13px; }
-/* keyboard-shortcut hint: the decision bar's native controls drop out of Tab
-   order when macOS Full Keyboard Access is off (Chrome mirrors that setting),
-   so the a/r/↵ shortcuts are the reliable keyboard path — surface them here. */
-/* .apply-note says what "Request changes" does to the plan document, so the
-   choice is made with that in view */
+/* Full Keyboard Access off (macOS default) drops these controls from Tab order, so the
+   a/r/↵ shortcuts are the reliable keyboard path. */
 #bar .kbd-hint, #bar .apply-note { color: var(--muted); font-size: 12px; }
 #bar .kbd-hint kbd {
   font: inherit; background: var(--bg-soft); border: 1px solid var(--border);
@@ -526,9 +468,7 @@ details.step > .step-body { padding: 2px 0 2px 18px; }
 #app.submitted main#plan, #app.submitted #toc, #app.submitted #hero,
 #app.submitted #at-a-glance { opacity: 0.5; pointer-events: none; }
 
-/* Reduced motion: the only motion here is the disclosure triangle's rotation and the
-   commentable block's hover tint. Both are affordance feedback, so they stop rather than
-   slow down. */
+/* The only motion is affordance feedback, so it stops rather than slows. */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition-duration: 0s !important; animation-duration: 0s !important; }
 }

@@ -2,6 +2,13 @@
 
 ## 2026-08-30
 
+### dev-workflow v1.134.0 / dev-workflow-bundle v1.157.0
+
+- fix(dev-workflow): open a published plan page on the sections that need judgment
+  - A plan published through `plan_artifact` arrived with every section unfolded, so the page opened at its full length and the reader met the reference material before deciding they wanted it. `dev-workflow`'s Test plan and Risks — and their `mobpro` counterparts, How we'll check it works and Watch-outs — now start collapsed, each keeping its heading and its first line of prose, and the risk section its count badge, so they say what they hold and open on a click.
+  - The page now inherits the same open/close default the local approval gate has always rendered under, rather than carrying an override of its own. The gate's own rendering is unchanged. Every section the plan template names apart from those two is unaffected and still open on arrival; a section under a heading the template does not name now arrives collapsed as well, as it already did at the gate.
+  - Text inside a collapsed section is out of reach of browser find-in-page on some browsers, so a reader searching the published page for a term will not match on the two collapsed sections until they open them.
+
 ### dev-workflow v1.133.0 / dev-workflow-bundle v1.156.0
 
 - fix(dev-workflow): draw a published plan page's mermaid diagrams on the page itself

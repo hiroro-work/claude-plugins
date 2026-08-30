@@ -2,6 +2,13 @@
 
 ## 2026-08-30
 
+### dev-workflow v1.135.0 / mobpro v1.43.0 / dev-workflow-bundle v1.158.0
+
+- fix(dev-workflow, mobpro): stop review findings from growing code comments, and default implementation to writing none
+  - Code review now runs comment findings in one direction only. The reviewer rubric forbids proposing a comment be added, expanded, or restored after an earlier pass deleted it — such a finding is not actionable at any severity — and asks instead for verbose, narrating, or over-long comments to be flagged for deletion. Correcting a comment that says something untrue about the code is not an addition and still applies.
+  - The main thread rejects a comment-growing fix at every review layer — `dev-workflow` from Step 6 onward, `mobpro` across its whole run — so a finding from a callee that never read that rubric, such as `rules-review` or a `hooks.on_complete` reviewer, is turned down too.
+  - Implementation now starts from "no comment" rather than auditing comments after the fact: `dev-workflow` Step 5, a delegated executor under `implementation_executor`, and `mobpro`'s implementation loop each write a comment only where the *why* is non-obvious, and hold it to one line.
+
 ### dev-workflow v1.134.0 / dev-workflow-bundle v1.157.0
 
 - fix(dev-workflow): open a published plan page on the sections that need judgment

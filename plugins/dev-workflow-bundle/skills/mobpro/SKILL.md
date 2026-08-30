@@ -128,6 +128,14 @@ Every record lands in `fast_mode_skipped_steps` (§ Cross-step state variables),
 
 The full definition is transcribed in [`references/inline-defs.md`](references/inline-defs.md) § (b) Workflow artifacts. M6 / M7 / M9 / M11 apply that single shared exclusion when building any changed-file set.
 
+## Comment discipline
+
+Binds every edit this run makes — M6's unit edits, M7's cleanup, M9's rules-compliance and code-review fixes, and any fix applied from an M10 hook's findings.
+
+**Writing one**: the default is no comment. Write one only where the *why* is non-obvious — a hidden constraint, a subtle invariant, a workaround for a specific bug, behavior that would surprise a reader — and hold it to a single line. A comment that restates what the adjacent code already expresses is deleted, or condensed to the why it does carry. An explanation for the junior belongs in the M6 walkthrough, never in a comment.
+
+**Taking a finding**: a review finding whose fix is to add a comment, lengthen one, or restore one an earlier layer deleted is **rejected with that reason** — whatever severity it carries, and whichever callee raised it. Correcting a comment that states something untrue about the code is not an addition: replace it with the shorter true statement, or delete it. The junior's own request is not a callee finding — when they ask for a comment, write it.
+
 ## Phase naming in user-facing output
 
 `M1`–`M13` are **internal identifiers**. Never let a bare identifier stand alone in anything the junior reads: chat prose, status lines, gate prompts, skip notes, ledger records, the wrap-up summary, and the task rows themselves. Pair it with what that phase does, or **drop the number** and name the phase. The test is one question: **could the reader recover the meaning from this line alone?** Take the name from that M-step's own heading, minus any trailing parenthetical — so `## M8 — Check / test (quality gate, max 3 retries)` yields `M8 — Check / test` for a task-row subject, and `M8 (Check / test)` in prose. The two ledgers M13 renders are the carve-outs where the **drop the number** option is available. `bundle_skills_unavailable`'s `<context>` slot takes it (`extract-rules unavailable (rule update)`, per [`references/inline-defs.md`](references/inline-defs.md) § (f)). `fast_mode_skipped_steps` records are written out in full at § Run modes' table, each already resolved against this rule. The same holds for any **drop the number** label authored inside a shared `dev-workflow` reference file (`Check / Test:` at M11, `the rule-update phase` at M13): that wording belongs to the file, not to this heading list. The name itself stays in English on every `language`. This governs output only — it leaves untouched the identifiers this file uses in its own cross-references, which follow their own number-plus-stable-descriptor rule.

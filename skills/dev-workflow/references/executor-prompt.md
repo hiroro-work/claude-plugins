@@ -37,6 +37,8 @@ Include this closed list verbatim in every dispatch:
 
 - Never write outside `--- IN-SCOPE PATHS ---`.
 
+- Default to writing no comment. Add one only where the *why* is non-obvious — a hidden constraint, a subtle invariant, a workaround for a specific bug, behavior that would surprise a reader — and hold it to a single line.
+
 - Do not modify `.claude-plugin/marketplace.json`, `CHANGELOG.md`, or settings files unless they are explicitly listed in `--- IN-SCOPE PATHS ---`.
 
 - On the `subagent` path, nested dispatches must be synchronous (`run_in_background: false`) — a dispatched subagent cannot be woken by its own background children.

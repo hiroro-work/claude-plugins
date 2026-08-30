@@ -280,8 +280,11 @@ details.section[open] > summary .sec-gist { display: none; }
   font-family: var(--font-mono);
   background: var(--bg-soft); border-radius: 4px; padding: 1px 5px; font-size: 0.82em;
 }
-.sec-body table { border-collapse: collapse; }
-.sec-body th, .sec-body td { border: 1px solid var(--border); padding: 4px 10px; }
+/* A wide table scrolls inside itself instead of dragging the whole page sideways. `display:
+   block` is what gives the table its own scroll box; the rows and cells keep their table
+   layout inside it. `max-width` stops a narrow table from being stretched by the block. */
+.sec-body table, #hero table, .preamble table { display: block; max-width: max-content; overflow-x: auto; border-collapse: collapse; }
+.sec-body th, .sec-body td, #hero th, #hero td, .preamble th, .preamble td { border: 1px solid var(--border); padding: 4px 10px; }
 .sec-body .mermaid, #hero .mermaid { background: var(--bg); text-align: center; margin: 10px 0; }
 /* figures layer: a <figure> the gate merged in, carrying inline SVG */
 .sec-body figure { margin: 12px 0; text-align: center; }

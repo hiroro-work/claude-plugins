@@ -15,7 +15,7 @@ These project-characteristic keys are read from `dev-workflow`'s three layers (`
 | `check_commands` | none (unset) | M8 |
 | `boundary_check_commands` | none (unset) | M6 per-unit object build |
 | `test_commands` | `["Skill(run-tests)"]` | M8 |
-| `language` | merged config → `~/.claude/settings.json` `language` → `ja` | every user-facing output |
+| `language` | merged config → `~/.claude/settings.json` `language` → `ja` | every user-facing output, M12's PR-spec prompt and its decline note included |
 | `polish_prose` | `true` | M5 plan-body polish, M7 |
 | `interactive_commits` | `true` | M11 and M11.5 registration, M12 rule-update commit gate |
 | `commit_review_gate` | `diff` | M6 diff-review surface, M11 diff surface |

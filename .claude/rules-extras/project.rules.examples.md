@@ -77,8 +77,10 @@
 ### Multi-target safety-rail の pre-check before global revert
 **Good**: per-Edit pre-check で `out_of_scope` path を skip（実 write 無し → revert 不要）、`reverted_paths` は informational only。**Bad**: write 後に global `git checkout HEAD -- <sibling-path>` で revert すると、multi-target loop で T1 executor が T2 path に edit を返した場合 T2 で既に landed した sibling edits を wipe する collateral damage 経路が開く。
 
-### i18n 機能 documenting の英語 meta-prose と paired bilingual sample 分離
-**Good**: meta-prose は英語、bilingual sample は paired demonstration として括弧書きに併記 (例: `(e.g.  '品質ゲート（check_commands / Step 7.5）' for language: ja, 'quality gate (check_commands / Step 7.5)' for language: en)`)。**Bad**: Japanese meta-prose は「実装物は英語で記述する」ルール違反 + Japanese-only sample は rules-review で borderline flag される。
+### 言語切替仕様の記述 — 英語本文と日英一対の例の分離、および例を置く／置かない の判断
+**Good**: 規律は英語本文で述べ、例は括弧書きに日英併記する (例: `(e.g. '品質ゲート（check_commands / Step 7.5 Rules Compliance Review）' for language: ja, 'quality gate (check_commands / Step 7.5 Rules Compliance Review)' for language: en)`)。**Bad**: 日本語で書いた本文は「実装物は英語で記述する」に反し、日本語だけの例は rules-review の低確度指摘を呼ぶ。
+
+**置く／置かない の判断（Good）**: 例が逐語内容を運ぶときだけ置く — そのまま出力される固定文字列 (`upstream-override` / `先行合意上書き`)、言語で変わる描画規約 (`Step 7.5（Rules Compliance Review）` / `Step 7.5 (Rules Compliance Review)`)、再現が要るスロットの構造 (`<N>/<total> コミット適用済み` / `<N>/<total> commits landed`)。**Bad**: 言い回ししか示さない例を置く — 「難易度判定（<tier> tier）により <steps> を skip しました」/「Skipped <steps> per the difficulty-skip matrix (<tier> tier)」は、隣の本文が「工程名と難易度を名指しする 1 行」と書けば足りる。**適用除外（Good）**: ファイル自身の主題が当の規約であるもの (`skills/dev-workflow/references/localization.md` / `references/plan-format.md`) では例そのものが規約の内容なので残す。
 
 ### 配布性ルールの intra-bundle 例外とその厳格化
 **Good**: 同 SKILL.md 内 self-reference (`Step 4 / Step 7.5 / Step 8`) や同 bundle 内 sibling skill 名（`rules-review` / `simplify` / `extract-rules`）の参照は **配布性ルール違反ではない**（reject 理由として明記）。**Bad**: self-reference まで一般化（"the user-judgment gate" 等）すると SKILL.md 内 cross-section reference の可読性 / トレーサビリティが下がる。配布性ルールは out-of-bundle vocabulary を防ぐもの。

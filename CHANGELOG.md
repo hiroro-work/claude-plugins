@@ -2,6 +2,15 @@
 
 ## 2026-08-31
 
+### dev-workflow v1.137.0 / mobpro v1.46.0 / dev-workflow-bundle v1.161.0
+
+- feat(dev-workflow, mobpro): extract rules from a reviewed PR's comments as the run's last step
+  - A reviewer's comments on a pull request are the one rule source neither workflow ever read: the existing rule update takes the session's conversation, and the two retrospectives take their own axes of it. **Step 11.7 (PR Rule Extraction)** in `dev-workflow`, and a fourth sub-phase of **M12 (Rule update / retrospective)** in `mobpro`, ask which reviewed PR to extract from and hand the answer to `extract-rules --from-pr` unchanged — a bare number, `owner/repo#N`, a range, or a URL. An empty answer ends the run as before.
+  - It runs last, is registered on every run, and is never dropped by the assessed difficulty.
+  - **The entry gate that asks whether to run the remaining steps now has a third option.** Answering "PR only" declines the conversation-derived rule update and both retrospectives while still running the PR extraction — the case a reviewer's comments are worth keeping but the session itself yielded nothing. It appears only where the step set holds something besides the PR step; otherwise the gate keeps its two options.
+  - The guard that stops one session being extracted twice deliberately does **not** apply here.
+  - **Behavior change** — every run now ends with one more question, and there is no setting to turn it off. Declining costs an empty reply, and a run that answers "skip" at the entry gate never reaches it.
+
 ### dev-workflow v1.136.0 / mobpro v1.45.0 / dev-workflow-bundle v1.160.0
 
 - feat(dev-workflow, mobpro): verify the commit phase once at the end instead of once per `crit` round

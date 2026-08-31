@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-08-31
+
+### dev-workflow v1.136.0 / mobpro v1.45.0 / dev-workflow-bundle v1.160.0
+
+- feat(dev-workflow, mobpro): verify the commit phase once at the end instead of once per `crit` round
+  - A `crit` diff-review round used to re-run the checks, the tests, and the rules-compliance walk every time it applied a fix. On a long review that repetition dominated the run's wall-clock and output. A round now runs `check_commands` alone — enough to keep a broken tree from being committed, and a few seconds — and the rest moves to a new phase, **Step 10.5 (Post-Commit Verification)** in `dev-workflow` and **M11.5** in `mobpro`, which runs the tests and the scoped rules-review once over every file the rounds touched.
+  - **Comments that cannot be answered in the commit under review are now queued rather than refused.** A request landing on a file an already-landed commit carries, or on another commit's group, goes to a queue; the new phase applies the whole queue after the last commit and offers the result as one additional commit. A request to change a landed commit's message, or to move a file between landed commits, is still refused — an extra commit cannot express either — with the guidance to use `git rebase -i` outside the workflow.
+  - **Behavior change** — a fix that a round used to land inside its own commit can now arrive one commit later. The commit that carries it names what it fixes, and the queue is reported in full if the commit phase is cancelled before it runs.
+  - The per-round metadata-only / actual-code classification is gone.
+
 ## 2026-08-30
 
 ### mobpro v1.44.0 / dev-workflow-bundle v1.159.0

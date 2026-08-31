@@ -140,10 +140,7 @@ Where a commit-phase review request goes when it cannot be answered in the commi
 
 Test 2 decides on paths, never on the kind of change the request asks for. A request carrying both a rejected part and a queueable one takes both dispositions, in that order.
 
-**Queueing.** Append `{paths, request, reason}` to `deferred_commit_fixes` (`SKILL.md` Step 1 sub-step 6's cross-step variable init table) — `request` carrying the comment's text verbatim, `reason` naming which of test 2's two cases put it there — a path in an already-landed commit, or a path in another group — and edit nothing. Then say so in one line in the resolved `language`, naming what was queued and that it lands in its own commit after the last one. On the `crit` surface that line reaches the user in chat rather than in the browser, which offers no reply channel, so write it to be read once the round has closed. Paired bilingual sample (runtime rendering demonstration):
-
-- `language: ja`: `この指摘は確定済みコミットのファイル（<path>）に当たるので、全コミットの確定後にまとめて直します`
-- `language: en`: `This comment lands on a file in an already-landed commit (<path>), so it is queued and fixed after the last commit`
+**Queueing.** Append `{paths, request, reason}` to `deferred_commit_fixes` (`SKILL.md` Step 1 sub-step 6's cross-step variable init table) — `request` carrying the comment's text verbatim, `reason` naming which of test 2's two cases put it there — a path in an already-landed commit, or a path in another group — and edit nothing. Then say so in one line in the resolved `language`, naming the path that put it there, which of test 2's two cases it was, and that the fix lands in its own commit after the last one. On the `crit` surface that line reaches the user in chat rather than in the browser, which offers no reply channel, so write it to be read once the round has closed.
 
 **Where the queue is applied**: [`finish-phase.md`](finish-phase.md) § Step 10.5, which applies every entry once and lands the result as one additional commit. **Where it is abandoned**: § Mid-loop cancel, which renders the queue and clears it — that step's own paragraph owns the disposition.
 

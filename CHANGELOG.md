@@ -2,6 +2,15 @@
 
 ## 2026-08-31
 
+### dev-workflow v1.138.0 / mobpro v1.47.0 / dev-workflow-bundle v1.162.0
+
+- refactor(dev-workflow, mobpro): state what each localized output must convey, not its wording
+  - Sites whose paired `language: ja` / `language: en` sample only demonstrated phrasing now state what their output has to carry, with the wording written per run — the difficulty log line, the completion reminders, the remaining-steps and PR-extraction gates, the plan-artifact notices, the queued-comment note, and the browser-URL line. A fixed sample pins a register the surrounding output is then pulled toward.
+  - Samples carrying content rather than phrasing stay: fixed output strings, the parenthesis form that changes with the language, the `<N>/<total>` shape, and the worked examples in the two files that define the localization conventions themselves.
+  - **Every choice a gate offers is preserved.** The two sites whose sample was the only record of an option set — the remaining-steps gate and the PR-spec prompt — now name their options and accepted input forms in prose. `mobpro`'s transcriptions of both follow.
+  - `.claude/rules/` § ドキュメント言語 gains the criterion this applied, so a sample is added only where it carries something the adjacent prose does not.
+  - 4,601 characters off `dev-workflow`'s hot path, twice that counting the bundle copy.
+
 ### dev-workflow v1.137.0 / mobpro v1.46.0 / dev-workflow-bundle v1.161.0
 
 - feat(dev-workflow, mobpro): extract rules from a reviewed PR's comments as the run's last step

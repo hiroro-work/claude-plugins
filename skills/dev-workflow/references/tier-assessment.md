@@ -60,12 +60,14 @@ The `Step 11.5: Self-Retrospective`, `Step 11.6: Workability Retrospective`, and
 
 ## Difficulty log line
 
-Log the assessed difficulty and the resolved review phases in the resolved `language` (§ Configuration; default `ja`) — naming each phase from **its own cause**, composing the two clauses independently, so the tier's own cutoff is never announced as a run-mode skip (the same precedence `references/plan-format.md` § Step 4 guidance lines' "Disabled-plan-phase conditional" paragraph applies). Name the assessed tier on every form, and name the plan phase's **scope** whenever that phase runs. Paired bilingual samples (runtime rendering demonstration):
+Log the assessed difficulty and the resolved review phases in the resolved `language` (§ Configuration; default `ja`) — naming each phase from **its own cause**, composing the two clauses independently, so the tier's own cutoff is never announced as a run-mode skip (the same precedence `references/plan-format.md` § Step 4 guidance lines' "Disabled-plan-phase conditional" paragraph applies). The line carries four things:
 
-- Both phases run, `normal` run mode — `language: ja`: `難易度: Moderate — Step 3（Plan Review）を rules-only スコープで実施し、Step 8（Code Review）も実施します`; `language: en`: `Difficulty: Moderate — Step 3 (Plan Review) will run at rules-only scope, and Step 8 (Code Review) will run`
-- Both phases run, `deep` run mode — `language: ja`: `難易度: Moderate — deep モードにより Step 3（Plan Review）を full スコープで実施し、Step 8（Code Review）も実施します`; `language: en`: `Difficulty: Moderate — deep mode runs Step 3 (Plan Review) at full scope, and Step 8 (Code Review) will run`
-- Trivial turned both off — `language: ja`: `難易度: Trivial — Step 3（Plan Review）と Step 8（Code Review）を skip します`; `language: en`: `Difficulty: Trivial — Step 3 (Plan Review) and Step 8 (Code Review) are skipped`
-- `fast` run mode turned the plan phase off — `language: ja`: `難易度: Moderate — fast モードにより Step 3（Plan Review）を skip し、Step 8（Code Review）を実施します`; `language: en`: `Difficulty: Moderate — fast mode skips Step 3 (Plan Review); Step 8 (Code Review) will run`
+- the assessed tier, unconditionally;
+- each review phase, with whether it runs or is skipped;
+- the **run mode**, whenever the mode is what turned a phase off or widened its scope, and left out when it is not;
+- the plan phase's **scope**, whenever that phase runs.
+
+The last two are not optional where their condition holds.
 
 ## Escalation
 

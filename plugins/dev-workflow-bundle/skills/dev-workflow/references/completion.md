@@ -8,49 +8,21 @@
 
 Emit each reminder whose condition holds, in the resolved `language`, in the order below. The Step 11 rule-update / examples-dir / staging-dir reminders read the `uncommitted_*` partitioned sets produced by § Partition — Step 11 extract-rules output sets (below).
 
-**Difficulty-skip reminder** (per [`references/localization.md`](localization.md) § Localization granularity): when `difficulty_skipped_steps` is non-empty, surface a line in the resolved `language` naming the steps the difficulty-skip matrix skipped. Render the recorded steps with their tier; the example below pairs the two `language` values:
+**Difficulty-skip reminder** (per [`references/localization.md`](localization.md) § Localization granularity): when `difficulty_skipped_steps` is non-empty, surface a line in the resolved `language` naming the recorded steps, the difficulty-skip matrix that skipped them, and the tier it keyed on. The reminder is omitted when `difficulty_skipped_steps` is empty. The step names (`Step 6 Tidy` / `Step 6.5 Polish Prose` / `Step 7.5 Rules Compliance Review` / `Step 11 Update Rules`) stay verbatim regardless of `language`.
 
-- `language: ja`: `難易度判定（<tier> tier）により <steps> を skip しました` — 例: `難易度判定（Trivial tier）により Step 6 Tidy / Step 6.5 Polish Prose / Step 7.5 Rules Compliance Review / Step 11 Update Rules を skip しました`
-- `language: en`: `Skipped <steps> per the difficulty-skip matrix (<tier> tier)` — e.g. `Skipped Step 6 Tidy / Step 6.5 Polish Prose / Step 7.5 Rules Compliance Review / Step 11 Update Rules per the difficulty-skip matrix (Trivial tier)`
+**Fast-mode-skip reminder**: when `fast_mode_skipped_steps` is non-empty, surface a line in the resolved `language` naming the recorded steps and the `fast` run mode that skipped them. The reminder is omitted when `fast_mode_skipped_steps` is empty. The step names stay verbatim regardless of `language`.
 
-The reminder is omitted when `difficulty_skipped_steps` is empty. The step names (`Step 6 Tidy` / `Step 6.5 Polish Prose` / `Step 7.5 Rules Compliance Review` / `Step 11 Update Rules`) stay verbatim regardless of `language`.
+**Bundle-skill availability reminder** (per [`references/localization.md`](localization.md) § Localization granularity): when `bundle_skills_unavailable` (declared at Step 1 sub-step 3's "Initialize the bundle-unavailability ledger here" bullet, appended at the sites named there) is non-empty, surface a line in the resolved `language` naming which `dev-workflow-bundle` sibling skills were unavailable this run, and asking the user to check whether the `dev-workflow-bundle` plugin is fully installed.
 
-**Fast-mode-skip reminder**: when `fast_mode_skipped_steps` is non-empty, surface a line in the resolved `language` naming the steps the `fast` run mode skipped:
-
-- `language: ja`: `fast モードにより <steps> を skip しました` — 例: `fast モードにより Step 3 Plan Review / Step 6.5 Polish Prose を skip しました`
-- `language: en`: `Skipped <steps> per fast mode` — e.g. `Skipped Step 3 Plan Review / Step 6.5 Polish Prose per fast mode`
-
-The reminder is omitted when `fast_mode_skipped_steps` is empty. The step names stay verbatim regardless of `language`.
-
-**Bundle-skill availability reminder** (per [`references/localization.md`](localization.md) § Localization granularity): when `bundle_skills_unavailable` (declared at Step 1 sub-step 3's "Initialize the bundle-unavailability ledger here" bullet, appended at the sites named there) is non-empty, surface a line in the resolved `language` naming which `dev-workflow-bundle` sibling skills were unavailable this run:
-
-- `language: ja`: `dev-workflow-bundle の一部スキルが今回の実行で利用できませんでした: <list>。\`dev-workflow-bundle\` プラグインが完全にインストールされているか確認してください。`
-- `language: en`: `Some dev-workflow-bundle sibling skills were unavailable this run: <list>. Check whether the \`dev-workflow-bundle\` plugin is fully installed.`
-
-Render `<list>` as the ledger's recorded entries verbatim, comma-separated (the skill names and the recorded `<context>` phase descriptions stay verbatim per § Localization granularity's "Preserve verbatim" rule; only the surrounding connective sentence is localized). The reminder is omitted entirely when `bundle_skills_unavailable` is empty.
+List the ledger's recorded entries verbatim, comma-separated (the skill names and the recorded `<context>` phase descriptions stay verbatim per § Localization granularity's "Preserve verbatim" rule; only the surrounding connective sentence is localized). The reminder is omitted entirely when `bundle_skills_unavailable` is empty.
 
 **Step 10 partial-state line**: if Step 10 ended via its `Mid-loop cancel` branch (see `references/interactive-commits.md` § Mid-loop cancel), emit the localized partial-completion token defined at [`finish-phase.md`](finish-phase.md) § Step 10's "Localized summary tokens" paragraph. On a normal completion path, omit this line.
 
-**Step 11 rule-update reminder** (per [`references/localization.md`](localization.md) § Localization granularity): `uncommitted_rule_changes` is the partitioned set for output_dir (default `.claude/rules/`). When `uncommitted_rule_changes` is non-empty, surface a manual-commit reminder in the resolved `language` (`<N>` = number of uncommitted rule files):
+**Step 11 rule-update reminder** (per [`references/localization.md`](localization.md) § Localization granularity): `uncommitted_rule_changes` is the partitioned set for output_dir (default `.claude/rules/`). When `uncommitted_rule_changes` is non-empty, surface a manual-commit reminder in the resolved `language` saying how many uncommitted rule files remain under `.claude/rules/`, and asking the user to commit them by hand before opening a PR. The reminder is omitted when `uncommitted_rule_changes` is empty.
 
-- `language: ja`: `\`.claude/rules/\` に未コミットの変更が <N> 件あります — PR を開く前に手動で commit してください`
-- `language: en`: `<N> uncommitted change(s) under \`.claude/rules/\` remain — please commit manually before opening a PR`
+**Step 11 examples-dir reminder**: when `uncommitted_examples_changes` (the partitioned set for `examples_output_dir`, default `.claude/rules-extras/`) is non-empty, surface a reminder in the resolved `language` saying how many uncommitted `extract-rules` example files remain under the resolved `<examples_dir>`, and asking the user to commit them by hand before opening a PR. The reminder is omitted when `uncommitted_examples_changes` is empty.
 
-The reminder is omitted when `uncommitted_rule_changes` is empty.
-
-**Step 11 examples-dir reminder**: when `uncommitted_examples_changes` (the partitioned set for `examples_output_dir`, default `.claude/rules-extras/`) is non-empty, surface a reminder in the resolved `language` (`<N>` = number of uncommitted example files, `<examples_dir>` = the resolved directory):
-
-- `language: ja`: `\`<examples_dir>\` に未コミットの extract-rules examples が <N> 件あります — PR を開く前に手動で commit してください`
-- `language: en`: `<N> uncommitted extract-rules example file(s) under \`<examples_dir>\` remain — please commit manually before opening a PR`
-
-The reminder is omitted when `uncommitted_examples_changes` is empty.
-
-**Step 11 staging-dir reminder**: when `uncommitted_staging_changes` (the partitioned set for `staging_output_dir`, default `.claude/rules-staging/`) is non-empty, surface a reminder in the resolved `language` (`<N>` = number of uncommitted staging files, `<staging_dir>` = the resolved directory):
-
-- `language: ja`: `\`<staging_dir>\` に未レビューの extract-rules 候補が <N> 件あります — 手動で確認し、採用するものを \`.claude/rules/\` へ promote してください（ルール更新コミットゲートで commit することも可能でした）`
-- `language: en`: `<N> extract-rules candidate(s) under \`<staging_dir>\` await review — inspect and promote accepted files to \`.claude/rules/\` manually (or commit them at the rule-update commit gate)`
-
-The reminder is omitted when `uncommitted_staging_changes` is empty.
+**Step 11 staging-dir reminder**: when `uncommitted_staging_changes` (the partitioned set for `staging_output_dir`, default `.claude/rules-staging/`) is non-empty, surface a reminder in the resolved `language` saying how many unreviewed `extract-rules` candidates sit under the resolved `<staging_dir>`, and asking the user to inspect them and promote the accepted ones to `.claude/rules/` by hand — noting that the rule-update commit gate could also have committed them. The reminder is omitted when `uncommitted_staging_changes` is empty.
 
 ## Partition — Step 11 extract-rules output sets
 

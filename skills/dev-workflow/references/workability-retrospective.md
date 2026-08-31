@@ -2,6 +2,8 @@
 
 Deep reference for Step 11.6. Read this when `workability_retrospective.enabled` is `true` at Step 1.
 
+Every "proceed to Completion" below means **do not block the run**: control returns to the caller, which continues at whatever steps it still has ahead of Completion.
+
 Purpose: scan the current session for two classes of **project-tooling workability** improvement — (1) **skill-candidate**: a reusable multi-step manual procedure that could be extracted into a `.claude/skills/<name>/` skill, and (2) **lint-rule-candidate**: a mechanically-enforceable convention that could be added to an existing linter config (`rubocop.yml` / `eslint` / `ruff` / etc.) or to `check_commands`. For each candidate, offer the user a per-candidate **4-way disposition** (act now / make a subtask / save to backlog / reject). Raw conversation stays in-session.
 
 This is the third retrospective axis, orthogonal to the other two:

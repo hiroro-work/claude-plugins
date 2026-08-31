@@ -1,6 +1,6 @@
 # Step 7.5 — Rules Compliance Review (extracted procedure)
 
-Unqualified `§ Completion` and `§ Step 9` – `§ Step 11.6` references resolve to [`finish-phase.md`](finish-phase.md); unqualified `§ No-Stall Principle` / `§ Prerequisites` / `§ Step N` references for Steps 1 – 8.5 resolve to `SKILL.md`.
+Unqualified `§ Completion` and `§ Step 9` onward references resolve to [`finish-phase.md`](finish-phase.md); unqualified `§ No-Stall Principle` / `§ Prerequisites` / `§ Step N` references for Steps 1 – 8.5 resolve to `SKILL.md`.
 
 **Responsibility scope** (so the same rule class is not double-reviewed across passes and no class slips through every pass):
 - **Step 7.5 owns** the mechanical walk of every matched `.claude/rules/` rule against the diff — hard rules (explicit prohibitions, naming, reference form, import paths, placement, file structure) are evaluated strictly; intent-style rules (judgment-based principles, prose conventions) are evaluated best-effort with low-confidence markers per `rules-review` SKILL.md.

@@ -4,7 +4,7 @@
 
 ## Reused parts of `crit-commit-review.md`
 
-Read `../dev-workflow/references/crit-commit-review.md` and reuse the parts below, substituting M6's own range endpoints for its own; those endpoints are defined by [`diff-review.md`](diff-review.md) § Per-unit review range. Read `crit-commit-review.md`'s "Step 10 run" scope as **the M6 loop**. `Keep the pointers below in sync with ../dev-workflow/references/crit-commit-review.md § Procedure and § Story prologue — they name that file's steps and sections and describe their content, so a renumbering or a change of what a step does lands here too. This file's own § Decision mapping below names that file's § Round re-verification weight as well; keep that name resolvable.`
+Read `../dev-workflow/references/crit-commit-review.md` and reuse the parts below, substituting M6's own range endpoints for its own; those endpoints are defined by [`diff-review.md`](diff-review.md) § Per-unit review range. Read `crit-commit-review.md`'s "Step 10 run" scope as **the M6 loop**. `Keep the pointers below in sync with ../dev-workflow/references/crit-commit-review.md § Procedure and § Story prologue — they name that file's steps and sections and describe their content, so a renumbering or a change of what a step does lands here too. This file's own § Decision mapping below names that file's § Round verification and fix accumulation as well; keep that name resolvable.`
 
 - **§ crit CLI contract** — the CLI facts, the `--range` mode rationale, the read-both-streams `approved:` rule, and the no-`--no-open` / no-`--quiet` finding.
 - **§ Story prologue** — run over the same `<m6_review_base>..<unit_obj>` endpoints, immediately before the launch below. One substitution: M6 lands no commit, so the prose comes from this unit's point — the sentence [`learning-gates.md`](learning-gates.md) § A's "Opening the review" paragraph has the AI state — in place of a commit subject and body.
@@ -14,7 +14,7 @@ Read `../dev-workflow/references/crit-commit-review.md` and reuse the parts belo
 
 ## Decision mapping
 
-M6 substitutes this for that file's **§ Procedure step 5's per-commit decision mapping**. The substitution also drops that step's per-round re-verification (that file's § Round re-verification weight, which only that step enters). Evaluate in order, first match wins:
+M6 substitutes this for that file's **§ Procedure step 5's per-commit decision mapping**. The substitution also drops that step's per-round verification (that file's § Round verification and fix accumulation, which only that step enters) — M6 is not the commit phase, so it accumulates nothing for M11.5 either. Evaluate in order, first match wins:
 
 - **Non-zero exit, or no parseable `approved:` line** → this unit alone renders on the chat surface ([`diff-review.md`](diff-review.md) § Display surface's `diff` bullet). The cached availability answer is **not** cleared, so crit is used again for the next unit.
 - **`approved: true`** → the review is done; advance and move to the next unit. Accompanying comments are advisory.

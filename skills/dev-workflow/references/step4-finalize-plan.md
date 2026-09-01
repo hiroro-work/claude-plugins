@@ -17,7 +17,7 @@ Deep reference for `SKILL.md` **Step 4: Finalize Plan (USER APPROVAL GATE)**. Th
 
 ## Sub-step 1 — Step 3-completion verification
 
-1. Before presenting, verify via `TaskList` that `Step 3: Plan Review` is `completed`. If the row is not `completed`, emit a one-line inline note to the user naming it (e.g., `Plan review found incomplete (Step 3: Plan Review still pending) — running the review pass before presenting the plan.`) then return to Step 3 to process it (do not flip the row to `completed` without doing the review work). **Exception**: when `plan_review_enabled` is `false` (`SKILL.md` Step 3's Disabled-phase exception) — so the row is already `completed` — that completed state is the intended skip, so proceed to the approval presentation normally.
+1. Before presenting, verify per `SKILL.md` § Step 1 registration mechanics' **Row-status resolution convention** that `Step 3: Plan Review` is `completed`. If the row is not `completed`, emit a one-line inline note to the user naming it (e.g., `Plan review found incomplete (Step 3: Plan Review still pending) — running the review pass before presenting the plan.`) then return to Step 3 to process it (do not flip the row to `completed` without doing the review work). **Exception**: when `plan_review_enabled` is `false` (`SKILL.md` Step 3's Disabled-phase exception) — so the row is already `completed` — that completed state is the intended skip, so proceed to the approval presentation normally.
 
 ## Sub-step 1.5 — Prose-language self-audit
 

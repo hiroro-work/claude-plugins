@@ -2,6 +2,14 @@
 
 ## 2026-09-01
 
+### dev-workflow v1.140.0 / mobpro v1.49.0 / dev-workflow-bundle v1.164.0
+
+- feat(dev-workflow, mobpro): keep a progress file where neither task surface is available
+  - A session that offers neither the Task tools nor `TodoWrite` previously registered nothing and named each phase in prose alone, leaving the run's only record in conversation context — which a compaction or an interruption destroys, and which nothing can read back. Such a run now writes its phase list to a fixed path (`.claude/plans/dev-workflow.run-progress.md` / `.claude/plans/mobpro.run-progress.md`) and appends a line as each phase completes, at each skip, at each change to the phase set, and at the run's end — naming the gate or error instead when the run ends somewhere else. The prose naming continues alongside it.
+  - A new **Row-status resolution convention** in `dev-workflow` pairs with the existing task-handle one, so every site that reads a row's status resolves it from whichever surface the run registered on rather than naming `TaskList` directly. The phase-boundary self-audit, the pre-completed row guard, and `dev-workflow`'s interruption re-anchoring and compaction recovery all reach the file that way. A failed write is non-fatal: the run records it and falls back to the prose trail.
+  - A new **Unfinished-phase** completion reminder — the eighth — reads the run's rows back at the end and names any phase that neither completed nor was skipped, so a phase passed over silently is visible at least once. It reads whichever surface the run registered on, so it covers every run, not only the file-backed ones.
+  - A run that finds a file an earlier run left without a run-end line leaves it in place when the user is resuming that run: on `dev-workflow` it is what interruption re-anchoring reads to recover a position. A file whose last line records the run's end is replaced, as is any file `mobpro` finds — that skill has no resume-from-file step. The file is a workflow artifact, excluded from every changed-file enumeration and commit grouping, and one run at a time may hold it.
+
 ### dev-workflow v1.139.0 / mobpro v1.48.0 / dev-workflow-bundle v1.163.0
 
 - feat(dev-workflow, mobpro)!: remove the `interactive_commits` config key — the commit phase always runs

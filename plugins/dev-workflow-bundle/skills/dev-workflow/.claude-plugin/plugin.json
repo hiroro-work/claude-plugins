@@ -1,0 +1,18 @@
+{
+  "name": "dev-workflow",
+  "description": "Guided development workflow: planning, review, implementation, testing, and rule maintenance",
+  "author": {
+    "name": "hiropon",
+    "url": "https://github.com/hiroro-work"
+  },
+  "homepage": "https://github.com/hiroro-work/claude-plugins",
+  "repository": "https://github.com/hiroro-work/claude-plugins",
+  "license": "MIT",
+  "keywords": [
+    "workflow",
+    "planning",
+    "code-review",
+    "testing",
+    "rules"
+  ]
+}

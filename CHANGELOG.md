@@ -2,6 +2,13 @@
 
 ## 2026-09-01
 
+### ask-claude v1.1.4 / ask-codex v1.2.3 / ask-gemini v1.2.2 / ask-copilot v1.0.4 / ask-agy v1.0.1 / security-scanner v1.3.1 / extract-rules v1.29.1 / merge-rules v2.1.2 / peer v2.6.2 / apply-rules v2.1.2 / rules-review v1.8.2 / tidy v1.6.1 / prose-polish v1.8.2 / dev-workflow v1.141.1 / mobpro v1.50.1 / dev-workflow-bundle v1.165.1
+
+- fix: ship a `.claude-plugin/plugin.json` with every plugin
+  - A plugin defined only by its `marketplace.json` entry installs into a cache directory that carries no manifest, and a session loading it inline then takes the plugin name from that directory's basename — the version string. Every component of such a plugin appears twice, once under its real name and once under `<version>:`, and two manifest-less plugins sharing a version string merge into one namespace ([anthropics/claude-code#76234](https://github.com/anthropics/claude-code/issues/76234)). The 15 direct-skill plugins and `dev-workflow-bundle` now each carry a manifest, so the name is read from the manifest instead. `caffeinate` and `translate` already had one.
+  - The new manifests declare no `version`: `marketplace.json` stays the single version source and each manifest inherits from it. Only the two pre-existing wrapper manifests declare a version, and those stay paired with their marketplace entry.
+  - Version-consistency checks in `run-tests` and `/verify-plugins` now treat a manifest without a `version` as correct rather than as a mismatch, and both require the manifest's `name` to match the marketplace entry so a future plugin cannot ship without one. The patch bumps here are what makes the manifests reach installs that already exist.
+
 ### dev-workflow v1.141.0 / mobpro v1.50.0 / extract-rules v1.29.0 / tidy v1.6.0 / dev-workflow-bundle v1.165.0
 
 - refactor(dev-workflow, mobpro, extract-rules, tidy): drop the deprecated `TodoWrite` progress-tracking layer

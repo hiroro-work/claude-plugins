@@ -2,6 +2,13 @@
 
 ## 2026-09-01
 
+### dev-workflow v1.141.0 / mobpro v1.50.0 / extract-rules v1.29.0 / tidy v1.6.0 / dev-workflow-bundle v1.165.0
+
+- refactor(dev-workflow, mobpro, extract-rules, tidy): drop the deprecated `TodoWrite` progress-tracking layer
+  - All four skills tracked progress on the Task tools first and fell back to `TodoWrite` where those were unavailable. `TodoWrite` is deprecated, so the fallback is gone from every prose site and from each skill's `allowed-tools`. What each skill falls back to instead is unchanged: `dev-workflow` and `mobpro` write their progress file, and `tidy` holds iteration state in main-thread context.
+  - `extract-rules` had no third layer — `TodoWrite` was its only fallback — so both of its pre-registration sites now say what a host without the Task tools does: skip the registration and hold the progress in context. The loop's semantics were never gated on it.
+  - The cross-file label for the paragraphs defining `dev-workflow`'s progress file is renamed from `neither-surface` to `progress-file`, since only one task surface remains for it to contrast with. Swept with it: every site referring to that label, and the `.claude/rules/` rule that prescribed `TodoWrite` in a Pattern A iteration loop skill's `allowed-tools` baseline.
+
 ### dev-workflow v1.140.0 / mobpro v1.49.0 / dev-workflow-bundle v1.164.0
 
 - feat(dev-workflow, mobpro): keep a progress file where neither task surface is available

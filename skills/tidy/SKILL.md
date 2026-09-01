@@ -1,7 +1,7 @@
 ---
 name: tidy
 description: Review changed code for reuse, quality, and efficiency, then apply cleanup edits. Dispatches a fresh host-provided reviewer per iteration when available; the main thread applies mechanical edits and re-dispatches until no further edits remain. Non-interactive — no user prompts. Use after implementation as a code-cleanup pass complementary to correctness review.
-allowed-tools: Read, Edit, Agent, TaskCreate, TaskUpdate, TodoWrite, Bash(git diff *), Bash(git status *), Bash(git checkout HEAD -- *)
+allowed-tools: Read, Edit, Agent, TaskCreate, TaskUpdate, Bash(git diff *), Bash(git status *), Bash(git checkout HEAD -- *)
 ---
 
 # Tidy
@@ -60,9 +60,9 @@ For each entry in `changed_files`, in the main thread:
 
 ### Step 3 — Iteration loop (i = 1 .. Max iterations)
 
-**Pre-register iteration tasks** — before entering the loop, use the current host's task-tracking surface when available. In Claude Code, `TaskCreate` one task per iteration with subject `iteration 1`, `iteration 2`, ..., `iteration <Max iterations>`. Mark `in_progress` (via `TaskUpdate`) before each dispatch, `completed` after parse + apply (a converged iteration marks `completed` immediately after parsing). On early convergence (no `mechanical_edits` returned) or safety-rail-triggered exit, mark remaining iteration tasks `completed` with the skip note recorded in the task's `description` field (the `content` field under the `TodoWrite` fallback) as `— skipped: converged` / `— skipped: <reason>`. Pre-registration is load-bearing when the host supports it: without it, executor-driven loops tend to stop at the first iteration that looks acceptable.
+**Pre-register iteration tasks** — before entering the loop, `TaskCreate` one task per iteration with subject `iteration 1`, `iteration 2`, ..., `iteration <Max iterations>`. Mark `in_progress` (via `TaskUpdate`) before each dispatch, `completed` after parse + apply (a converged iteration marks `completed` immediately after parsing). On early convergence (no `mechanical_edits` returned) or safety-rail-triggered exit, mark remaining iteration tasks `completed` with the skip note recorded in the task's `description` field as `— skipped: converged` / `— skipped: <reason>`. Pre-registration is load-bearing when the host supports it: without it, executor-driven loops tend to stop at the first iteration that looks acceptable.
 
-**Task tools unavailable fallback**: when the executor's tool set lacks the Task tools (`TaskCreate` / `TaskUpdate`), use the equivalent `TodoWrite` operations if it is present (e.g. the VSCode extension, Claude Code before v2.1.142, or a Codex host that exposes compatible task tracking) — the status values and pre-register semantics are identical, and `allowed-tools` grants both. If **neither** the Task tools nor `TodoWrite` is surfaced (e.g. the skill runs inside a nested subagent context where progress-tracking tools were not surfaced), skip the pre-registration step and hold iteration state (current `i`, cumulative `applied_edits_count`, `notes_remaining_count`, accumulated `out_of_scope`, `reverted_paths`) in main-thread context instead. Progress tracking is not correctness-critical — the loop semantics in (a)–(c) are unaffected.
+**Task tools unavailable fallback** (e.g. the VSCode extension, Claude Code before v2.1.142, a Codex host, or a nested subagent context where progress-tracking tools were not surfaced): skip the pre-registration step and hold iteration state (current `i`, cumulative `applied_edits_count`, `notes_remaining_count`, accumulated `out_of_scope`, `reverted_paths`) in main-thread context instead. Progress tracking is not correctness-critical — the loop semantics in (a)–(c) are unaffected.
 
 #### (a) Dispatch reviewer
 

@@ -3,7 +3,7 @@ name: extract-rules
 description: Extract project-specific coding rules and domain knowledge from existing codebase, generating markdown documentation for AI agents. Use when onboarding a new project, after code review discussions about coding style, or when coding conventions need documenting. Also consider running after sessions where coding preferences were discussed or corrected (--from-conversation), or after PRs with significant review feedback (--from-pr).
 model: opus
 effort: high
-allowed-tools: Read, Glob, Grep, Write, Edit, Agent, TaskCreate, TaskUpdate, TodoWrite, Bash(ls *), Bash(mkdir *), Bash(git ls-files *), Bash(git grep *), Bash(git checkout HEAD -- *), Bash(wc *), Bash(head *), Bash(tail *), Bash(sort *), Bash(uniq *), Bash(tree *), Bash(gh pr view *), Bash(gh pr diff *), Bash(gh api *), Bash(gh auth status *), Bash(gh repo view *), Bash(node *)
+allowed-tools: Read, Glob, Grep, Write, Edit, Agent, TaskCreate, TaskUpdate, Bash(ls *), Bash(mkdir *), Bash(git ls-files *), Bash(git grep *), Bash(git checkout HEAD -- *), Bash(wc *), Bash(head *), Bash(tail *), Bash(sort *), Bash(uniq *), Bash(tree *), Bash(gh pr view *), Bash(gh pr diff *), Bash(gh api *), Bash(gh auth status *), Bash(gh repo view *), Bash(node *)
 ---
 
 # Extract Rules
@@ -535,7 +535,7 @@ The Skill wrapper runs in the main thread, a subagent performs the compaction an
 
 ### Step CP2: Per-File Compaction (Pattern A iteration loop)
 
-**Pre-register per-file tasks** — before entering the per-file outer loop, `TaskCreate` one task per file in the target set (e.g. `compact: <path>`). Mark each task `in_progress` (via `TaskUpdate`) before its first dispatch and `completed` after the per-file loop terminates (regardless of `per_file_status` outcome — `converged` / `partial` / `unresolved` / `error` / `skipped-below-threshold` all flip the row to `completed`; the outcome is carried in the per-file record, not the task status). Per-iter progress within a file is tracked inline within this Step (no per-iter task). Where the Task tools are unavailable (e.g. the VSCode extension, or Claude Code before v2.1.142), use the equivalent `TodoWrite` operations instead — the status values and pre-register semantics are identical; `allowed-tools` grants both.
+**Pre-register per-file tasks** — before entering the per-file outer loop, `TaskCreate` one task per file in the target set (e.g. `compact: <path>`). Mark each task `in_progress` (via `TaskUpdate`) before its first dispatch and `completed` after the per-file loop terminates (regardless of `per_file_status` outcome — `converged` / `partial` / `unresolved` / `error` / `skipped-below-threshold` all flip the row to `completed`; the outcome is carried in the per-file record, not the task status). Per-iter progress within a file is tracked inline within this Step (no per-iter task). Where the Task tools are unavailable (e.g. the VSCode extension, or Claude Code before v2.1.142), skip the pre-registration and hold the per-file progress in main-thread context instead.
 
 For each file in the target set, run the per-file iteration loop. `max_iterations = 2` by default. Under-threshold files terminate at iter 1's (d) convergence check (chars_after ≤ compaction_threshold is already true), so their loop effectively runs once for consolidation detection only.
 

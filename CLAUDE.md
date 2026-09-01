@@ -15,13 +15,15 @@ Claude Code用プラグインを公開するためのマーケットプレイス
 │   └── marketplace.json      # プラグインマニフェスト
 ├── skills/                   # SKILL.mdの実体かつ単体スキルプラグインのsource
 │   └── <skill-name>/
+│       ├── .claude-plugin/   # direct-skill 方式で source になるスキルのみ
+│       │   └── plugin.json
 │       ├── SKILL.md
 │       └── README.md         # (任意、ユーザー向け設定リファレンスなど)
 ├── plugins/                  # wrapper 方式のプラグインのみ
 │   └── <plugin-name>/
 │       ├── skills/           # bundle の場合、複数 skill 分のエントリ
 │       │   └── <skill-name>  # skills/<skill-name> の実ディレクトリコピー
-│       ├── .claude-plugin/   # (エージェント依存 / フック定義プラグイン)
+│       ├── .claude-plugin/
 │       │   └── plugin.json
 │       ├── agents/           # (エージェント依存プラグインのみ)
 │       │   └── <agent-name>.md
@@ -38,6 +40,14 @@ Claude Code用プラグインを公開するためのマーケットプレイス
 
 **注意:** marketplace.json で `source: "./"` を使ってはいけない。`skills/` 配下の全スキルが自動発見されて重複登録される（[anthropics/claude-code#13344](https://github.com/anthropics/claude-code/issues/13344)）。必ず `./skills/<skill-dir>` または `./plugins/<plugin-name>` のように specific なパスを指定する。
 
+## プラグインマニフェスト
+
+**全プラグインが `<source>/.claude-plugin/plugin.json` を持つ。** direct-skill 方式・wrapper 方式のどちらも例外なし。マニフェストの無いプラグインは、インストール後のキャッシュディレクトリ名（バージョン文字列）からプラグイン名が推定され、同名前空間の重複・別プラグイン同士の合流が起きる（[anthropics/claude-code#76234](https://github.com/anthropics/claude-code/issues/76234)）。
+
+- `name` は marketplace.json の `name` と一致させる。スキルディレクトリ名とは異なってよい（例: plugin `peer` → `skills/ask-peer/`）
+- `version` は書かない。marketplace.json を単一のバージョン源とし、plugin.json はそれを継承する。両方に書くとバージョン更新のたびに 2 ファイル編集が必要になる
+- 例外は既存の `plugins/caffeinate` と `plugins/translate` の 2 つ。どちらも `version` を持つため、bump 時は marketplace.json とペアで更新する
+
 ## スキル追加フロー（direct-skill 方式 / エージェント非依存）
 
 スキルが `allowed-tools` を持ち、エージェント / フック定義に依存しない場合。`plugins/` 配下のラッパーは作らない。
@@ -46,6 +56,8 @@ Claude Code用プラグインを公開するためのマーケットプレイス
 
 ```text
 skills/<skill-name>/
+├── .claude-plugin/
+│   └── plugin.json
 ├── SKILL.md
 └── README.md   # (任意、設定が複雑ならユーザー向けリファレンスを追加)
 ```
@@ -64,7 +76,23 @@ allowed-tools: Read, Glob, Grep
 スキルの詳細な説明と使い方
 ```
 
-### 3. marketplace.json に追加
+### 3. plugin.json
+
+`.claude-plugin/plugin.json` を置く。プラグイン名は marketplace.json の `name` と一致させる（スキルディレクトリ名とは異なってよい）。`version` は書かない（marketplace.json を単一のバージョン源とする）。理由は「プラグインマニフェスト」節を参照。
+
+```json
+{
+  "name": "<plugin-name>",
+  "description": "スキルの説明",
+  "author": { "name": "hiropon", "url": "https://github.com/hiroro-work" },
+  "homepage": "https://github.com/hiroro-work/claude-plugins",
+  "repository": "https://github.com/hiroro-work/claude-plugins",
+  "license": "MIT",
+  "keywords": ["keyword1", "keyword2"]
+}
+```
+
+### 4. marketplace.json に追加
 
 `.claude-plugin/marketplace.json` の `plugins` 配列に追加（プラグイン名とスキル名が異なっても OK、例: plugin `peer` → skill `ask-peer`）:
 
@@ -80,13 +108,13 @@ allowed-tools: Read, Glob, Grep
 }
 ```
 
-### 4. 開発・テスト用シンボリックリンク作成
+### 5. 開発・テスト用シンボリックリンク作成
 
 ```bash
 ln -s ../../skills/<skill-name> .claude/skills/<skill-name>
 ```
 
-### 5. CHANGELOG.md 更新
+### 6. CHANGELOG.md 更新
 
 ## プラグイン追加フロー（wrapper 方式）
 
@@ -95,7 +123,7 @@ wrapper には **2 つのサブパターン** がある。必要なファイル�
 | サブパターン | 用途 | `.claude-plugin/plugin.json` | `agents/` | `skills/` |
 |---|---|---|---|---|
 | **A. エージェント / フック wrapper** | エージェント依存 (`translate`)、フック定義 (`caffeinate`) | 必須 | エージェント依存なら必須 | 単一スキルのエントリ |
-| **B. bundle wrapper** | 複数スキルの束 (`dev-workflow-bundle`) | 不要 | 不要 | 複数スキルのエントリ + marketplace.json の `skills` 配列 |
+| **B. bundle wrapper** | 複数スキルの束 (`dev-workflow-bundle`) | 必須 | 不要 | 複数スキルのエントリ + marketplace.json の `skills` 配列 |
 
 ### サブパターン A: エージェント / フック wrapper
 
@@ -126,7 +154,6 @@ ln -s ../../../skills/<skill-name> plugins/<plugin-name>/skills/<skill-name>
 ```json
 {
   "name": "<plugin-name>",
-  "version": "1.0.0",
   "description": "プラグインの説明",
   "author": {
     "name": "hiroro-work",
@@ -156,10 +183,12 @@ ln -s ../../../skills/<skill-name> plugins/<plugin-name>/skills/<skill-name>
 
 ### サブパターン B: bundle wrapper
 
-#### B-1. プラグインディレクトリ作成（plugin.json は不要）
+#### B-1. プラグインディレクトリ作成
 
 ```text
 plugins/<bundle-name>/
+├── .claude-plugin/
+│   └── plugin.json
 └── skills/
     ├── <skill-a>  # → ../../../skills/<skill-a>
     ├── <skill-b>  # → ../../../skills/<skill-b>

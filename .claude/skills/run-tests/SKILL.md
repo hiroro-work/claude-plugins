@@ -28,14 +28,14 @@ This project is a Claude Code plugins marketplace. "Tests" here means verifying 
 > 2. **Skill entity existence**: Verify each `skills/*/` directory contains `SKILL.md`.
 >
 > 3. **Plugin source directory structure**: For each plugin in marketplace.json, dispatch by `source` prefix:
->    - **If `source` starts with `./skills/`** (direct-skill plugin): verify `<source>/SKILL.md` exists and `skills: ["./"]` is present
->    - **If `source` starts with `./plugins/`** (wrapper plugin): verify `<source>/` exists; if `<source>/skills/` exists, each entry under it must be **either** a symlink (use `readlink`) resolving to an existing `skills/<skill>/SKILL.md` **or** a real directory containing `SKILL.md`; if `<source>/agents/` exists, each `.md` file must have YAML frontmatter; if `<source>/.claude-plugin/plugin.json` exists, its JSON must be valid
+>    - **If `source` starts with `./skills/`** (direct-skill plugin): verify `<source>/SKILL.md` exists, `skills: ["./"]` is present, and `<source>/.claude-plugin/plugin.json` exists with a `name` equal to the marketplace entry's `name`
+>    - **If `source` starts with `./plugins/`** (wrapper plugin): verify `<source>/` exists; if `<source>/skills/` exists, each entry under it must be **either** a symlink (use `readlink`) resolving to an existing `skills/<skill>/SKILL.md` **or** a real directory containing `SKILL.md`; if `<source>/agents/` exists, each `.md` file must have YAML frontmatter; `<source>/.claude-plugin/plugin.json` must exist with a `name` equal to the marketplace entry's `name`
 >      - **Real directories are expected, not a defect.** Do **not** report a real directory as a broken/missing symlink. Content equality between a real-directory copy and its canonical `skills/<name>/` is **out of scope here**: `verify-bundle-sync` owns that check
 >    - **Additionally, for wrapper bundles** (wrapper plugin with `skills` array of specific paths like `./skills/<name>`): verify each path in `skills` array resolves to an existing `skills/<name>/SKILL.md`, AND verify the set of paths matches the set of entries under `<source>/skills/` (each entry has a corresponding `skills` entry, and vice versa — detect drift in either direction)
 >
-> 4. **Version consistency**: For each plugin, if `<source>/.claude-plugin/plugin.json` exists (only possible for `./plugins/` sources), verify its `version` matches marketplace.json.
+> 4. **Version consistency**: For each plugin, if `<source>/.claude-plugin/plugin.json` declares a `version`, verify it matches marketplace.json. A manifest with no `version` field is correct, not a defect — `marketplace.json` is the single version source, and the manifest inherits it. Only `plugins/caffeinate` and `plugins/translate` currently declare one.
 >
-> 5. **JSON syntax**: Validate `.claude-plugin/marketplace.json` and every `plugins/*/.claude-plugin/plugin.json` with `jq empty`.
+> 5. **JSON syntax**: Validate `.claude-plugin/marketplace.json` and every `plugins/*/.claude-plugin/plugin.json` and `skills/*/.claude-plugin/plugin.json` with `jq empty`.
 >
 > 6. **Frontmatter presence**: Verify each `skills/*/SKILL.md` and each agent file (`plugins/*/agents/*.md`) starts with `---` on the first line (YAML frontmatter).
 >

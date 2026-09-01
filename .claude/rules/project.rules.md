@@ -92,9 +92,10 @@
 ## プラグイン構造
 
 - 単体スキルプラグインは direct-skill 方式（`source: "./skills/<skill-dir>"` + `skills: ["./"]`）を使う。`plugins/` 配下のラッパーディレクトリを作らない
+- **全プラグインの source 直下に `.claude-plugin/plugin.json` を置く**（direct-skill 方式も例外ではない）。マニフェストが無いとインストール後のキャッシュディレクトリ名からプラグイン名が推定され、名前空間の重複と別プラグイン同士の合流が起きる（[anthropics/claude-code#76234](https://github.com/anthropics/claude-code/issues/76234)）。`name` は marketplace.json の `name` と一致させる。`version` は書かない — marketplace.json を単一のバージョン源とし、plugin.json はそれを継承する（既存の `plugins/caffeinate` と `plugins/translate` だけが `version` を持ち、bump 時は marketplace.json とペアで更新する）
 - direct-skill 方式ではプラグイン名と skill ディレクトリ名が異なっても OK（例: plugin `peer` → skill `ask-peer`）
 - wrapper 方式（`plugins/<name>/`）は以下のいずれかに該当する場合のみ: (1) `agents/` を持つエージェント依存プラグイン、(2) `plugin.json` にフック定義を持つプラグイン、(3) 複数スキル bundle
-- wrapper には 2 サブパターン: (A) エージェント/フック wrapper（`plugin.json` 必須）、(B) bundle wrapper（`plugin.json` 不要、marketplace.json 側の `skills` 配列で参照スキルを明示）
+- wrapper には 2 サブパターン: (A) エージェント/フック wrapper、(B) bundle wrapper（marketplace.json 側の `skills` 配列で参照スキルを明示）
 - bundle では marketplace.json の `skills` 配列と `plugins/<bundle>/skills/` 配下のエントリセットを必ず一致させる。ずれると配布が壊れるため、`/verify-plugins` と `run-tests` で整合性を検証すること
 - **wrapper 配下の `skills/` エントリは symlink ではなく実ディレクトリコピー**。upstream の plugin cache が symlink を解決しない bug（[anthropics/claude-code#53948](https://github.com/anthropics/claude-code/issues/53948)）を回避するための暫定対応。検証ツール（`run-tests` の check 3、`/verify-plugins`）は symlink を要求せず、`SKILL.md` を含む実ディレクトリを合格として扱うこと — 要求したままにすると全 wrapper が毎回 FAIL し、恒常 FAIL が新規問題の検出を潰す。symlink 復活時は本 bullet と各検証ツールの exemption 記述をまとめて削除する
 - フックの自動設定が必要な場合はプラグイン化

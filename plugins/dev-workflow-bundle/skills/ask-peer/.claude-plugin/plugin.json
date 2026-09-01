@@ -1,0 +1,17 @@
+{
+  "name": "peer",
+  "description": "Peer engineer for code review, planning, and brainstorming",
+  "author": {
+    "name": "hiropon",
+    "url": "https://github.com/hiroro-work"
+  },
+  "homepage": "https://github.com/hiroro-work/claude-plugins",
+  "repository": "https://github.com/hiroro-work/claude-plugins",
+  "license": "MIT",
+  "keywords": [
+    "peer-review",
+    "code-review",
+    "planning",
+    "brainstorming"
+  ]
+}

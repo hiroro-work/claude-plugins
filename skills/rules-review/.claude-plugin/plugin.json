@@ -1,0 +1,17 @@
+{
+  "name": "rules-review",
+  "description": "Check code changes for .claude/rules/ compliance using parallel sub-agent review",
+  "author": {
+    "name": "hiropon",
+    "url": "https://github.com/hiroro-work"
+  },
+  "homepage": "https://github.com/hiroro-work/claude-plugins",
+  "repository": "https://github.com/hiroro-work/claude-plugins",
+  "license": "MIT",
+  "keywords": [
+    "rules",
+    "compliance",
+    "review",
+    "conventions"
+  ]
+}

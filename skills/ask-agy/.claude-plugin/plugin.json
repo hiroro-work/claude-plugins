@@ -1,0 +1,18 @@
+{
+  "name": "ask-agy",
+  "description": "Get a second opinion from Google Antigravity",
+  "author": {
+    "name": "hiropon",
+    "url": "https://github.com/hiroro-work"
+  },
+  "homepage": "https://github.com/hiroro-work/claude-plugins",
+  "repository": "https://github.com/hiroro-work/claude-plugins",
+  "license": "MIT",
+  "keywords": [
+    "antigravity",
+    "google",
+    "second-opinion",
+    "code-review",
+    "cli"
+  ]
+}

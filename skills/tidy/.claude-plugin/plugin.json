@@ -1,0 +1,17 @@
+{
+  "name": "tidy",
+  "description": "Review changed code for reuse, quality, and efficiency, then apply cleanup edits.",
+  "author": {
+    "name": "hiropon",
+    "url": "https://github.com/hiroro-work"
+  },
+  "homepage": "https://github.com/hiroro-work/claude-plugins",
+  "repository": "https://github.com/hiroro-work/claude-plugins",
+  "license": "MIT",
+  "keywords": [
+    "cleanup",
+    "refactor",
+    "code-quality",
+    "review"
+  ]
+}

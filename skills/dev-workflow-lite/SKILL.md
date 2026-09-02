@@ -1,7 +1,7 @@
 ---
 name: dev-workflow-lite
 description: Guided development workflow with the same phases as dev-workflow — task decomposition, planning, peer plan review, approval, implementation, tidy, prose polish, check/test, rules compliance review, code review, completion hooks, interactive commits, rule updates — with a fixed difficulty-skip table, browser plan review, plan artifacts, an optional mob mode for a junior navigator, and a growth-controlled self-retrospective; no executors. Runs the same way every time so a junior engineer can follow along. Use when the user wants a feature built, a bug fixed, or code refactored.
-allowed-tools: Read, Write, Edit, Glob, Grep, TaskCreate, TaskUpdate, TaskList, AskUserQuestion, Artifact, Skill(artifact-design), Skill(ask-peer), Skill(ask-claude), Skill(ask-codex), Skill(ask-gemini), Skill(ask-copilot), Skill(ask-agy), Skill(simplify), Skill(tidy), Skill(prose-polish), Skill(rules-review), Skill(extract-rules), Skill(run-tests), Bash(pwd), Bash(mkdir -p .claude/plans), Bash(cp .claude/plans/*), Bash(rm -f .claude/plans/*), Bash(node *), Bash(printenv CLAUDE_CODE_REMOTE), Bash(crit *), Bash(test -f *), Bash(pnpm run *), Bash(pnpm exec *), Bash(npm run *), Bash(yarn run *), Bash(bun run *), Bash(bundle exec *), Bash(make lint *), Bash(make format *), Bash(make test *), Bash(make typecheck *), Bash(make check *), Bash(python -m pytest *), Bash(poetry run *), Bash(uv run *), Bash(cargo test *), Bash(cargo clippy *), Bash(cargo fmt *), Bash(go test *), Bash(go vet *), Bash(git status *), Bash(git symbolic-ref -q *), Bash(git rev-parse *), Bash(git merge-base *), Bash(git remote show *), Bash(git switch -c *), Bash(git diff *), Bash(git add *), Bash(git reset -- *), Bash(git commit *), Bash(LEFTHOOK=0 git commit *), Bash(git write-tree), Bash(git commit-tree *), Bash(git read-tree *), Bash(git update-ref *), Bash(git rev-list *), Bash(git blame *), Bash(git worktree *), Bash(git branch -D *), Bash(GIT_INDEX_FILE=* git read-tree *), Bash(GIT_INDEX_FILE=* git add *), Bash(GIT_INDEX_FILE=* git write-tree), Bash(git -C .git/dev-workflow-lite-wt *), Bash(GIT_SEQUENCE_EDITOR=true GIT_EDITOR=true git -c commit.gpgsign=false -C .git/dev-workflow-lite-wt rebase *), Bash(rm -rf .claude/plans/*.absorb), Bash(rm -f .claude/plans/*.retrospective.md), Bash(test -d .git), Bash(gh auth status), Bash(gh api --method POST /repos/*/issues *), Bash(jq *), Bash(git log *), Bash(git ls-files *), Bash(wc -l *)
+allowed-tools: Agent, Read, Write, Edit, Glob, Grep, TaskCreate, TaskUpdate, TaskList, AskUserQuestion, Artifact, Skill(artifact-design), Skill(ask-peer), Skill(ask-claude), Skill(ask-codex), Skill(ask-gemini), Skill(ask-copilot), Skill(ask-agy), Skill(simplify), Skill(tidy), Skill(prose-polish), Skill(rules-review), Skill(extract-rules), Skill(run-tests), Bash(pwd), Bash(mkdir -p .claude/plans), Bash(cp .claude/plans/*), Bash(rm -f .claude/plans/*), Bash(node *), Bash(printenv CLAUDE_CODE_REMOTE), Bash(crit *), Bash(test -f *), Bash(pnpm run *), Bash(pnpm exec *), Bash(npm run *), Bash(yarn run *), Bash(bun run *), Bash(bundle exec *), Bash(make lint *), Bash(make format *), Bash(make test *), Bash(make typecheck *), Bash(make check *), Bash(python -m pytest *), Bash(poetry run *), Bash(uv run *), Bash(cargo test *), Bash(cargo clippy *), Bash(cargo fmt *), Bash(go test *), Bash(go vet *), Bash(git status *), Bash(git symbolic-ref -q *), Bash(git rev-parse *), Bash(git merge-base *), Bash(git remote show *), Bash(git switch -c *), Bash(git diff *), Bash(git add *), Bash(git reset -- *), Bash(git commit *), Bash(LEFTHOOK=0 git commit *), Bash(git write-tree), Bash(git commit-tree *), Bash(git read-tree *), Bash(git update-ref *), Bash(git rev-list *), Bash(git blame *), Bash(git worktree *), Bash(git branch -D *), Bash(GIT_INDEX_FILE=* git read-tree *), Bash(GIT_INDEX_FILE=* git add *), Bash(GIT_INDEX_FILE=* git write-tree), Bash(git -C .git/dev-workflow-lite-wt *), Bash(GIT_SEQUENCE_EDITOR=true GIT_EDITOR=true git -c commit.gpgsign=false -C .git/dev-workflow-lite-wt rebase *), Bash(rm -rf .claude/plans/*.absorb), Bash(rm -f .claude/plans/*.retrospective.md), Bash(test -d .git), Bash(gh auth status), Bash(gh api --method POST /repos/*/issues *), Bash(jq *), Bash(git log *), Bash(git ls-files *), Bash(wc -l *)
 ---
 
 # Dev Workflow Lite
@@ -36,11 +36,11 @@ Merge rules per key, in order: `null` or an empty value in a higher layer clears
 | `timing.report_dir` | none | Directory that receives each run's per-phase timing report (wall / waiting / active). The table is always shown at Completion; this only persists it |
 | `custom_instructions` | none | Free-form development guidance (for example "Always use TDD") followed at Create Plan, Implement, and Tidy and handed to both reviewers. `.claude/rules/` and the user's explicit requests win on conflict |
 
-`language` resolves as: merged settings → `language` in `~/.claude/settings.json` → `ja`. Section headings, phase names, commit messages, diffs, and file paths stay as written; explanatory prose follows the resolved language. Keys this skill does not read (for example `implementation_executor`, `subagent_model`, `self_retrospective`) are ignored; name them once in one line at Load Settings.
+`language` resolves as: merged settings → `language` in `~/.claude/settings.json` → `ja`. Section headings, phase names, commit messages, diffs, and file paths stay as written; explanatory prose follows the resolved language. Keys this skill does not read are named once at Load Settings and ignored.
 
 ## Callee failure rule
 
-When a `Skill(...)` call fails, retry once. If it fails again: for the `reviewer` skill, ask the user to pick one of switch reviewer / self-review inline / stop (a user gate); for every other skill, say so in one line, do that phase's work yourself in the main thread, and continue. Record each skipped callee for the Completion summary. Never stop a phase for a missing callee other than through the reviewer gate.
+When a `Skill(...)` call fails, retry once. If it fails again: for the `reviewer` skill, ask the user to pick switch reviewer / self-review inline / stop (a user gate); for any other skill, say so in one line, do that phase's work yourself, and continue. Record each skipped callee for the Completion summary.
 
 ## Difficulty and the skip table
 
@@ -75,11 +75,11 @@ The only places the workflow waits for the user:
 - Self-Retrospective: the preview of the Findings before posting (`approve` / `edit` / `skip`).
 - Completion (decomposed runs only): the disposition of each work item left in prose, then an optional PR URL for the finished subtask.
 
-In mob mode, `references/mob-mode.md` § Learning stops adds the per-unit diff review, the plan-building checkpoints, and the post-commit-note question to this list. Everywhere else, judge callee results yourself and issue the next tool call immediately. A reply that is a question or non-committal ("looks good?") is never approval: ask what was meant.
+In mob mode, `references/mob-mode.md` § Learning stops adds the per-unit diff review, the plan-building checkpoints, and the post-commit-note question to this list. The collect wait of `references/review-launch.md` § Collect is a harness-tracked boundary, not a gate. Everywhere else, judge callee results yourself and issue the next tool call immediately. A reply that is a question or non-committal ("looks good?") is never approval: ask what was meant.
 
 ## Timing
 
-Every run records its own clock per `references/timing.md`: marks at each phase's start and end and around every wait, in the same tool-call burst as the transition. Completion renders the per-phase wall / waiting / active table.
+Every run marks phase starts, ends, and waits per `references/timing.md`; Completion renders the wall / waiting / active table.
 
 ## Workflow artifacts
 
@@ -156,6 +156,7 @@ Express lane skips; `polish_prose: false` and `fast` mode skip. Collect changed 
 
 ## Phase 9: Check / Test
 
+0. Launch the reviews this run will perform in the background per `references/review-launch.md` § Launch, then continue without waiting.
 1. Run `check_commands` in order, then `test_commands` in order. A `Skill(<name>)` entry is called with `--base-commit <base-commit>`; it returns SUCCESS / TEST_FAILED / EXECUTION_ERROR. The first failure stops the pass.
 2. Classify each failure. A failure whose failing test and failing code both lie outside the files changed since `<base-commit>` is pre-existing: record it, do not fix it, do not count it. If the workflow's own fix (Tidy, a review fix) broke a test that passed before, correct that fix rather than the implementation.
 3. Fix and rerun. At most 3 fix rounds per entry into this phase. After the third, stop: report the command, its last output, and that nothing was committed.
@@ -165,11 +166,11 @@ In mob mode, narrate every failure per `references/mob-mode.md` § Check / Test 
 
 ## Phase 10: Rules Compliance Review
 
-Express lane skips. Call `Skill(rules-review)` with `--base-commit <base-commit>`. Fix every reported violation; when a violation is a pattern rather than a one-off, grep the file for the defining token and fix every match. A `rule-doc-drift` classification gets no code fix; note it for Update Rules. Record edited files in `review_fix_files`. Do not rerun Check / Test here.
+Express lane skips. Take the background result per `references/review-launch.md` § Collect when it is fresh; otherwise call `Skill(rules-review)` with `--base-commit <base-commit>`. Fix every reported violation; when a violation is a pattern rather than a one-off, grep the file for the defining token and fix every match. A `rule-doc-drift` classification gets no code fix; note it for Update Rules. Record edited files in `review_fix_files`. Do not rerun Check / Test here.
 
 ## Phase 11: Code Review
 
-Skipped on Trivial and when `code_review: false`.
+Skipped on Trivial and when `code_review: false`. Take the background result per `references/review-launch.md` § Collect when it is fresh; otherwise run step 1.
 
 1. Call `Skill(<reviewer>)` with `git diff <base-commit>`, the content of untracked new files labeled as such, `custom_instructions` when set, the three categories (correctness and edge cases; conventions and consistency including a light `.claude/rules/` check; simplicity and maintainability), the current subtask and its siblings when a decomposition state file is active, and "report only actionable findings, else say No actionable findings".
 2. Fix genuine findings; reject the rest with one line each. If the user would plausibly raise the point themselves, fix it. Duplicates of Rules Compliance findings are skipped. After a Critical fix, sweep the diff for the same defect class. Record edited files in `review_fix_files`.
@@ -180,7 +181,7 @@ In mob mode, predict and cross-check per `references/mob-mode.md` § Code Review
 
 ## Phase 12: Verify Fixes
 
-If `review_fix_files` is empty, mark completed and continue. Otherwise run Check / Test once (3 fix rounds apply). Then, if Rules Compliance Review ran this run, call `Skill(rules-review)` with `--base-commit <base-commit>` and `Files: <review_fix_files>` plus the note that this is a scoped re-check and file-crossing invariants are out of scope. Fix violations once; a second scoped pass over the newly fixed files is the last; violations still present after it go to the user (USER GATE).
+If `review_fix_files` is empty, mark completed and continue. Otherwise run Check / Test once (3 fix rounds apply). Then, if Rules Compliance Review ran, call `Skill(rules-review)` with `--base-commit <base-commit>` and `Files: <review_fix_files>`, noting it is a scoped re-check (file-crossing invariants out of scope). Fix violations once; a second scoped pass over the newly fixed files is the last; violations still present go to the user (USER GATE).
 
 ## Phase 13: Completion Hooks
 

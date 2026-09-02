@@ -22,13 +22,18 @@ The same development workflow as `dev-workflow`, with the same phases in the sam
 | 14 | Interactive Commits | 10, 10.5 | **user gates**, git; one commit per Build order step with review fixes absorbed; crit browser with `commit_review_gate: crit` | never |
 | 15 | Update Rules | 11 | **user gate**, `Skill(extract-rules)` | Trivial, Simple |
 | 16 | PR Rule Extraction | 11.7 | **user gate**, `Skill(extract-rules)` | empty answer |
-| 17 | Completion | Completion | summary | never |
+| 17 | Self-Retrospective | 11.5 | **user gate**, `gh api` | `self_retrospective.feedback` unset |
+| 18 | Completion | Completion | summary | never |
 
-All seventeen phases are registered on every run. A skipped phase is marked completed with its reason. The difficulty tier (Trivial / Simple / Moderate / Complex) is assessed once at Task Decomposition and never changes during the run.
+All eighteen phases are registered on every run. A skipped phase is marked completed with its reason. The difficulty tier (Trivial / Simple / Moderate / Complex) is assessed once at Task Decomposition and never changes during the run.
 
 ## What is not here
 
-Compared with `dev-workflow`: difficulty escalation mid-run, `implementation_executor`, `subagent_model`, `boundary_check_commands`, Self-Retrospective, Workability Retrospective. Post-Commit Verification is folded into Interactive Commits as one rule. Run modes, the browser plan review, plan artifacts, and the crit commit gate are kept. Everything else keeps its behavior; the internal mechanics are shorter.
+Compared with `dev-workflow`: difficulty escalation mid-run, `implementation_executor`, `subagent_model`, `boundary_check_commands`, Workability Retrospective. Post-Commit Verification is folded into Interactive Commits as one rule. Run modes, the browser plan review, plan artifacts, and the crit commit gate are kept. Everything else keeps its behavior; the internal mechanics are shorter.
+
+## Self-retrospective without skill growth
+
+With `self_retrospective.feedback` set, the run ends by turning its own friction (corrections, stalls, rejected callee output, wrong defaults) into at most three Findings and posting them as a GitHub issue or a local file, after you approve the preview. The producer is built so that the fixes it asks for do not make the skills grow: each Finding must name a behavior change or a same-size-or-smaller wording change, carry its estimated character delta and what prose could be dropped to pay for it, and is checked against the target's current text so it never asks for a reminder that already exists. The repository's tests hold `SKILL.md` to 27,000 characters and `SKILL.md` plus references to 80,000; a Finding that would cross either must name what to delete. Signals come from the run in context; no session log is scanned and no agent is dispatched.
 
 ## Commits per Build order step
 
@@ -69,6 +74,8 @@ plan_artifact: "off"          # off | share | review; --artifact overrides
 commit_review_gate: "diff"    # diff | crit
 custom_instructions: "Always use TDD."   # optional; rules and explicit requests win
 mode: "solo"                 # solo | mob; --mob overrides for one run
+self_retrospective:
+  feedback: "owner/repo"     # or a local directory; unset skips the phase
 hooks:
   on_complete:
     - "Skill(work-complete)"

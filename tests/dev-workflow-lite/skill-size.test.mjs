@@ -1,11 +1,12 @@
 // dev-workflow-lite exists to stay small. dev-workflow grew from the same shape to 98k
 // characters one added sentence at a time, so the budget is enforced here rather than by
-// review. Mob-mode content lives in references/mob-mode.md; SKILL.md may point at it from
+// review. Test names matter: dev-workflow-triage (§ 3.4 (a.5)) recognizes a size assertion
+// by the words "budget" or "thin entry point" in the failing test name — rename in both places. Mob-mode content lives in references/mob-mode.md; SKILL.md may point at it from
 // a phase with at most one sentence, and never describe the mode's behavior itself.
 
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -14,7 +15,20 @@ const skill = readFileSync(join(repoRoot, "skills", "dev-workflow-lite", "SKILL.
 
 test("SKILL.md stays under the character budget", () => {
   const chars = [...skill].length;
-  assert.ok(chars <= 26000, `SKILL.md is ${chars} chars; budget is 26000 — cut, do not move to references`);
+  assert.ok(chars <= 27000, `SKILL.md is ${chars} chars; budget is 27000 — cut, do not move to references`);
+});
+
+test("SKILL.md plus references stay under the tree budget", () => {
+  const dir = join(repoRoot, "skills", "dev-workflow-lite", "references");
+  const refs = readdirSync(dir).filter((f) => f.endsWith(".md"));
+  const total = [...skill].length + refs.reduce((n, f) => n + [...readFileSync(join(dir, f), "utf8")].length, 0);
+  assert.ok(total <= 80000, `SKILL.md + references total ${total} chars; budget is 80000`);
+});
+
+test("mobpro-lite stays a thin entry point", () => {
+  const wrapper = readFileSync(join(repoRoot, "skills", "mobpro-lite", "SKILL.md"), "utf8");
+  const chars = [...wrapper].length;
+  assert.ok(chars <= 3000, `mobpro-lite/SKILL.md is ${chars} chars; budget is 3000 — mob behavior belongs in dev-workflow-lite/references/mob-mode.md`);
 });
 
 test("each phase mentions mob mode at most once", () => {

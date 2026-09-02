@@ -1,7 +1,7 @@
 ---
 name: extract-skill-section
-description: Extract a named SKILL.md section's body verbatim into a references/<name>.md file, replace the body with a skeleton (section label + delegation pointer, runtime definitions left in place), sync the bundle copy, and verify byte-identity plus cross-reference integrity via verify-skill-refs / verify-bundle-sync. One-command automation of the manual section-extraction procedure used to shrink oversized SKILL.md files. Non-interactive — no user prompts. Project-local routine — not for marketplace distribution.
-allowed-tools: Read, Write, Edit, Grep, Bash(grep *), Bash(sed -n *), Bash(cat *), Bash(tail *), Bash(diff *), Bash(wc *), Bash(cp *), Bash(mktemp *), Bash(jq *), Skill(verify-skill-refs), Skill(verify-bundle-sync)
+description: Extract a named SKILL.md section's body verbatim into a references/<name>.md file, replace the body with a skeleton (section label + delegation pointer, runtime definitions left in place), sync the bundle copy, and verify byte-identity plus cross-reference integrity via the repository's reference test and verify-bundle-sync. One-command automation of the manual section-extraction procedure used to shrink oversized SKILL.md files. Non-interactive — no user prompts. Project-local routine — not for marketplace distribution.
+allowed-tools: Read, Write, Edit, Grep, Bash(grep *), Bash(sed -n *), Bash(cat *), Bash(tail *), Bash(diff *), Bash(wc *), Bash(cp *), Bash(mktemp *), Bash(jq *), Bash(node --test *), Skill(verify-bundle-sync)
 ---
 
 # Extract Skill Section
@@ -21,7 +21,7 @@ Two invariants the skill enforces, and one it deliberately does not:
 The caller passes labeled arguments in natural language. A field counts as **provided** iff it has a non-empty, non-whitespace value.
 
 - `Target file:` *(required)* — the SKILL.md (or other Markdown file) to extract from.
-- `Section:` *(required)* — the section's heading line, verbatim (e.g. `### Step 8: Code Review`).
+- `Section:` *(required)* — the section's heading line, verbatim (e.g. `## Phase 11: Code Review`).
 - `Reference file:` *(required)* — the destination path, conventionally `<target-root>/references/<name>.md`.
 - `Start after:` *(optional)* — a verbatim line inside the section; the extraction range starts on the line **after** it (start-side boundary override, used to leave leading runtime definitions in place).
 - `End before:` *(optional)* — a verbatim line; the extraction range ends on the line **before** it (end-side boundary override).
@@ -50,7 +50,7 @@ wc -m < '<Target file>'        # target_chars_before
 
 ### 3. Compose the reference file
 
-Write the header block to the `Reference file` (after re-confirming it still does not exist), following the house preamble convention. `<Title>` is derived from the `Section` label: its text without the leading `#`s and without any `Step N:`-style numbering prefix:
+Write the header block to the `Reference file` (after re-confirming it still does not exist), following the house preamble convention. `<Title>` is derived from the `Section` label: its text without the leading `#`s and without any `Phase N:`-style numbering prefix:
 
 ```markdown
 # <Title> (extracted from `<target basename>` <Section label>)
@@ -104,10 +104,10 @@ When syncing, copy **only the files this run edited** under the target skill roo
 
 ### 8. Verification dispatch
 
-1. `Skill(verify-skill-refs)` — always pass `Target dir: <target skill root>`.
+1. **Reference integrity** — run `node --test tests/dev-workflow/refs.test.mjs`, the repository test that checks `§` references and reference-file names. It covers `skills/dev-workflow/` only, so run it only when the `Target file` sits under that root; for any other target it proves nothing about the move — report `verify_skill_refs: "skipped"` without running it.
 2. `Skill(verify-bundle-sync)` — dispatch only when Process step 7 (Bundle sync) synced into the repo's real bundle copy (`plugins/dev-workflow-bundle/skills/<member>/`). For an explicit custom `Bundle copy dir:`, instead verify each copied file with a direct `diff <src> <dest>` and report the outcome in the **same** `verify_bundle_sync` field — `"ok"` when every diff is clean, `"drift"` otherwise (`"skipped"` is reserved for runs where no sync happened). verify-bundle-sync inspects **all** bundle members, so when its `drift_files[]` names a member other than the target member, add a Layer 1 attribution note that the drift is likely pre-existing and unrelated to this extraction.
 
-Judge each callee's fenced JSON verdict semantically and issue the next action in the **next tool call, in the same turn**, regardless of outcome (`ok` / `violations` / `drift` / `"skipped"`-equivalent, any non-error result — and on non-ok outcomes the next action is folding the result per § Return contract's Aggregation mapping, not a pause): the verdict is a return value, not a turn boundary. When this skill itself runs as a callee, the caller's `§ No-Stall Principle` governs the same boundary (see § Sub-skill caller directive). A callee response with no parseable fenced JSON → first match wins: `{"status": "error", "reason": "verdict parse failure"}`.
+Read the reference-integrity run from its exit code and TAP summary: exit `0` → `verify_skill_refs: "ok"`; a non-zero exit with failing assertions → `"violations"`; `node` missing, or a non-zero exit with no parseable summary → `"error"`. Judge each result — the test's exit code and `verify-bundle-sync`'s fenced JSON verdict — semantically, and issue the next action in the **next tool call, in the same turn**, regardless of outcome (`ok` / `violations` / `drift` / `"skipped"`-equivalent, any non-error result — and on non-ok outcomes the next action is folding the result per § Return contract's Aggregation mapping, not a pause): the verdict is a return value, not a turn boundary. When this skill itself runs as a callee, the caller's `§ No-Stall Principle` governs the same boundary (see § Sub-skill caller directive). A `verify-bundle-sync` response with no parseable fenced JSON → first match wins: `{"status": "error", "reason": "verdict parse failure"}`.
 
 ## Return contract
 
@@ -161,7 +161,7 @@ Mapping between the prose status token and the JSON `status` field:
 - `verification_failed` — the byte-identity diff mismatched (Process step 6, Verbatim verification), **or** any sync/reference verification returned non-ok (`verify_skill_refs: "violations" | "error"`, `verify_bundle_sync: "drift" | "error"`); `reason` names which. On any `verification_failed`, record and report — never auto-recover (no revert, no retry); leave the working tree as-is for inspection.
 - `error` — invalid arguments, a Pre-flight failure, a tool failure, or a callee verdict parse failure (`reason: "verdict parse failure"`).
 - `ok` — everything else.
-- `verify_skill_refs` is a passthrough of the callee's own JSON `status`, or `"skipped"` when the dispatch did not run. `verify_bundle_sync` reports the **sync-verification outcome regardless of mechanism** — the callee's JSON `status` for a real-bundle-copy sync, or the direct per-file diff outcome for a custom `Bundle copy dir:` (`"ok"` / `"drift"`); `"skipped"` only when no sync ran. `edited_files` is the union of the new reference file, the target file, and every sweep-edited file. An error verdict synthesized before extraction completes carries zeroed counts, empty arrays, and `"skipped"` in every string-enum field (`verbatim_check` / `bundle_sync` / `verify_skill_refs` / `verify_bundle_sync`).
+- `verify_skill_refs` reports the reference-integrity test run — `"ok"` / `"violations"` / `"error"` derived from its exit code per Process step 8, or `"skipped"` when it did not run (a target outside `skills/dev-workflow/`, or a skipped verification dispatch). `verify_bundle_sync` reports the **sync-verification outcome regardless of mechanism** — the callee's JSON `status` for a real-bundle-copy sync, or the direct per-file diff outcome for a custom `Bundle copy dir:` (`"ok"` / `"drift"`); `"skipped"` only when no sync ran. `edited_files` is the union of the new reference file, the target file, and every sweep-edited file. An error verdict synthesized before extraction completes carries zeroed counts, empty arrays, and `"skipped"` in every string-enum field (`verbatim_check` / `bundle_sync` / `verify_skill_refs` / `verify_bundle_sync`).
 
 ## Sub-skill caller directive
 

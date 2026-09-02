@@ -7,7 +7,6 @@ test_commands:
   - "Skill(run-tests)"
   - "Skill(run-node-tests)"
   - "Skill(verify-bundle-sync)"
-  - "Skill(verify-skill-refs)"
 hooks:
   on_complete:
     - "Skill(skill-review)"

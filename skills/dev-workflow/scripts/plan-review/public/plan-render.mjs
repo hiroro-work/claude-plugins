@@ -73,7 +73,34 @@ export async function renderMermaidDiagrams(nodes) {
     const stamped = document.documentElement.dataset.theme;
     const darkScheme = stamped === "dark"
       || (stamped !== "light" && window.matchMedia("(prefers-color-scheme: dark)").matches);
-    globalThis.mermaid.initialize({ startOnLoad: false, theme: darkScheme ? "dark" : "default", securityLevel: "strict" });
+    // Only the `base` theme takes themeVariables, so the diagram is coloured from the page's
+    // own tokens rather than mermaid's palette, which knows nothing of this stylesheet.
+    const style = getComputedStyle(document.documentElement);
+    const token = (name) => style.getPropertyValue(name).trim();
+    const fg = token("--fg"), bg = token("--bg"), soft = token("--bg-soft"), border = token("--border");
+    const accent = token("--accent"), accentSoft = token("--accent-soft");
+    globalThis.mermaid.initialize({
+      startOnLoad: false,
+      securityLevel: "strict",
+      theme: "base",
+      themeVariables: {
+        darkMode: darkScheme,
+        fontFamily: token("--font-body"),
+        background: bg,
+        textColor: fg,
+        lineColor: accent,
+        primaryColor: accentSoft, primaryTextColor: fg, primaryBorderColor: accent,
+        secondaryColor: soft, secondaryTextColor: fg, secondaryBorderColor: border,
+        tertiaryColor: bg, tertiaryTextColor: fg, tertiaryBorderColor: border,
+        mainBkg: accentSoft, nodeBorder: accent, nodeTextColor: fg,
+        clusterBkg: soft, clusterBorder: border, titleColor: fg, edgeLabelBackground: bg,
+        noteBkgColor: token("--revise-bg"), noteTextColor: fg, noteBorderColor: token("--revise-border"),
+        actorBkg: accentSoft, actorBorder: accent, actorTextColor: fg, actorLineColor: border,
+        signalColor: fg, signalTextColor: fg,
+        labelBoxBkgColor: soft, labelBoxBorderColor: border, labelTextColor: fg, loopTextColor: fg,
+        activationBkgColor: soft, activationBorderColor: accent, sequenceNumberColor: token("--on-accent"),
+      },
+    });
     // suppressErrors keeps one bad fence from aborting the batch.
     await globalThis.mermaid.run({ nodes, suppressErrors: true });
   } catch (err) {
@@ -127,18 +154,66 @@ export function createRenderer(env = {}) {
   const decorateSection = hooks.decorateSection || (() => {});
   const mermaidTag = hooks.renderDiagrams ? "div" : "pre";
 
-  function renderHeader(ov, planId, riskCount) {
+  // The Now / After shape (plan-format.md § Overview) renders as structured blocks; the
+  // Goal shape, and any plan without per-file Scope lines, falls through to Markdown.
+  const isStructuredOverview = (ov) => Boolean(ov.now || ov.after || ov.scopeFiles.length);
+
+  function renderHeader(ov, planId, counts) {
     document.getElementById("plan-id").textContent = planId;
-    document.getElementById("plan-title").innerHTML = ov.goal ? mdInline(ov.goal) : escapeHtml(planId);
+    const title = ov.after || ov.goal;
+    document.getElementById("plan-title").innerHTML = title ? mdInline(title) : escapeHtml(planId);
     const chips = [];
     if (ov.difficulty) chips.push(chip("Difficulty", stripMd(ov.difficulty)));
-    if (riskCount) chips.push(chip("Risks", String(riskCount), "risk"));
+    if (ov.fileCount) chips.push(chip("Files", String(ov.fileCount)));
+    if (counts.stepCount) chips.push(chip("Steps", String(counts.stepCount)));
+    if (counts.decisionCount) chips.push(chip("Decisions", String(counts.decisionCount)));
+    if (counts.riskCount) chips.push(chip("Risks", String(counts.riskCount), "risk"));
     document.getElementById("plan-chips").innerHTML = chips.join("");
     const scopeEl = document.getElementById("plan-scope");
-    if (ov.scope) {
+    // With per-file lines the section carries the Scope as a table; the meta row would repeat it.
+    if (ov.scope && !ov.scopeFiles.length) {
       scopeEl.innerHTML = `<span class="meta-label">Scope</span><span class="meta-val">${escapeHtml(stripMd(ov.scope))}</span>`;
       scopeEl.hidden = false;
     }
+  }
+
+  // Every block is a direct child of the body and one of the tags the gate's comment walk
+  // takes (a <p> or a <table>); the side-by-side layout is the stylesheet's, keyed on the
+  // classes. Label first, then value, so an excerpt reads like the source bullet.
+  function renderOverviewBody(ov, body) {
+    const field = (cls, label, value) => {
+      if (!value) return;
+      const p = document.createElement("p");
+      p.className = `ov-field ${cls}`;
+      p.innerHTML = `<span class="ov-k">${label}</span>${mdInline(value)}`;
+      body.appendChild(p);
+    };
+    field("ov-now", "Now", ov.now);
+    field("ov-after", "After", ov.after);
+    field("ov-highlights", "Highlights", ov.highlights);
+    field("ov-keep", "Not changing", ov.notChanging);
+    field("ov-approach", "Approach", ov.approach);
+    if (ov.scopeFiles.length) {
+      const rows = ov.scopeFiles.map((f) => {
+        const kind = f.kind ? `<span class="ov-kind ov-kind-${f.kind}">${f.kind}</span>` : "";
+        // Path first: the directory part goes quiet so the file name stands out. A line
+        // holding several files (`a / b`) is left whole — its last slash is the separator.
+        const at = / \/ /.test(f.file) ? -1 : f.file.lastIndexOf("/");
+        const file = at >= 0
+          ? `<span class="ov-dir">${escapeHtml(f.file.slice(0, at + 1))}</span>${escapeHtml(f.file.slice(at + 1))}`
+          : escapeHtml(f.file);
+        const step = f.steps ? `<span class="ov-step">${escapeHtml(f.steps)}</span>` : "";
+        return `<tr><td class="ov-kind-cell">${kind}</td><td class="ov-file">${file}</td>`
+          + `<td class="ov-sum">${mdInline(f.summary)}</td><td class="ov-step-cell">${step}</td></tr>`;
+      }).join("");
+      const table = document.createElement("table");
+      table.className = "ov-scope";
+      table.innerHTML = `<caption><span class="ov-k">Scope</span>${escapeHtml(stripMd(ov.scope))}</caption><tbody>${rows}</tbody>`;
+      body.appendChild(table);
+    } else if (ov.scope) {
+      field("ov-scope-line", "Scope", ov.scope);
+    }
+    if (ov.rest) body.insertAdjacentHTML("beforeend", md(ov.rest));
   }
 
   function renderDiffBanner() {
@@ -185,6 +260,8 @@ export function createRenderer(env = {}) {
   // Only one decisions section's cards may carry `decision-<n>` as an element id — every such
   // section numbers from 1. The first, so the digest's links land on the cards it listed.
   let idClaimingSectionId = null;
+  // preparePlan's Overview, held for the section walk; only the first Overview is structured.
+  let overviewModel = null;
 
   // Toggle and comment affordance are the caller's, via `hooks.decorateDecisionCard`.
   function renderDecisionCard(it, n, claimId) {
@@ -290,7 +367,9 @@ export function createRenderer(env = {}) {
         });
       }
     }
-    if (!isCards) {
+    if (section.type === "overview" && overviewModel && isStructuredOverview(overviewModel)) {
+      renderOverviewBody(overviewModel, body);
+    } else if (!isCards) {
       body.innerHTML = md(section.body); // shape-detection fallback: render as markdown
     }
     det.appendChild(body);
@@ -410,9 +489,10 @@ export function createRenderer(env = {}) {
 
   // The whole walk, in the one order that holds — both surfaces call this rather than
   // sequencing the pieces, so the two collapse passes' ordering constraints can't drift.
-  async function renderPlan({ id, preamble, sections, overview, riskCount }) {
+  async function renderPlan({ id, preamble, sections, overview, riskCount, stepCount, decisionCount }) {
     idClaimingSectionId = (sections.find((s) => s.type === "decisions") || {}).id ?? null;
-    renderHeader(overview, id, riskCount);
+    overviewModel = overview;
+    renderHeader(overview, id, { riskCount, stepCount, decisionCount });
     renderAtAGlance(sections);
     renderDiffBanner();
     renderNav(sections);

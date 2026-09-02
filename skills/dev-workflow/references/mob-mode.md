@@ -26,10 +26,10 @@ One extra user gate: the plan-building checkpoints — the orientation checkpoin
 
 Replaces `plan-format.md`'s sections at every tier (no compact shape). Headings verbatim English; body in the resolved language. Under `## Plan`, in order:
 
-- `### What we're building` — 1–2 plain sentences on what the junior will have at the end, then one line naming the files touched.
+- `### What we're building` — field bullets **Now** (what the code does today, one plain sentence), **After** (what the junior will have at the end, one plain sentence), **Scope** (`N files`, then one nested line per file in the Scope line shape `plan-format.md` defines, the change described in the junior's terms).
 - `### Build order` — numbered `N. **<verb-first heading naming the files>** — <detail>`, typically 3–10 steps; one step = one change that can be followed in a single diff review. Implement segments on this and nothing else.
 - `### Why this order` — 2–4 lines on dependencies and what breaks in another order.
-- `### Choices I made` — one item per fork the build actually faced, no filtering by consequence, in the `**Question**` / `**Recommendation**` / optional `**Alternative**` shape; omit `Alternative` when there was no real second option. When no fork qualifies, say so in one sentence.
+- `### Choices I made` — one item per fork the build actually faced, no filtering by consequence, in the `**Question**` / `**Recommendation**` / optional `**Alternative**` shape, the Recommendation a two-line conclusion plus at most three nested reason bullets; omit `Alternative` when there was no real second option. When no fork qualifies, say so in one sentence.
 - `### How we'll check it works` — one line per check, each naming the Build order step it verifies.
 - `### Watch-outs` — optional; open points and risks. Omit when empty.
 

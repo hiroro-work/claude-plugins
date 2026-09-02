@@ -472,3 +472,60 @@ details.step > .step-body { padding: 2px 0 2px 18px; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition-duration: 0s !important; animation-duration: 0s !important; }
 }
+
+/* Overview in the Now / After shape (plan-format.md § Overview). Every block stays a direct
+   child of the body — the layout is a grid on the body itself, dense so a comment box that
+   lands between Now and After does not push After onto the next row. The same grid on
+   details.fold keeps the pairing once a figure has folded the prose beneath it. */
+[data-section-type="overview"] .sec-body,
+[data-section-type="overview"] .sec-body > details.fold {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 10px 14px; grid-auto-flow: dense;
+}
+[data-section-type="overview"] .sec-body > :not(.ov-now):not(.ov-after),
+[data-section-type="overview"] .sec-body > details.fold > :not(.ov-now):not(.ov-after) { grid-column: 1 / -1; }
+.ov-now { grid-column: 1; }
+.ov-after { grid-column: 2; }
+@media (max-width: 720px) {
+  [data-section-type="overview"] .sec-body,
+  [data-section-type="overview"] .sec-body > details.fold { grid-template-columns: 1fr; }
+  .ov-now, .ov-after { grid-column: 1; }
+}
+.ov-field { margin: 0; max-width: none; font-size: 14px; line-height: 1.7; }
+.ov-k {
+  display: block; font-family: var(--font-mono); font-size: 10px; font-weight: 500;
+  letter-spacing: .1em; text-transform: uppercase; color: var(--muted); margin-bottom: 4px;
+}
+/* The pair the reader measures the change by: Now quiet, After in the accent. */
+.ov-now, .ov-after { border-radius: 10px; padding: 12px 14px; align-self: stretch; }
+.ov-now { background: var(--bg-soft); }
+.ov-after { background: var(--accent-soft); color: var(--accent-ink); }
+.ov-after .ov-k { color: var(--accent); }
+/* Highlights carry the destructive / breaking flags: the same amber that marks a Risk. */
+.ov-highlights { padding: 8px 14px; border-left: 3px solid var(--risk); background: var(--risk-bg); border-radius: 0 8px 8px 0; }
+.ov-highlights .ov-k { color: var(--risk); }
+/* Not changing is the scope fence; a dashed edge, not a fill, so it reads as a boundary. */
+.ov-keep { padding: 8px 14px; border: 1px dashed var(--border); border-radius: 8px; }
+.ov-approach, .ov-scope-line { padding: 0 2px; }
+/* The stylesheet's generic table rule scrolls a wide table in a block box; the Scope table
+   is a layout of its own and takes the full width instead. */
+.sec-body table.ov-scope { display: table; width: 100%; max-width: none; border-collapse: collapse; font-size: 13.5px; }
+.ov-scope caption { text-align: left; padding: 0 0 6px; font-size: 12px; color: var(--muted); }
+.ov-scope caption .ov-k { display: inline; margin-right: 8px; }
+.sec-body .ov-scope td { border: 0; border-top: 1px solid var(--border); padding: 7px 8px; vertical-align: top; line-height: 1.55; }
+.ov-scope tr:first-child td { border-top: 0; }
+.ov-kind-cell { width: 48px; padding-left: 0 !important; }
+.ov-kind {
+  display: inline-block; font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .04em;
+  padding: 1px 6px; border-radius: 4px; background: var(--bg-soft); color: var(--muted);
+}
+.ov-kind-edit { background: var(--changed-bg); color: var(--changed); }
+.ov-kind-new { background: var(--accent-soft); color: var(--accent-ink); }
+.ov-kind-delete { background: var(--risk-bg); color: var(--risk); }
+.ov-file { width: 36%; font-family: var(--font-mono); font-size: 12.5px; word-break: break-all; }
+.ov-file .ov-dir { color: var(--muted); }
+.ov-step-cell { width: 44px; text-align: right; padding-right: 0 !important; }
+.ov-step { font-family: var(--font-mono); font-size: 11px; color: var(--accent); white-space: nowrap; }
+/* A Recommendation's rationale bullets (plan-format.md § Decisions) sit under its conclusion
+   in a quieter register, so the conclusion is what the eye lands on. */
+.dc-rec > ul, .dc-alt > ul { margin: 6px 0 0; padding-left: 1.1em; font-size: 13px; line-height: 1.65; color: var(--muted); }
+.dc-rec > ul > li, .dc-alt > ul > li { margin: 2px 0; }

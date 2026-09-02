@@ -37,7 +37,7 @@ export const escapeHtml = (t) => (t || "").replace(/[&<>"]/g, (c) => HTML_ESCAPE
 // One rule for every line walk in this file that has to know whether it is inside a fence.
 const FENCE_RE = /^\s*(`{3,}|~{3,})/;
 
-// Match-priority order. Prefixes come from plan-authoring.md § Template and plan-shape.md;
+// Match-priority order. Prefixes come from plan-format.md and mob-mode.md § Plan shape;
 // keep in sync both ways — a heading renamed upstream silently all-collapses that plan.
 // Each prefix stops short of an apostrophe, so straight vs. curly quotes cannot break it.
 const SECTION_TYPES = [
@@ -105,12 +105,53 @@ export function fieldValue(body, label) {
   return "";
 }
 
+// The kind tokens a Scope line may open with (plan-format.md § Overview). English on purpose:
+// field labels and headings already are, and a localized token would parse as part of the path.
+const SCOPE_KINDS = ["new", "edit", "delete"];
+const SCOPE_LINE_RE = new RegExp("^\\s{2,}[-*]\\s+(?:(" + SCOPE_KINDS.join("|") + ")\\s+)?(.+?)\\s*$");
+// `<path> — <summary> (step N)`; the step tag is optional and may hold a range or list.
+const SCOPE_STEP_RE = /\s*\((?:steps?\s*)?(\d[\d\s,–-]*)\)\s*$/i;
+const OVERVIEW_FIELDS = ["Goal", "Now", "After", "Not changing", "Approach", "Highlights", "Difficulty", "Scope"];
+const FIELD_LINE_RE = /^\s{0,1}[-*]\s+\*\*([^*]+)\*\*\s*[:：]/;
+
+// Every field of either Overview shape (Goal, or Now / After / Not changing), the per-file
+// Scope lines nested under **Scope**, and `rest` — whatever else the section holds (a figure,
+// prose), as Markdown, so a structured render can still place it.
 export function parseOverview(body) {
-  return {
-    goal: fieldValue(body, "Goal"),
-    difficulty: fieldValue(body, "Difficulty"),
-    scope: fieldValue(body, "Scope"),
-  };
+  const ov = { scopeFiles: [], rest: "" };
+  for (const f of OVERVIEW_FIELDS) ov[f === "Not changing" ? "notChanging" : f.toLowerCase()] = fieldValue(body, f);
+  const rest = [];
+  let inFence = false, inScope = false;
+  for (const line of (body || "").split("\n")) {
+    if (FENCE_RE.test(line)) inFence = !inFence;
+    if (inFence) { rest.push(line); continue; }
+    const fm = FIELD_LINE_RE.exec(line);
+    if (fm) {
+      const known = OVERVIEW_FIELDS.some((f) => f.toLowerCase() === fm[1].trim().toLowerCase());
+      inScope = known && fm[1].trim().toLowerCase() === "scope";
+      if (!known) rest.push(line);
+      continue;
+    }
+    const sm = inScope ? SCOPE_LINE_RE.exec(line) : null;
+    if (sm) {
+      let text = sm[2];
+      let steps = "";
+      const st = SCOPE_STEP_RE.exec(text);
+      if (st) { steps = st[1].replace(/\s+/g, ""); text = text.slice(0, st.index); }
+      const sep = text.search(/\s[—–-]\s/);
+      const file = stripMd(sep >= 0 ? text.slice(0, sep) : text);
+      const summary = sep >= 0 ? text.slice(sep).replace(/^\s[—–-]\s/, "").trim() : "";
+      ov.scopeFiles.push({ kind: sm[1] || "", file, summary, steps });
+      continue;
+    }
+    if (line.trim()) inScope = false;
+    rest.push(line);
+  }
+  ov.rest = rest.join("\n").trim();
+  // The count the header shows: the per-file lines when present, else the `N files` figure.
+  const m = /(\d+)/.exec(ov.scope);
+  ov.fileCount = ov.scopeFiles.length || (m ? Number(m[1]) : 0);
+  return ov;
 }
 
 export function countListItems(body) {
@@ -240,7 +281,12 @@ export function preparePlan(markdown, id) {
   const risksSection = sections.find((s) => s.type === "risks");
   const riskCount = risksSection ? countListItems(risksSection.body) : 0;
   if (risksSection) risksSection.itemCount = riskCount; // the section badge reads it back
-  return { id, preamble, sections, overview, riskCount };
+  // Header chips: the top-level steps of the first Build order, the cards of the first Decisions.
+  const buildSection = sections.find((s) => s.type === "buildorder");
+  const stepCount = buildSection ? countListItems(buildSection.body) : 0;
+  const decisionsSection = sections.find((s) => s.type === "decisions");
+  const decisionCount = decisionsSection ? parseDecisions(decisionsSection.body).items.length : 0;
+  return { id, preamble, sections, overview, riskCount, stepCount, decisionCount };
 }
 
 // The figures layer's `## Hero` block lands in the preamble (visual-plan-review.md

@@ -83,7 +83,7 @@ Phase starts, ends, and waits are marked per `references/timing.md`; Completion 
 
 ## Workflow artifacts
 
-Files this workflow writes as its own state are excluded from every diff, review payload, and commit: `.claude/plans/<slug>.md` (the plan), `.claude/plans/dev-workflow.<slug>.md` (decomposition state), `.claude/plans/rules-candidates-<date>.md`, `.claude/plans/timing-*.jsonl`, every other `.claude/plans/<slug>.*` staging file or directory (`.plan-review.*`, `.figures.md`, `.artifact.html`, `.absorb/`, `.retrospective.md`), and the git-side state `refs/dev-workflow-lite/<slug>`, `.git/dev-workflow-lite.index`, `.git/dev-workflow-lite-wt`. Everything else under the working tree is the task's.
+Files this workflow writes as its own state are excluded from every diff, review payload, and commit: `.claude/plans/<slug>.md` (the plan), `.claude/plans/dev-workflow.<slug>.md` (decomposition state), `.claude/plans/rules-candidates-<date>.md`, `.claude/plans/timing-*.jsonl`, every other `.claude/plans/<slug>.*` staging file or directory (`.plan-review.*`, `.figures.md`, `.artifact.html`, `.absorb/`, `.retrospective.md`), and the git-side state `refs/dev-workflow-lite/<slug>*`, `.git/dev-workflow-lite.index`, `.git/dev-workflow-lite-wt`. Everything else under the working tree is the task's.
 
 ## Mode detection
 
@@ -216,4 +216,4 @@ Skipped when `self_retrospective.feedback` is unset. Read `references/self-retro
 1. Summary in the resolved language: what was done, files changed, check/test result, review outcomes, rules updated, commits landed, the Self-Retrospective line, the timing table per `references/timing.md` § Report, and one line per phase skipped or stopped early. List skipped callees and any uncommitted rule files.
 2. Decomposed runs: follow `references/decomposition.md` § Finish a subtask. It marks the subtask done, asks for an optional PR URL (USER GATE), and prints the `--resume` command or deletes the state file when all subtasks are done.
 3. In mob mode, add the learning summary and the paired resume commands per `references/mob-mode.md` § Completion.
-4. Delete this run's staging state: `rm -f` each existing staging file listed in § Workflow artifacts (named paths, no globs), `rm -rf .claude/plans/<slug>.absorb`, and `git update-ref -d refs/dev-workflow-lite/<slug>`. Never delete the plan file itself; `hooks.on_complete` owns archiving.
+4. Delete this run's staging state: `rm -f` each existing staging file listed in § Workflow artifacts (named paths, no globs), `rm -rf .claude/plans/<slug>.absorb`, and `git update-ref -d` on each `refs/dev-workflow-lite/<slug>*` ref. Never delete the plan file itself; `hooks.on_complete` owns archiving.

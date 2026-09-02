@@ -12,3 +12,7 @@ Assess once, from the effective task plus cheap probes (read a named file, grep 
 - **Complex**: cross-module work, new patterns, API changes, or significant refactoring.
 
 Express lane = Trivial, Simple. Full lane = Moderate, Complex. The skip table in `SKILL.md` § Difficulty and the skip table is the only consumer of the tier.
+
+## Re-check after planning
+
+The first assessment happens before any plan exists, and the Simple / Moderate line ("at least one genuine design decision") often shows only once the plan is drafted. So at the end of Create Plan, assess the drafted plan against § Tier criteria once more. The tier only rises: an equal or lower result changes nothing. When it rises, emit one line naming the old and new tier, then set every phase row the new tier runs back from `completed` (skipped) to `pending`, per the skip table. Plan Review has not run yet, so nothing is re-done. No other re-check exists; Implement onward never changes the tier.

@@ -12,7 +12,7 @@ allowed-tools: Read, Write, Edit, Glob, Grep, TaskCreate, TaskUpdate, TaskList, 
 /dev-workflow-lite --resume <state-file> [--fast|--deep] [--artifact off|share|review] [--mob]  # Run the next subtask of a decomposed task
 ```
 
-Eighteen phases, always in this order, always all registered. Which phases are skipped, and how Plan Review runs, is decided by one table (§ Difficulty and the skip table) plus the run mode and four settings, and never changes mid-run. User gates are listed in § User gates; nothing else asks the user a question.
+Eighteen phases, always in this order, always all registered. Which phases are skipped, and how Plan Review runs, is decided by one table (§ Difficulty and the skip table) plus the run mode and four settings, and changes at most once, at the tier re-check after Create Plan. User gates are listed in § User gates; nothing else asks the user a question.
 
 ## Settings
 
@@ -44,7 +44,7 @@ When a `Skill(...)` call fails, retry once. If it fails again: for the `reviewer
 
 ## Difficulty and the skip table
 
-The tier is assessed once, at Task Decomposition, from the effective task and cheap probes (read a named file, grep a named identifier), per `references/tiers.md` § Tier criteria. It never changes afterwards. Trivial and Simple are the **express lane**; Moderate and Complex are the **full lane**.
+The tier is assessed once, at Task Decomposition, from the effective task and cheap probes (read a named file, grep a named identifier), per `references/tiers.md` § Tier criteria, and re-checked once at the end of Create Plan per its § Re-check after planning, where it can only rise. After that it never changes. Trivial and Simple are the **express lane**; Moderate and Complex are the **full lane**.
 
 | Phase | Trivial | Simple | Moderate / Complex |
 |---|---|---|---|
@@ -112,7 +112,8 @@ No code changes until Plan Approval passes.
 1. Read the files the task touches. Use Glob / Grep / Read directly.
 2. Draft the plan per `references/plan-format.md`: Review guide, Overview, Decisions, Build order, Test plan, Risks. Express-lane plans use the compact shape defined there.
 3. Follow `custom_instructions` when set. Simplicity self-audit: every element traces to an explicit requirement, a known bug or constraint, a rule under `.claude/rules/`, or `custom_instructions`. Drop what does not, or add a one-line rationale. Verify every "already exists / reuses X" premise from the source. If the work splits into independently verifiable units and was not decomposed, say so in Risks.
-4. Do not show the plan yet. Proceed to Plan Review. In mob mode, this phase runs as `references/mob-mode.md` § Design dialogue and writes its § Plan shape.
+4. Re-check the tier against the drafted plan (`references/tiers.md` § Re-check after planning): if it rises, say so in one line and reopen the rows the new tier runs.
+5. Do not show the plan yet. Proceed to Plan Review. In mob mode, this phase runs as `references/mob-mode.md` § Design dialogue and writes its § Plan shape.
 
 ## Phase 4: Plan Review
 

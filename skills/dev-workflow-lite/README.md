@@ -25,11 +25,11 @@ The same development workflow as `dev-workflow`, with the same phases in the sam
 | 17 | Self-Retrospective | 11.5 | **user gate**, `gh api` | `self_retrospective.feedback` unset |
 | 18 | Completion | Completion | summary | never |
 
-All eighteen phases are registered on every run. A skipped phase is marked completed with its reason. The difficulty tier (Trivial / Simple / Moderate / Complex) is assessed once at Task Decomposition and never changes during the run.
+All eighteen phases are registered on every run. A skipped phase is marked completed with its reason. The difficulty tier (Trivial / Simple / Moderate / Complex) is assessed at Task Decomposition and re-checked once against the drafted plan at the end of Create Plan, where it can only rise (a plan that turns out to carry a real design decision lifts Simple to Moderate and reopens the skipped rows). After that it never changes.
 
 ## What is not here
 
-Compared with `dev-workflow`: difficulty escalation mid-run, `implementation_executor`, `subagent_model`, `boundary_check_commands`, Workability Retrospective. Post-Commit Verification is folded into Interactive Commits as one rule. Run modes, the browser plan review, plan artifacts, and the crit commit gate are kept. Everything else keeps its behavior; the internal mechanics are shorter.
+Compared with `dev-workflow`: difficulty escalation after Implement (only the post-plan re-check is kept), `implementation_executor`, `subagent_model`, `boundary_check_commands`, Workability Retrospective. Post-Commit Verification is folded into Interactive Commits as one rule. Run modes, the browser plan review, plan artifacts, and the crit commit gate are kept. Everything else keeps its behavior; the internal mechanics are shorter.
 
 ## Self-retrospective without skill growth
 

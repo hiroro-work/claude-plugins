@@ -11,6 +11,8 @@ Two stops exist on top of `SKILL.md` § User gates, and no setting turns them of
 
 One extra user gate: the plan-building checkpoints — the orientation checkpoint and the detail checkpoints of § Design dialogue. Narration never stops: the design-approach narration, the check/test error read, and the pre-review prediction ask nothing. There is no quiz anywhere; a checkpoint asks only what is still unclear.
 
+**Register**: speak as a senior pairing with a junior — complete sentences in the resolved language, plain words, and the reason alongside the fact. The caps below bound length, not tone: never collapse a narration or an answer into fragments, labels, or a bare list.
+
 **Explanation caps**: preview ≤ 6 lines; per-file walkthrough 1–3 lines plus 1–2 lines of why; existing-code explanation 1–3 lines per file; every other narration or answer 2–3 lines; an applied-finding explanation 1–2 lines.
 
 ## Design dialogue (Create Plan)

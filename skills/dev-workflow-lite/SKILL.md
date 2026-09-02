@@ -60,7 +60,7 @@ The tier is assessed once, at Task Decomposition, from the effective task and ch
 
 **Run mode** comes from the flags: `--fast`, `--deep`, or neither (`normal`). Both flags together is a fatal error. `normal`: Plan Review runs in **rules-only** scope. `deep`: Plan Review runs in **full** scope. `fast`: Plan Review and Polish Prose are skipped. Nothing else reads the run mode.
 
-Every other phase runs on every tier. Completion Hooks is skipped only when `hooks.on_complete` is unset, Self-Retrospective when `self_retrospective.feedback` is unset, Workability Retrospective unless `workability_retrospective.enabled` is `true`. A skipped phase is marked `completed` with the description `skipped: <tier> tier`, `skipped: <key>: false`, or `skipped: fast mode` — settings- and run-mode-derived skips at Load Settings, tier-derived skips at Task Decomposition.
+Every other phase runs on every tier. Completion Hooks needs `hooks.on_complete`, Self-Retrospective `self_retrospective.feedback`, Workability Retrospective `workability_retrospective.enabled: true`; Phase 15's gate can skip the last three. A skipped phase is marked `completed` with the description `skipped: <tier> tier`, `skipped: <key>: false`, or `skipped: fast mode` — settings- and run-mode-derived skips at Load Settings, tier-derived skips at Task Decomposition.
 
 ## User gates
 
@@ -72,7 +72,7 @@ The only places the workflow waits for the user:
 - Code Review: findings still unresolved after the passes, asked once.
 - Verify Fixes: rule violations still present after the second scoped pass, asked once.
 - Interactive Commits: the stashing-hook question when a pre-commit hook exists and the plan has two or more commits; the commit plan; then each commit (`accept` / `adjust` / `cancel`, or the crit browser's approve / comments); `fold` / `defer` when a pre-commit hook modified files; `continue` / `stop` when the user made a behavioral edit during a gate.
-- Update Rules: the confirm-remaining-steps question, then the rule commit.
+- Update Rules: the confirm-remaining-steps question covering the rule and retrospective phases, then the rule commit.
 - PR Rule Extraction: which PR to read (an empty answer declines), then the rule commit.
 - Self-Retrospective: the preview of the Findings before posting (`approve` / `edit` / `skip`).
 - Workability Retrospective: the candidates' dispositions (`apply` / `backlog` / `skip`), then the commit of what was applied or backlogged.
@@ -90,14 +90,14 @@ Files this workflow writes as its own state are excluded from every diff, review
 
 ## Mode detection
 
-`--init` → read `references/init-mode.md` and follow it; the session ends there (generated skills are recognized from the next session). `--resume <state-file>` → Resume sub-mode. Otherwise Normal sub-mode. `--fast` / `--deep` set the run mode, `--artifact <value>` overrides `plan_artifact`, and `--mob` sets `mode: mob`; all combine with either sub-mode and are ignored under `--init`.
+`--init` → read `references/init-mode.md` and follow it; the session ends there (generated skills are recognized next session). `--resume <state-file>` → Resume sub-mode. Otherwise Normal sub-mode. `--fast` / `--deep` set the run mode, `--artifact <value>` overrides `plan_artifact`, and `--mob` sets `mode: mob`; all combine with either sub-mode and are ignored under `--init`.
 
 ## Phase 1: Load Settings
 
 1. Run `pwd`; confirm the repository root. Abort if `git symbolic-ref -q HEAD` exits non-zero (detached HEAD). Start the timing log (`references/timing.md` § Events, `--event start --new` for this phase).
 2. Record `<base-commit>` = `git rev-parse HEAD`. Every later diff is against it. Note whether `test -d .git` succeeds; when it does not (a linked worktree), the snapshot chain of `references/snapshots.md` is not built this run.
 3. Load and merge the settings; resolve the run mode, the `--artifact` override, and `mode`; emit `Output language: <value>`, `Run mode: <value>`, and `Mode: <value>`. In mob mode, read `references/mob-mode.md` now; in solo mode never open it.
-4. Register the nineteen phases with `TaskCreate`, subjects exactly as the `## Phase N:` headings below minus the `Phase N:` prefix. Mark each `in_progress` on entry and `completed` on exit in the same tool-call burst as the phase's first or last action. Mark the phases skipped by settings or run mode `completed` here; tier-derived skips are marked at Task Decomposition.
+4. Register the nineteen phases with `TaskCreate`, subjects = the `## Phase N:` headings below minus the prefix. Mark each `in_progress` on entry and `completed` on exit in the same tool-call burst as the phase's first or last action. Mark the phases skipped by settings or run mode `completed` here; tier-derived skips are marked at Task Decomposition.
 
 ## Phase 2: Task Decomposition
 
@@ -132,8 +132,8 @@ Skipped on Trivial and in `fast` mode. One pass, no loop.
 USER GATE. Read `references/plan-approval.md`.
 
 1. Write the plan to `.claude/plans/<slug>.md` (`mkdir -p .claude/plans`). Slug: ASCII kebab-case of the effective task, `-2`, `-3` on collision with a prior run's file; resolved once per run.
-2. **Browser gate** on every tier but Trivial when `printenv CLAUDE_CODE_REMOTE` is not `true`: follow § Browser gate. Its `approve` → step 4; `rewrite-approach` → rewrite the plan, re-run Plan Review once unless it is skipped this run, re-enter this phase; `fallback` → step 3.
-3. **Chat gate** (Trivial, remote sessions, or fallback): present the plan per § Chat gate. Classify the reply: **approve** → step 4. **swap** (named Decisions items) → read back the interpretation in one line, wait for confirmation, swap Recommendation and Alternative on exactly those items, re-present. **rewrite** (Approach, Build order, or Scope changed) → read back, wait, rewrite the plan, re-run Plan Review once unless it is skipped this run, re-present. **withdraw** → stop; leave the plan file. **Anything else** (a question, a comment) → ask what was meant; never advance.
+2. **Browser gate** on every tier but Trivial when `printenv CLAUDE_CODE_REMOTE` is not `true`: follow § Browser gate. Its `approve` → step 4; `rewrite-approach` → rewrite the plan, re-run Plan Review once unless skipped this run, re-enter this phase; `fallback` → step 3.
+3. **Chat gate** (Trivial, remote sessions, or fallback): present the plan per § Chat gate. Classify the reply: **approve** → step 4. **swap** (named Decisions items) → read back in one line, wait, swap Recommendation and Alternative on those items, re-present. **rewrite** (Approach, Build order, or Scope changed) → read back, wait, rewrite the plan, re-run Plan Review once unless skipped this run, re-present. **withdraw** → stop; leave the plan file. **Anything else** (a question, a comment) → ask what was meant; never advance.
 4. **Plan artifact**: when the resolved `plan_artifact` is `share` or `review`, follow § Plan artifact. `review` holds at its team-review gate (USER GATE) until the user says the team is done. Then Implement.
 
 In mob mode, `references/mob-mode.md` § Plan Approval keeps the browser gate on every tier and adds the plan narration.
@@ -142,7 +142,7 @@ In mob mode, `references/mob-mode.md` § Plan Approval keeps the browser gate on
 
 1. Before the first edit, list the plan's user-side manual actions (external config, keys, probes) in one block.
 2. Follow Build order in sequence, and `custom_instructions` when set. Read each file immediately before editing it. Content the user deleted earlier in the session never comes back.
-3. A write to a path not in `git ls-files` must resolve inside the repository and under the directory the plan names for that kind of file; otherwise skip that edit with a one-line note and continue.
+3. A write to a path not in `git ls-files` must resolve inside the repository, under the directory the plan names for that kind of file; otherwise skip the edit with a one-line note.
 4. If a file outside the plan must change, add it to Build order first, then edit, and say so in one line.
 5. After the last edit of each Build order step, take that step's snapshot per `references/snapshots.md` § Snapshot at a Build order step boundary (before step 1's snapshot, delete a leftover `refs/dev-workflow-lite/<slug>` from an earlier run). The chain is what Interactive Commits turns into one commit per step.
 6. After the last edit, `git add -N -- <path>` for each new file outside § Workflow artifacts, so diff-based reviews and the snapshot residue see them.
@@ -163,7 +163,7 @@ Express lane skips; `polish_prose: false` and `fast` mode skip. Collect changed 
 1. Run `check_commands` in order, then `test_commands` in order. A `Skill(<name>)` entry is called with `--base-commit <base-commit>`; it returns SUCCESS / TEST_FAILED / EXECUTION_ERROR. The first failure stops the pass. EXECUTION_ERROR consumes no fix round: report the callee's reason and wait (USER GATE) for `retry`, or `stop`, which ends the run as step 3 does.
 2. Classify each failure. A failure whose failing test and failing code both lie outside the files changed since `<base-commit>` is pre-existing: record it, do not fix it, do not count it. If the workflow's own fix (Tidy, a review fix) broke a test that passed before, correct that fix rather than the implementation.
 3. Fix and rerun. At most 3 fix rounds per entry into this phase. After the third, stop: report the command, its last output, and that nothing was committed.
-4. When a check command rewrites files outside the task's changed set beyond trivial formatting (≤ 5 whitespace or comment lines), warn and stop for the user; never revert its output silently.
+4. When a check command rewrites files outside the task's changed set beyond trivial formatting (≤ 5 whitespace or comment lines), warn and stop; never revert its output silently.
 
 In mob mode, narrate every failure per `references/mob-mode.md` § Check / Test before fixing it.
 
@@ -200,23 +200,21 @@ Post-commit verification: when gate adjustments edited any file, run Check / Tes
 
 ## Phase 15: Update Rules
 
-Express lane skips this whole phase, including the question below; PR Rule Extraction then asks for its PR on its own.
-
-1. USER GATE. Ask whether to run the remaining rule steps: `proceed` (Update Rules and PR Rule Extraction) / `pr-only` / `skip`. `skip` also marks PR Rule Extraction completed without asking for a PR.
+1. USER GATE, on every tier. List the remaining enabled phases — this extraction (full lane only), Self-Retrospective, Workability Retrospective, PR Rule Extraction (always) — and ask `proceed` / `pr-only` / `skip` (`proceed` / `skip` when only one side is listed). `skip` marks all listed completed unrun; `pr-only` marks the session-derived ones so. Express lane: steps 2–3 do not run.
 2. Call `Skill(extract-rules)` with `--from-conversation`, unless a `hooks.on_complete` entry contains `extract-rules` (it already extracted). If the diff introduced a new framework, library, pattern, or API convention and no conversation extraction ran, use `--update` instead. If extract-rules is unavailable, write the session's reusable patterns to `.claude/plans/rules-candidates-<YYYY-MM-DD>.md` and tell the user.
 3. Rule commit (USER GATE): run the § Rule commit gate procedure of `references/commits.md` over uncommitted paths under `.claude/rules/`, `.claude/rules-extras/`, `.claude/rules-staging/` (or the dirs `.claude/extract-rules.local.md` sets). Skip when there are none.
 
 ## Phase 16: PR Rule Extraction
 
-USER GATE. Ask which reviewed PR to extract rules from, naming the accepted forms: a number, `owner/repo#N`, a `100..110` range, a URL, or several separated by spaces; an empty answer declines. On an answer, call `Skill(extract-rules)` with `--from-pr <answer verbatim>`. "Nothing qualified" and "no human comments" are success; a pre-flight error (missing `gh`, no such PR) is noted and skipped. Then run the § Rule commit gate procedure again over what it wrote.
+USER GATE. Ask which reviewed PR to extract rules from, naming the accepted forms (a number, `owner/repo#N`, a `100..110` range, a URL, several separated by spaces); an empty answer declines. On an answer, call `Skill(extract-rules)` with `--from-pr <answer verbatim>`. "Nothing qualified" and "no human comments" are success; a pre-flight error (missing `gh`, no such PR) is noted and skipped. Then run the § Rule commit gate procedure again over what it wrote.
 
 ## Phase 17: Self-Retrospective
 
-Skipped when `self_retrospective.feedback` is unset. Read `references/self-retrospective.md` and follow it: at most three Findings from this run's friction, each naming a behavior change and its character cost, previewed (USER GATE) and posted to the destination. Nothing here edits a skill.
+Skipped when `self_retrospective.feedback` is unset or Phase 15's gate skipped it. Read `references/self-retrospective.md` and follow it: at most three Findings from this run's friction, each naming a behavior change and its character cost, previewed (USER GATE) and posted to the destination. Nothing here edits a skill.
 
 ## Phase 18: Workability Retrospective
 
-Skipped unless `workability_retrospective.enabled` is `true`. Read `references/workability.md` and follow it: at most three candidates from this run's friction with the project's tooling (a skill, a linter rule, or a check command), deduped against what exists; the user disposes of each (USER GATE); applied edits and backlog files go through the rule commit gate.
+Skipped unless `workability_retrospective.enabled` is `true` and Phase 15's gate kept it. Read `references/workability.md` and follow it: at most three candidates from this run's friction with the project's tooling (a skill, a linter rule, or a check command), deduped against what exists; the user disposes of each (USER GATE); applied edits and backlog files go through the rule commit gate.
 
 ## Phase 19: Completion
 

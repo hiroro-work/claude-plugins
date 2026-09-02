@@ -20,10 +20,10 @@ The same development workflow as `dev-workflow`, with the same phases in the sam
 | 12 | Verify Fixes | 8.5 | Bash, `Skill(rules-review)` | no review fixes |
 | 13 | Completion Hooks | 9 | `hooks.on_complete` | key unset |
 | 14 | Interactive Commits | 10, 10.5 | **user gates**, git; one commit per Build order step with review fixes absorbed; crit browser with `commit_review_gate: crit` | never |
-| 15 | Update Rules | 11 | **user gate**, `Skill(extract-rules)` | Trivial, Simple |
+| 15 | Update Rules | 11 | **user gate** (covers phases 15–18), `Skill(extract-rules)` | extraction: Trivial, Simple |
 | 16 | PR Rule Extraction | 11.7 | **user gate**, `Skill(extract-rules)` | empty answer |
-| 17 | Self-Retrospective | 11.5 | **user gate**, `gh api` | `self_retrospective.feedback` unset |
-| 18 | Workability Retrospective | 11.6 | **user gate**, project tooling candidates | `workability_retrospective.enabled` not `true` |
+| 17 | Self-Retrospective | 11.5 | **user gate**, `gh api` | `self_retrospective.feedback` unset, or skipped at the phase 15 gate |
+| 18 | Workability Retrospective | 11.6 | **user gate**, project tooling candidates | `workability_retrospective.enabled` not `true`, or skipped at the phase 15 gate |
 | 19 | Completion | Completion | summary | never |
 
 All nineteen phases are registered on every run. A skipped phase is marked completed with its reason. The difficulty tier (Trivial / Simple / Moderate / Complex) is assessed at Task Decomposition and re-checked once against the drafted plan at the end of Create Plan, where it can only rise (a plan that turns out to carry a real design decision lifts Simple to Moderate and reopens the skipped rows). After that it never changes.

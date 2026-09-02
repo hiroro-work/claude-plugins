@@ -15,7 +15,9 @@ const skill = readFileSync(join(repoRoot, "skills", "dev-workflow-lite", "SKILL.
 
 test("SKILL.md stays under the character budget", () => {
   const chars = [...skill].length;
-  assert.ok(chars <= 27000, `SKILL.md is ${chars} chars; budget is 27000 — cut, do not move to references`);
+  // 26k → 27k → 28k: each raise paid for features the maintainers chose (mob mode, retrospective, timing,
+  // background reviews, tier re-check, subagent_model), never for prose; the ratchet still stops drift.
+  assert.ok(chars <= 28000, `SKILL.md is ${chars} chars; budget is 28000 — cut, do not move to references`);
 });
 
 // Budgets are ratchets, not derived values: each was set at "current size plus a margin" when

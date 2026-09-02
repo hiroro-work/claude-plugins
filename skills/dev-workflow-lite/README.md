@@ -29,11 +29,11 @@ All eighteen phases are registered on every run. A skipped phase is marked compl
 
 ## What is not here
 
-Compared with `dev-workflow`: difficulty escalation after Implement (only the post-plan re-check is kept), `implementation_executor`, `subagent_model`, `boundary_check_commands`, Workability Retrospective. Post-Commit Verification is folded into Interactive Commits as one rule. Run modes, the browser plan review, plan artifacts, the crit commit gate, and the background review launch during Check / Test are kept. Everything else keeps its behavior; the internal mechanics are shorter.
+Compared with `dev-workflow`: difficulty escalation after Implement (only the post-plan re-check is kept), `implementation_executor`, `boundary_check_commands`, Workability Retrospective. Post-Commit Verification is folded into Interactive Commits as one rule. Run modes, the browser plan review, plan artifacts, the crit commit gate, and the background review launch during Check / Test are kept. Everything else keeps its behavior; the internal mechanics are shorter.
 
 ## Self-retrospective without skill growth
 
-With `self_retrospective.feedback` set, the run ends by turning its own friction (corrections, stalls, rejected callee output, wrong defaults) into at most three Findings and posting them as a GitHub issue or a local file, after you approve the preview. The producer is built so that the fixes it asks for do not make the skills grow: each Finding must name a behavior change or a same-size-or-smaller wording change, carry its estimated character delta and what prose could be dropped to pay for it, and is checked against the target's current text so it never asks for a reminder that already exists. The repository's tests hold `SKILL.md` to 27,000 characters, `SKILL.md` plus the always-read references to 80,000, and `mob-mode.md` to 12,000; a Finding that would cross either must name what to delete. Signals come from the run in context; the session log is read only when context compaction has summarized away earlier phases (`scripts/retro/session-text.mjs`, bounded output), and no agent is dispatched.
+With `self_retrospective.feedback` set, the run ends by turning its own friction (corrections, stalls, rejected callee output, wrong defaults) into at most three Findings and posting them as a GitHub issue or a local file, after you approve the preview. The producer is built so that the fixes it asks for do not make the skills grow: each Finding must name a behavior change or a same-size-or-smaller wording change, carry its estimated character delta and what prose could be dropped to pay for it, and is checked against the target's current text so it never asks for a reminder that already exists. The repository's tests hold `SKILL.md` to 28,000 characters, `SKILL.md` plus the always-read references to 80,000, and `mob-mode.md` to 12,000; a Finding that would cross either must name what to delete. Signals come from the run in context; the session log is read only when context compaction has summarized away earlier phases (`scripts/retro/session-text.mjs`, bounded output), and no agent is dispatched.
 
 ## Commits per Build order step
 
@@ -77,6 +77,9 @@ test_commands:
 plan_artifact: "off"          # off | share | review; --artifact overrides
 commit_review_gate: "diff"    # diff | crit
 custom_instructions: "Always use TDD."   # optional; rules and explicit requests win
+subagent_model:              # default {trivial: sonnet, simple: sonnet}; other tiers inherit
+  trivial: sonnet
+  simple: sonnet
 mode: "solo"                 # solo | mob; --mob overrides for one run
 self_retrospective:
   feedback: "owner/repo"     # or a local directory; unset skips the phase

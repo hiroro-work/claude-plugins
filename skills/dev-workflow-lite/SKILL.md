@@ -34,6 +34,7 @@ Merge rules per key, in order: `null` or an empty value in a higher layer clears
 | `mode` | `solo` | `solo` / `mob`. `mob` is the learning-oriented run for a junior navigator: same phases and gates, plus the stops and narration `references/mob-mode.md` defines. `--mob` sets it for one run |
 | `self_retrospective.feedback` | none | Where Self-Retrospective posts its Findings: GitHub `owner/repo`, or a local directory path. Unset skips the phase |
 | `timing.report_dir` | none | Directory that receives each run's per-phase timing report (wall / waiting / active). The table is always shown at Completion; this only persists it |
+| `subagent_model` | `{trivial: sonnet, simple: sonnet}` | `{tier: model}` map. The resolved tier's entry becomes `<model>`, passed as `Model:` to the reviewer, rules-review, and tidy callees and as the background review agents' `model`; a tier without an entry inherits the session model |
 | `custom_instructions` | none | Free-form development guidance (for example "Always use TDD") followed at Create Plan, Implement, and Tidy and handed to both reviewers. `.claude/rules/` and the user's explicit requests win on conflict |
 
 `language` resolves as: merged settings → `language` in `~/.claude/settings.json` → `ja`. Headings, phase names, commit messages, diffs, and paths stay as written; prose follows it. Keys this skill does not read are named once at Load Settings and ignored.
@@ -103,7 +104,7 @@ Read `references/decomposition.md`.
 - **Resume sub-mode**: follow its § Resume. The selected subtask becomes the effective task.
 - **Normal sub-mode**: assess the tier (`references/tiers.md`). On the full lane, follow § Propose a split; on `yes`, write the state file and take the first subtask as the effective task. On the express lane, or on `no`, the effective task is the request itself.
 
-Emit one line: the tier and the phases it skips. Mark the skipped rows. In mob mode, apply `references/mob-mode.md` § Other differences to the split proposal.
+Emit one line: the tier and the phases it skips. Mark the skipped rows. Resolve `<model>` = `subagent_model[tier]` (unset → inherit); the Create Plan re-check resolves it again. In mob mode, apply `references/mob-mode.md` § Other differences to the split proposal.
 
 ## Phase 3: Create Plan
 
@@ -119,8 +120,8 @@ No code changes until Plan Approval passes.
 
 Skipped on Trivial and in `fast` mode. One pass, no loop.
 
-1. **Full scope** (`deep`): call `Skill(<reviewer>)` with the full plan body, `custom_instructions` when set, the Decisions field shape (Question / Recommendation / optional Alternative), and three review units: scope, feasibility, dependencies, `.claude/rules/` compliance (the reviewer lists and reads `.claude/rules/**/*.md`); the simplicity self-audit's conclusions; approach and alternatives, completeness, cross-section consistency. Ask for actionable findings only, or the words "No actionable findings".
-   **Rules-only scope** (`normal`): resolve the reading list yourself — every `*.md` directly under `.claude/rules/` plus subdirectory files whose domain the plan touches — and call `Skill(<reviewer>)` with the plan body, that numbered list, and one unit: `.claude/rules/` compliance only, reading exactly the listed files and no other tool; anything it cannot confirm goes under an "unverified items" heading. If the glob finds no rule files, do not dispatch: say the review found no project rules to check and continue.
+1. **Full scope** (`deep`): call `Skill(<reviewer>)` with `Model: <model>`, the full plan body, `custom_instructions` when set, the Decisions field shape (Question / Recommendation / optional Alternative), and three review units: scope, feasibility, dependencies, `.claude/rules/` compliance (the reviewer lists and reads `.claude/rules/**/*.md`); the simplicity self-audit's conclusions; approach and alternatives, completeness, cross-section consistency. Ask for actionable findings only, or the words "No actionable findings".
+   **Rules-only scope** (`normal`): resolve the reading list yourself — every `*.md` directly under `.claude/rules/` plus subdirectory files whose domain the plan touches — and call `Skill(<reviewer>)` with `Model: <model>`, the plan body, that numbered list, and one unit: `.claude/rules/` compliance only, reading exactly the listed files and no other tool; anything it cannot confirm goes under an "unverified items" heading. If the glob finds no rule files, do not dispatch: say the review found no project rules to check and continue.
 2. Apply findings you agree with; reject the rest with one line each. Do not ask the user about individual findings. Do not re-dispatch, with one exception: when Critical ≥ 3 or Critical + Major ≥ 10 and a finding proposes an approach-level alternative, rewrite the plan around it and dispatch one more pass.
 3. Unresolved points are carried to Plan Approval as a short list. In mob mode, review through `references/mob-mode.md` § Plan shape's lenses and explain applied findings.
 
@@ -148,7 +149,7 @@ In mob mode, each Build order step runs as a unit per `references/mob-mode.md` �
 
 ## Phase 7: Tidy
 
-Express lane skips. Call `Skill(simplify)`; if unavailable, `Skill(tidy)` with no base ref; pass `custom_instructions` as context when set. Either edits the tree itself. From here on, **no review layer grows a comment**: a finding whose fix adds, lengthens, or restores a comment is rejected with that reason. Correcting a false comment means replacing it with the shorter true statement. In mob mode, explain any cleanup per `references/mob-mode.md` § Tidy.
+Express lane skips. Call `Skill(simplify)`; if unavailable, `Skill(tidy)` with no base ref and `Model: <model>`; pass `custom_instructions` as context when set. Either edits the tree itself. From here on, **no review layer grows a comment**: a finding whose fix adds, lengthens, or restores a comment is rejected with that reason. Correcting a false comment means replacing it with the shorter true statement. In mob mode, explain any cleanup per `references/mob-mode.md` § Tidy.
 
 ## Phase 8: Polish Prose
 
@@ -166,13 +167,13 @@ In mob mode, narrate every failure per `references/mob-mode.md` § Check / Test 
 
 ## Phase 10: Rules Compliance Review
 
-Express lane skips. Take the background result per `references/review-launch.md` § Collect when it is fresh; otherwise call `Skill(rules-review)` with `--base-commit <base-commit>`. Fix every reported violation; when a violation is a pattern rather than a one-off, grep the file for the defining token and fix every match. A `rule-doc-drift` classification gets no code fix; note it for Update Rules. Record edited files in `review_fix_files`. Do not rerun Check / Test here.
+Express lane skips. Take the background result per `references/review-launch.md` § Collect when it is fresh; otherwise call `Skill(rules-review)` with `--base-commit <base-commit>` and `Model: <model>`. Fix every reported violation; when a violation is a pattern rather than a one-off, grep the file for the defining token and fix every match. A `rule-doc-drift` classification gets no code fix; note it for Update Rules. Record edited files in `review_fix_files`. Do not rerun Check / Test here.
 
 ## Phase 11: Code Review
 
 Skipped on Trivial and when `code_review: false`. Take the background result per `references/review-launch.md` § Collect when it is fresh; otherwise run step 1.
 
-1. Call `Skill(<reviewer>)` with `git diff <base-commit>`, the content of untracked new files labeled as such, `custom_instructions` when set, Phase 7's no-comment rule as a standing rejection criterion, the three categories (correctness and edge cases; conventions and consistency including a light `.claude/rules/` check; simplicity and maintainability), the current subtask and its siblings when a decomposition state file is active, and "report only actionable findings, else say No actionable findings".
+1. Call `Skill(<reviewer>)` with `Model: <model>`, `git diff <base-commit>`, the content of untracked new files labeled as such, `custom_instructions` when set, Phase 7's no-comment rule as a standing rejection criterion, the three categories (correctness and edge cases; conventions and consistency including a light `.claude/rules/` check; simplicity and maintainability), the current subtask and its siblings when a decomposition state file is active, and "report only actionable findings, else say No actionable findings".
 2. Fix genuine findings; reject the rest with one line each. If the user would plausibly raise the point themselves, fix it. Duplicates of Rules Compliance findings are skipped. After a Critical fix, sweep the diff for the same defect class. Record edited files in `review_fix_files`.
 3. Escalation: exactly one more pass when this pass had at least one Critical finding and at least one fix was applied. The escalation pass scopes to the changes since the first pass. It never triggers a third.
 4. Findings still unresolved after the passes go to the user once (USER GATE). Fixes made there also enter `review_fix_files`.
@@ -181,7 +182,7 @@ In mob mode, predict and cross-check per `references/mob-mode.md` § Code Review
 
 ## Phase 12: Verify Fixes
 
-If `review_fix_files` is empty, mark completed and continue. Otherwise run Check / Test once (3 fix rounds apply). Then, if Rules Compliance Review ran, call `Skill(rules-review)` with `--base-commit <base-commit>` and `Files: <review_fix_files>`. Fix violations once; a second scoped pass over the newly fixed files is the last; violations still present go to the user (USER GATE).
+If `review_fix_files` is empty, mark completed and continue. Otherwise run Check / Test once (3 fix rounds apply). Then, if Rules Compliance Review ran, call `Skill(rules-review)` with `--base-commit <base-commit>`, `Files: <review_fix_files>`, and `Model: <model>`. Fix violations once; a second scoped pass over the newly fixed files is the last; violations still present go to the user (USER GATE).
 
 ## Phase 13: Completion Hooks
 

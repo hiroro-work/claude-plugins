@@ -1,769 +1,109 @@
-# Dev Workflow
+# dev-workflow
 
-A skill that guides `plan → review → implement → check/test → code review → rules update` in a single command. Behavior is customizable via layered settings files (user global, project shared, and personal override).
+A guided development workflow with fixed phases in a fixed order. What changes between runs is decided once, by one table, before any work starts, so a junior engineer can say what happens next at any point. Version 2 is a rewrite of v1 with the same phases and gates and a fraction of the text; what it dropped is listed under "What is not here".
 
-This document is the **configuration reference**. For the internal specification Claude reads at runtime, see `skills/dev-workflow/SKILL.md`. For `--init` detection details, see `skills/dev-workflow/references/init-mode.md`.
+## Phases
 
-## Overview
+| # | Phase | v1 step | Tool | Skipped when |
+|---|---|---|---|---|
+| 1 | Load Settings | 1 | Read | never |
+| 2 | Task Decomposition | 1.5 | Write | proposal only on Moderate / Complex |
+| 3 | Create Plan | 2 | Read, Write | never |
+| 4 | Plan Review | 3 | `Skill(<reviewer>)`; rules-only in `normal`, full in `--deep` | Trivial, `--fast` |
+| 5 | Plan Approval | 4 | **user gate**: browser viewer (`serve.mjs`), chat fallback; plan artifact | never |
+| 6 | Implement | 5 | Edit; a snapshot per Build order step | never |
+| 7 | Tidy | 6 | `Skill(simplify)`, fallback `Skill(tidy)` | Trivial, Simple |
+| 8 | Polish Prose | 6.5 | `Skill(prose-polish)` | Trivial, Simple, `polish_prose: false`, `--fast` |
+| 9 | Check / Test | 7 | Bash, `Skill(run-tests)`; launches the two reviews in the background | never |
+| 10 | Rules Compliance Review | 7.5 | `Skill(rules-review)` | Trivial, Simple |
+| 11 | Code Review | 8 | `Skill(<reviewer>)` | Trivial, `code_review: false` |
+| 12 | Verify Fixes | 8.5 | Bash, `Skill(rules-review)` | no review fixes |
+| 13 | Completion Hooks | 9 | `hooks.on_complete` | key unset |
+| 14 | Interactive Commits | 10, 10.5 | **user gates**, git; one commit per Build order step with review fixes absorbed; crit browser with `commit_review_gate: crit` | never |
+| 15 | Update Rules | 11 | **user gate** (covers phases 15–18), `Skill(extract-rules)` | extraction: Trivial, Simple |
+| 16 | PR Rule Extraction | 11.7 | **user gate**, `Skill(extract-rules)` | empty answer |
+| 17 | Self-Retrospective | 11.5 | **user gate**, `gh api` | `self_retrospective.feedback` unset, or skipped at the phase 15 gate |
+| 18 | Workability Retrospective | 11.6 | **user gate**, project tooling candidates | `workability_retrospective.enabled` not `true`, or skipped at the phase 15 gate |
+| 19 | Completion | Completion | summary | never |
 
-- Orchestrator that runs development tasks through a structured process
-- Pluggable reviewer (ask-peer / ask-claude / ask-codex / ask-gemini / ask-copilot / ask-agy)
-- Turns the review phases off automatically on a Trivial task
-- **Task decomposition**: Large tasks can be split into subtasks (each delivered as its own PR), with resume support across sessions
-- **Self-retrospective** (opt-in): After a run, emits a sanitized improvement signal for the bundled skills to a GitHub issue or a local markdown file — helps the skill set itself improve over time. Raw conversation never leaves the session
-- Can run custom skills / shell commands as completion hooks
+All nineteen phases are registered on every run. A skipped phase is marked completed with its reason. The difficulty tier (Trivial / Simple / Moderate / Complex) is assessed at Task Decomposition and re-checked once against the drafted plan at the end of Create Plan, where it can only rise (a plan that turns out to carry a real design decision lifts Simple to Moderate and reopens the skipped rows). After that it never changes.
 
-## Usage
+## What is not here
 
-```bash
-/dev-workflow --init                          # Project setup (detects check/test commands)
-/dev-workflow <task>                          # Normal execution (auto-decompose check)
-/dev-workflow --executor <value> <task>       # Override the implementation executor for this run (see `implementation_executor` below)
-/dev-workflow --artifact <value> <task>       # Override the plan-artifact setting for this run (see `plan_artifact` below)
-/dev-workflow --fast [--executor <value>] [--artifact <value>] <task>        # Speed-first run mode (see `--fast` / `--deep` below)
-/dev-workflow --deep [--executor <value>] [--artifact <value>] <task>        # Thoroughness-first run mode (see `--fast` / `--deep` below)
-/dev-workflow --resume <state-file> [--executor <value>] [--artifact <value>] # Resume next subtask from a decomposition state file
-/dev-workflow --resume <slug> [--executor <value>] [--artifact <value>]       # Shorthand for .claude/plans/dev-workflow.<slug>.md
-```
+Compared with v1: difficulty escalation after Implement (only the post-plan re-check is kept), `implementation_executor`, `boundary_check_commands`. Settings files and keys are unchanged; keys v2 does not read are named once at start and ignored. Decomposition state files, `--resume`, and the browser plan viewer are the same. Post-Commit Verification is folded into Interactive Commits as one rule. Run modes, the browser plan review, plan artifacts, the crit commit gate, and the background review launch during Check / Test are kept. Everything else keeps its behavior; the internal mechanics are shorter.
 
-Skills generated by `--init` are not recognized in the same session, so run `/dev-workflow <task>` in a **new session** after `--init`.
+## Self-retrospective without skill growth
 
-### `--fast` / `--deep` (the run mode)
+With `self_retrospective.feedback` set, the run ends by turning its own friction (corrections, stalls, rejected callee output, wrong defaults) into at most three Findings and posting them as a GitHub issue or a local file, after you approve the preview. The producer is built so that the fixes it asks for do not make the skills grow: each Finding must name a behavior change or a same-size-or-smaller wording change, carry its estimated character delta and what prose could be dropped to pay for it, and is checked against the target's current text so it never asks for a reminder that already exists. The repository's tests hold `SKILL.md` to 28,000 characters, `SKILL.md` plus the always-read references to 80,000, and `mob-mode.md` to 12,000; a Finding that would cross either must name what to delete. Signals come from the run in context; the session log is read only when context compaction has summarized away earlier phases (`scripts/retro/session-text.mjs`, bounded output), and no agent is dispatched.
 
-Two invocation flags at opposite ends of one **run mode** axis: `--fast` favors speed, `--deep` favors thoroughness, and passing neither gives the middle setting. `--fast` is unrelated to Claude Code's own `/fast` (which speeds up model output, not workflow steps). Either combines with either sub-mode (`<task>` or `--resume`); both are ignored under `--init`; neither has a config-key equivalent (per-run only). **Passing both at once is a fatal error** — they ask for opposite things, so the run halts rather than picking one.
+## Workability retrospective
 
-What separates `--deep` from passing neither flag is **Step 3 (Plan Review)** and nothing else:
+With `workability_retrospective.enabled: true`, the run ends by turning friction with the project's own tooling into at most three candidates: a project skill for a manual procedure that recurred, a linter rule for a convention review had to catch by hand, or a check command for a failure that surfaced late. Each cites what happened (with the timing table row) and proposes something concrete; duplicates of what the project already has are dropped. You choose per candidate: `apply` (single configuration edits only, checked once), `backlog` (a file under `.claude/improvements/`), or `skip`. Prose conventions still go to Update Rules and workflow defects to Self-Retrospective; this phase covers tooling only.
 
-| Invocation | `run_mode` | Step 3 (Plan Review) |
-| --- | --- | --- |
-| `--fast` | `fast` | Skipped entirely |
-| neither flag | `normal` | Runs, narrowed to `.claude/rules/` compliance (one reviewer) |
-| `--deep` | `deep` | Runs the full single pass — review categories a–d across three reviewers |
+## Commits per Build order step
 
-On a **Trivial** task the tier turns the plan phase off by itself, so `--deep` does not bring it back — the tier's cutoff wins. **Step 8 (Code Review)** is untouched by either flag: it stays governed by `code_review` and the tier.
+Implement records a snapshot after every Build order step (a commit object on `refs/dev-workflow/<slug>`, built in a private index so your staging area is untouched). Before Interactive Commits, the edits made afterwards by Tidy, Polish Prose, the reviews, and Verify Fixes are attributed by `git blame` to the step that last wrote each changed line and folded into that step's commit (`scripts/absorb/attribute.mjs` plus a non-interactive `rebase --autosquash` in a throwaway worktree). Each commit you approve is therefore one step's work in its reviewed form. Edits no step owns, such as a new test file added by a review, land in one trailing `review fixes` commit. `dev-workflow` instead refreshes whole snapshots from the first touched one onward, which lets later steps' content leak into earlier commits.
 
-Beyond Step 3, `--deep` changes nothing today. `--fast` also trades the passes below.
+Because absorption also handles formatter output, `boundary_check_commands` is not needed: put `lefthook run pre-commit` in `check_commands` so formatting lands before review. A multi-step task always yields several commits, so on a project with a pre-commit hook the stashing-hook question (suppress with `LEFTHOOK=0`, or proceed) appears on most runs.
 
-- **Step 6 Tidy** and **Step 7.5 Rules Compliance Review** still run — `--fast` does not skip them, only **Step 6.5 Polish Prose** and the Step 4 plan-body prose-polish pass are skipped.
-- The review layers' **single post-fix verification cycle** (Step 8.5 Deferred Verification — see the Step 7.5 / Step 8.5 rows below) is capped to one pass under `--fast`: it re-runs Step 7 over both review layers' fixes but skips the 2nd-cycle re-verification and the persistent-violations gate (those fixes are trusted unverified; the Step 10 commit gate is the remaining backstop). The commit phase's own cycle (Step 10.5 Post-Commit Verification) takes the same cap for the same reason, and it is the second and last place the cap can fire — a `crit` review round runs `check_commands` alone whatever it edited, so no round takes a cap of its own.
-- **`subagent_model`** is unaffected — it always resolves from the task's real assessed difficulty, never from `--fast`.
-- `hooks.on_complete` still runs in full (fast mode does not gate project hooks).
+## Mob mode
 
-### Adding or dropping a run-mode difference
+`mode: mob` in the settings, or `--mob` on the command line, runs the same nineteen phases for a junior navigator: the AI drives and narrates, the junior reads each implementation unit's diff and approves commits. It adds two learning stops (a diff review after every Build order step, and the junior's question after each commit's note), one gate (plan-building checkpoints before the plan is written), narration at check/test failures and before reviews, a junior-oriented plan shape, and the browser plan review on every tier. Everything else — tiers, gates, settings, commits, rule updates — is the solo run. The whole mode lives in `references/mob-mode.md`, read only when the mode is on; solo runs never load it.
 
-`mobpro` mirrors this skill's run-mode behavior at its own `SKILL.md` § Run modes, which claims parity with it. Adding or dropping a difference here therefore sweeps that section in the same commit, along with the closed list of read sites at `references/step1-load-settings.md` § Sub-step 4. A difference that **skips** work appends to `fast_mode_skipped_steps`; one that **adds** work — anything on the `deep` side — records nothing, so that ledger stays fast-specific.
+`/mobpro <task>` is a thin entry point for the same thing (the `mobpro` plugin). Fix the mode in the project's shared settings rather than switching per run, so the team sees one behavior.
 
-## Setup (`--init`)
+## Timing
 
-`--init` auto-detects and configures the following interactively:
+Every run writes a per-phase timing log (`.claude/plans/timing-<stamp>.jsonl`, a workflow artifact) by marking each phase's start and end and each user or background wait. Completion prints a table of wall, waiting, and active time per phase, so a supervisor can see where a junior's task spent its time without reading session logs. Set `timing.report_dir` to also persist the table as a dated Markdown file. This runs in both solo and mob mode.
 
-| Target | Content |
-| --- | --- |
-| `check_commands` | Detects lint / format / typecheck from `package.json` / `Gemfile` / `pyproject.toml` / `Cargo.toml` / `go.mod` / `Makefile` |
-| `run-tests` skill generation | Generates test execution skill at `.claude/skills/run-tests/SKILL.md` (diff-checks if already exists) |
-| Prerequisites | Detects and embeds the following into `run-tests` Prerequisites (see below) |
-| `reviewer` | Interactive selection (default `ask-peer`) |
-| Settings save | Writes to `.claude/dev-workflow.md` (project shared) |
+## Requirements
 
-Detected prerequisites:
+- Install through the `dev-workflow-bundle` plugin, which carries the callees `peer` (ask-peer), `rules-review`, `extract-rules`, `tidy`, `prose-polish`, and `mobpro`. `simplify` is a Claude Code built-in. A missing skill is reported once and its phase is done inline, except the reviewer, which asks you to choose a replacement.
+- A project `run-tests` skill, generated by `--init`.
+- Node.js for the browser plan review (`scripts/plan-review/serve.mjs`, bundled) and the artifact export. `crit` installed locally if `commit_review_gate: crit` is set.
+- Add `.claude/plans/` to `.gitignore`. The workflow keeps its plan, decomposition state, and absorb patches there.
+- A regular `.git` directory. In a linked worktree the snapshot chain is not built and commits are grouped from the final diff instead.
 
-- **Docker daemon + services**: If any of `docker-compose.yml` / `docker-compose.yaml` / `compose.yml` / `compose.yaml` exists → generates a two-step prerequisite: Docker daemon readiness check (`docker info`) and compose services running check (`docker compose ps`)
-- **Rails DB**: If **both** `config/database.yml` and `db/schema.rb` exist → check `bin/rails db:version` / setup `bin/rails db:prepare`
-- **Environment file**: If `.env.example` exists → check `test -f .env` (no auto-copy since it is unsafe; manual guidance only)
-- **Project-specific setup script**: If `bin/setup` or `script/setup` exists → takes precedence over individual prerequisites as a single setup command
+## Settings
 
-After detection, each check_command is executed to verify it works, and `run-tests` is pseudo-executed (since newly generated skills are not callable as `Skill()` in the same session) and the results are displayed.
-
-## Configuration
-
-### Settings files
-
-| Layer | Path | Priority | Git |
-| --- | --- | --- | --- |
-| User global | `~/.claude/dev-workflow.local.md` | Lowest | N/A |
-| Project shared | `.claude/dev-workflow.md` | Medium | Tracked (commit) |
-| Personal override | `.claude/dev-workflow.local.md` | Highest | Ignored |
-
-Settings are **merged** across layers with type-aware strategy:
-
-- **Scalar keys** (`reviewer`, `code_review`, etc.): higher layer wins (replaces). When a scalar key's value is a map (`subagent_model`), the whole map is replaced as a single value — there is no per-key cross-layer merge (an absent map key is not inherited from a lower layer; it falls to its built-in default)
-- **List keys** (`check_commands`, `boundary_check_commands`): **appended** — lower-layer items first, then higher-layer items, duplicates removed. `test_commands` is always fixed to `["Skill(run-tests)"]` and excluded from merge
-- **`hooks`**: deep-merged — each sub-key (`on_complete`) is appended and deduplicated
-
-Keys absent from a higher layer inherit from lower layers. Setting a key to `null` or empty (`[]`, `{}`) explicitly clears the lower-layer value. Only specify keys you want to override or extend.
-
-Adding `.claude/*.local.md` to `.gitignore` is recommended. `.claude/dev-workflow.md` should be committed to share project settings with the team. If your `.gitignore` uses a broad pattern like `.claude/*`, add `!.claude/dev-workflow.md` to unignore it.
-
-Settings files consist of **YAML frontmatter only** (no body required).
-
-### Merge examples
-
-#### Personal reviewer override
-
-Project shared (`.claude/dev-workflow.md`):
+The same files as `dev-workflow`: `~/.claude/dev-workflow.local.md`, `.claude/dev-workflow.md`, `.claude/dev-workflow.local.md`, YAML frontmatter, merged in that order. Only these keys are read; others are named once at start and ignored.
 
 ```yaml
 ---
-reviewer: "ask-peer"
+reviewer: "ask-peer"          # ask-peer | ask-claude | ask-codex | ask-gemini | ask-copilot | ask-agy
+code_review: true
+polish_prose: true
+language: "ja"                # default: ~/.claude/settings.json language, then ja
 check_commands:
-  - "pnpm run lint:fix"
+  - "pnpm run lint"
   - "pnpm run typecheck"
----
-```
-
-Personal override (`.claude/dev-workflow.local.md`):
-
-```yaml
----
-reviewer: "ask-claude"
----
-```
-
-Effective config:
-
-```yaml
-reviewer: "ask-claude"        # scalar: personal wins
-check_commands:               # list: inherited from project (not in personal)
-  - "pnpm run lint:fix"
-  - "pnpm run typecheck"
-```
-
-#### List append and hooks deep-merge
-
-Project shared (`.claude/dev-workflow.md`):
-
-```yaml
----
-reviewer: "ask-peer"
-check_commands:
-  - "pnpm run lint:fix"
-  - "pnpm run typecheck"
-hooks:
-  on_complete:
-    - "git status"
----
-```
-
-Personal override (`.claude/dev-workflow.local.md`):
-
-```yaml
----
-reviewer: "ask-claude"
-check_commands:
-  - "pnpm run format"
-hooks:
-  on_complete:
-    - "afplay /System/Library/Sounds/Glass.aiff"
----
-```
-
-Effective config:
-
-```yaml
-reviewer: "ask-claude"        # scalar: personal wins
-check_commands:               # list: project items + personal items appended
-  - "pnpm run lint:fix"
-  - "pnpm run typecheck"
-  - "pnpm run format"
-hooks:
-  on_complete:                # list: project items + personal items appended
-    - "git status"
-    - "afplay /System/Library/Sounds/Glass.aiff"
-```
-
-### Settings reference
-
-| Key | Type | Default | Description |
-| --- | --- | --- | --- |
-| `reviewer` | string | `ask-peer` | Reviewer skill name |
-| `code_review` | bool | `true` | Whether Step 8 (Code Review) runs at all — a single review pass plus one Critical-only escalation pass when `true` |
-| `commit_review_gate` | string | `diff` | Which surface a code-diff review renders on — `diff` (default; the existing chat-text presentation with the accept/adjust/cancel gate) or `crit` (opt-in; launches the external `crit` CLI scoped to just the reviewed files, falling back to `diff` when unavailable or unreachable). Step 10 applies it to each commit's diff, but is one consumer rather than the key's whole scope — see the `commit_review_gate` section below |
-| `implementation_executor` | string | `main` | Experimental, opt-in. Selects who executes Step 5 implementation work units — `main` (default), `subagent`, or one of `ask-claude` / `ask-codex` / `ask-gemini` / `ask-copilot` / `ask-agy`. Unsupported values fall back to `main`; see the `implementation_executor` section below |
-| `polish_prose` | bool | `true` | Whether the workflow's two `prose-polish` passes (Step 6.5 file-mode polish of changed files + Step 4 plan-body polish, the latter also covering the decomposition state file on the run that created it) run; Step 6.5 is still subject to the difficulty-skip matrix (default-on, opt-out) |
-| `plan_artifact` | string | `off` | Experimental, opt-in. Whether an approved plan is published as a claude.ai artifact for a team to read and comment on — `off` (default; nothing is published), `share` (publish and hand back the URL), `review` (publish, then wait for the team's review before implementation) |
-| `custom_instructions` | string | (none) | Free-form instructions applied across all phases |
-| `check_commands` | list&lt;string&gt; | (none) | Static checks (lint / format / typecheck, etc.) |
-| `boundary_check_commands` | list&lt;string&gt; | (none) | Shell commands run as each Build order step's boundary object is recorded, so what they rewrite lands in that step's own tree — see the `boundary_check_commands` section below |
-| `test_commands` | list&lt;string&gt; | `["Skill(run-tests)"]` | Test execution (fixed) |
-| `hooks.on_complete` | list&lt;string&gt; | (none) | Hooks to run as Step 9 (immediately after Step 8.5 Deferred Verification, before Step 10 Interactive Commits) |
-| `self_retrospective.feedback` | string | (none) | Destination for Step 11.5 self-retrospective output (GitHub `owner/repo` or a local directory path). Unset = Step 11.5 is fully skipped |
-| `workability_retrospective.enabled` | bool | `false` | Whether Step 11.6 (Workability Retrospective) detects skill / lint-rule candidates and opens the per-candidate disposition gate (experimental, opt-in) |
-| `workability_retrospective.backlog_dir` | string | `.claude/improvements` | Directory for the "save to backlog" disposition's markdown files |
-
-### Details
-
-#### `reviewer`
-
-Skill that handles Plan Review (Step 3) and Code Review (Step 8). Choose from:
-
-- `ask-peer` (default, Claude sub-agent)
-- `ask-claude`
-- `ask-codex`
-- `ask-gemini`
-- `ask-copilot`
-- `ask-agy`
-
-If unset or set to an unsupported value, falls back to `ask-peer`. If the specified skill is not installed, Claude falls back to asking the user directly.
-
-#### `code_review`
-
-Whether Step 8 (Code Review) runs at all, defaulting to on. The phase is a **single pass** — there is no iteration count to configure — plus **one** deterministic escalation pass, taken only when the review pass reported at least one Critical finding.
-
-There is no `plan_review` key. Whether Step 3 (Plan Review) runs, and in what shape, comes from the run mode instead (§ `--fast` / `--deep` above), so it is chosen per invocation rather than settled per project.
-
-Set `code_review: false` to run the workflow without Code Review. The phase is then skipped exactly the way the Trivial tier skips it: its task rows are registered `completed` and the step passes straight through. Because that `false` is your own declaration rather than something the workflow decided for you, it raises no Completion-summary skip reminder (unlike the difficulty-skip and `--fast` skips, which are always named there). A `code_review` that is not a boolean warns and falls back to on.
-
-Automatic adjustment by task difficulty — only Trivial changes either phase; the other tiers leave the code phase as configured and the plan phase as the run mode set it. The tier is resolved in **Step 1.5, before the plan exists**, so a low tier also spares the run the plan-authoring and self-audit references it would otherwise have read to reach the assessment (§ Express lane below); Step 2 re-checks it against the drafted plan and can only raise it:
-
-| Difficulty | Examples | Review effect | Quality steps skipped (difficulty-skip matrix) |
-| --- | --- | --- | --- |
-| Trivial | Typo, one-line edit, config value change, or a mechanical multi-site edit with one clearly-correct replacement (e.g. a version bump or an unambiguous rename) | Both phases turned off — Step 3 (Plan Review) & Step 8 (Code Review) skipped entirely | Step 6 Tidy + Step 6.5 Polish Prose + Step 7.5 Rules Compliance + Step 11 Update Rules |
-| Simple | Obvious bug fix, or a small feature addition that fully follows an existing pattern with no new design decisions | Both phases run (the plan phase at the run mode's scope) | Step 6 Tidy + Step 6.5 Polish Prose + Step 7.5 Rules Compliance + Step 11 Update Rules |
-| Moderate | A change requiring at least one genuine design decision, or spanning multiple modules | Both phases run (the plan phase at the run mode's scope) | none |
-| Complex | Cross-module, new patterns, API changes, significant refactoring | Both phases run (the plan phase at the run mode's scope) | none |
-
-The **difficulty-skip matrix** (rightmost column) is applied unconditionally — keyed on the assessed tier alone, with no config flag — reusing the same pre-completed-mark + entry-point-guard mechanism as the Trivial Step 3 / Step 8 skip. Skipped quality steps are always named in the Completion summary (never silent). **Step 9 (`hooks.on_complete`), Step 11.5 (Self-Retrospective), Step 11.6 (Workability Retrospective), and Step 11.7 (PR Rule Extraction) are never skipped by the matrix at any tier** — the first three are governed by per-project configuration, so difficulty-gating one would make the same tier behave differently across projects, and Step 11.7 by nothing but its own PR-spec prompt. Step 11 (Update Rules) *is* in the matrix because its action is skill-internal: only the directories it writes to are configurable, not whether it extracts.
-
-The **Trivial** tier covers any change with one obviously correct, mechanical fix — line, file, or module count alone does not disqualify a change as long as the fix is uniform across every site (e.g. a version bump touching manifests in several modules stays Trivial). Escalate to Simple or above only when the change requires an actual judgment call: more than one plausible approach, behavior-affecting logic, or genuine ambiguity about the correct fix. For Trivial and Simple tasks alike, the Step 6 Tidy, Step 6.5 Polish Prose, Step 7.5 Rules Compliance, and Step 11 Update Rules steps are skipped per the matrix above, while the Step 4 plan-approval gate, Step 7 `check_commands` / `test_commands`, and `hooks.on_complete` still run. On Simple, Step 8's review pass is the run's primary rules-compliance defense in Step 7.5's place — its reviewer prompt flags obvious `.claude/rules/` violations as a safety net.
-
-##### Express lane
-
-Trivial and Simple runs take an **express lane**: because the tier is known before the plan is written, they also skip the apparatus that produces the plan, not just the steps after it. The decomposition proposal is skipped (a task at these tiers has one verification path by definition), the plan is authored from a compact template rather than the full plan-authoring specification, the Step 2 self-audit runs from a tier-independent core rather than the whole checklist, and a Trivial task's Step 4 approval is the chat surface directly — a browser round-trip to approve a handful of lines costs more attention than the plan does. Measured on shipped defaults, a Trivial run reads 96,161 fewer characters end to end (−20.7%) than it did when the tier was decided after the plan.
-
-The subset is safe rather than merely shorter because of what it holds back: every deferred self-audit item fires only when the plan makes a **design judgment** — a new config flag, a contract change, a choice between sibling mechanisms, a dependency major bump. A task carrying one of those is neither Trivial nor Simple, so noticing one on the express lane raises the tier instead of reaching for the deferred file.
-
-The escalation note names whichever steps actually returned to the run, which is why its worked example starts from Simple: at that tier the four matrix steps are exactly the set that comes back, whereas out of Trivial the plan- and code-review phases return too, and `--fast` holds some of them back.
-
-**Escalation is one-way**, at two fixed checkpoints: Step 2 (once the plan is drafted) and Step 5 completion (once the change has landed). Its procedure lives in `references/tier-escalation.md`, read only when a checkpoint actually raises the tier. Raising the tier re-derives the review phases, re-resolves `subagent_model`, returns the skipped steps to the run, and reads the references the express lane deferred — so a misjudged tier costs a rejoin, not a lost safety net. There is no de-escalation: a task judged harder than it turned out to be simply pays what the workflow charged before.
-
-**Exception to Simple**: a change that touches an external library's configuration file or type-level API is classified at least Moderate (not Simple) when the library has had a recent major-version bump. The primary detection is a `git diff` against the base commit on the project's package manifest; when that misses (e.g. the bump landed in a previous task), rely on `git log` on the manifest or conversational context for the same signal. This protects against stale configuration examples being adopted under the Simple heuristic's reduced quality-step coverage.
-
-#### `commit_review_gate`
-
-Controls which surface a code-diff review renders on: `diff` (default) or `crit`. Step 10 (Interactive Commits) applies it to each commit's diff, but it is one consumer rather than the key's whole scope — the bundled `mobpro` skill reads the same key for the per-unit diff review in its implementation loop.
-
-- `diff` (default): the workflow's existing per-commit presentation — Subject / Body / Files / Verification / Diff rendered in chat (verbatim / condensed / skeleton depending on size, per `skills/dev-workflow/references/diff-presentation.md` § Rendering ladder), gated by the existing accept/adjust/cancel per-commit accept gate.
-- `crit` (opt-in): drives the external **[crit](https://github.com/tomasz-tomczyk/crit)** CLI — a separately-installed local review tool, not bundled with this skill — scoped to just the current commit's files, so you review the actual code diff in the browser (inline comments, approve / request-changes) before the commit lands. The browser view opens on a story built from the commit message — a prologue naming what the change does, its key changes and its risks, plus chapters grouping the diff's hunks — so the "why" the commit body carries reaches the review surface, which crit otherwise renders subject-only. When crit is too old to have the `story` subcommand, or rejects the story, the browser simply opens the plain diff instead. Availability (`crit --version`) and local-browser reachability (`CLAUDE_CODE_REMOTE`) are checked once per run and cached, independently of Step 4's own reachability probe. When either check fails, the whole run falls back to `diff` mode with a one-line note; when a specific commit's crit launch itself is interrupted, only that commit falls back to `diff` — crit stays in use for the rest of the run. See `skills/dev-workflow/references/crit-commit-review.md` for the full contract.
-
-```yaml
-commit_review_gate: "crit"
-```
-
-Invalid values are ignored with a warning and fall back to `diff`. To opt in for one project, set `commit_review_gate: "crit"` in `.claude/dev-workflow.md` or `~/.claude/dev-workflow.local.md` / `.claude/dev-workflow.local.md`.
-
-#### `implementation_executor`
-
-Controls who executes Step 5 implementation work units. This setting is **experimental** and opt-in; `main` keeps the current behavior unchanged.
-
-- `main` (default): the main thread implements every work unit itself.
-
-- `subagent`: Step 5 routes each settled implementation work unit through the existing subagent delegation path by default, still using the same spec-completeness guard. Units that are judgment-heavy, context-dependent, small, or still unsettled stay on the main thread with a one-line note.
-
-- `ask-claude` / `ask-codex` / `ask-gemini` / `ask-copilot` / `ask-agy`: Step 5 routes each settled work unit through the matching external-CLI skill instead of the `Agent` tool. `ask-peer` is intentionally not supported here because it is a reviewer-style feedback skill rather than an editing executor.
-
-Availability is resolved once per run at the first Step 5 delegation point. `subagent` requires an edit-capable exposed subagent type; the external-CLI values require a successful `Skill(<value>)` call after one retry. When the selected executor is unavailable, the workflow emits a one-line note and falls back to `main` for the rest of the run with no user gate.
-
-The main thread always remains the orchestrator. It keeps all user gates, the Step 5 self-audit sub-steps (run as post-delegation verification against the delegated diff), Step 7 and later verification gates, and Step 10 commits. `subagent_model` is propagated only on the `subagent` path; the external-CLI executors keep their CLI-side model configuration. Hybrid execution is normal: some settled units may delegate while others stay on the main thread.
-
-```yaml
-implementation_executor: "ask-codex"
-```
-
-Normally leave the config unset so `main` implements, and pass the invocation override only on runs where you want to try a delegated executor. Example: `/dev-workflow --executor ask-codex <task>`. The flag uses the same closed value space as the config key and overrides it for that run only; if the flag value is invalid or unsupported, the workflow warns and ignores the flag, leaving the config-resolved value in effect.
-
-Invalid values are ignored with a warning and fall back to `main`. To opt in for one project, set `implementation_executor: "subagent"` (or another supported value) in `.claude/dev-workflow.md` or `~/.claude/dev-workflow.local.md` / `.claude/dev-workflow.local.md`. The canonical dispatch payload lives in `skills/dev-workflow/references/executor-prompt.md`.
-
-#### `polish_prose`
-
-Controls whether the workflow's two `prose-polish` passes — **Step 6.5 (Polish Prose)** and the **Step 4 plan-body polish** — run. Both passes run by default; set `polish_prose: false` to opt out.
-
-- `false`: both passes are skipped. Step 6.5 marks itself `completed` and proceeds to Step 7 (emitting a one-line note on Moderate / Complex; on Trivial / Simple the difficulty-skip matrix already owns the skip, so no `polish_prose` note fires); the Step 4 plan-body polish is skipped silently and the un-polished plan is presented
-- `true` (default): both passes run. Step 6.5 is still subject to the difficulty-skip matrix, so it runs only on Moderate / Complex tasks (Trivial / Simple skip it regardless); the Step 4 plan-body polish runs on every tier, and covers the decomposition state file too on the run that created it
-
-The state file is in scope because the prose in it — the parent-task statement, each subtask's `title` / `description` / `verification_hint`, and the human-readable body — is written for you to read and no other pass polishes it. The whole file is passed, so all of that is in reach, not the two subtask fields alone. It is polished only on the run that creates it: that run already covers every subtask the decomposition produced, and those files reach tens of thousands of characters, so re-reading one on each `--resume` would buy nothing. Two things stay outside the pass as a result — a subtask promoted later by Completion's execution-time deferral/exclusion gate, and any edit made to the file after its creating run.
-
-```yaml
-polish_prose: false
-```
-
-Non-boolean values are ignored with a warning and fall back to `true`. To opt out for one project, set `polish_prose: false` in `.claude/dev-workflow.md`; to opt out personally, set it in `~/.claude/dev-workflow.local.md` or `.claude/dev-workflow.local.md`.
-
-**Behavior change from v1.78.0**: the default flipped from `false` (opt-in) to `true` — projects that leave `polish_prose` unset now run both passes by default; set `polish_prose: false` to opt out. (History: v1.77.0 ran both passes unconditionally with no config flag; v1.78.0 gated them behind `polish_prose: true` defaulting to opt-in.)
-
-Note: the `polish_prose: false` skip is independent of whether the `prose-polish` skill is installed — a missing skill skips both passes for a separate reason (see the prose-polish entry under § Prerequisites).
-
-#### `plan_artifact`
-
-Controls whether an approved plan is published as a **claude.ai artifact** — a rendered, viewer-only copy of the plan a team can read and comment on — and whether the workflow then waits for that review. Nothing is published by default.
-
-- `off` (default): nothing is published; the workflow is unchanged
-- `share`: once the plan approval settles, the plan is published and its URL handed back in chat. It fires on every approval route, the ones that never open a browser included
-- `review`: `share`, plus a gate after it — the workflow holds until you say the team has finished, reads the page's comment threads, takes what they ask for through the plan's existing revise loop, and republishes to the same URL
-
-```yaml
----
-plan_artifact: "share"
----
-```
-
-The page's URL is recorded in the plan document's YAML frontmatter, which survives the archive move at completion, so a later session updates the same page instead of opening a second one. A failed export or publish is non-fatal — the run notes it and carries on to implementation.
-
-Publishing sends the plan's content outside the project, which is why the default withholds it. Values outside the three are ignored with a warning and fall back to `off`. To opt in for one project, set `plan_artifact: "share"` (or `"review"`) in `.claude/dev-workflow.md`; to opt in personally, set it in `~/.claude/dev-workflow.local.md` or `.claude/dev-workflow.local.md`.
-
-A single run can override whatever the config resolved to by passing `--artifact <value>` on the invocation — `/dev-workflow --artifact off <task>` publishes nothing on a project configured for `share`, and `/dev-workflow --artifact share <task>` publishes on a project that normally does not. The flag takes the same three values as the config key and applies to that run only; an invalid or unsupported value is ignored with a warning, leaving the config-resolved value in effect.
-
-#### `custom_instructions`
-
-Free-form instructions applied as a guiding principle across planning, implementation, review, and tidy phases. Example:
-
-```yaml
-custom_instructions: "Always use TDD. Write tests before implementation."
-```
-
-If they conflict with `.claude/rules/` or explicit user instructions, **the latter take precedence**. Non-string values are ignored with a warning.
-
-#### `check_commands`
-
-Static checks (lint / format / typecheck, etc.). **Always runs all commands in order**. On failure, fixes and retries (up to 3 times); if still failing, reports to the user and stops.
-
-```yaml
-check_commands:
-  - "pnpm run lint:fix"
-  - "pnpm run format"
-  - "pnpm run typecheck"
-```
-
-#### `boundary_check_commands`
-
-Shell commands run in order at the moment each Build order step's boundary object is recorded, while that step's paths are staged. Whatever a command rewrites is re-staged and carried into that step's own tree, instead of surfacing later as a change no step accounts for — a project's pre-commit hook runner is the motivating case, since Step 10 is otherwise the first place it ever runs.
-
-Default: none, so no command runs.
-
-A command listed here that also appears in `check_commands` runs twice: once per Build order step here, and again at the check/test gate — worth avoiding when the command is slow.
-
-The re-staging covers the paths that step already edited. Anything outside that set stays out of the tree and remains an uncommitted working-tree change — both a path a command creates, and an already-tracked file that step did not edit but a repo-wide command rewrote.
-
-```yaml
-boundary_check_commands:
-  - "lefthook run pre-commit"
-```
-
-One limit on the scope: a command outside the skill's `Bash(...)` grants may need a one-time permission approval on its first run.
-
-A non-zero exit does not stop the run: it is recorded as a one-line note, the command is fixed and re-run once, and the corrected content is staged again before the boundary is built from the index. `check_commands` at the check/test gate remains the one that stops the run.
-
-#### `test_commands`
-
-Always fixed to `["Skill(run-tests)"]`. The `run-tests` skill is generated and updated by `--init`. It spawns a sub-agent internally to execute tests and returns one of `SUCCESS` / `TEST_FAILED` / `EXECUTION_ERROR`.
-
-To use a different test runner, re-run `--init` to regenerate `run-tests`.
-
-#### `hooks.on_complete`
-
-Hooks to run as Step 9 (immediately after Step 8.5 Deferred Verification, before Step 10 Interactive Commits). Entry format:
-
-- `Skill(<name>)` form → invokes the skill
-- Any other string → executed as a shell command
-
-```yaml
+test_commands:
+  - "Skill(run-tests)"        # Skill(<name>) entries only
+plan_artifact: "off"          # off | share | review; --artifact overrides
+commit_review_gate: "diff"    # diff | crit
+custom_instructions: "Always use TDD."   # optional; rules and explicit requests win
+subagent_model:              # default {trivial: sonnet, simple: sonnet}; other tiers inherit
+  trivial: sonnet
+  simple: sonnet
+mode: "solo"                 # solo | mob; --mob overrides for one run
+self_retrospective:
+  feedback: "owner/repo"     # or a local directory; unset skips the phase
+timing:
+  report_dir: "docs/timing"  # optional; the table is always shown at Completion
+workability_retrospective:
+  enabled: false             # opt-in; backlog_dir defaults to .claude/improvements
 hooks:
   on_complete:
     - "Skill(work-complete)"
-    - "git status"
-```
-
-Commands not covered by `allowed-tools` require user approval at runtime. Invalid formats are ignored with a warning. Hook failures do not stop the workflow — errors are recorded as warnings and remaining hooks continue executing.
-
-#### `self_retrospective.feedback`
-
-Opt-in feedback channel that turns on **Step 11.5: Self-Retrospective**. After a normal run, a subagent scans the session's conversation for signals about how the bundled skills (`dev-workflow`, `ask-peer`, `extract-rules`, `rules-review`) performed, sanitizes the findings, and submits them to the configured destination. The raw conversation (jsonl) never leaves the session — only abstracted, project-agnostic text is emitted.
-
-Unset by default. When unset, Step 11.5 is never registered and the workflow behaves exactly as before. When set, the destination is auto-detected from the string shape:
-
-| Shape of `feedback` | Mode | Behavior |
-| --- | --- | --- |
-| Starts with `/`, `~/`, `./`, `../` | **path** | Write a markdown file `<feedback>/dev-workflow-retrospective-<YYYY-MM-DD>-<slug>.md` |
-| Matches `^[\w.-]+/[\w.-]+$` | **repo** | Submit via `gh api --method POST /repos/<feedback>/issues` (requires `gh` installed and authenticated; the backing token only needs `Issues: write` on the target repo) |
-| Anything else (incl. empty) | — | Warn and skip Step 11.5 |
-
-Examples:
-
-```yaml
-# Repo mode — retrospective goes to the specified GitHub repo as an issue
-self_retrospective:
-  feedback: "owner/repo"
-```
-
-```yaml
-# Path mode — retrospective goes to a local directory (created if needed on approval)
-self_retrospective:
-  feedback: "~/retrospectives/dev-workflow"
-```
-
-**Runs regardless of task difficulty**: Step 11.5 runs whenever `self_retrospective.feedback` is configured, independent of the assessed tier. Difficulty gates `plan_review_enabled` / `code_review_enabled` (Step 3 / Step 8) and the difficulty-skip matrix (Step 6 Tidy / Step 6.5 Polish Prose / Step 7.5 Rules Compliance / Step 11 Update Rules on Trivial / Simple) — it does **not** gate the self-retrospective. Even Simple/Trivial tasks produce a retrospective when `feedback` is set — when nothing notable surfaced, it is simply short.
-
-**User preview + approval is always required**. Before submission, the assembled body is shown to the user along with a destination header (mode / resolved value / settings layer source). The user can `approve`, `edit` (revise inline), or `skip`. A single `approve` covers both the body and the resolved destination — the approval prompt names that destination (`<owner/repo>` in repo mode, the absolute path in path mode), so the response is an explicit destination acknowledgment rather than an autopilot wave-through. The destination header defends against a malicious commit to the git-tracked `.claude/dev-workflow.md` silently redirecting retrospectives.
-
-**Sanitization**: absolute paths, project / repo / product / user names, project-specific code identifiers, dates / session IDs / ticket IDs / internal URLs, and credential-like literals (API keys, tokens, email addresses, IPs, `.env` values) are stripped before the body is shown. The preview is the final human catch-all; inspect carefully if you handle sensitive codebases.
-
-**Related**: the reusable-local-skill-candidate detection once planned as a self-retrospective "observation C" is now provided by the separate **Step 11.6: Workability Retrospective** (see `workability_retrospective` below) — it proposes skill-ization and lint-rule candidates from session patterns with a per-candidate user-approval gate.
-
-#### `workability_retrospective`
-
-Opt-in feedback channel that turns on **Step 11.6: Workability Retrospective**. After a normal run, a subagent scans the session for two classes of project-tooling improvement — **skill-candidate** (a reusable multi-step manual procedure that could become a `.claude/skills/<name>/` skill) and **lint-rule-candidate** (a mechanically-enforceable convention that could be added to an existing linter config or to `check_commands`) — and presents each candidate with a 4-way disposition gate. The raw conversation (jsonl) never leaves the session. This is a third retrospective axis, distinct from Step 11's prose-rule axis (`extract-rules`, which owns `.claude/rules/`) and Step 11.5's bundle-skill axis (`self_retrospective`).
-
-Disabled by default (the detection + disposition feature is **experimental**). When `enabled` is not `true`, Step 11.6 is never registered and the workflow behaves exactly as before.
-
-- **`enabled`** (bool, default `false`): turns Step 11.6 on. Non-boolean values warn and fall back to `false`.
-- **`backlog_dir`** (string, default `.claude/improvements`): where the "save to backlog" disposition writes its markdown files. Non-string / empty values warn and fall back to the default. A project that enables this feature should add its `backlog_dir` to `.gitignore` — the backlog is kept and only commit inclusion is blocked.
-
-```yaml
-workability_retrospective:
-  enabled: true
-  backlog_dir: ".claude/improvements"
-```
-
-Per-candidate dispositions: **act now** (start a fresh `/dev-workflow <candidate>` run, kept out of the current task's commits) / **make a subtask** (add to a decomposition state file — created fresh on a normal run — for later `--resume`) / **save to backlog** (append to a markdown file under `backlog_dir`) / **reject** (record an optional reason and drop).
-
-**Runs regardless of task difficulty**: like Step 11.5, Step 11.6 runs whenever `enabled` is `true`, independent of the assessed tier. See `references/workability-retrospective.md` for the full procedure.
-
-### Complete configuration examples
-
-#### Minimal (real example from this repository)
-
-```yaml
----
-reviewer: "ask-peer"
-check_commands:
-  - "jq empty .claude-plugin/marketplace.json plugins/*/.claude-plugin/plugin.json"
-test_commands:
-  - "Skill(run-tests)"
 ---
 ```
 
-#### Full-featured
+Flags: `--fast` skips Plan Review and Polish Prose; `--deep` runs Plan Review in full scope (default `normal` runs it in rules-only scope); `--artifact off|share|review` overrides `plan_artifact` for one run.
 
-```yaml
----
-reviewer: "ask-codex"
-custom_instructions: "Always use TDD. Write tests before implementation. Prefer functional style."
-check_commands:
-  - "pnpm run lint:fix"
-  - "pnpm run format"
-  - "pnpm run typecheck"
-boundary_check_commands:
-  - "lefthook run pre-commit"
-test_commands:
-  - "Skill(run-tests)"
-hooks:
-  on_complete:
-    - "Skill(work-complete)"
-self_retrospective:
-  feedback: "owner/repo"   # or a local path like "~/retrospectives/dev-workflow"
-workability_retrospective:
-  enabled: false           # opt-in (experimental); Step 11.6 project-tooling retrospective
-  backlog_dir: ".claude/improvements"
----
-```
+Commands in `check_commands` must match the Bash patterns the skill allows (pnpm / npm / yarn / bun / bundle exec / make lint|format|test|typecheck|check / pytest / poetry / uv / cargo / go). Others, and shell strings in `hooks.on_complete`, trigger a permission prompt.
 
-## Task Decomposition
+`/dev-workflow --init` detects the commands, writes `.claude/dev-workflow.md`, and generates the `run-tests` skill. Start a new session before the first run.
 
-Large requests that span multiple independent concerns can be split into subtasks (each delivered as its own PR), and resumed across sessions.
+## Decomposed tasks
 
-### How it works
-
-1. `/dev-workflow <task>` runs a lightweight decomposition check in Step 1.5
-   - Simple, single-concern tasks continue as a single task (no state file created)
-   - Tasks with multiple independent concerns get a decomposition proposal presented to the user
-2. The user approves, adjusts, or rejects the proposal
-3. On approval, a state file is created at `.claude/plans/dev-workflow.<slug>.md` and the first subtask is marked `in_progress`. The rest of the workflow (Step 2 onward) runs for that single subtask only
-4. On completion, the workflow reports the subtask as done and instructs the user to commit + open a PR, then resume in a new session with `/dev-workflow --resume <slug>`
-5. The last subtask removes the state file and prints a parent-task summary
-
-### Decomposition judgment (lightweight)
-
-- **Decomposed (proactively proposed when any of these hold)**:
-  - The request splits into 2+ units where each unit has a **distinct verification path** (separate E2E, manual check, or acceptance criterion) — strongest signal
-  - "and/plus"-style requests ("implement X and Y and Z")
-  - Cross-layer work where earlier layers are shippable standalone (e.g. data model → admin page → user-facing feature)
-  - Large refactors that benefit from staged rollout
-- **Not decomposed (vetoes)**: single-concern work with one verification path (typo, config tweak, obvious bug fix), changes that would break atomicity if split (e.g. a cross-caller rename that must land as one commit), or subtasks so small that per-PR / review overhead exceeds the benefit
-- **Precedence**: the primary signal (distinct verification paths) overrides all vetoes; otherwise vetoes override the non-primary positive signals. When signals are mixed and no veto applies, the workflow errs on the side of proposing decomposition
-- The proposal itself shows each subtask's `verification_hint` so you can judge and redirect quickly. That hint is advisory context for the split decision — it is not locked in as a completion contract and may be refined during Step 2
-
-The assessment is always advisory: if the user rejects the proposal, the workflow falls back to single-task mode with no state file.
-
-### State file
-
-Location: `.claude/plans/dev-workflow.<slug>.md` (one file per parent task — multiple parent tasks can coexist).
-
-```yaml
----
-parent_task: |
-  Add authentication: DB schema, API endpoints, frontend login form.
-slug: "add-authentication"
-created_at: "2026-04-09T10:00:00+09:00"
-subtasks:
-  - id: 1
-    title: "Add user auth DB schema"
-    description: "Add password_hash, session_token columns to users table"
-    verification_hint: "migration runs clean, existing tests stay green"
-    depends_on: []
-    status: "completed"
-    pr: "https://github.com/org/repo/pull/123"
-  - id: 2
-    title: "Implement auth API endpoints"
-    description: "POST /auth/login, /auth/logout"
-    verification_hint: "new auth spec passes"
-    depends_on: [1]
-    status: "in_progress"
-    pr: null
-  - id: 3
-    title: "Add frontend login form"
-    description: "Login screen + logout button"
-    verification_hint: "UI login → logout works end-to-end"
-    depends_on: [2]
-    status: "pending"
-    pr: null
----
-
-# Parent Task Breakdown
-
-(Human-readable notes, auto-generated.)
-```
-
-Adding `.claude/plans/` to `.gitignore` is recommended — the state file is a session-scoped scratchpad, not a shareable artifact.
-
-### Resume (`--resume`)
-
-```bash
-/dev-workflow --resume add-authentication
-/dev-workflow --resume dev-workflow.add-authentication.md
-/dev-workflow --resume .claude/plans/dev-workflow.add-authentication.md
-```
-
-All three forms resolve to the same state file. On resume, the workflow:
-
-1. Reads the state file (stops with a clear error if YAML parsing fails — back up and repair manually)
-2. Validates the dependency graph (stops if a cycle or dangling dependency is found)
-3. Detects any leftover `in_progress` subtask from an interrupted session and asks whether to resume it or pick a different pending one
-4. Selects the next runnable subtask (smallest `id` among `pending` entries whose `depends_on` are all `completed`)
-5. Marks it `in_progress` and proceeds to Step 2
-
-If no runnable subtask exists (all done, or all remaining blocked), the workflow reports and stops.
-
-### Important: commit before resuming
-
-**The workflow never pushes.** Step 10 (Interactive Commits) proposes the subtask's commits and lands the ones you accept, so between subtasks you normally only need to:
-
-1. Review the commits Step 10 landed
-2. Open a PR for them
-3. Only then start a new session and run `/dev-workflow --resume <slug>`
-
-When the commit phase landed nothing — you declined every commit gate, or there was nothing to commit — commit the subtask's changes by hand before step 2. Either way, if you resume with uncommitted changes from the previous subtask, the next subtask's base-commit will be recorded at a "dirty" HEAD and its diff will include the previous subtask's work. The workflow cannot detect this — keeping your git state clean between subtasks is the user's responsibility.
-
-### Parallel parent tasks
-
-Because each parent task has a unique slug, multiple parent tasks can be decomposed and resumed independently. Running `/dev-workflow <new task>` while another parent task is in progress simply creates a second state file — the two do not interfere.
-
-### Managing state files
-
-There are no `--status` / `--abort` flags. Manage state files directly:
-
-- **Inspect progress**: open `.claude/plans/dev-workflow.<slug>.md` in your editor
-- **Abort a parent task**: delete the state file
-
-## Workflow Steps
-
-The workflow begins at Step 2 (Step 1 is settings load, Step 1.5 is task decomposition). For step-by-step details, see `skills/dev-workflow/SKILL.md`.
-
-| Step | Name | Content |
-| --- | --- | --- |
-| 1 | Load Settings | Load config, resolve the review phases, register workflow tasks |
-| 1.5 | Task Decomposition | Resolve the difficulty tier, and decide decomposition. (Normal sub-mode) On the express lane the task is not split and the decomposition reference is not read; otherwise decide whether to split into subtasks and, if approved, create a state file. (Resume sub-mode) Load the state file, pick the next subtask, then resolve the tier against it — the step is executed but not registered as a task entry. |
-| 2 | Create Plan | Create plan, confirm the tier Step 1.5 resolved |
-| 3 | Plan Review | A single internal review pass by the reviewer — narrowed to `.claude/rules/` compliance in the default `normal` run mode, full under `--deep`; skipped entirely when `plan_review_enabled` is `false` — a Trivial task, or any task under `--fast` |
-| 4 | Finalize Plan | **User approval gate** — a browser-based structured review gate when the local browser is reachable, degrading to a chat approval otherwise, and going straight to chat on a Trivial task (see § Plan approval surface); when `polish_prose: true`, the plan body is polished via the `prose-polish` skill before presentation |
-| 5 | Implement | Follow the plan |
-| 6 | Tidy | Reduce complexity via the built-in `simplify` skill (falls back to the in-house `tidy` skill when `simplify` is unavailable); skipped for Trivial / Simple tasks per the difficulty-skip matrix |
-| 6.5 | Polish Prose | (Only when `polish_prose: true`) Refine resolved-language comments / descriptions in changed files via the `prose-polish` skill (file mode, `sonnet`); skipped for Trivial / Simple tasks per the difficulty-skip matrix, or under `--fast` (independent of tier) |
-| 7 | Check / Test | Run check_commands + run-tests |
-| 7.5 | Rules Compliance Review | Verify `.claude/rules/` compliance via `rules-review` skill, then apply the fixes and stop — re-verifying them belongs to Step 8.5, which runs one cycle over both review layers' fixes instead of one per layer. Skipped for Trivial / Simple tasks per the difficulty-skip matrix. When the plan defers paired-change / bookkeeping edits (version bump, CHANGELOG) to the Step 10 commit gate, the dispatch says so, so the reviewer does not flag them as missing mid-run — a deterministic false positive that would otherwise need a hand-written exception every run. Step 8.5's gate 2 injects the same scope note |
-| 8 | Code Review | A single review pass by the reviewer, plus one escalation pass taken only when that pass reported a Critical finding; skipped entirely when `code_review_enabled` is `false` — a Trivial task or a configured `code_review: false`. `--fast` does not touch it |
-| 8.5 | Deferred Verification | The review layers' one post-fix cycle, over the union of Step 7.5's and Step 8's fixes: check/test, then a rules-review scoped to every file those layers touched. A phase of its own rather than a tail of Step 8, so a run with `code_review_enabled: false` still verifies Step 7.5's fixes. Always registered and never tier-skipped; an empty fix set makes it a no-op, and the rules-review gate additionally stands down on Trivial / Simple, where no initial Step 7.5 walk ran for it to re-verify against |
-| 9 | Completion Hooks | Run `hooks.on_complete` (only if configured) |
-| 10 | Interactive Commits | Propose one commit per approved Build order step — from the landing points Step 5 recorded, refreshed with the Steps 6–9 gates' later edits to the paths each step wrote — plus a final commit for what those gates changed elsewhere, then iterate per-commit with the user (each commit's diff reviewed via chat text by default, or via the external `crit` CLI when `commit_review_gate: "crit"`). Falls back to grouping the working tree by cohesion when no step landing points were recorded. The workflow never pushes — that stays the user's responsibility |
-| 10.5 | Post-Commit Verification | The commit phase's one verification cycle: check/test, then a rules-review scoped to every file the commit gates touched — the work a `crit` round used to repeat every round, which now owes only `check_commands`. It also applies the review comments the commit phase queued because they landed on an already-committed file, and offers the lot as one additional commit |
-| 11 | Update Rules | Update rules via `extract-rules` from the session's conversation, then propose committing the resulting `.claude/rules/` changes as a single commit; skipped for Trivial / Simple tasks per the difficulty-skip matrix. An entry gate asks whether to run whichever rule-maintenance, retrospective, and PR-rule-extraction steps remain — a third option runs the PR extraction alone, so declining the conversation-derived work still keeps a reviewer's comments |
-| 11.5 | Self-Retrospective | (Only if `self_retrospective.feedback` is set; runs regardless of task difficulty) Spawn a subagent to extract sanitized bundle-skill improvement signal, present it with a destination header, and submit on user approval. See `references/self-retrospective.md` |
-| 11.6 | Workability Retrospective | (Only if `workability_retrospective.enabled: true`; runs regardless of task difficulty) Spawn a subagent to detect skill-ization / lint-rule candidates from the session, then offer a per-candidate disposition gate (act now / subtask / backlog / reject). See `references/workability-retrospective.md` |
-| 11.7 | PR Rule Extraction | (Always registered; runs regardless of task difficulty) Ask which reviewed PR to extract rules from and run `extract-rules --from-pr` on the answer, then propose committing what it wrote. Last of all the steps, because a reviewer's comments on the change this run just built only exist once someone has reviewed the PR — so the PR a run names is usually one whose review has already finished. An empty answer skips it, and unlike Step 11 it is never suppressed by a conversation extraction having already run: a comment from a human reviewer is a separate observation |
-
-### How Step 10 groups commits
-
-After Step 9, the workflow proposes a commit grouping (subjects plus what each commit covers), waits for user approval, then iterates per-commit — presenting subject / body / diff for each commit before it lands. The grouping's starting point is the **Build order you approved at Step 4**: Step 5 records each Build order step's landing point as a dangling git object, and Step 10 proposes one commit per step (plus a final commit for whatever the Steps 6–9 quality gates changed elsewhere), so the commit sequence matches the plan you approved instead of being regrouped from the finished tree. Because each commit's content comes from its recorded step rather than from a file list, **two commits may both touch the same file** — the sequence is no longer flattened just because steps revisited a file, which is what "build small, then flesh it out" normally does. When those quality gates later edit a file an earlier step's commit carries, that commit and every commit after it are **refreshed** — the step's recorded snapshot with the gates' edits to its own files folded in — instead of being shown as recorded. Otherwise you would be reviewing code the gates already fixed, and every comment you left on it could only be answered "already fixed in a later commit". Each commit still holds only the files its step wrote, so the per-step sequence survives; the commit plan says which step the refresh starts at and which files caused it. The one blurred case is a file that a gate **and** a later step both edited: that later edit rides into the earlier commit. A run with no recorded landing points falls back to grouping the working tree by cohesion, with a one-line note saying so. So does a run where you choose that fallback yourself: when a `pre-commit` hook is installed and the plan holds two or more commits — a single recorded commit plus the final quality-gate commit already counts — the gate asks first, because a hook that shelves your unstaged changes to reformat the staged ones can fail to put them back. You pick between dropping the recorded commits to let every hook run (commits then carry final content instead) and proceeding unchanged — the drop road only on a run that has recorded commits to drop — with a third option — keep the recorded commits and suppress that one hook manager — offered whenever a suppression setting for it can be resolved. (`Source of truth: skills/dev-workflow/references/interactive-commits.md` § Propose commit plan's **Stashing-hook incompatibility gate**; keep in sync. Membership = every README that restates this gate's trigger or its roads — this one and `skills/mobpro/README.md`.) The plan gate also reports a **recovery point**: on entry Step 10 records the whole working tree as a dangling git object and shows you its SHA together with the `git restore --source=<sha> --worktree -- .` that would put that content back — displayed for you to run, never run by the workflow. If recording it failed, the gate says so instead of staying quiet, so you always know whether there is a way back before anything lands. It **also** proposes committing the rule-file updates that Step 11 (Update Rules) writes to `.claude/rules/` (after `extract-rules` runs), as a single additional commit you can accept, adjust, or decline. The workflow itself never pushes — that stays the user's responsibility
-
-When hooks are left enabled, the per-commit loop also handles pre-commit hook auto-modifications via a `fold` / `defer` gate — the user chooses whether to amend the just-landed commit (`fold`) or leave the hook-edited files for a later commit-plan iteration (`defer`).
-
-The workflow never disables hooks on its own initiative. The exposure they create is real — while Step 10 lands one commit at a time, the other commits' content sits unstaged, and a hook that shelves that content, rewrites what is staged, and then fails to reapply its own shelf takes the content with it (a real incident) — but it is answered twice over: by the gate above, where suppressing that one hook manager is a road you elect rather than one the workflow takes for you; and by recovery — the recovery point above, plus a survival check that compares the tree against it whenever a commit fails, reports what went missing versus what merely diverged, and stops instead of retrying against a damaged tree. The full procedure (commit-style deduction, mid-loop adjust, cancel semantics) lives in `skills/dev-workflow/references/interactive-commits.md` (the single canonical home for Step 10's procedure); the partial-completion summary tokens stay defined in `skills/dev-workflow/references/finish-phase.md` § Step 10.
-
-Declining the rule-update commit that Step 11 (Update Rules) proposes leaves its `.claude/rules/` changes uncommitted, and the Completion reminder then fires for whatever remains.
-
-### Step 7 background launches
-
-Step 7 overlaps two read-only analyses with the test phase: the initial-pass `rules-review` (collected at Step 7.5) and the initial-pass code review (collected at Step 8). Both run as background subagents, apply no edits, and are told to run their callee on their own thread rather than nesting a further `Agent` dispatch.
-
-That nesting bound is a constraint the caller imposes, not a claim that nested dispatch is unavailable. Its cost is that the callee then runs its review inline-sequentially instead of dispatching its own per-group / per-perspective parallel reviewers — accepted because both launches already overlap the test phase, so the wall-clock the callee loses internally is time the main thread spends on tests anyway. The inline execution is the deliberate design here, not a regression.
-
-The code-review launch is a bet that Step 7.5 finds nothing: any fix Step 7.5 applies sets `code_review_stale`, and Step 8 then discards the background result whole and dispatches fresh. On Simple that bet is safe — Step 7.5 is matrix-skipped, so only a `test_commands` fix can stale it. On Moderate / Complex the launch is discarded whenever rules-review reports one actionable violation. Kept anyway, because the wasted run costs tokens but **zero** wall clock (it runs concurrently with the tests), while gating it would cost wall clock on every clean run.
-
-### Why the crit gate uses commit-range mode
-
-`references/crit-commit-review.md` requires `crit --range <base>..<head>` and forbids the file/dir form (`crit <file-1> <file-2> …`). The evidence is crit's own runtime output, which says the file form is not for reviewing changes at all: *"file paths are intended for reviewing a small set of documents or plans. To review code changes, run `crit` with no arguments"*. File arguments never enter crit's git-diff-aware code path, so the browser renders the named files' current on-disk content and no diff — which is what the gate is there to show.
-
-### Where cross-step variables are initialized
-
-The cross-step variables Step 1 sub-step 6 tabulates are initialized there rather than nearer the step that writes each one. That sub-step precedes all of their writers, so each is well-defined on **every** path — including the paths that never reach the procedure that would otherwise have initialized it. A tier that qualifies for no skip leaves `difficulty_skipped_steps` / `fast_mode_skipped_steps` at `[]` (Completion omits their reminders) and `subagent_model` at `inherit` (downstream dispatches omit the model); a run where neither review layer applies a fix leaves `review_fix_files` at `[]` (Step 8.5 Deferred Verification is then a no-op); and the shared session-scan state stays at its init when every participating step abstains or is unregistered.
-
-So do not relocate one of those inits into the procedure that writes it, expecting that procedure's own prose to cover it — several are read by steps that run whether or not the writing procedure fires.
-
-Three pieces of cross-step state sit outside that table on purpose, and the sub-step names them: `bundle_skills_unavailable` initializes at sub-step 3 (the earliest site that may append to it), the two review-phase flags at sub-step 4 (where they are resolved from config), and Step 7's launch / stale flags at **every** Step 7 entry — that repetition is what keeps the unavailable / skip / re-run paths from reading an uninitialized flag.
-
-### Why two Step 2 audit items sit in the express core
-
-`references/simplicity-self-audit-express.md` is read on both lanes; `references/simplicity-self-audit.md` only on the full lane. Two items sit in the express file for reach rather than by topic, and moving either into the full-lane file would silently drop the case it exists for.
-
-**Plan-level incrementality** needs the express lane most: Step 1.5 (Task Decomposition) skips its own decomposition judgment there, so a split this item does not propose is not proposed at all.
-
-**Deletion / no-duplication justified by an external reference — recipient-visibility check** has to survive `--fast`, which drops the Step 3 (Plan Review) pass but never the Step 2 audit. Recipient-visibility cannot be deferred to a review round fast mode skips.
-
-### Changing the express / full lane difference set
-
-`references/tier-assessment.md` § Lanes is the source of truth for what the two lanes differ in; keep every restating site in sync with it. Membership = every site that branches on the lane **or restates its difference set**, including this file's § Express lane and the tier table under its § Configuration section. A branch site says only which lane it is on and points at § Lanes — the set of differences lives in that table, not at the branch sites.
-
-### Renaming a review-category label
-
-`references/review-categories.md` is the single canonical home for the Step 3 and Step 8 review rubrics; the two dispatch sites keep a label-only enumeration — Step 3's in `references/step3-plan-review.md`'s group table, Step 8's in `references/code-review-payload.md` — and point the reviewer at the matching section rather than restating it.
-
-Several bold sub-check labels inside the categories (for example `Runtime/language major version upgrades`, `Internal convention citation verification`, `Cross-component sibling coverage`) are cited verbatim by `references/simplicity-self-audit.md` and `references/simplicity-self-audit-express.md`, and — for every category (a) sub-check — by `references/step3-plan-review.md`'s group table, which partitions them across its groups. The category labels themselves are cited by `references/plan-authoring.md` (§ Step 3 (d) content-quality rubric) and by `references/plan-format.md`, whose § User-gate summary preamble paraphrases the three code-review categories in its Step 8 slot.
-
-So when renaming any of those labels, sweep every citation site across the repository, the bundle copies included.
-
-### Renaming the Simplicity self-audit label
-
-`references/simplicity-self-audit-express.md` and `references/simplicity-self-audit.md` are the single canonical home for the Step 2 audit checklist; `SKILL.md` Step 2 points at them rather than restating the items. The stable phrase anchor `Step 2 § Simplicity self-audit` resolves to the **Simplicity self-audit** label kept in `SKILL.md` Step 2's delegation pointer, while the sub-step body itself lives in `references/step2-create-plan.md` — so keep that label in the pointer when either file is edited.
-
-Four sites cite the anchor: `references/review-categories.md` (Step 3 reviewer category (a)), `references/step5-implement.md` (the late-stage scaffolding self-audit), `references/plan-authoring.md` § Step 2 self-check, and `references/task-decomposition-normal.md`. Renaming the label means sweeping all four, the bundle copies included.
-
-## Plan format
-
-Plans produced in Step 2 and presented in Step 4 follow a fixed structure so you can scan them quickly and focus on the parts that actually need your judgment. Full specification in [`references/plan-format.md`](references/plan-format.md).
-
-### Sections
-
-| Section | Required | Purpose |
-| --- | --- | --- |
-| Overview | Yes | Goal, highlights (high-impact callouts — DB migrations, destructive ops, breaking changes; omitted when none), difficulty, scope (files), approach — at most 5 bullets, one line each. 30-second scan |
-| Decisions | Yes | Up to 5 items where **your** judgment is actually needed, OR a fixed "no decisions" sentence (see below) |
-| Build order | Yes | The body of the plan — always an ordered, numbered list of implementation steps, each written as `N. **<heading>** — <detail>`. The order is the order the work lands in, and Step 5 executes it step by step |
-| Test plan | Yes | Test files to add/update, test types, coverage — or justification for no tests; each case may reference the Build order step it verifies |
-| Risks / Unknowns | Optional | Non-trivial risks or open questions |
-
-The `Build order` heading name and its `N. **<heading>** — <detail>` step shape are specified by [`references/plan-authoring.md`](references/plan-authoring.md) § Template. A rename or a shape change sweeps this closed list in the same commit — in this README, the section table above plus Two-tier presentation, How to review a plan quickly, and the visual-gate bullets; mobpro's `references/plan-shape.md` (§ Template and § Review lens' Structure bullet); and, under `scripts/plan-review/public/`, `SECTION_TYPES` in `plan-parse.mjs` for the heading, plus — for the shape — `collapseBuildOrderSteps` and `STEP_SEP_RE` in `plan-render.mjs` and the `[data-section-type="buildorder"] … > ol` rules in `plan-view.css`, which draw the steps as a numbered rail and so depend on each one rendering as an `<li>` of an `<ol>`. Those sites re-encode the name or the shape in a form a grep for the old token can miss, which is what puts them on the list; a passing mention anywhere in the skill's own files is not a member, because that grep does reach it.
-
-### The Decisions section
-
-This is the attention anchor. An item lands in Decisions only if **both** are true: (a) reasonable engineers could legitimately disagree, AND (b) switching later would require non-trivial rework. Preference-level choices that are cheap to reverse do not belong here — they stay in Build order. Full criterion in [`references/plan-authoring.md`](references/plan-authoring.md) § Decisions criterion (AND condition).
-
-When no items qualify, the section is still rendered with one of two fixed sentences (one for Normal mode, one for Resume / subtask mode) — so "no decisions" becomes an unambiguous signal rather than a missing-by-mistake section. Canonical strings in [`references/plan-format.md`](references/plan-format.md) § Empty-Decisions fixed sentences.
-
-In Resume mode, subtask boundaries, order, and purposes were already approved in the parent run's Step 1.5 — only in-subtask judgment calls surface in Decisions. Details in [`references/plan-authoring.md`](references/plan-authoring.md) § Subtask / Resume handling.
-
-**Two-tier presentation**: on the chat approval, Step 4 shows a condensed view — Overview (including highlights), Decisions, the Build order step headings (which name the files each step touches), and a one-line gist of Test plan and Risks. The per-step detail and the full reference sections live in the plan document at `.claude/plans/<slug>.md`, which the chat view points to. A `Review guide` line at the top marks which sections need your judgment (Overview, Decisions, Build order) vs reference detail (Test plan, Risks).
-
-### Plan approval surface
-
-Step 4's approval runs in your browser. The gate serves the plan on a local `127.0.0.1` server (the bundled `scripts/plan-review/serve.mjs` viewer), opens your browser, and lets you review and comment per element, then choose **approve** or **revise**. `approve` proceeds to implementation; `revise` applies your comments (and any recommendation/alternative switches) to the plan document itself — the moment you submit, not at the end of the loop — and re-runs the gate, highlighting what changed since your previous review. A comment that asks something rather than asking for a change is answered instead, with the plan left alone, and the answer appears on the page under the block you commented on. The re-run reuses the same port and reloads the tab you already have; only when that port is no longer free does a new tab open. It turns the plan into a review surface plain markdown cannot offer:
-
-- a **summary header** (Goal as title; Difficulty / Scope / Risks-count chips) for a 5-second scan
-- **a whole-change picture at the top** — one figure, above the plan and across the full width, for the reader meeting this change for the first time: what stands now, what the plan moves, what you end up with. It is authored as the figures file's `## Hero` block, sits outside the three-per-plan cap the per-section figures share, and is optional here — a plan without one simply opens on its header. (`mobpro` requires one: a junior needs the picture before any section makes sense.)
-- **collapsible sections** — the must-review tier (Overview / Decisions / Build order) opens by default, as does Context where a plan carries one; the reference sections (Test plan / Risks) start collapsed, Risks carrying a count badge. A collapsed section still says what it is about: its header carries the section's own first line of prose, which disappears the moment you open it and read that line in place
-- **a visual form per section kind** — the Build order as a numbered sequence down a rail, the Decisions as their two options side by side, the Risks as a list of cards. All of it is styling: none of these forms wraps, reorders, or inserts text into the blocks a comment anchors on
-- **collapsible Build order steps** — each step shows only its bold heading and opens its detail on click, so the section stays a one-line-per-step list even though it is must-review
-- **Decision cards** rendering each Decision's Question / Recommendation / Alternative, with a one-click **Keep recommendation / Switch to alternative** toggle (a switch is applied as a Recommendation↔Alternative swap when you submit)
-- **per-element comments** — comment on an individual Decision, Build order step, risk, or paragraph, not just a whole section
-- **figures** — mermaid diagrams rendered as SVG (flowcharts / sequence diagrams), plus hand-authored SVG where a flow needs more than mermaid's automatic layout. Every must-review section gets one unless a figure there would only restate a list, decorate the section, or illustrate something you never have to judge; the whole-change figure above the plan is a further one, outside that count. Figures are one of two things the browser shows that the plan document does not — the conversation thread and its log panel are the other. Figures live in a separate `.claude/plans/<slug>.figures.md`, which the gate merges into the copy it serves, so the plan document you read in your editor — and the chat approval this gate degrades to — stays prose only
-- **prose folded under its figure** — a section carrying a figure opens on the figure and its caption, with the prose in a closed disclosure one click below. Nothing is dropped: the served copy and the plan document both keep every word. A section that is new or changed since your previous review opens instead, as does one replaying an earlier round's exchange, so nothing that moved since you last looked starts folded. Build order is left as it is — its steps already open at their headings
-
-The gate needs a local browser — the agent and you on the same machine (local CLI / Remote Control). Where that does not hold, the approval degrades to **chat**: Step 4 probes `CLAUDE_CODE_REMOTE` before it even reads the gate procedure, so on Claude Code on the Web the browser gate is skipped outright; a launch failure or a timeout after the gate has started falls through to the same chat approval. A **Trivial** task takes the chat approval directly as well, with the gate never launched — a browser round-trip to approve a handful of lines costs more attention than the plan does (§ Express lane). The canonical plan document is always `.claude/plans/<slug>.md`, and the gate never writes it back from the served copy — every launch rebuilds that copy from it.
-
-### Changing the plan-approval gate's return contract
-
-`references/visual-plan-review.md` is the single canonical home for the visual gate's **procedure**; the callers that read it — `references/step4-finalize-plan.md`'s **Run the approval gate** bullets and `mobpro`'s `references/m5-plan-approval.md` **Approval surface** sub-step — each probe browser reachability first and describe the surface for their own audience.
-
-A change to **the three-value return contract (`approve` / `rewrite-approach` / `fallback`) or the routing around it** — deliberately narrower than "anything that mentions the gate", so this list can stay complete — sweeps a closed list of sites: the whole of `references/step4-finalize-plan.md` (its **Run the approval gate** bullets and its § Sub-step 3 — rewrite-approach bucket runtime); `SKILL.md`'s Step 4 sub-step 2 and its § No-Stall Principle Step 4 bullet; `mobpro`'s `references/m5-plan-approval.md` **Approval surface** sub-step and its outcome-mapping sub-step. Keep those in sync with the gate procedure.
-
-Everything else — the two READMEs, `references/plan-format.md`, `references/step1-load-settings.md`'s state-variable table, and `SKILL.md` outside those two sites — *describes* the surface or tracks downstream state rather than stating the contract, so it is carved out of this directive and swept by the ordinary rename / behavior-change rules instead.
-
-### How to review a plan quickly
-
-1. Read the `Review guide` line and Overview — including any Highlights (≤ 30 seconds).
-2. Read the guidance line at the top of the plan — Step 4 leads with one of three literal lines that tell you where to focus.
-3. If Decisions has items, engage with each one (the real work). If Decisions is empty, approve after a light skim.
-4. Scan the Build order step headings — they are the sequence the work will land in, and approving the plan approves it. The per-step detail and the full Test plan / Risks are in the plan document (§ Plan approval surface) and have already been reviewed in Step 3 by the reviewer skill; open the plan document and skim only if something looks off. (Two exceptions, and the Step 4 line tells you which one you are in: when `plan_review_enabled` is `false` — a Trivial task, or any task run with `--fast` — Step 3 is skipped and the plan is entirely unreviewed; in the default `normal` run mode it ran over `.claude/rules/` compliance alone, leaving design and completeness unreviewed. Read the plan carefully before approving in either case.)
-
-## Prerequisites
-
-To get the full benefit of dev-workflow, the following skills are recommended:
-
-- **Reviewer skill** (specified via `reviewer` setting): Used for Plan / Code Review. If not installed, falls back to asking the user directly
-- **rules-review skill**: Required for Step 7.5 (rules compliance review). Step 7.5 is skipped if not installed
-- **extract-rules skill**: Required for Step 11 (rule update) and Step 11.7 (PR rule extraction). Whichever of the two cannot reach it is skipped; availability is judged per step, so one being skipped does not skip the other
-- **prose-polish skill**: Used for the Step 4 plan-body polish and Step 6.5 (Polish Prose), both gated by the `polish_prose` setting (default `true`, opt-out). When `polish_prose` is not `true` — or the skill is not installed — those passes are skipped and the plan and changed-file prose are presented un-polished
-- **`gh` CLI, authenticated** (for Step 11.5 when `self_retrospective.feedback` is set to an `owner/repo` value, and for Step 11.7 on any run): Step 11.5 submits via `gh api` POST to `/repos/<feedback>/issues`, and Step 11.7 reads the PR's review comments through `gh`. The backing token only needs `Issues: write` on the target repo (no full `repo` scope). If `gh` is missing or unauthenticated, Step 11.5 aborts with an actionable message and Step 11.7 skips itself with a note rather than blocking the run; switch `feedback` to a local path to drop Step 11.5's `gh` requirement, and decline Step 11.7's PR prompt to drop its own
-
-`reviewer` (when `ask-peer`), `rules-review`, `extract-rules`, `tidy` (the Step 6 cleanup fallback), and `prose-polish` are each `dev-workflow-bundle` sibling skills, installed separately from `dev-workflow` itself — installing `dev-workflow` alone does not guarantee they are present. See the Error / edge case behavior table below for what happens when one is unavailable.
-
-## Error / edge case behavior
-
-| Situation | Behavior |
-| --- | --- |
-| None of the 3 settings files exist | Prompts to run `--init` and stops |
-| Settings file has malformed YAML | Warns, skips that layer, continues with remaining layers |
-| `reviewer` unset or unsupported value | Falls back to `ask-peer` |
-| `code_review` is not a boolean | Warns and falls back to `true` |
-| `commit_review_gate` is not a valid value | Warns and falls back to `diff` |
-| `implementation_executor` is not a valid value | Warns and falls back to `main` |
-| `polish_prose` is not a boolean | Warns and falls back to `true` |
-| `plan_artifact` is not a valid value | Warns and falls back to `off` |
-| `custom_instructions` is not a string | Warns and ignores |
-| `hooks.on_complete` has invalid format | Warns and ignores |
-| `check_commands` failure | Fix and retry (up to 3 times); if still failing, reports to user and stops |
-| `run-tests` failure | Fix and retry (up to 3 times) |
-| Rule violations persist after 2 cycles at Step 8.5 (Deferred Verification) or at Step 10.5 (Post-Commit Verification) | Asks the user for a decision |
-| `hooks.on_complete` hook failure | Recorded as a warning; remaining hooks continue |
-| `--resume` target file not found | Reports the attempted path + lists `.claude/plans/dev-workflow.*.md` candidates and stops |
-| State file YAML parse error | Stops and instructs the user to back up and repair manually (no automatic recovery) |
-| State file has `depends_on` cycle or dangling id | Stops with a clear error describing the invalid edge |
-| Leftover `in_progress` subtask on resume | Asks the user whether to resume it or pick a different pending subtask |
-| `self_retrospective.feedback` not a string / empty / neither path nor `owner/repo` | Warns and skips Step 11.5 (workflow continues normally) |
-| `self_retrospective.feedback` is `owner/repo` but `gh auth status` fails | Early warning at Step 1; Step 11.5 aborts with an actionable message at runtime |
-| Step 11.5 subagent returns malformed / unsanitized content | Abort Step 11.5 with `skipped` terminal summary; no retry in the same session |
-| Step 11.5 submission (`gh api` POST / path `Write`) fails after approval | Report error + draft body in-chat so user can retry manually; terminal summary `failed`; workflow continues to Completion |
-| `workability_retrospective.enabled` is not a boolean | Warns and falls back to `false` |
-| `workability_retrospective.backlog_dir` not a non-empty string | Warns and falls back to `.claude/improvements` |
-| Step 11.6 detection subagent returns malformed content | Skip the disposition gate; terminal summary `skipped`; no retry in the same session |
-| Step 11.6 backlog write / state-file create fails | Recorded as a warning in the terminal summary; remaining candidates continue |
-| Any `dev-workflow-bundle` sibling skill (`ask-peer` as reviewer / `rules-review` / `extract-rules` / the Step 6 `tidy` fallback / `prose-polish`) unavailable | Recorded to a run-level ledger; surfaced as one aggregated reminder at Completion |
-| Step 6 cleanup: both `simplify` and `tidy` unavailable | Step 6 is skipped entirely with a note (no cleanup edits applied this run) |
-
-## Notes
-
-- Adding `.claude/*.local.md` to `.gitignore` is recommended. `.claude/dev-workflow.md` (project shared) should be committed. If `.gitignore` uses `.claude/*`, add `!.claude/dev-workflow.md`
-- Adding `.claude/plans/` to `.gitignore` is also recommended (task decomposition state files)
-- Settings files are **YAML frontmatter only** (no body required)
-- Personal override files only need the keys you want to override — unspecified keys inherit from lower layers
-- When a personal override specifies `hooks.on_complete`, items are appended after the project shared list (not replaced)
-- `--init` is expected to end the session. Run `/dev-workflow <task>` in a new session
-- When resuming decomposed subtasks, **always commit the previous subtask's changes before running `--resume`** — the workflow cannot detect dirty git state
-- For the detailed execution spec, see `skills/dev-workflow/SKILL.md`; for detection logic, see `skills/dev-workflow/references/init-mode.md`
+Moderate and Complex tasks may be split into subtasks, each shipped as its own PR. The state file is `.claude/plans/dev-workflow.<slug>.md`, in the format `dev-workflow` uses, so a split started by either skill resumes in the other with `--resume <slug>`.

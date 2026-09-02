@@ -1,6 +1,6 @@
 {
   "name": "dev-workflow",
-  "description": "Guided development workflow: planning, review, implementation, testing, and rule maintenance",
+  "description": "Guided development workflow: task decomposition, planning, peer plan review, browser plan approval, implementation, tidy, check/test, rules and code review, one commit per build step, rule updates, retrospectives; mob mode for a junior navigator.",
   "author": {
     "name": "hiropon",
     "url": "https://github.com/hiroro-work"
@@ -10,9 +10,9 @@
   "license": "MIT",
   "keywords": [
     "workflow",
+    "development",
     "planning",
-    "code-review",
-    "testing",
-    "rules"
+    "review",
+    "junior-friendly"
   ]
 }

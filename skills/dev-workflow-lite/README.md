@@ -29,7 +29,7 @@ All eighteen phases are registered on every run. A skipped phase is marked compl
 
 ## What is not here
 
-Compared with `dev-workflow`: difficulty escalation after Implement (only the post-plan re-check is kept), `implementation_executor`, `subagent_model`, `boundary_check_commands`, Workability Retrospective. Post-Commit Verification is folded into Interactive Commits as one rule. Run modes, the browser plan review, plan artifacts, the crit commit gate, and the background review launch during Check / Test (solo mode only, as in mobpro) are kept. Everything else keeps its behavior; the internal mechanics are shorter.
+Compared with `dev-workflow`: difficulty escalation after Implement (only the post-plan re-check is kept), `implementation_executor`, `subagent_model`, `boundary_check_commands`, Workability Retrospective. Post-Commit Verification is folded into Interactive Commits as one rule. Run modes, the browser plan review, plan artifacts, the crit commit gate, and the background review launch during Check / Test are kept. Everything else keeps its behavior; the internal mechanics are shorter.
 
 ## Self-retrospective without skill growth
 

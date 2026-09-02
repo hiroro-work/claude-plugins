@@ -6,7 +6,7 @@ Read from `SKILL.md` Phase 9 (Check / Test), Phase 10 (Rules Compliance Review),
 
 For each review that this run will perform (Rules Compliance Review unless its row is skipped; Code Review unless its row is skipped), dispatch one `Agent` with `run_in_background: true` and the same model as the session (no `model` parameter). Its prompt: for Rules Compliance, "run `Skill(rules-review) --base-commit <base-commit>` and return its full output verbatim, including the fenced JSON verdict"; for Code Review, "run `Skill(<reviewer>)` with the payload below and return its full output verbatim", followed by the Phase 11 payload. Both end with "Do not edit any file. Do not run further `Skill()` dispatches beyond the one named." Invoking this skill is the request to dispatch; do not ask the user to confirm the launch. Then continue into Check / Test without waiting; a running background agent is never a reason for a separate turn.
 
-If `Agent` is not available on this tool surface, skip the launch and run Phases 10 and 11 inline as written; say so in one line. In mob mode the launch is always skipped and both reviews run inline after Check / Test: the error narration there routinely changes the tree, which would make a background result stale on most runs.
+If `Agent` is not available on this tool surface, skip the launch and run Phases 10 and 11 inline as written; say so in one line. Mob mode launches them too; its pre-review prediction (`mob-mode.md` § Code Review) is narrated before the launch.
 
 ## Collect (Phases 10 and 11)
 

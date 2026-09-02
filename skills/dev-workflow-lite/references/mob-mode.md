@@ -60,7 +60,7 @@ Never hand an error over. On every failure, including re-entries from Verify Fix
 
 ## Code Review
 
-Before the reviews are dispatched (inline, after Check / Test; mob mode never launches them in the background), predict where findings will land: name only the checks this run dispatches, then one clause per predicted spot, what this run wrote first, then pre-existing code. On Trivial say in one line that neither review runs and why. After the results return, cross-check the prediction, acknowledging what it got right before what it missed. Prediction fires only on the first pass, not on Verify Fixes. Phase 11's Critical-triggered escalation pass is not run in mob mode; the per-unit reviews and the unresolved-findings gate carry that weight.
+Before the reviews are launched (at Check / Test entry, or inline when the launch is skipped), predict where findings will land: name only the checks this run dispatches, then one clause per predicted spot, what this run wrote first, then pre-existing code. On Trivial say in one line that neither review runs and why. After the results return, cross-check the prediction, acknowledging what it got right before what it missed. Prediction fires only on the first pass, not on Verify Fixes. Phase 11's Critical-triggered escalation pass is not run in mob mode; the per-unit reviews and the unresolved-findings gate carry that weight.
 
 ## Commits
 

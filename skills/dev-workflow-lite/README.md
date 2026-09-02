@@ -23,17 +23,22 @@ The same development workflow as `dev-workflow`, with the same phases in the sam
 | 15 | Update Rules | 11 | **user gate**, `Skill(extract-rules)` | Trivial, Simple |
 | 16 | PR Rule Extraction | 11.7 | **user gate**, `Skill(extract-rules)` | empty answer |
 | 17 | Self-Retrospective | 11.5 | **user gate**, `gh api` | `self_retrospective.feedback` unset |
-| 18 | Completion | Completion | summary | never |
+| 18 | Workability Retrospective | 11.6 | **user gate**, project tooling candidates | `workability_retrospective.enabled` not `true` |
+| 19 | Completion | Completion | summary | never |
 
-All eighteen phases are registered on every run. A skipped phase is marked completed with its reason. The difficulty tier (Trivial / Simple / Moderate / Complex) is assessed at Task Decomposition and re-checked once against the drafted plan at the end of Create Plan, where it can only rise (a plan that turns out to carry a real design decision lifts Simple to Moderate and reopens the skipped rows). After that it never changes.
+All nineteen phases are registered on every run. A skipped phase is marked completed with its reason. The difficulty tier (Trivial / Simple / Moderate / Complex) is assessed at Task Decomposition and re-checked once against the drafted plan at the end of Create Plan, where it can only rise (a plan that turns out to carry a real design decision lifts Simple to Moderate and reopens the skipped rows). After that it never changes.
 
 ## What is not here
 
-Compared with `dev-workflow`: difficulty escalation after Implement (only the post-plan re-check is kept), `implementation_executor`, `boundary_check_commands`, Workability Retrospective. Post-Commit Verification is folded into Interactive Commits as one rule. Run modes, the browser plan review, plan artifacts, the crit commit gate, and the background review launch during Check / Test are kept. Everything else keeps its behavior; the internal mechanics are shorter.
+Compared with `dev-workflow`: difficulty escalation after Implement (only the post-plan re-check is kept), `implementation_executor`, `boundary_check_commands`. Post-Commit Verification is folded into Interactive Commits as one rule. Run modes, the browser plan review, plan artifacts, the crit commit gate, and the background review launch during Check / Test are kept. Everything else keeps its behavior; the internal mechanics are shorter.
 
 ## Self-retrospective without skill growth
 
 With `self_retrospective.feedback` set, the run ends by turning its own friction (corrections, stalls, rejected callee output, wrong defaults) into at most three Findings and posting them as a GitHub issue or a local file, after you approve the preview. The producer is built so that the fixes it asks for do not make the skills grow: each Finding must name a behavior change or a same-size-or-smaller wording change, carry its estimated character delta and what prose could be dropped to pay for it, and is checked against the target's current text so it never asks for a reminder that already exists. The repository's tests hold `SKILL.md` to 28,000 characters, `SKILL.md` plus the always-read references to 80,000, and `mob-mode.md` to 12,000; a Finding that would cross either must name what to delete. Signals come from the run in context; the session log is read only when context compaction has summarized away earlier phases (`scripts/retro/session-text.mjs`, bounded output), and no agent is dispatched.
+
+## Workability retrospective
+
+With `workability_retrospective.enabled: true`, the run ends by turning friction with the project's own tooling into at most three candidates: a project skill for a manual procedure that recurred, a linter rule for a convention review had to catch by hand, or a check command for a failure that surfaced late. Each cites what happened (with the timing table row) and proposes something concrete; duplicates of what the project already has are dropped. You choose per candidate: `apply` (single configuration edits only, checked once), `backlog` (a file under `.claude/improvements/`), or `skip`. Prose conventions still go to Update Rules and workflow defects to Self-Retrospective; this phase covers tooling only.
 
 ## Commits per Build order step
 
@@ -43,7 +48,7 @@ Because absorption also handles formatter output, `boundary_check_commands` is n
 
 ## Mob mode
 
-`mode: mob` in the settings, or `--mob` on the command line, runs the same eighteen phases for a junior navigator: the AI drives and narrates, the junior reads each implementation unit's diff and approves commits. It adds two learning stops (a diff review after every Build order step, and the junior's question after each commit's note), one gate (plan-building checkpoints before the plan is written), narration at check/test failures and before reviews, a junior-oriented plan shape, and the browser plan review on every tier. Everything else — tiers, gates, settings, commits, rule updates — is the solo run. The whole mode lives in `references/mob-mode.md`, read only when the mode is on; solo runs never load it.
+`mode: mob` in the settings, or `--mob` on the command line, runs the same nineteen phases for a junior navigator: the AI drives and narrates, the junior reads each implementation unit's diff and approves commits. It adds two learning stops (a diff review after every Build order step, and the junior's question after each commit's note), one gate (plan-building checkpoints before the plan is written), narration at check/test failures and before reviews, a junior-oriented plan shape, and the browser plan review on every tier. Everything else — tiers, gates, settings, commits, rule updates — is the solo run. The whole mode lives in `references/mob-mode.md`, read only when the mode is on; solo runs never load it.
 
 `/mobpro-lite <task>` is a thin entry point for the same thing (the `mobpro-lite` plugin). Fix the mode in the project's shared settings rather than switching per run, so the team sees one behavior.
 
@@ -85,6 +90,8 @@ self_retrospective:
   feedback: "owner/repo"     # or a local directory; unset skips the phase
 timing:
   report_dir: "docs/timing"  # optional; the table is always shown at Completion
+workability_retrospective:
+  enabled: false             # opt-in; backlog_dir defaults to .claude/improvements
 hooks:
   on_complete:
     - "Skill(work-complete)"

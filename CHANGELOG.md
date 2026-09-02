@@ -2,6 +2,14 @@
 
 ## 2026-09-02
 
+### dev-workflow v2.1.0 / dev-workflow-bundle v2.1.0
+
+- feat(dev-workflow): the plan's Overview takes a **Now** / **After** / **Not changing** shape, with a per-file Scope line (`<kind>` `new` / `edit` / `delete`, one-line change, the Build order step that touches it) so an approver can judge the change from the file list; Difficulty stays a header chip. Mob mode's `What we're building` takes the same Now / After and Scope fields.
+- feat(dev-workflow): a Recommendation is a two- or three-line conclusion plus at most three rationale bullets; a Build order step is one line of *what* plus uncapped *how* lines beneath it, so Implement loses no detail.
+- feat(dev-workflow): the plan viewer and the published plan page render that Overview as structured blocks — Now and After side by side, Highlights and Not changing as bands, Scope as a kind / file / change / step table — and the header counts files, steps, and decisions from the plan. Every block stays a commentable unit; the Goal shape still renders as before.
+- feat(dev-workflow): mermaid diagrams are drawn with the page's own colour tokens and font (`theme: base` + `themeVariables`) on both surfaces, so a figure no longer sits in mermaid's default palette.
+- fix(dev-workflow): the figures step names its notation again — mermaid for flows, sequences, and dependency graphs; inline SVG with `var(--token, #fallback)` colours for axis positions, grids, and comparisons — and requires a one-sentence caption.
+
 ### dev-workflow v2.0.1 / peer v2.6.3 / extract-rules v1.29.2 / dev-workflow-bundle v2.0.1
 
 - fix(dev-workflow): mob mode gains a register paragraph — a senior pairing with a junior speaks in complete sentences with the reason alongside the fact; the explanation caps bound length, not tone.

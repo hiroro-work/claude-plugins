@@ -2,7 +2,7 @@
 
 ## 2026-09-02
 
-### dev-workflow-lite v1.0.0
+### dev-workflow-lite v1.0.0 / mobpro-lite v1.0.0
 
 - feat: new plugin `dev-workflow-lite`
   - The `dev-workflow` phases (Load Settings through Completion, seventeen in all) in the same order with the same user gates, written to run identically on every invocation. Which phases run is decided once by one difficulty table (Trivial / Simple / Moderate / Complex), the run mode (`--fast` / `--deep`), and `code_review`, `polish_prose`, `hooks.on_complete`; the tier never changes mid-run.
@@ -10,7 +10,10 @@
   - Review-fix absorption replaces `dev-workflow`'s snapshot supersession: `scripts/absorb/attribute.mjs` blames each later edit to the step that last wrote the line and folds it into that step's commit through a non-interactive `rebase --autosquash` in a throwaway worktree, so a step's commit shows its reviewed form without pulling in later steps' content. Unowned edits go to a trailing `review fixes` commit; any failure falls back to the plain chain plus that commit.
   - Dropped, as features outside the workflow itself: mid-run difficulty escalation, `implementation_executor`, `subagent_model`, `boundary_check_commands`, Self-Retrospective, Workability Retrospective. Post-Commit Verification is folded into Interactive Commits as one rule.
   - Reads the same settings files and the same ten keys as `dev-workflow`, and uses the same decomposition state-file format, so a project can switch without reconfiguring and a split task resumes in either skill.
-  - `SKILL.md` plus seven reference files total about 55k characters against `dev-workflow`'s 657k.
+  - Mob mode (`mode: mob` / `--mob`): the `mobpro` behavior as a mode of the same skill — per-unit diff review after every Build order step, plan-building checkpoints, error and pre-review narration, the junior-oriented plan shape, the browser gate on every tier — defined in `references/mob-mode.md` and read only when the mode is on. `SKILL.md` carries at most one pointer sentence per phase, enforced by a test together with a 26k-character budget.
+  - `SKILL.md` plus eight reference files total about 66k characters against `dev-workflow`'s 657k and `mobpro`'s 134k.
+- feat: new plugin `mobpro-lite`
+  - A thin entry point that calls `dev-workflow-lite` with `--mob`. Keeps the `mobpro` name and leaves room to split the mode into its own skill later without changing how it is invoked.
 
 ## 2026-09-01
 

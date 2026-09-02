@@ -147,6 +147,17 @@
       "category": "workflow"
     },
     {
+      "name": "mobpro-lite",
+      "description": "Learning-oriented (mob-programming) entry point that runs dev-workflow-lite in mob mode: the AI drives and narrates, the junior reviews each diff",
+      "source": "./skills/mobpro-lite",
+      "skills": ["./"],
+      "version": "1.0.0",
+      "author": {
+        "name": "hiropon"
+      },
+      "category": "workflow"
+    },
+    {
       "name": "dev-workflow-bundle",
       "description": "Development workflow bundle (includes peer + extract-rules + dev-workflow + rules-review + tidy + prose-polish + mobpro)",
       "source": "./plugins/dev-workflow-bundle",

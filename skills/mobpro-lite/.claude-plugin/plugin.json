@@ -1,0 +1,17 @@
+{
+  "name": "mobpro-lite",
+  "description": "Learning-oriented (mob-programming) entry point that runs dev-workflow-lite in mob mode: the AI drives and narrates, the junior reviews each diff.",
+  "author": {
+    "name": "hiropon",
+    "url": "https://github.com/hiroro-work"
+  },
+  "homepage": "https://github.com/hiroro-work/claude-plugins",
+  "repository": "https://github.com/hiroro-work/claude-plugins",
+  "license": "MIT",
+  "keywords": [
+    "workflow",
+    "mob-programming",
+    "learning",
+    "junior"
+  ]
+}

@@ -8,8 +8,8 @@ allowed-tools: Read, Write, Edit, Glob, Grep, TaskCreate, TaskUpdate, TaskList, 
 
 ```text
 /dev-workflow-lite --init                 # Detect check/test commands, write settings, generate run-tests
-/dev-workflow-lite [--fast|--deep] [--artifact off|share|review] <task>                 # Run the workflow
-/dev-workflow-lite --resume <state-file> [--fast|--deep] [--artifact off|share|review]  # Run the next subtask of a decomposed task
+/dev-workflow-lite [--fast|--deep] [--artifact off|share|review] [--mob] <task>                 # Run the workflow
+/dev-workflow-lite --resume <state-file> [--fast|--deep] [--artifact off|share|review] [--mob]  # Run the next subtask of a decomposed task
 ```
 
 Seventeen phases, always in this order, always all registered. Which phases are skipped, and how Plan Review runs, is decided by one table (§ Difficulty and the skip table) plus the run mode and four settings, and never changes mid-run. User gates are listed in § User gates; nothing else asks the user a question.
@@ -31,6 +31,7 @@ Merge rules per key, in order: `null` or an empty value in a higher layer clears
 | `hooks.on_complete` | none | `Skill(<name>)` or shell command strings, run as Completion Hooks |
 | `plan_artifact` | `off` | `off` / `share` / `review`: publish the approved plan as a claude.ai artifact, and with `review` wait for the team's comments. `--artifact` overrides per run |
 | `commit_review_gate` | `diff` | `diff` / `crit`: how each commit's diff is shown at Interactive Commits. `crit` opens the crit browser reviewer |
+| `mode` | `solo` | `solo` / `mob`. `mob` is the learning-oriented run for a junior navigator: same phases and gates, plus the stops and narration `references/mob-mode.md` defines. `--mob` sets it for one run |
 | `custom_instructions` | none | Free-form development guidance (for example "Always use TDD") followed at Create Plan, Implement, and Tidy and handed to both reviewers. `.claude/rules/` and the user's explicit requests win on conflict |
 
 `language` resolves as: merged settings → `language` in `~/.claude/settings.json` → `ja`. Section headings, phase names, commit messages, diffs, and file paths stay as written; explanatory prose follows the resolved language. Keys this skill does not read (for example `implementation_executor`, `subagent_model`, `self_retrospective`) are ignored; name them once in one line at Load Settings.
@@ -71,7 +72,7 @@ The only places the workflow waits for the user:
 - PR Rule Extraction: which PR to read (an empty answer declines), then the rule commit.
 - Completion (decomposed runs only): the disposition of each work item left in prose, then an optional PR URL for the finished subtask.
 
-Everywhere else, judge callee results yourself and issue the next tool call immediately. A reply that is a question or non-committal ("looks good?") is never approval: ask what was meant.
+In mob mode, `references/mob-mode.md` § Learning stops adds the per-unit diff review, the plan-building checkpoints, and the post-commit-note question to this list. Everywhere else, judge callee results yourself and issue the next tool call immediately. A reply that is a question or non-committal ("looks good?") is never approval: ask what was meant.
 
 ## Workflow artifacts
 
@@ -79,13 +80,13 @@ Files this workflow writes as its own state are excluded from every diff, review
 
 ## Mode detection
 
-`--init` → read `references/init-mode.md` and follow it; the session ends there (generated skills are recognized from the next session). `--resume <state-file>` → Resume sub-mode. Otherwise Normal sub-mode. `--fast` / `--deep` set the run mode and `--artifact <value>` overrides `plan_artifact`; both combine with either sub-mode and are ignored under `--init`.
+`--init` → read `references/init-mode.md` and follow it; the session ends there (generated skills are recognized from the next session). `--resume <state-file>` → Resume sub-mode. Otherwise Normal sub-mode. `--fast` / `--deep` set the run mode, `--artifact <value>` overrides `plan_artifact`, and `--mob` sets `mode: mob`; all combine with either sub-mode and are ignored under `--init`.
 
 ## Phase 1: Load Settings
 
 1. Run `pwd`; confirm the repository root. Abort if `git symbolic-ref -q HEAD` exits non-zero (detached HEAD).
 2. Record `<base-commit>` = `git rev-parse HEAD`. Every later diff is against it. Note whether `test -d .git` succeeds; when it does not (a linked worktree), the snapshot chain of `references/snapshots.md` is not built this run.
-3. Load and merge the settings; resolve the run mode and the `--artifact` override; emit `Output language: <value>` and `Run mode: <value>`.
+3. Load and merge the settings; resolve the run mode, the `--artifact` override, and `mode`; emit `Output language: <value>`, `Run mode: <value>`, and `Mode: <value>`. In mob mode, read `references/mob-mode.md` now; in solo mode never open it.
 4. Register the seventeen phases with `TaskCreate`, subjects exactly as the `## Phase N:` headings below minus the `Phase N:` prefix. Mark each `in_progress` on entry and `completed` on exit in the same tool-call burst as the phase's first or last action. Mark the phases skipped by settings or run mode `completed` here; tier-derived skips are marked at Task Decomposition.
 
 ## Phase 2: Task Decomposition
@@ -95,7 +96,7 @@ Read `references/decomposition.md`.
 - **Resume sub-mode**: follow its § Resume. The selected subtask becomes the effective task.
 - **Normal sub-mode**: assess the tier (`references/tiers.md`). On the full lane, follow § Propose a split; on `yes`, write the state file and take the first subtask as the effective task. On the express lane, or on `no`, the effective task is the request itself.
 
-Emit one line: the tier and the phases it skips. Mark the skipped rows.
+Emit one line: the tier and the phases it skips. Mark the skipped rows. In mob mode, apply `references/mob-mode.md` § Other differences to the split proposal.
 
 ## Phase 3: Create Plan
 
@@ -104,7 +105,7 @@ No code changes until Plan Approval passes.
 1. Read the files the task touches. Use Glob / Grep / Read directly.
 2. Draft the plan per `references/plan-format.md`: Review guide, Overview, Decisions, Build order, Test plan, Risks. Express-lane plans use the compact shape defined there.
 3. Follow `custom_instructions` when set. Simplicity self-audit: every element traces to an explicit requirement, a known bug or constraint, a rule under `.claude/rules/`, or `custom_instructions`. Drop what does not, or add a one-line rationale. Verify every "already exists / reuses X" premise from the source. If the work splits into independently verifiable units and was not decomposed, say so in Risks.
-4. Do not show the plan yet. Proceed to Plan Review.
+4. Do not show the plan yet. Proceed to Plan Review. In mob mode, this phase runs as `references/mob-mode.md` § Design dialogue and writes its § Plan shape.
 
 ## Phase 4: Plan Review
 
@@ -113,7 +114,7 @@ Skipped on Trivial and in `fast` mode. One pass, no loop.
 1. **Full scope** (`deep`): call `Skill(<reviewer>)` with the full plan body, `custom_instructions` when set, the Decisions field shape (Question / Recommendation / optional Alternative), and three review units: scope, feasibility, dependencies, `.claude/rules/` compliance (the reviewer lists and reads `.claude/rules/**/*.md`); the simplicity self-audit's conclusions; approach and alternatives, completeness, cross-section consistency. Ask for actionable findings only, or the words "No actionable findings".
    **Rules-only scope** (`normal`): resolve the reading list yourself — every `*.md` directly under `.claude/rules/` plus subdirectory files whose domain the plan touches — and call `Skill(<reviewer>)` with the plan body, that numbered list, and one unit: `.claude/rules/` compliance only, reading exactly the listed files and no other tool; anything it cannot confirm goes under an "unverified items" heading. If the glob finds no rule files, do not dispatch: say the review found no project rules to check and continue.
 2. Apply findings you agree with; reject the rest with one line each. Do not ask the user about individual findings. Do not re-dispatch, with one exception: when Critical ≥ 3 or Critical + Major ≥ 10 and a finding proposes an approach-level alternative, rewrite the plan around it and dispatch one more pass.
-3. Unresolved points are carried to Plan Approval as a short list.
+3. Unresolved points are carried to Plan Approval as a short list. In mob mode, review through `references/mob-mode.md` § Plan shape's lenses and explain applied findings.
 
 ## Phase 5: Plan Approval
 
@@ -124,6 +125,8 @@ USER GATE. Read `references/plan-approval.md`.
 3. **Chat gate** (Trivial, remote sessions, or fallback): present the Review guide, Overview and Decisions in full, Build order as headings only, Test plan and Risks as one-line gists, a `---`, a 3–5 bullet summary (goal, verification, decisions, risks, main files), and the plan path, with the review-status sentence § Chat gate defines. Classify the reply: **approve** → step 4. **swap** (named Decisions items) → read back the interpretation in one line, wait for confirmation, swap Recommendation and Alternative on exactly those items, re-present. **rewrite** (Approach, Build order, or Scope changed) → read back, wait, rewrite the plan, re-run Plan Review once unless it is skipped this run, re-present. **withdraw** → stop; leave the plan file.
 4. **Plan artifact**: when the resolved `plan_artifact` is `share` or `review`, follow § Plan artifact. `review` holds at its team-review gate (USER GATE) until the user says the team is done. Then Implement.
 
+In mob mode, `references/mob-mode.md` § Plan Approval keeps the browser gate on every tier and adds the plan narration.
+
 ## Phase 6: Implement
 
 1. Before the first edit, list any user-side manual actions the plan contains (external config, keys, probes) in one block.
@@ -133,9 +136,11 @@ USER GATE. Read `references/plan-approval.md`.
 5. After the last edit of each Build order step, take that step's snapshot per `references/snapshots.md` § Snapshot at a Build order step boundary (before step 1's snapshot, delete a leftover `refs/dev-workflow-lite/<slug>` from an earlier run). The chain is what Interactive Commits turns into one commit per step.
 6. After the last edit, `git add -N -- <path>` for each new file outside § Workflow artifacts, so diff-based reviews and the snapshot residue see them.
 
+In mob mode, each Build order step runs as a unit per `references/mob-mode.md` § Per-unit review, with its diff review after the snapshot.
+
 ## Phase 7: Tidy
 
-Express lane skips. Call `Skill(simplify)`; if unavailable, `Skill(tidy)` with no base ref; pass `custom_instructions` as context when set. Either edits the tree itself. From here on, **no review layer grows a comment**: a finding whose fix adds, lengthens, or restores a comment is rejected with that reason. Correcting a false comment means replacing it with the shorter true statement.
+Express lane skips. Call `Skill(simplify)`; if unavailable, `Skill(tidy)` with no base ref; pass `custom_instructions` as context when set. Either edits the tree itself. From here on, **no review layer grows a comment**: a finding whose fix adds, lengthens, or restores a comment is rejected with that reason. Correcting a false comment means replacing it with the shorter true statement. In mob mode, explain any cleanup per `references/mob-mode.md` § Tidy.
 
 ## Phase 8: Polish Prose
 
@@ -147,6 +152,8 @@ Express lane skips; `polish_prose: false` and `fast` mode skip. Collect changed 
 2. Classify each failure. A failure whose failing test and failing code both lie outside the files changed since `<base-commit>` is pre-existing: record it, do not fix it, do not count it. If the workflow's own fix (Tidy, a review fix) broke a test that passed before, correct that fix rather than the implementation.
 3. Fix and rerun. At most 3 fix rounds per entry into this phase. After the third, stop: report the command, its last output, and that nothing was committed.
 4. When a check command rewrites files outside the task's changed set beyond trivial formatting (≤ 5 whitespace or comment lines), warn and stop for the user; never revert its output silently.
+
+In mob mode, narrate every failure per `references/mob-mode.md` § Check / Test before fixing it.
 
 ## Phase 10: Rules Compliance Review
 
@@ -161,6 +168,8 @@ Skipped on Trivial and when `code_review: false`.
 3. Escalation: exactly one more pass when this pass had at least one Critical finding and at least one fix was applied. The escalation pass scopes to the changes since the first pass. It never triggers a third.
 4. Findings still unresolved after the passes go to the user once (USER GATE). Fixes made there also enter `review_fix_files`.
 
+In mob mode, predict and cross-check per `references/mob-mode.md` § Code Review, and skip step 3's escalation pass.
+
 ## Phase 12: Verify Fixes
 
 If `review_fix_files` is empty, mark completed and continue. Otherwise run Check / Test once (3 fix rounds apply). Then, if Rules Compliance Review ran this run, call `Skill(rules-review)` with `--base-commit <base-commit>` and `Files: <review_fix_files>` plus the note that this is a scoped re-check and file-crossing invariants are out of scope. Fix violations once; a second scoped pass over the newly fixed files is the last; violations still present after it go to the user (USER GATE).
@@ -172,6 +181,8 @@ Skipped when `hooks.on_complete` is unset. If the tree has no task-derived chang
 ## Phase 14: Interactive Commits
 
 USER GATE. First, when the snapshot chain exists, absorb the review layers' edits into it per `references/snapshots.md` § Absorb review fixes. Then read `references/commits.md` and follow it: default-branch guard, collect changes, deduce the commit style, the stashing-hook question, the commit plan (one commit per Build order step from the chain; cohesion grouping of the final diff when there is no chain), then land each commit through the accept gate. With `commit_review_gate: crit`, each commit's diff is reviewed in the crit browser per its § Crit gate. Initialize `landed_count = 0` on entry; the reference increments it. Never `git push`.
+
+In mob mode, add the per-commit note and the already-reviewed accept variant per `references/mob-mode.md` § Commits.
 
 Post-commit verification is part of this phase: when adjustments during the gates edited any file, run Check / Test once after the last commit and offer those edits as one extra commit (pathspec = the edited paths minus § Workflow artifacts). If the user cancelled mid-loop, skip the extra commit.
 
@@ -191,4 +202,5 @@ USER GATE. Ask which reviewed PR to extract rules from, naming the accepted form
 
 1. Summary in the resolved language: what was done, files changed, check/test result, review outcomes, rules updated, commits landed, and one line per phase skipped or stopped early. List skipped callees and any uncommitted rule files.
 2. Decomposed runs: follow `references/decomposition.md` § Finish a subtask. It marks the subtask done, asks for an optional PR URL (USER GATE), and prints the `--resume` command or deletes the state file when all subtasks are done.
-3. Delete this run's staging state: `rm -f` the `.plan-review.*`, `.figures.md`, and `.artifact.html` paths listed in § Workflow artifacts, `rm -rf .claude/plans/<slug>.absorb`, and `git update-ref -d refs/dev-workflow-lite/<slug>`. Never delete the plan file itself; `hooks.on_complete` owns archiving.
+3. In mob mode, add the learning summary and the paired resume commands per `references/mob-mode.md` § Completion.
+4. Delete this run's staging state: `rm -f` the `.plan-review.*`, `.figures.md`, and `.artifact.html` paths listed in § Workflow artifacts, `rm -rf .claude/plans/<slug>.absorb`, and `git update-ref -d refs/dev-workflow-lite/<slug>`. Never delete the plan file itself; `hooks.on_complete` owns archiving.

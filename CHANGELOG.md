@@ -2,6 +2,12 @@
 
 ## 2026-09-02
 
+### dev-workflow v2.0.1 / peer v2.6.3 / extract-rules v1.29.2 / dev-workflow-bundle v2.0.1
+
+- fix(dev-workflow): mob mode gains a register paragraph — a senior pairing with a junior speaks in complete sentences with the reason alongside the fact; the explanation caps bound length, not tone.
+- fix(peer): the self-audit-gap note named dev-workflow v1 step numbers (`Step 2`, `Step 5`); it now names the plan stage and the implementation stage, so the distributed prose carries no caller-internal identifiers.
+- fix(extract-rules): the conversation-candidates contract described its block as reusing dev-workflow v1's shared session-scan envelope, which no longer exists; the envelope (`### Candidate <N>` headings plus a `Candidates: <N>` count line) is now defined in place.
+
 ### dev-workflow v2.0.0 / mobpro v2.0.0 / dev-workflow-bundle v2.0.0
 
 - feat!: rewrite `dev-workflow` with the same phases and gates and a fraction of the text (the v1 tree is tagged `dev-workflow-v1.141.1`)

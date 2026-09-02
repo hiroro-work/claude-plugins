@@ -90,7 +90,7 @@
       "skills": [
         "./"
       ],
-      "version": "1.29.1",
+      "version": "1.29.2",
       "author": {
         "name": "hiropon"
       },
@@ -126,7 +126,7 @@
       "skills": [
         "./"
       ],
-      "version": "2.6.2",
+      "version": "2.6.3",
       "author": {
         "name": "hiropon"
       },
@@ -149,7 +149,7 @@
       "skills": [
         "./"
       ],
-      "version": "2.0.0",
+      "version": "2.0.1",
       "author": {
         "name": "hiropon"
       },
@@ -168,7 +168,7 @@
         "./skills/prose-polish",
         "./skills/mobpro"
       ],
-      "version": "2.0.0",
+      "version": "2.0.1",
       "author": {
         "name": "hiropon"
       },

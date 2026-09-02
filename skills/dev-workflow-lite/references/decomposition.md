@@ -1,6 +1,6 @@
 # Task decomposition
 
-Read from `SKILL.md` Phase 2 (Task Decomposition) and Phase 17 (Completion). Unqualified `§` references point into this file.
+Read from `SKILL.md` Phase 2 (Task Decomposition) and Phase 18 (Completion). Unqualified `§` references point into this file.
 
 ## State file
 

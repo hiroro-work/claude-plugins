@@ -56,7 +56,7 @@ When the cleanup changed anything, explain why in 1–2 lines.
 
 ## Check / Test
 
-Never hand an error over. On every failure, including re-entries from Verify Fixes and Interactive Commits, narrate four things before fixing: which command failed, which part of its output you read and what it says, the cause you drew, the fix you are about to make. A `test_commands` entry naming a missing skill is noted and skipped without narration.
+Never hand an error over. On every failure, including re-entries from Verify Fixes and Interactive Commits, narrate four things before fixing: which command failed, which part of its output you read and what it says, the cause you drew, the fix you are about to make. On EXECUTION_ERROR narrate the first three and hand over at the gate. A `test_commands` entry naming a missing skill is noted and skipped without narration.
 
 ## Code Review
 

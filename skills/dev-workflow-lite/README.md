@@ -43,7 +43,7 @@ Because absorption also handles formatter output, `boundary_check_commands` is n
 
 ## Mob mode
 
-`mode: mob` in the settings, or `--mob` on the command line, runs the same seventeen phases for a junior navigator: the AI drives and narrates, the junior reads each implementation unit's diff and approves commits. It adds two learning stops (a diff review after every Build order step, and the junior's question after each commit's note), one gate (plan-building checkpoints before the plan is written), narration at check/test failures and before reviews, a junior-oriented plan shape, and the browser plan review on every tier. Everything else — tiers, gates, settings, commits, rule updates — is the solo run. The whole mode lives in `references/mob-mode.md`, read only when the mode is on; solo runs never load it.
+`mode: mob` in the settings, or `--mob` on the command line, runs the same eighteen phases for a junior navigator: the AI drives and narrates, the junior reads each implementation unit's diff and approves commits. It adds two learning stops (a diff review after every Build order step, and the junior's question after each commit's note), one gate (plan-building checkpoints before the plan is written), narration at check/test failures and before reviews, a junior-oriented plan shape, and the browser plan review on every tier. Everything else — tiers, gates, settings, commits, rule updates — is the solo run. The whole mode lives in `references/mob-mode.md`, read only when the mode is on; solo runs never load it.
 
 `/mobpro-lite <task>` is a thin entry point for the same thing (the `mobpro-lite` plugin). Fix the mode in the project's shared settings rather than switching per run, so the team sees one behavior.
 

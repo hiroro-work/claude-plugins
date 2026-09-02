@@ -1,6 +1,6 @@
 # Review launch during Check / Test
 
-Read from `SKILL.md` Phase 9 (Check / Test), Phase 10 (Rules Compliance Review), and Phase 11 (Code Review). Unqualified `§` references point into this file. The two reviews read the same diff the tests run against, so they start in the background when Check / Test starts and their results are collected afterwards. This saves their wall time on the common path where the tests pass.
+Read from `SKILL.md` Phase 9 (Check / Test), Phase 10 (Rules Compliance Review), and Phase 11 (Code Review). Unqualified `§` references point into this file. The two reviews read the same diff the tests run against, so they start in the background when Check / Test starts and their results are collected afterwards.
 
 ## Launch (Phase 9 entry)
 

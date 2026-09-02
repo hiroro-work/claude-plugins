@@ -2,6 +2,10 @@
 
 ## 2026-09-02
 
+### dev-workflow v2.1.1 / dev-workflow-bundle v2.1.1
+
+- fix(dev-workflow): mob mode's narration assumes a junior who has never seen the codebase and may not know the framework or language. Every narration and checkpoint now opens with what is about to be explained and why the task needs it before any file is named, introduces a file or framework concept the first time it appears, and gives the conclusion before the reason. A detail checkpoint says whether the code it shows is on the orientation map or reference code the task will not change, so a look at a similar feature no longer reads as an unrelated file appearing out of nowhere.
+
 ### dev-workflow v2.1.0 / dev-workflow-bundle v2.1.0
 
 - feat(dev-workflow): the plan's Overview takes a **Now** / **After** / **Not changing** shape, with a per-file Scope line (`<kind>` `new` / `edit` / `delete`, one-line change, the Build order step that touches it) so an approver can judge the change from the file list; Difficulty stays a header chip. Mob mode's `What we're building` takes the same Now / After and Scope fields.

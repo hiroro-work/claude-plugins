@@ -33,7 +33,7 @@ Compared with `dev-workflow`: difficulty escalation mid-run, `implementation_exe
 
 ## Self-retrospective without skill growth
 
-With `self_retrospective.feedback` set, the run ends by turning its own friction (corrections, stalls, rejected callee output, wrong defaults) into at most three Findings and posting them as a GitHub issue or a local file, after you approve the preview. The producer is built so that the fixes it asks for do not make the skills grow: each Finding must name a behavior change or a same-size-or-smaller wording change, carry its estimated character delta and what prose could be dropped to pay for it, and is checked against the target's current text so it never asks for a reminder that already exists. The repository's tests hold `SKILL.md` to 27,000 characters and `SKILL.md` plus references to 80,000; a Finding that would cross either must name what to delete. Signals come from the run in context; no session log is scanned and no agent is dispatched.
+With `self_retrospective.feedback` set, the run ends by turning its own friction (corrections, stalls, rejected callee output, wrong defaults) into at most three Findings and posting them as a GitHub issue or a local file, after you approve the preview. The producer is built so that the fixes it asks for do not make the skills grow: each Finding must name a behavior change or a same-size-or-smaller wording change, carry its estimated character delta and what prose could be dropped to pay for it, and is checked against the target's current text so it never asks for a reminder that already exists. The repository's tests hold `SKILL.md` to 27,000 characters and `SKILL.md` plus references to 80,000; a Finding that would cross either must name what to delete. Signals come from the run in context; the session log is read only when context compaction has summarized away earlier phases (`scripts/retro/session-text.mjs`, bounded output), and no agent is dispatched.
 
 ## Commits per Build order step
 
@@ -46,6 +46,10 @@ Because absorption also handles formatter output, `boundary_check_commands` is n
 `mode: mob` in the settings, or `--mob` on the command line, runs the same seventeen phases for a junior navigator: the AI drives and narrates, the junior reads each implementation unit's diff and approves commits. It adds two learning stops (a diff review after every Build order step, and the junior's question after each commit's note), one gate (plan-building checkpoints before the plan is written), narration at check/test failures and before reviews, a junior-oriented plan shape, and the browser plan review on every tier. Everything else — tiers, gates, settings, commits, rule updates — is the solo run. The whole mode lives in `references/mob-mode.md`, read only when the mode is on; solo runs never load it.
 
 `/mobpro-lite <task>` is a thin entry point for the same thing (the `mobpro-lite` plugin). Fix the mode in the project's shared settings rather than switching per run, so the team sees one behavior.
+
+## Timing
+
+Every run writes a per-phase timing log (`.claude/plans/timing-<stamp>.jsonl`, a workflow artifact) by marking each phase's start and end and each user or background wait. Completion prints a table of wall, waiting, and active time per phase, so a supervisor can see where a junior's task spent its time without reading session logs. Set `timing.report_dir` to also persist the table as a dated Markdown file. This runs in both solo and mob mode.
 
 ## Requirements
 
@@ -76,6 +80,8 @@ custom_instructions: "Always use TDD."   # optional; rules and explicit requests
 mode: "solo"                 # solo | mob; --mob overrides for one run
 self_retrospective:
   feedback: "owner/repo"     # or a local directory; unset skips the phase
+timing:
+  report_dir: "docs/timing"  # optional; the table is always shown at Completion
 hooks:
   on_complete:
     - "Skill(work-complete)"

@@ -32,7 +32,8 @@ test("SKILL.md plus the always-read references stay under the tree budget", () =
 
 test("mob-mode.md stays under its own budget", () => {
   const chars = [...readFileSync(join(repoRoot, "skills", "dev-workflow", "references", "mob-mode.md"), "utf8")].length;
-  assert.ok(chars <= 12000, `mob-mode.md is ${chars} chars; budget is 12000 (read only in mob mode)`);
+  // 12k → 13k: paid for the content-based checkpoint segmentation rule (v2.1.3).
+  assert.ok(chars <= 13000, `mob-mode.md is ${chars} chars; budget is 13000 (read only in mob mode)`);
 });
 
 test("mobpro stays a thin entry point", () => {

@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-09-02
+
+### dev-workflow-lite v1.0.0
+
+- feat: new plugin `dev-workflow-lite`
+  - The `dev-workflow` phases (Load Settings through Completion, seventeen in all) in the same order with the same user gates, written to run identically on every invocation. Which phases run is decided once by one difficulty table (Trivial / Simple / Moderate / Complex), the run mode (`--fast` / `--deep`), and `code_review`, `polish_prose`, `hooks.on_complete`; the tier never changes mid-run.
+  - Kept: the browser plan review (`scripts/plan-review/serve.mjs`), `plan_artifact` with its team-review gate, `commit_review_gate: crit` with its story prologue, the stashing-hook question with `LEFTHOOK=0`, task decomposition and `--resume`, and one commit per Build order step from per-step snapshots.
+  - Review-fix absorption replaces `dev-workflow`'s snapshot supersession: `scripts/absorb/attribute.mjs` blames each later edit to the step that last wrote the line and folds it into that step's commit through a non-interactive `rebase --autosquash` in a throwaway worktree, so a step's commit shows its reviewed form without pulling in later steps' content. Unowned edits go to a trailing `review fixes` commit; any failure falls back to the plain chain plus that commit.
+  - Dropped, as features outside the workflow itself: mid-run difficulty escalation, `implementation_executor`, `subagent_model`, `boundary_check_commands`, Self-Retrospective, Workability Retrospective. Post-Commit Verification is folded into Interactive Commits as one rule.
+  - Reads the same settings files and the same ten keys as `dev-workflow`, and uses the same decomposition state-file format, so a project can switch without reconfiguring and a split task resumes in either skill.
+  - `SKILL.md` plus seven reference files total about 55k characters against `dev-workflow`'s 657k.
+
 ## 2026-09-01
 
 ### ask-claude v1.1.4 / ask-codex v1.2.3 / ask-gemini v1.2.2 / ask-copilot v1.0.4 / ask-agy v1.0.1 / security-scanner v1.3.1 / extract-rules v1.29.1 / merge-rules v2.1.2 / peer v2.6.2 / apply-rules v2.1.2 / rules-review v1.8.2 / tidy v1.6.1 / prose-polish v1.8.2 / dev-workflow v1.141.1 / mobpro v1.50.1 / dev-workflow-bundle v1.165.1

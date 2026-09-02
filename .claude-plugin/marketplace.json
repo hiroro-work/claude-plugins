@@ -136,6 +136,17 @@
       "category": "workflow"
     },
     {
+      "name": "dev-workflow-lite",
+      "description": "Same phases as dev-workflow, minus the features that are not the workflow: fixed difficulty table, browser plan review and plan artifacts kept, no executors or retrospectives",
+      "source": "./skills/dev-workflow-lite",
+      "skills": ["./"],
+      "version": "1.0.0",
+      "author": {
+        "name": "hiropon"
+      },
+      "category": "workflow"
+    },
+    {
       "name": "dev-workflow-bundle",
       "description": "Development workflow bundle (includes peer + extract-rules + dev-workflow + rules-review + tidy + prose-polish + mobpro)",
       "source": "./plugins/dev-workflow-bundle",

@@ -1,12 +1,13 @@
 #!/usr/bin/env node
 // Append one timing event to the run's timing log.
 //
-// Usage: node mark.mjs --phase "<phase name>" --event start|end|wait|resume [--file <path>] [--dir <dir>]
+// Usage: node mark.mjs --phase "<phase name>" --event start|end|wait|resume [--at <ISO 8601>] [--file <path>] [--dir <dir>]
 // With `--event start --new` and no --file, a new log `<dir>/timing-<YYYYMMDD-HHMMSS>.jsonl` is
 // created (dir defaults to .claude/plans) and its path is printed; every other call without
 // --file appends to the newest timing-*.jsonl in that dir (a later phase's `start` included). Each line: {"phase","event","t"} with t in ISO 8601 UTC.
 // `wait` marks the moment a user gate (or a background wait) is presented; `resume` the moment
 // the run continues. report.mjs subtracts those spans from the phase's wall time.
+// `--at` changes only the event's timestamp, never which log is written to.
 
 import { appendFileSync, mkdirSync, readdirSync, statSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
@@ -20,6 +21,11 @@ if (!["start", "end", "wait", "resume"].includes(event)) {
 }
 const dir = args.dir ?? join(".claude", "plans");
 const now = new Date();
+const at = args.at === undefined ? now : new Date(typeof args.at === "string" ? args.at : NaN);
+if (Number.isNaN(at.getTime())) {
+  process.stderr.write("--at must be an ISO 8601 timestamp\n");
+  process.exit(2);
+}
 let file = args.file;
 if (!file) {
   const existing = newest(dir);
@@ -35,7 +41,7 @@ if (!file) {
   process.stderr.write(`no timing log under ${dir}; start one with --event start --new\n`);
   process.exit(2);
 }
-appendFileSync(file, JSON.stringify({ phase, event, t: now.toISOString() }) + "\n");
+appendFileSync(file, JSON.stringify({ phase, event, t: at.toISOString() }) + "\n");
 process.stdout.write(file + "\n");
 
 function newest(d) {

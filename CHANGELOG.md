@@ -2,6 +2,10 @@
 
 ## 2026-09-03
 
+### dev-workflow v2.1.4 / dev-workflow-bundle v2.1.4
+
+- fix(dev-workflow): the crit commit gate opens one browser window instead of two. `--no-open` on the story ingest stops that command from opening a browser but not the daemon it starts, so the review launch that followed opened a second window on the same URL. The launch now adds `--no-open` when either attempt of the ingest reported a started or restarted daemon, and carries that URL in its status line; when nothing was started — the ingest was rejected, or reached a daemon already running — the launch opens the window as before. Observed on crit 0.18.1.
+
 ### dev-workflow v2.1.3 / dev-workflow-bundle v2.1.3
 
 - fix(dev-workflow): mob mode's detail checkpoints are segmented by content instead of a 1–4 count: one checkpoint carries one decision's code, one constraint, or the build order, and one that would introduce more than three files the junior has not met yet is split in two. A fixed count pushed the research of a larger task into fewer, heavier checkpoints; the junior's load is set by what one checkpoint carries, not by how many there are. The `mob-mode.md` size ratchet in the repository tests rises from 12k to 13k characters to pay for the rule.

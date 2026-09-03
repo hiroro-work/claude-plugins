@@ -23,11 +23,12 @@ test("SKILL.md stays under the character budget", () => {
 
 // Budgets are ratchets, not derived values: each was set at "current size plus a margin" when
 // introduced, so that growth needs a deliberate commit that changes the number here.
+// 80k → 80.5k: paid for the missed-gate-mark rule in timing.md § Report (v2.1.7).
 test("SKILL.md plus the always-read references stay under the tree budget", () => {
   const dir = join(repoRoot, "skills", "dev-workflow", "references");
   const refs = readdirSync(dir).filter((f) => f.endsWith(".md") && f !== "mob-mode.md");
   const total = [...skill].length + refs.reduce((n, f) => n + [...readFileSync(join(dir, f), "utf8")].length, 0);
-  assert.ok(total <= 80000, `SKILL.md + always-read references total ${total} chars; budget is 80000`);
+  assert.ok(total <= 80500, `SKILL.md + always-read references total ${total} chars; budget is 80500`);
 });
 
 test("mob-mode.md stays under its own budget", () => {

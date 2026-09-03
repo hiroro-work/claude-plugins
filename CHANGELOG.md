@@ -2,6 +2,10 @@
 
 ## 2026-09-03
 
+### dev-workflow v2.1.8 / dev-workflow-bundle v2.1.8
+
+- fix(dev-workflow): the plan viewer's Scope table sizes its two text columns to their content. The path column was pinned to 36% of the table, which auto layout treats as a floor: long paths wrapped mid-word inside that width while the summary column held space its one-line summaries never used, leaving a band of empty page down the right of the table. Both columns now take the width their text asks for, and `word-break` stays as the fallback for a path too long to fit either way.
+
 ### dev-workflow v2.1.7 / dev-workflow-bundle v2.1.7
 
 - fix(dev-workflow): the timing report checks its own waiting figures. A phase that recorded no `wait` / `resume` pair at all yet stayed active for over 30 minutes is named under the table as a likely missed gate mark, because an unmarked gate's wait is reported as work — a rule-commit gate that held for 1h44m read as 1h55m of active time. The note asks rather than concludes, since a phase that held no gate looks the same from the log. `mark.mjs` gains `--at <ISO 8601>` so the pair can be recorded after the fact, and `timing.md` § Report tells the run to work the moments out and take the report again, or to say the phase's figures are not to be trusted when it cannot. The always-read references budget in the repository tests rises from 80000 to 80500 characters to pay for the rule.

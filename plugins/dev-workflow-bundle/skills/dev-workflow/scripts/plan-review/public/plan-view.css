@@ -521,7 +521,8 @@ details.step > .step-body { padding: 2px 0 2px 18px; }
 .ov-kind-edit { background: var(--changed-bg); color: var(--changed); }
 .ov-kind-new { background: var(--accent-soft); color: var(--accent-ink); }
 .ov-kind-delete { background: var(--risk-bg); color: var(--risk); }
-.ov-file { width: 36%; font-family: var(--font-mono); font-size: 12.5px; word-break: break-all; }
+/* The two text columns take no width: a percentage is a floor in auto layout, not a share. */
+.ov-file { font-family: var(--font-mono); font-size: 12.5px; word-break: break-all; }
 .ov-file .ov-dir { color: var(--muted); }
 .ov-step-cell { width: 44px; text-align: right; padding-right: 0 !important; }
 .ov-step { font-family: var(--font-mono); font-size: 11px; color: var(--accent); white-space: nowrap; }

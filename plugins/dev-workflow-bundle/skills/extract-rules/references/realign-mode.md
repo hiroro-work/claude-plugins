@@ -53,7 +53,7 @@ Every entry carries a one-sentence `reason`, `keep` included — a `keep` states
 
 ## Step RA2 — Dispatch the analysis subagent (main thread)
 
-**One target file per dispatch, files processed in the order given.** Before the first dispatch, register one task per target file (`realign: <path>`) via `TaskCreate` and mark each `in_progress` before its dispatch. **Every row flips to `completed` on every outcome** — the file's edits landed, the user refused at the gate, or a parse failure stopped the run — and the outcome is carried in the report, not in the task status. Where the Task tools are unavailable, skip the registration and hold the progress in main-thread context; the report carries the outcomes either way. Dispatch without asking the user to re-confirm: per `SKILL.md` § Dispatch authorization, a permission-shaped restriction does not justify substituting inline execution.
+**One target file per dispatch, files processed in the order given.** Before the first dispatch, register one task per target file (`realign: <path>`) via `TaskCreate` and mark each `in_progress` before its dispatch. **Every row flips to `completed` on every outcome** — the file's edits landed, the user refused at the gate, or a parse failure stopped the run — and the outcome is carried in the report, not in the task status. Where the Task tools are unavailable, skip the registration and hold the progress in main-thread context; the report carries the outcomes either way.
 
 Spawn an `Agent` (`subagent_type: general-purpose`) per file, assembling the prompt from these `--- LABEL ---` fence sections. This list is the **closed set** of what reaches the subagent; a constraint absent from it does not cross the boundary, however firmly this file states it:
 

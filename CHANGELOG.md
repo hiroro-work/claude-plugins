@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-09-03
+
+### dev-workflow v2.1.2 / peer v2.6.4 / tidy v1.6.2 / prose-polish v1.8.3 / rules-review v1.8.3 / extract-rules v1.29.3 / dev-workflow-bundle v2.1.2
+
+Prompt audit against Claude Opus 5 (`/claude-api prompt-audit`): remove instructions written for older models' habits.
+
+- fix(dev-workflow): Plan Review and Code Review ask the reviewer for every finding with a confidence level and a severity instead of "actionable findings only"; current models apply such filters literally and drop findings below the bar, while step 2's accept / reject pass already filters downstream.
+- fix(dev-workflow): mob mode states what each narration must convey instead of capping it at a line count; a fixed cap starves the explanation on hard units.
+- fix(peer): the reviewer persona's Planning focus bullets keep their principle and drop the per-domain example catalogues ("for skill development this includes …"), which froze one project's incidents into every review and cost about 9K characters per dispatch.
+- fix(peer, tidy, prose-polish, rules-review): the `Model:` field points at the `Agent` tool's live schema only; the frozen alias list next to it went stale and competed with the schema.
+- fix(tidy, extract-rules): the Task-tools fallback no longer names a Claude Code version.
+- fix(tidy, extract-rules, rules-review): the no-stall rule is stated once per site; the restatements placed "so the rule fires at the decision moment" were a retention crutch for older models.
+
 ## 2026-09-02
 
 ### dev-workflow v2.1.1 / dev-workflow-bundle v2.1.1

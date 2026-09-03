@@ -484,7 +484,7 @@ When `--from-conversation` is specified, extract rules from the full conversatio
 
 ### Step C2: Delegate to Subagent (main agent)
 
-Spawn a subagent using the Agent tool — dispatch without asking the user to re-confirm; per `§ Dispatch authorization`, a permission-shaped restriction does not justify substituting inline execution. The subagent performs all heavy processing (C3–C5) and returns a summary of what was added. Read `references/conversation-mode.md` for the full subagent instructions (Steps C3–C5).
+Spawn a subagent using the Agent tool. The subagent performs all heavy processing (C3–C5) and returns a summary of what was added. Read `references/conversation-mode.md` for the full subagent instructions (Steps C3–C5).
 
 Include in the agent prompt:
 - This skill's absolute directory path (where SKILL.md resides — needed to run bundled scripts)
@@ -535,11 +535,11 @@ The Skill wrapper runs in the main thread, a subagent performs the compaction an
 
 ### Step CP2: Per-File Compaction (Pattern A iteration loop)
 
-**Pre-register per-file tasks** — before entering the per-file outer loop, `TaskCreate` one task per file in the target set (e.g. `compact: <path>`). Mark each task `in_progress` (via `TaskUpdate`) before its first dispatch and `completed` after the per-file loop terminates (regardless of `per_file_status` outcome — `converged` / `partial` / `unresolved` / `error` / `skipped-below-threshold` all flip the row to `completed`; the outcome is carried in the per-file record, not the task status). Per-iter progress within a file is tracked inline within this Step (no per-iter task). Where the Task tools are unavailable (e.g. the VSCode extension, or Claude Code before v2.1.142), skip the pre-registration and hold the per-file progress in main-thread context instead.
+**Pre-register per-file tasks** — before entering the per-file outer loop, `TaskCreate` one task per file in the target set (e.g. `compact: <path>`). Mark each task `in_progress` (via `TaskUpdate`) before its first dispatch and `completed` after the per-file loop terminates (regardless of `per_file_status` outcome — `converged` / `partial` / `unresolved` / `error` / `skipped-below-threshold` all flip the row to `completed`; the outcome is carried in the per-file record, not the task status). Per-iter progress within a file is tracked inline within this Step (no per-iter task). Where the Task tools are unavailable (e.g. the VSCode extension), skip the pre-registration and hold the per-file progress in main-thread context instead.
 
 For each file in the target set, run the per-file iteration loop. `max_iterations = 2` by default. Under-threshold files terminate at iter 1's (d) convergence check (chars_after ≤ compaction_threshold is already true), so their loop effectively runs once for consolidation detection only.
 
-**(a) Read & dispatch (per-iter)**: On iter 1, reuse the cached content from Step CP1 step 3 — `chars_before` is that cache entry's char count (avoids re-reading the same file). On iter `i ≥ 2`, re-`Read` the target file so the subagent operates on the post-prior-iter content. Spawn an `Agent` (`subagent_type: general-purpose`) — dispatch without asking the user to re-confirm; per `§ Dispatch authorization`, a permission-shaped restriction does not justify substituting inline execution — with the dispatch prompt assembled from these `--- LABEL ---` sections:
+**(a) Read & dispatch (per-iter)**: On iter 1, reuse the cached content from Step CP1 step 3 — `chars_before` is that cache entry's char count (avoids re-reading the same file). On iter `i ≥ 2`, re-`Read` the target file so the subagent operates on the post-prior-iter content. Spawn an `Agent` (`subagent_type: general-purpose`) with the dispatch prompt assembled from these `--- LABEL ---` sections:
 
 - `--- TARGET FILE ---`: absolute path + full current content
 - `--- COMPACTION HEURISTICS ---`: the four heuristics enumerated in `references/compaction-mode.md` § Heuristics (class-level extension merge / similar-entry merge / example reference extraction / one-shot incident dropout) — emit into `mechanical_edits` / `structural_notes`

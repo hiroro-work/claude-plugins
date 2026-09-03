@@ -1,6 +1,6 @@
 {
   "name": "mobpro",
-  "description": "Learning-oriented development workflow (mob-programming style): runs the same quality gates as dev-workflow, scaled to the task's assessed difficulty the same way, while pausing after every implementation unit for a diff review, so a junior engineer can follow what is being built and why. The AI drives and narrates; the junior reads each diff and asks.",
+  "description": "Learning-oriented (mob-programming) entry point that runs dev-workflow in mob mode: the AI drives and narrates, the junior reviews each diff.",
   "author": {
     "name": "hiropon",
     "url": "https://github.com/hiroro-work"
@@ -9,9 +9,9 @@
   "repository": "https://github.com/hiroro-work/claude-plugins",
   "license": "MIT",
   "keywords": [
-    "mob-programming",
     "workflow",
+    "mob-programming",
     "learning",
-    "pair-programming"
+    "junior"
   ]
 }

@@ -1,5 +1,41 @@
 # Changelog
 
+## 2026-09-02
+
+### dev-workflow v2.1.1 / dev-workflow-bundle v2.1.1
+
+- fix(dev-workflow): mob mode's narration assumes a junior who has never seen the codebase and may not know the framework or language. Every narration and checkpoint now opens with what is about to be explained and why the task needs it before any file is named, introduces a file or framework concept the first time it appears, and gives the conclusion before the reason. A detail checkpoint says whether the code it shows is on the orientation map or reference code the task will not change, so a look at a similar feature no longer reads as an unrelated file appearing out of nowhere.
+
+### dev-workflow v2.1.0 / dev-workflow-bundle v2.1.0
+
+- feat(dev-workflow): the plan's Overview takes a **Now** / **After** / **Not changing** shape, with a per-file Scope line (`<kind>` `new` / `edit` / `delete`, one-line change, the Build order step that touches it) so an approver can judge the change from the file list; Difficulty stays a header chip. Mob mode's `What we're building` takes the same Now / After and Scope fields.
+- feat(dev-workflow): a Recommendation is a two- or three-line conclusion plus at most three rationale bullets; a Build order step is one line of *what* plus uncapped *how* lines beneath it, so Implement loses no detail.
+- feat(dev-workflow): the plan viewer and the published plan page render that Overview as structured blocks — Now and After side by side, Highlights and Not changing as bands, Scope as a kind / file / change / step table — and the header counts files, steps, and decisions from the plan. Every block stays a commentable unit; the Goal shape still renders as before.
+- feat(dev-workflow): mermaid diagrams are drawn with the page's own colour tokens and font (`theme: base` + `themeVariables`) on both surfaces, so a figure no longer sits in mermaid's default palette.
+- fix(dev-workflow): the figures step names its notation again — mermaid for flows, sequences, and dependency graphs; inline SVG with `var(--token, #fallback)` colours for axis positions, grids, and comparisons — and requires a one-sentence caption.
+
+### dev-workflow v2.0.1 / peer v2.6.3 / extract-rules v1.29.2 / dev-workflow-bundle v2.0.1
+
+- fix(dev-workflow): mob mode gains a register paragraph — a senior pairing with a junior speaks in complete sentences with the reason alongside the fact; the explanation caps bound length, not tone.
+- fix(peer): the self-audit-gap note named dev-workflow v1 step numbers (`Step 2`, `Step 5`); it now names the plan stage and the implementation stage, so the distributed prose carries no caller-internal identifiers.
+- fix(extract-rules): the conversation-candidates contract described its block as reusing dev-workflow v1's shared session-scan envelope, which no longer exists; the envelope (`### Candidate <N>` headings plus a `Candidates: <N>` count line) is now defined in place.
+
+### dev-workflow v2.0.0 / mobpro v2.0.0 / dev-workflow-bundle v2.0.0
+
+- feat!: rewrite `dev-workflow` with the same phases and gates and a fraction of the text (the v1 tree is tagged `dev-workflow-v1.141.1`)
+  - The v1 phases (Load Settings through Completion, nineteen in all) in the same order with the same user gates, written to run identically on every invocation. Which phases run is decided once by one difficulty table (Trivial / Simple / Moderate / Complex), the run mode (`--fast` / `--deep`), and `code_review`, `polish_prose`, `hooks.on_complete`; the tier is re-checked once against the drafted plan and can only rise.
+  - Kept: the browser plan review (`scripts/plan-review/serve.mjs`), `plan_artifact` with its team-review gate, `commit_review_gate: crit` with its story prologue, the stashing-hook question with `LEFTHOOK=0`, task decomposition and `--resume` with the same state-file format, `subagent_model`, `custom_instructions`, one commit per Build order step from per-step snapshots.
+  - Review-fix absorption replaces snapshot supersession: `scripts/absorb/attribute.mjs` blames each later edit to the step that last wrote the line and folds it into that step's commit through a non-interactive `rebase --autosquash` in a throwaway worktree, so a step's commit shows its reviewed form without pulling in later steps' content. Unowned edits go to a trailing `review fixes` commit; any failure falls back to the plain chain plus that commit. The pre-absorb chain is kept on `refs/dev-workflow/<slug>-reviewed` so mob mode can gate each commit on what changed since the junior's unit review, or skip it when nothing did.
+  - Rules Compliance Review and Code Review are launched in the background when Check / Test starts and collected afterwards; a result is used only when no file changed since launch, otherwise the review re-runs inline (`references/review-launch.md`). Mob mode launches them too, after its pre-review prediction.
+  - Self-Retrospective with growth control on the producer side: at most three Findings per run, each naming a `behavior` or same-size `wording` fix with its character delta and the prose that pays for it, deduplicated against the target's current text; signals are judged from the run in context, with a bounded session-log read (`scripts/retro/session-text.mjs`) only when context compaction summarized earlier phases away. Reminder-only Findings are never emitted.
+  - Workability Retrospective (opt-in via `workability_retrospective.enabled`), rebuilt: at most three candidates per run — a project skill, a linter rule, or a check command — each tied to something that happened in the run and its timing row, deduplicated against the project's skills, linter configuration, settings, and backlog; single-edit candidates can be applied and checked on the spot, the rest are backlogged; committed through the rule commit gate.
+  - The confirm-remaining-steps gate at Update Rules fires on every tier and covers the rule update, both retrospectives, and PR Rule Extraction (`proceed` / `pr-only` / `skip`).
+  - Per-phase timing: every run marks each phase's start and end and every user or background wait (`scripts/timing/mark.mjs`), and Completion renders wall / waiting / active per phase (`scripts/timing/report.mjs`), optionally persisted to `timing.report_dir`.
+  - Mob mode (`mode: mob` / `--mob`) folds `mobpro`'s behavior into the same skill — per-unit diff review after every Build order step, plan-building checkpoints that open with an orientation pass (the task in the junior's terms and a file-level map of the code it touches) before any detail, error and pre-review narration, the junior-oriented plan shape, the browser gate on every tier — defined in `references/mob-mode.md` and read only when the mode is on. `SKILL.md` carries at most one pointer sentence per phase, enforced by a test together with a 29k-character budget for `SKILL.md` and 80k for the always-read tree.
+  - Dropped: mid-run difficulty escalation after Implement, `implementation_executor` and `--executor`, `boundary_check_commands` (put formatter hooks in `check_commands`; absorption carries their output into the owning step), Post-Commit Verification as a separate step (folded into Interactive Commits). Unknown settings keys are named once and ignored.
+  - `SKILL.md` plus twelve reference files total about 87k characters against v1's 657k.
+- feat!: `mobpro` becomes a thin entry point that runs `dev-workflow --mob`; its behavior lives in `dev-workflow`'s `references/mob-mode.md`.
+
 ## 2026-09-01
 
 ### ask-claude v1.1.4 / ask-codex v1.2.3 / ask-gemini v1.2.2 / ask-copilot v1.0.4 / ask-agy v1.0.1 / security-scanner v1.3.1 / extract-rules v1.29.1 / merge-rules v2.1.2 / peer v2.6.2 / apply-rules v2.1.2 / rules-review v1.8.2 / tidy v1.6.1 / prose-polish v1.8.2 / dev-workflow v1.141.1 / mobpro v1.50.1 / dev-workflow-bundle v1.165.1

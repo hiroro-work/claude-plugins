@@ -56,7 +56,7 @@ Run everything below directly in the main thread — do not dispatch a subagent.
 
 ## Return contract
 
-Emit both layers in a single response, so prose-reading callers (`dev-workflow` Step 7 (Check /
+Emit both layers in a single response, so prose-reading callers (`dev-workflow` Phase 9 (Check /
 Test)) and JSON-parsing callers both get the verdict mechanically.
 
 **Layer 1 — Prose summary** (first, at the top of the response):

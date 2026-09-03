@@ -77,9 +77,62 @@ test("fieldValue accepts both colon widths and returns empty on a miss", () => {
   assert.equal(fieldValue("- **Goal**: ship it", "Scope"), "");
 });
 
-test("parseOverview picks up the three fields it names", () => {
+test("parseOverview still reads the Goal shape, with the file count taken from the Scope line", () => {
   const ov = parseOverview("- **Goal**: g\n- **Difficulty**: Moderate\n- **Scope**: 3 files\n");
-  assert.deepEqual(ov, { goal: "g", difficulty: "Moderate", scope: "3 files" });
+  assert.equal(ov.goal, "g");
+  assert.equal(ov.difficulty, "Moderate");
+  assert.equal(ov.scope, "3 files");
+  assert.equal(ov.now, "");
+  assert.deepEqual(ov.scopeFiles, []);
+  assert.equal(ov.fileCount, 3);
+  assert.equal(ov.rest, "");
+});
+
+test("parseOverview reads the Now / After shape and its per-file Scope lines", () => {
+  const body = [
+    "- **Now**: today",
+    "- **After**: tomorrow",
+    "- **Not changing**: headings",
+    "- **Approach**: small steps",
+    "- **Scope**: 4 files",
+    "  - edit `references/plan-format.md` — add the caps (step 1)",
+    "  - new `tests/plan-review/x.test.mjs` — cover it (steps 4–6)",
+    "  - `CHANGELOG.md` / `marketplace.json` — bump",
+    "  - delete `old.md`",
+    "",
+    "<figure><svg></svg><figcaption>cap</figcaption></figure>",
+  ].join("\n");
+  const ov = parseOverview(body);
+  assert.equal(ov.now, "today");
+  assert.equal(ov.after, "tomorrow");
+  assert.equal(ov.notChanging, "headings");
+  assert.equal(ov.approach, "small steps");
+  assert.deepEqual(ov.scopeFiles, [
+    { kind: "edit", file: "references/plan-format.md", summary: "add the caps", steps: "1" },
+    { kind: "new", file: "tests/plan-review/x.test.mjs", summary: "cover it", steps: "4–6" },
+    { kind: "", file: "CHANGELOG.md / marketplace.json", summary: "bump", steps: "" },
+    { kind: "delete", file: "old.md", summary: "", steps: "" },
+  ]);
+  // The per-file lines win over the `N files` figure, so a miscount in prose cannot show.
+  assert.equal(ov.fileCount, 4);
+  // What is neither a field nor a Scope line survives for the structured render to place.
+  assert.equal(ov.rest, "<figure><svg></svg><figcaption>cap</figcaption></figure>");
+});
+
+test("parseOverview closes the Scope block at the next non-blank line that is not a Scope line", () => {
+  const ov = parseOverview("- **Scope**: 1 file\n  - edit `a.md` — x\n\nA paragraph.\n  - not a scope line\n");
+  assert.equal(ov.scopeFiles.length, 1);
+  assert.match(ov.rest, /A paragraph\./);
+  assert.match(ov.rest, /not a scope line/);
+});
+
+test("preparePlan counts the first Build order's steps and the first Decisions' items", () => {
+  const model = preparePlan(
+    "### Decisions\n\n- **Question**: q\n- **Recommendation**: r\n\n### Build order\n\n1. **a** — x\n   - how\n2. **b**\n",
+    "p",
+  );
+  assert.equal(model.stepCount, 2);
+  assert.equal(model.decisionCount, 1);
 });
 
 test("countListItems skips fenced lines and deeply indented ones", () => {

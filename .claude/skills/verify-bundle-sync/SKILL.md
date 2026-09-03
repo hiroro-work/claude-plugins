@@ -6,7 +6,7 @@ allowed-tools: Bash(jq *), Bash(diff *), Bash(test *)
 
 # Verify Bundle Sync
 
-This skill exists solely to work around an upstream Claude Code symlink bug ([anthropics/claude-code#53948](https://github.com/anthropics/claude-code/issues/53948)) that requires `plugins/dev-workflow-bundle/skills/<name>/` to be a real directory copy of `skills/<name>/` rather than a symlink. It is a **project-local** skill (lives under `.claude/skills/verify-bundle-sync/`, not registered in `.claude-plugin/marketplace.json`). When the bug is fixed and the bundle layout returns to symlinks, **delete this skill directory, the `.claude/dev-workflow.md` `test_commands` entry, the `dev-workflow-triage` (d4) sub-step, the `.claude/rules/project.rules.md` bullet, and `verify-skill-refs` SKILL.md's Process step 2 (bundle-copy identity check, with its `bundle_copy` verdict field)** that document this workaround.
+This skill exists solely to work around an upstream Claude Code symlink bug ([anthropics/claude-code#53948](https://github.com/anthropics/claude-code/issues/53948)) that requires `plugins/dev-workflow-bundle/skills/<name>/` to be a real directory copy of `skills/<name>/` rather than a symlink. It is a **project-local** skill (lives under `.claude/skills/verify-bundle-sync/`, not registered in `.claude-plugin/marketplace.json`). When the bug is fixed and the bundle layout returns to symlinks, **delete this skill directory, the `.claude/dev-workflow.md` `test_commands` entry, the `dev-workflow-triage` (d4) sub-step, and the `.claude/rules/project.rules.md` bullet** that document this workaround.
 
 The skill compares each bundle member's canonical directory against its bundle copy and reports drift. It is detect-only — it never modifies any files.
 
@@ -43,11 +43,11 @@ Run the following directly in the main thread (no subagent dispatch is needed �
    - Any entry has drift → `TEST_FAILED`. Include the per-entry drift list and a remediation hint of the form `cp -R skills/<name>/. plugins/dev-workflow-bundle/skills/<name>/` for each affected member
    - `jq` failed / `diff` missing / `marketplace.json` unreadable / per-entry path missing → `EXECUTION_ERROR`
 
-**EXECUTION_ERROR is deterministic** within a run: `marketplace.json` absence, missing tooling (`jq` / `diff`), and missing path entries do not become resolved during the same run, so retrying the same invocation will not change the outcome. Callers that retry on EXECUTION_ERROR (such as `dev-workflow` Step 7's retry handler) will simply burn through their retry budget producing the same error each time — that wastes a few extra invocations but is harmless.
+**EXECUTION_ERROR is deterministic** within a run: `marketplace.json` absence, missing tooling (`jq` / `diff`), and missing path entries do not become resolved during the same run, so retrying the same invocation will not change the outcome. Callers that retry on EXECUTION_ERROR (such as `dev-workflow` Phase 9's retry handler) will simply burn through their retry budget producing the same error each time — that wastes a few extra invocations but is harmless.
 
 ## Return contract
 
-The skill emits its result in **two layers** in a single response so that both prose-reading callers (such as `dev-workflow` Step 7) and JSON-parsing callers (such as `dev-workflow-triage` (d4)) can extract the verdict mechanically.
+The skill emits its result in **two layers** in a single response so that both prose-reading callers (such as `dev-workflow` Phase 9) and JSON-parsing callers (such as `dev-workflow-triage` (d4)) can extract the verdict mechanically.
 
 **Layer 1 — Prose summary** (first, at the top of the response):
 

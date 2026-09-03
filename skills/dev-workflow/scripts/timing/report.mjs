@@ -2,6 +2,8 @@
 // Render a timing log as a Markdown table: per phase, wall time, time spent waiting on the
 // user (or a background gate), and active time = wall − waiting. Phases are listed in the
 // order they started; an unterminated phase is closed at the last event's time and marked.
+// A phase with no wait/resume pair at all yet a long active time is flagged under the table. A
+// phase that held no gate is one of those too, so the note asks rather than concludes.
 //
 // Usage: node report.mjs --file <timing.jsonl> [--out <dir>] [--title <text>]
 // --out writes `<dir>/<YYYY-MM-DD>-<basename>.md` with the same table and prints its path;
@@ -28,7 +30,9 @@ for (const e of events) {
   if (e.event === "wait") p.openWait = t;
   if (e.event === "resume" && p.openWait != null) { p.waiting += t - p.openWait; p.openWait = null; }
 }
+const MISSED_WAIT_ACTIVE_MS = 30 * 60 * 1000;
 const rows = [];
+const suspects = [];
 let totalWall = 0, totalWait = 0;
 for (const [name, p] of phases) {
   if (p.start == null) continue;
@@ -39,9 +43,14 @@ for (const [name, p] of phases) {
   const active = Math.max(0, wall - p.waiting);
   totalWall += wall; totalWait += p.waiting;
   rows.push(`| ${name}${p.unterminated ? " (not ended)" : ""} | ${fmt(wall)} | ${fmt(p.waiting)} | ${fmt(active)} |`);
+  if (p.waiting === 0 && active > MISSED_WAIT_ACTIVE_MS) suspects.push(`> - ${name} — ${fmt(active)} active`);
 }
 const title = args.title ?? `Timing — ${basename(args.file, ".jsonl")}`;
-const table = [`## ${title}`, "", "| Phase | Wall | Waiting | Active |", "|---|---:|---:|---:|", ...rows, `| **Total** | ${fmt(totalWall)} | ${fmt(totalWait)} | ${fmt(totalWall - totalWait)} |`, ""].join("\n");
+const lines = [`## ${title}`, "", "| Phase | Wall | Waiting | Active |", "|---|---:|---:|---:|", ...rows, `| **Total** | ${fmt(totalWall)} | ${fmt(totalWait)} | ${fmt(totalWall - totalWait)} |`, ""];
+if (suspects.length) {
+  lines.push("> **Check the waiting marks.** These phases recorded no `wait` / `resume` pair yet stayed active for over 30m. Where one of them held a USER GATE, its marks were missed and its wait is being reported as work:", ...suspects, "");
+}
+const table = lines.join("\n");
 if (typeof args.out === "string") {
   mkdirSync(args.out, { recursive: true });
   const first = events[0]?.t ? events[0].t.slice(0, 10) : new Date().toISOString().slice(0, 10);

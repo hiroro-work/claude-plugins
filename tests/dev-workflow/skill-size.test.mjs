@@ -17,8 +17,8 @@ test("SKILL.md stays under the character budget", () => {
   const chars = [...skill].length;
   // 26k → 27k → 28k: each raise paid for features the maintainers chose (mob mode, retrospective, timing,
   // background reviews, tier re-check, subagent_model) and the bundle's Dispatch authorization section (28k → 29k),
-  // never for prose; the ratchet still stops drift.
-  assert.ok(chars <= 29000, `SKILL.md is ${chars} chars; budget is 29000 — cut, do not move to references`);
+  // never for prose; the ratchet still stops drift. 29k → 29.2k: paid for the gate-reply rule (v2.1.5).
+  assert.ok(chars <= 29200, `SKILL.md is ${chars} chars; budget is 29200 — cut, do not move to references`);
 });
 
 // Budgets are ratchets, not derived values: each was set at "current size plus a margin" when

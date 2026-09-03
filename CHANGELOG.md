@@ -2,6 +2,11 @@
 
 ## 2026-09-03
 
+### dev-workflow v2.1.5 / dev-workflow-bundle v2.1.5
+
+- fix(dev-workflow): the crit commit gate no longer treats a verdict-less output as a broken review. The review is over only when an `approved:` line has appeared or the process exited non-zero; output without either line is re-read up to 5 times, matching the plan-approval gate's discipline, and the crit daemon is never stopped during the run. A completion notice arriving before the verdict was flushed sent the gate to its chat fallback while the reviewer still had the browser open.
+- fix(dev-workflow): at every user gate, an instruction about how to run — including one to proceed without asking — is classified with questions and comments: it never approves the pending gate and never waives a later one. The gate re-states what it needs and waits. `SKILL.md` § User gates and `commits.md` § Approval tokens carry the same wording; the `SKILL.md` size ratchet rises from 29000 to 29200 characters to pay for it.
+
 ### dev-workflow v2.1.4 / dev-workflow-bundle v2.1.4
 
 - fix(dev-workflow): the crit commit gate opens one browser window instead of two. `--no-open` on the story ingest stops that command from opening a browser but not the daemon it starts, so the review launch that followed opened a second window on the same URL. The launch now adds `--no-open` when either attempt of the ingest reported a started or restarted daemon, and carries that URL in its status line; when nothing was started — the ingest was rejected, or reached a daemon already running — the launch opens the window as before. Observed on crit 0.18.1.

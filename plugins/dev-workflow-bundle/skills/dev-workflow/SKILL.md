@@ -78,7 +78,7 @@ The only places the workflow waits for the user:
 - Workability Retrospective: the candidates' dispositions (`apply` / `backlog` / `skip`), then the commit of what was applied or backlogged.
 - Completion (decomposed runs only): the disposition of each work item left in prose, then an optional PR URL for the finished subtask.
 
-In mob mode, `references/mob-mode.md` § Learning stops adds the per-unit diff review, the plan-building checkpoints, and the post-commit-note question to this list. The collect wait of `references/review-launch.md` § Collect is a harness-tracked boundary, not a gate. Everywhere else, judge callee results yourself and issue the next tool call immediately. A question or non-committal reply is never approval.
+In mob mode, `references/mob-mode.md` § Learning stops adds the per-unit diff review, the plan-building checkpoints, and the post-commit-note question to this list. The collect wait of `references/review-launch.md` § Collect is a harness-tracked boundary, not a gate. Everywhere else, judge callee results yourself and issue the next tool call immediately. A question, a comment, or an instruction about how to run (including one to proceed without asking) is never approval: say what the gate needs and wait. No reply waives a later gate.
 
 ## Timing
 

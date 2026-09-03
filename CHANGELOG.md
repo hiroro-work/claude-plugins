@@ -2,6 +2,11 @@
 
 ## 2026-09-03
 
+### dev-workflow v2.1.6 / dev-workflow-bundle v2.1.6
+
+- fix(dev-workflow): the plan-approval figures guidance states the two constraints an inline SVG must meet to render in the browser gate: no blank line inside `<svg>` (the renderer closes the HTML block at a blank line and re-reads the rest as markdown, or as a code block when indented) and no `<style>` element (colours and fonts go in presentation attributes). A hero figure written with blank lines between `<g>` groups rendered halfway and printed the remaining `<rect>` lines as code.
+- fix(dev-workflow): the plan-approval revise step spells out how a reply is recorded: `<slug>.plan-review.thread.json` is owned by the viewer, so the workflow reads the existing file, fills the entry's `reply` and `disposition` (`answered` / `revised` / `both`), and writes it back with `rounds` and every entry's `id` / `block` / `anchor` intact. Writing the file from scratch, or without `rounds`, made the viewer drop the whole thread and the comment history vanished on relaunch.
+
 ### dev-workflow v2.1.5 / dev-workflow-bundle v2.1.5
 
 - fix(dev-workflow): the crit commit gate no longer treats a verdict-less output as a broken review. The review is over only when an `approved:` line has appeared or the process exited non-zero; output without either line is re-read up to 5 times, matching the plan-approval gate's discipline, and the crit daemon is never stopped during the run. A completion notice arriving before the verdict was flushed sent the gate to its chat fallback while the reviewer still had the browser open.

@@ -4,7 +4,7 @@ Read from `SKILL.md` Phase 14 (Interactive Commits), Phase 15 (Update Rules), an
 
 ## Approval tokens
 
-Judge replies semantically; the phrases are examples, not matchers. **accept**: OK / approve / next / LGTM / コミットして / 進めて. **adjust**: a concrete change request (subject wording, move a file, split or merge). **cancel**: stop / abort / やめる / 中断. A question or non-committal reply is not approval: re-present and ask. Every gate names at least one short accept word so brief replies work.
+Judge replies semantically; the phrases are examples, not matchers. **accept**: OK / approve / next / LGTM / コミットして / 進めて. **adjust**: a concrete change request (subject wording, move a file, split or merge). **cancel**: stop / abort / やめる / 中断. A question, a non-committal reply, or an instruction about how to run (including one to proceed without asking) is not approval: re-present and ask. Every gate names at least one short accept word so brief replies work.
 
 ## Procedure
 
@@ -37,7 +37,7 @@ Per commit: on the chain path the candidate is the chain commit itself and `<par
 
 A story failure is non-fatal: a non-zero exit is retried once, an `{"ok":false, …}` rejection is not retried, and `"auto_repaired": true` is not a failure. On failure say so in one line with the last stderr line (≤ 80 chars) and launch without the story.
 
-Run `crit --range <parent>..<candidate>` in background Bash with a status line. On exit read stdout and stderr for the literal line `approved: true` or `approved: false` (both exit 0). `true` → land per § Procedure's accept. `false` with no comments → same candidate, new round. `false` with comments → apply the `scope: "line"` comments as edits (or refuse the ones that would change a landed commit), run `check_commands` once if anything changed, then treat each `scope: "review"` body as a typed reply through § Approval tokens (cancel wins over adjust over accept); the commit stays pending and is rebuilt and re-reviewed. No parseable line or a non-zero exit → chat presentation for this commit only; crit stays enabled for the next.
+Run `crit --range <parent>..<candidate>` in background Bash with a status line. When either attempt of the story ingest printed `Started` or `Restarted crit daemon at <url>` on stdout or stderr, add `--no-open` to the `crit --range` command and put that URL in the status line. Read stdout and stderr for the literal line `approved: true` or `approved: false` (both exit 0). The review is over only when one of those lines has appeared or the process exited non-zero; output without either line means the review is still open, even after a completion notice — re-read up to 5 times before treating it as broken, and never stop the daemon during the run. `true` → land per § Procedure's accept. `false` with no comments → same candidate, new round. `false` with comments → apply the `scope: "line"` comments as edits (or refuse the ones that would change a landed commit), run `check_commands` once if anything changed, then treat each `scope: "review"` body as a typed reply through § Approval tokens (cancel wins over adjust over accept); the commit stays pending and is rebuilt and re-reviewed. No parseable line or a non-zero exit → chat presentation for this commit only; crit stays enabled for the next.
 
 ## Rule commit gate
 

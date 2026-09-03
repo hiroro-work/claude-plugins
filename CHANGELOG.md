@@ -2,6 +2,10 @@
 
 ## 2026-09-03
 
+### dev-workflow v2.1.7 / dev-workflow-bundle v2.1.7
+
+- fix(dev-workflow): the timing report checks its own waiting figures. A phase that recorded no `wait` / `resume` pair at all yet stayed active for over 30 minutes is named under the table as a likely missed gate mark, because an unmarked gate's wait is reported as work — a rule-commit gate that held for 1h44m read as 1h55m of active time. The note asks rather than concludes, since a phase that held no gate looks the same from the log. `mark.mjs` gains `--at <ISO 8601>` so the pair can be recorded after the fact, and `timing.md` § Report tells the run to work the moments out and take the report again, or to say the phase's figures are not to be trusted when it cannot. The always-read references budget in the repository tests rises from 80000 to 80500 characters to pay for the rule.
+
 ### dev-workflow v2.1.6 / dev-workflow-bundle v2.1.6
 
 - fix(dev-workflow): the plan-approval figures guidance states the two constraints an inline SVG must meet to render in the browser gate: no blank line inside `<svg>` (the renderer closes the HTML block at a blank line and re-reads the rest as markdown, or as a code block when indented) and no `<style>` element (colours and fonts go in presentation attributes). A hero figure written with blank lines between `<g>` groups rendered halfway and printed the remaining `<rect>` lines as code.

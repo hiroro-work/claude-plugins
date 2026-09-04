@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-09-04
+
+### dev-workflow v2.1.9 / dev-workflow-bundle v2.1.9
+
+- fix(dev-workflow): the plan viewer lays the Overview out across the full content width when a figure has folded the prose beneath it. The two-column grid sat on the `<details>` itself, and a browser wraps a `<details>`' non-summary children in one `::details-content` box — so the whole fold became a single grid item in the left column, stacking Now, After, Approach and Scope down half the page with the other half blank. The fold's blocks now live in a `.fold-body` child that carries the grid, so Now and After pair up again at width and stack only below 720px. A repository test asserts that no rule makes a `<details>` a grid or flex container, since the failure is silent outside a browser.
+
 ## 2026-09-03
 
 ### dev-workflow v2.1.8 / dev-workflow-bundle v2.1.8

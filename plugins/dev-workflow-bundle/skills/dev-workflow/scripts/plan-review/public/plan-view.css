@@ -476,18 +476,19 @@ details.step > .step-body { padding: 2px 0 2px 18px; }
 /* Overview in the Now / After shape (plan-format.md § Overview). Every block stays a direct
    child of the body — the layout is a grid on the body itself, dense so a comment box that
    lands between Now and After does not push After onto the next row. The same grid on
-   details.fold keeps the pairing once a figure has folded the prose beneath it. */
+   .fold-body keeps the pairing once a figure has folded the prose beneath it — on that inner div,
+   not on details.fold, whose children a browser wraps in one ::details-content box. */
 [data-section-type="overview"] .sec-body,
-[data-section-type="overview"] .sec-body > details.fold {
+[data-section-type="overview"] .fold-body {
   display: grid; grid-template-columns: 1fr 1fr; gap: 10px 14px; grid-auto-flow: dense;
 }
 [data-section-type="overview"] .sec-body > :not(.ov-now):not(.ov-after),
-[data-section-type="overview"] .sec-body > details.fold > :not(.ov-now):not(.ov-after) { grid-column: 1 / -1; }
+[data-section-type="overview"] .fold-body > :not(.ov-now):not(.ov-after) { grid-column: 1 / -1; }
 .ov-now { grid-column: 1; }
 .ov-after { grid-column: 2; }
 @media (max-width: 720px) {
   [data-section-type="overview"] .sec-body,
-  [data-section-type="overview"] .sec-body > details.fold { grid-template-columns: 1fr; }
+  [data-section-type="overview"] .fold-body { grid-template-columns: 1fr; }
   .ov-now, .ov-after { grid-column: 1; }
 }
 .ov-field { margin: 0; max-width: none; font-size: 14px; line-height: 1.7; }

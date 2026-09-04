@@ -67,9 +67,47 @@ export function slugify(title) {
 const FRONTMATTER_RE = /^---\r?\n(?=[A-Za-z_][\w.-]*[ \t]*:)[\s\S]*?\r?\n---[ \t]*\r?\n/;
 export const stripFrontmatter = (t) => String(t || "").replace(FRONTMATTER_RE, "");
 
+// Section heading level, inferred rather than fixed. plan-format.md puts the sections at
+// `###` under a `## Plan` wrapper, but a plan written one level shallow would otherwise
+// collapse into a single section whose last field swallows every section below it. Score each
+// candidate level by how many distinct section *types* `classify` recognizes there and take
+// the best, shallowest on a tie; `## Plan` and the figures layer's `## Hero` are unrecognized,
+// so a canonical plan still scores `###` highest. Distinct types, not a count of headings: a
+// shallow plan giving each of five decisions its own `### Decision N:` sub-heading would
+// otherwise outscore its own `##` sections and land back on the bug this infers around.
+const LEVELLED_HEADING_RE = /^(#{2,4})\s+(.+?)\s*$/;
+const SECTION_LEVELS = [2, 3, 4];
+const DEFAULT_SECTION_LEVEL = 3;
+// Left out of the split at whatever level is chosen: both belong to the preamble, where
+// `splitPreamble` reads Hero back and the wrapper heading names no section of its own.
+const RESERVED_HEADINGS = new Set(["plan", "hero"]);
+
+export function inferSectionLevel(lines) {
+  const types = new Map(); // level -> the set of section types recognized at it
+  let inFence = false;
+  for (const line of lines) {
+    if (FENCE_RE.test(line)) { inFence = !inFence; continue; }
+    if (inFence) continue;
+    const h = LEVELLED_HEADING_RE.exec(line);
+    if (!h) continue;
+    const type = classify(h[2]);
+    if (type === "other") continue;
+    const lv = h[1].length;
+    if (!types.has(lv)) types.set(lv, new Set());
+    types.get(lv).add(type);
+  }
+  let level = DEFAULT_SECTION_LEVEL, best = 0;
+  for (const lv of SECTION_LEVELS) {
+    const n = types.has(lv) ? types.get(lv).size : 0;
+    if (n > best) { level = lv; best = n; } // strict, so the shallowest level wins a tie
+  }
+  return level;
+}
+
 export function parseSections(markdown) {
   const body = stripFrontmatter(markdown);
   const lines = body.split(/\r?\n/);
+  const headingRe = new RegExp(`^#{${inferSectionLevel(lines)}}\\s+(.+?)\\s*$`);
   const sections = [];
   const preamble = [];
   let cur = null;
@@ -77,8 +115,8 @@ export function parseSections(markdown) {
   const seen = {};
   for (const line of lines) {
     if (FENCE_RE.test(line)) inFence = !inFence;
-    const h = !inFence && /^###\s+(.+?)\s*$/.exec(line);
-    if (h) {
+    const h = !inFence && headingRe.exec(line);
+    if (h && !RESERVED_HEADINGS.has(h[1].trim().toLowerCase())) {
       const title = h[1];
       const base = slugify(title);
       let id = base, n = 1;
@@ -168,6 +206,10 @@ export function parseDecisions(body) {
   // Only starts an item when a **Question** is the next non-blank line — splitting elsewhere
   // truncates a Recommendation onto the next card.
   const ITEM_HEAD_RE = /^\*\*(\d+[.)]\s*\S.*?)\*\*\s*$/;
+  // A sub-heading immediately above a **Question** is that item's title — the shape a plan
+  // takes when it gives each decision its own heading. Folded like the bold-numbered form,
+  // so the heading does not trail into the previous item's Alternative.
+  const HEADING_HEAD_RE = /^#{2,6}\s+(.+?)\s*$/;
   const items = [];
   const preamble = [];
   const lines = body.split("\n");
@@ -215,7 +257,7 @@ export function parseDecisions(body) {
       }
       continue;
     }
-    const h = inFence ? null : ITEM_HEAD_RE.exec(line);
+    const h = inFence ? null : (ITEM_HEAD_RE.exec(line) || HEADING_HEAD_RE.exec(line));
     if (h && headStartsItem(i)) {
       open(h[1], true);
       continue;

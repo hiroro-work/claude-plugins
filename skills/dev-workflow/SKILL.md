@@ -118,7 +118,7 @@ Emit one line: the tier and the phases it skips. Mark the skipped rows. Resolve 
 No code changes until Plan Approval passes.
 
 1. Read the files the task touches. Use Glob / Grep / Read directly.
-2. Draft the plan per `references/plan-format.md`: Review guide, Overview, Decisions, Build order, Test plan, Risks. Express-lane plans use the compact shape defined there.
+2. Draft the plan per `references/plan-format.md`: the body under `## Plan`, sections as `###`, in the order Review guide, Overview, Decisions, Build order, Test plan, Risks. Express-lane plans use the compact shape defined there.
 3. Follow `custom_instructions` when set. Simplicity self-audit: every element traces to an explicit requirement, a known bug or constraint, a rule under `.claude/rules/`, or `custom_instructions`. Drop what does not, or add a one-line rationale. Verify every "already exists / reuses X" premise from the source. If the work splits into independently verifiable units and was not decomposed, say so in Risks.
 4. Re-check the tier against the drafted plan (`references/tiers.md` § Re-check after planning): if it rises, say so in one line and reopen the rows the new tier runs.
 5. Do not show the plan yet. Proceed to Plan Review. In mob mode, this phase runs as `references/mob-mode.md` § Design dialogue and writes its § Plan shape.

@@ -28,6 +28,7 @@ import {
   parseDecisions,
   parseOverview,
   parseSections,
+  inferSectionLevel,
   sectionOfBlockId,
   slugify,
 } from "../../skills/dev-workflow/scripts/plan-review/public/plan-parse.mjs";
@@ -53,6 +54,58 @@ test("parseSections does not treat a ### inside a code fence as a heading", () =
 test("parseSections gives repeated headings distinct ids", () => {
   const { sections } = parseSections("### Build order\n\na\n\n### Build order\n\nb\n");
   assert.deepEqual(sections.map((s) => s.id), ["build-order", "build-order-2"]);
+});
+
+// --- the section heading level is inferred, so a plan written one level shallow still splits ---
+
+test("inferSectionLevel picks ### for a canonical plan, past the ## wrapper and Hero block", () => {
+  const md = "## Plan\n\n## Hero\n<figure></figure>\n\n### Overview\n\nb\n\n### Build order\n\n1. x\n";
+  assert.equal(inferSectionLevel(md.split("\n")), 3);
+  assert.deepEqual(parseSections(md).sections.map((s) => s.title), ["Overview", "Build order"]);
+});
+
+test("inferSectionLevel picks ## when the plan puts its sections there", () => {
+  const md = "# Subtask 5\n\n## Overview\n\nb\n\n## Decisions\n\n### Decision 1: naming\n\n"
+    + "**Question**: q\n\n**Recommendation**: r\n\n**Alternative**: a\n\n## Build order\n\n1. x\n";
+  assert.equal(inferSectionLevel(md.split("\n")), 2);
+  const { sections } = parseSections(md);
+  assert.deepEqual(sections.map((s) => s.type), ["overview", "decisions", "buildorder"]);
+  // The bug this guards: with the level fixed at ###, Build order landed inside the
+  // Decisions section and its Alternative field swallowed the whole numbered list.
+  const [item] = parseDecisions(sections[1].body).items;
+  assert.equal(item.alternative, "a");
+});
+
+test("inferSectionLevel counts distinct section types, so per-decision sub-headings cannot win", () => {
+  const decisions = [1, 2, 3, 4, 5]
+    .map((n) => `### Decision ${n}: choice ${n}\n\n**Question**: q${n}\n\n**Recommendation**: r${n}\n`)
+    .join("\n");
+  const md = `## Overview\n\nb\n\n## Decisions\n\n${decisions}\n## Build order\n\n1. x\n\n## Test plan\n\n- t\n`;
+  // Five ### headings against four ## ones: by heading count level 3 would win and swallow
+  // Build order into the last Alternative again. Level 3 carries one type, level 2 carries four.
+  assert.equal(inferSectionLevel(md.split("\n")), 2);
+  const { sections } = parseSections(md);
+  assert.deepEqual(sections.map((s) => s.type), ["overview", "decisions", "buildorder", "test"]);
+  assert.equal(parseDecisions(sections[1].body).items.length, 5);
+});
+
+test("inferSectionLevel leaves a heading inside a fence out of the count", () => {
+  const md = "### Overview\n\n```md\n## Decisions\n## Build order\n## Test plan\n```\n";
+  assert.equal(inferSectionLevel(md.split("\n")), 3);
+});
+
+test("parseSections keeps the Plan wrapper and the Hero block in the preamble at ## level", () => {
+  const md = "## Plan\n\n## Hero\n<figure>H</figure>\n\n## Overview\n\nb\n\n## Risks\n\n- r\n";
+  const { preamble, sections } = parseSections(md);
+  assert.deepEqual(sections.map((s) => s.title), ["Overview", "Risks"]);
+  // Reserved for the preamble, where splitPreamble gives the figure its own slot.
+  assert.equal(splitPreamble(preamble).hero, "<figure>H</figure>");
+});
+
+test("inferSectionLevel falls back to ### when no heading is a known section", () => {
+  const md = "## Notes\n\nprose\n\n#### Appendix\n\nmore\n";
+  assert.equal(inferSectionLevel(md.split("\n")), 3);
+  assert.deepEqual(preparePlan(md, "p").sections.map((s) => s.title), ["Plan"]);
 });
 
 test("classify maps known title prefixes and falls back to other", () => {
@@ -157,6 +210,18 @@ test("parseDecisions folds a numbered bold heading into the Question that follow
   // How many blank lines the fold leaves between the two is incidental; that both
   // ended up in one question is the contract.
   assert.match(items[0].question, /^1\. naming\s+q$/);
+});
+
+test("parseDecisions folds a sub-heading into the Question that follows it", () => {
+  const { items, preamble } = parseDecisions(
+    "### Decision 1: naming\n\n**Question**: q1\n\n**Recommendation**: r1\n\n**Alternative**: a1\n\n"
+    + "### Decision 2: layout\n\n**Question**: q2\n\n**Recommendation**: r2\n");
+  assert.equal(preamble, "");
+  assert.equal(items.length, 2);
+  assert.match(items[0].question, /^Decision 1: naming\s+q1$/); // the # marks come off with the head
+  // The heading of the item that follows must not trail into this Alternative.
+  assert.equal(items[0].alternative, "a1");
+  assert.match(items[1].question, /Decision 2: layout/);
 });
 
 test("parseDecisions leaves a numbered bold line alone when prose follows it", () => {

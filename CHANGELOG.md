@@ -2,6 +2,13 @@
 
 ## 2026-09-04
 
+### dev-workflow v2.1.10 / dev-workflow-bundle v2.1.10
+
+- fix(dev-workflow): `mark.mjs` anchors the timing log on the repository root instead of the caller's directory. Marks are issued between arbitrary other commands, so the shell stands wherever the previous one left it; a `cd` into the skill tree put the log at `skills/dev-workflow/.claude/plans/` and every later mark then appended to a different file, so the run reported a wrong table rather than no table and left a stray log inside the distributed tree. `--dir` still wins, and outside a repository the path stays relative as before.
+- fix(dev-workflow): starting the timing log is its own step in Load Settings rather than the third clause of the step that runs `pwd` and guards against a detached HEAD — it was the only action there with a side effect, and it was the one that got dropped.
+- fix(dev-workflow): `timing.md` § Report covers a run that started no log at all, not just a missing or failing script, and asks which of the two it was. Silence let a run reach Completion with no table and no explanation.
+- fix(dev-workflow): the crit story step in `commits.md` sends the run to `crit story --guide` for the schema instead of listing field names. The names alone did not say that `hunk_refs` holds objects and that `key_changes` and `risks` are arrays, and a guessed shape is rejected on ingest.
+
 ### dev-workflow v2.1.9 / dev-workflow-bundle v2.1.9
 
 - fix(dev-workflow): the plan viewer lays the Overview out across the full content width when a figure has folded the prose beneath it. The two-column grid sat on the `<details>` itself, and a browser wraps a `<details>`' non-summary children in one `::details-content` box — so the whole fold became a single grid item in the left column, stacking Now, After, Approach and Scope down half the page with the other half blank. The fold's blocks now live in a `.fold-body` child that carries the grid, so Now and After pair up again at width and stack only below 720px. A repository test asserts that no rule makes a `<details>` a grid or flex container, since the failure is silent outside a browser.

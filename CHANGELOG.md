@@ -2,6 +2,10 @@
 
 ## 2026-09-04
 
+### dev-workflow v2.1.11 / dev-workflow-bundle v2.1.11
+
+- fix(dev-workflow): the plan viewer infers which heading level holds the plan's sections instead of assuming `###`. A plan written one level shallow — sections at `##` — split on nothing, so a single `###` sub-heading became the whole plan and the last field of its last Decision swallowed Build order, Test plan and Risks into the Alternative column. The level is now the one carrying the most kinds of recognized section, shallowest on a tie, which still lands on `###` for a canonical plan; the `## Plan` wrapper and the figures layer's `## Hero` stay in the preamble at any level. A sub-heading sitting directly above a `**Question**` is also folded in as that decision's title, so a per-decision heading no longer trails into the previous card. Phase 3 (Create Plan) now names the heading skeleton where it points at the format, since this plan drifted one level off it.
+
 ### dev-workflow v2.1.10 / dev-workflow-bundle v2.1.10
 
 - fix(dev-workflow): `mark.mjs` anchors the timing log on the repository root instead of the caller's directory. Marks are issued between arbitrary other commands, so the shell stands wherever the previous one left it; a `cd` into the skill tree put the log at `skills/dev-workflow/.claude/plans/` and every later mark then appended to a different file, so the run reported a wrong table rather than no table and left a stray log inside the distributed tree. `--dir` still wins, and outside a repository the path stays relative as before.

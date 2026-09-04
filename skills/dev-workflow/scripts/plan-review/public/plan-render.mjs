@@ -483,7 +483,11 @@ export function createRenderer(env = {}) {
     const sum = document.createElement("summary");
     sum.textContent = foldLabel;
     det.appendChild(sum);
-    for (const c of rest) det.appendChild(c);
+    // Layout goes on this div, not the <details>, whose children a browser wraps in one box.
+    const inner = document.createElement("div");
+    inner.className = "fold-body";
+    for (const c of rest) inner.appendChild(c);
+    det.appendChild(inner);
     bodyEl.appendChild(det);
   }
 

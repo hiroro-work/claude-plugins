@@ -4,7 +4,7 @@ Read from `SKILL.md` § Timing. The run keeps its own clock so a supervisor can 
 
 ## Events
 
-`node "<base dir>/scripts/timing/mark.mjs" --phase "<phase name>" --event <event> [--at <ISO 8601>]` appends `{"phase","event","t"}` to the run's log `.claude/plans/timing-<YYYYMMDD-HHMMSS>.jsonl`. The first call of the run passes `--event start --new` (at Load Settings) and prints the file's path; every later call omits `--file` and appends to the newest log in `.claude/plans/`.
+`node "<base dir>/scripts/timing/mark.mjs" --phase "<phase name>" --event <event> [--at <ISO 8601>]` appends `{"phase","event","t"}` to the run's log, `timing-<YYYYMMDD-HHMMSS>.jsonl` under the repository root's `.claude/plans/` wherever the mark is issued from. The first call of the run passes `--event start --new` (at Load Settings) and prints the file's path; every later call omits `--file` and appends to the newest log there.
 
 | Event | When |
 |---|---|
@@ -21,4 +21,4 @@ At Completion run `node "<base dir>/scripts/timing/report.mjs" --file <log>` and
 
 A phase with no `wait` / `resume` pair at all that stayed active for over 30 minutes is named in a note under the table. One named there that held no gate this run needs nothing. For one that did, work out when the gate was presented and answered, record the pair with `--at <ISO 8601>`, and take the report again; when those moments cannot be worked out, say in one line that the phase's figures are not to be trusted.
 
-A missing or failing script never stops the run: say so in one line and continue without the table.
+A missing or failing script, or a run that started no log at all, never stops the run: say which of the two it is in one line and continue without the table.

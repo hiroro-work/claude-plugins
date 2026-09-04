@@ -3,12 +3,13 @@
 //
 // Usage: node mark.mjs --phase "<phase name>" --event start|end|wait|resume [--at <ISO 8601>] [--file <path>] [--dir <dir>]
 // With `--event start --new` and no --file, a new log `<dir>/timing-<YYYYMMDD-HHMMSS>.jsonl` is
-// created (dir defaults to .claude/plans) and its path is printed; every other call without
+// created (dir defaults to the repository root's .claude/plans) and its path is printed; every other call without
 // --file appends to the newest timing-*.jsonl in that dir (a later phase's `start` included). Each line: {"phase","event","t"} with t in ISO 8601 UTC.
 // `wait` marks the moment a user gate (or a background wait) is presented; `resume` the moment
 // the run continues. report.mjs subtracts those spans from the phase's wall time.
 // `--at` changes only the event's timestamp, never which log is written to.
 
+import { execFileSync } from "node:child_process";
 import { appendFileSync, mkdirSync, readdirSync, statSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
@@ -19,7 +20,9 @@ if (!["start", "end", "wait", "resume"].includes(event)) {
   process.stderr.write("--event must be start|end|wait|resume\n");
   process.exit(2);
 }
-const dir = args.dir ?? join(".claude", "plans");
+// Not the caller's directory: a `cd` in some earlier command would put the log elsewhere, and
+// `newest()` would then send the rest of the run to a different file — a wrong table, not a gap.
+const dir = args.dir ?? join(repoRoot() ?? ".", ".claude", "plans");
 const now = new Date();
 const at = args.at === undefined ? now : new Date(typeof args.at === "string" ? args.at : NaN);
 if (Number.isNaN(at.getTime())) {
@@ -43,6 +46,12 @@ if (!file) {
 }
 appendFileSync(file, JSON.stringify({ phase, event, t: at.toISOString() }) + "\n");
 process.stdout.write(file + "\n");
+
+function repoRoot() {
+  try {
+    return execFileSync("git", ["rev-parse", "--show-toplevel"], { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim() || null;
+  } catch { return null; }
+}
 
 function newest(d) {
   let names;

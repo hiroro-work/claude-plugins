@@ -2,6 +2,12 @@
 
 ## 2026-09-05
 
+### kabeuchi v1.1.0 / dev-workflow-bundle v2.3.0
+
+- feat(kabeuchi): end the session with both handoff lines instead of only the `mobpro` one
+  - The Next card and the closing chat lines now carry `/mobpro --resume <path>` and `/dev-workflow --resume <path>`, in that order, with one sentence saying that the reader copies one of them — the first when someone will navigate the build and learn from it, the second for a run without that. Both accept the handoff file as an inherited specification, so neither skill changes.
+  - Files: `skills/kabeuchi/{SKILL.md, README.md, .claude-plugin/plugin.json}`
+
 ### kabeuchi v1.0.0 / dev-workflow-bundle v2.2.0
 
 - feat(kabeuchi): add a sounding-board skill for a junior who cannot yet picture the task, let alone read the plan `mobpro` would write, and register it as a `dev-workflow-bundle` member

@@ -1,6 +1,6 @@
 ---
 name: kabeuchi
-description: A sounding-board session before mobpro. Grows a picture-first, one-page HTML artifact with a junior who cannot yet read the task, republishing the same page every turn, until the junior can say in their own words what they will be able to do once the task is done; then writes a text handoff file and ends with a one-line `/mobpro --resume <path>`. Use before mobpro when the junior does not understand the task yet; optional, not a workflow phase.
+description: A sounding-board session before a mobpro or dev-workflow run. Grows a picture-first, one-page HTML artifact with a junior who cannot yet read the task, republishing the same page every turn, until the junior can say in their own words what they will be able to do once the task is done; then writes a text handoff file and ends with two handoff lines, `/mobpro --resume <path>` and `/dev-workflow --resume <path>`, of which the reader copies one. Use before either run when the junior does not understand the task yet; optional, not a workflow phase.
 allowed-tools: Read, Glob, Grep, Write, Edit, Artifact, Skill(artifact-design), Bash(mkdir -p .claude/*)
 ---
 
@@ -34,7 +34,7 @@ The body is a column of `<section>` cards with fixed English headings, in this o
 5. **Words you'll meet in the plan** — the words mobpro's plan and reviews use, and the task's own terms, each in one sentence.
 6. **Your questions** — every question the junior asked, with its answer as a picture and a few sentences, newest last.
 7. **In your words** — the junior's own statement of what they will be able to do.
-8. **Next** — the one line `/mobpro --resume .claude/plans/<slug>.kabeuchi.md`.
+8. **Next** — the two handoff lines `/mobpro --resume .claude/plans/<slug>.kabeuchi.md` and `/dev-workflow --resume .claude/plans/<slug>.kabeuchi.md`, in that order, each on its own line. One sentence says that the reader copies one of them: the first when someone will navigate the build and learn from it, the second for a run without that.
 9. **How this page was built** — a `<details>` element, closed by default, holding one entry per turn: the junior's message verbatim and one line naming what changed on the page.
 
 Every card except the last is a picture first: one large inline SVG spanning the card's width, with at most three sentences beneath it. Inline SVG only: a `viewBox`, colours as `var(--token, #fallback)`, no `<style>` element. Nothing on the page states a design decision, an alternative or a build step.
@@ -60,7 +60,7 @@ This skill's procedure dispatches subagents, so invoking the skill **is** the re
 3. **Design pass.** `Skill(artifact-design)` once, before the page's first write.
 4. **Orientation.** Read the code the task touches. Write the first three cards and the first entry of the How this page was built card, then publish: `file_path` the page, a one-sentence `description`, and `favicon` 🧱 only on a publish that carries no `url`. Write the returned URL into the first-line comment. Show the URL in one chat line, followed by the invitation of step 5.
 5. **Every turn.** Read the junior's message. Research on the main thread when the answer needs it. `Edit` the page: the answer as a new entry in the Your questions card (or a correction to an earlier card when the question shows it was unclear), the stage cards as § Stages allows, and the turn's entry in the How this page was built card. Publish to the same path; when only the How this page was built card changed, skip the publish and let the entry ride the next one. The chat carries one line saying what changed on the page and, as its last line, an open invitation: ask whether anything is still unclear, and say that once the junior can state in their own words what they will be able to do when the task is done, they should say so and the session wraps up. Never quiz, and never demand the statement.
-6. **Wrap-up.** When the junior gives that statement, compare it with the What you'll be able to do after card. A mismatch is corrected on the page (that card, or the Your questions card) and the turn continues as step 5. A match: add the Names for the pieces and Words you'll meet in the plan cards when either is still missing, write the In your words card with the statement verbatim, the Next card with the handoff line and the final entry of the How this page was built card, then publish. Write the handoff file (§ Handoff file). End the chat with the handoff line alone as its last line.
+6. **Wrap-up.** When the junior gives that statement, compare it with the What you'll be able to do after card. A mismatch is corrected on the page (that card, or the Your questions card) and the turn continues as step 5. A match: add the Names for the pieces and Words you'll meet in the plan cards when either is still missing, write the In your words card with the statement verbatim, the Next card with the handoff line and the final entry of the How this page was built card, then publish. Write the handoff file (§ Handoff file). End the chat with the Next card's two handoff lines, in the card's order, as the chat's last two lines and nothing else.
 
 ## Handoff file
 

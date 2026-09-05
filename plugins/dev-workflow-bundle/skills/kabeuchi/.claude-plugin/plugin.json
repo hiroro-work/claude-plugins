@@ -1,6 +1,6 @@
 {
   "name": "kabeuchi",
-  "description": "A sounding-board session before mobpro: grow a picture-first, one-page artifact with a junior who cannot yet read the task, until they can say in their own words what they will be able to do; hands off a short /mobpro --resume line",
+  "description": "A sounding-board session before a mobpro or dev-workflow run: grow a picture-first, one-page artifact with a junior who cannot yet read the task, until they can say in their own words what they will be able to do; hands off /mobpro --resume and /dev-workflow --resume lines, of which the reader copies one",
   "author": {
     "name": "hiropon",
     "url": "https://github.com/hiroro-work"

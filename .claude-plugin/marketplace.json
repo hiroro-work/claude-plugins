@@ -157,7 +157,7 @@
     },
     {
       "name": "dev-workflow-bundle",
-      "description": "Development workflow bundle (includes peer + extract-rules + dev-workflow + rules-review + tidy + prose-polish + mobpro)",
+      "description": "Development workflow bundle (includes peer + extract-rules + dev-workflow + rules-review + tidy + prose-polish + mobpro + kabeuchi)",
       "source": "./plugins/dev-workflow-bundle",
       "skills": [
         "./skills/ask-peer",
@@ -166,9 +166,10 @@
         "./skills/rules-review",
         "./skills/tidy",
         "./skills/prose-polish",
-        "./skills/mobpro"
+        "./skills/mobpro",
+        "./skills/kabeuchi"
       ],
-      "version": "2.1.11",
+      "version": "2.2.0",
       "author": {
         "name": "hiropon"
       },
@@ -182,6 +183,19 @@
         "./"
       ],
       "version": "2.0.0",
+      "author": {
+        "name": "hiropon"
+      },
+      "category": "workflow"
+    },
+    {
+      "name": "kabeuchi",
+      "description": "A sounding-board session before mobpro: grow a picture-first, one-page artifact with a junior who cannot yet read the task, until they can say in their own words what they will be able to do; hands off a short /mobpro --resume line",
+      "source": "./skills/kabeuchi",
+      "skills": [
+        "./"
+      ],
+      "version": "1.0.0",
       "author": {
         "name": "hiropon"
       },

@@ -1,0 +1,18 @@
+{
+  "name": "kabeuchi",
+  "description": "A sounding-board session before mobpro: grow a picture-first, one-page artifact with a junior who cannot yet read the task, until they can say in their own words what they will be able to do; hands off a short /mobpro --resume line",
+  "author": {
+    "name": "hiropon",
+    "url": "https://github.com/hiroro-work"
+  },
+  "homepage": "https://github.com/hiroro-work/claude-plugins",
+  "repository": "https://github.com/hiroro-work/claude-plugins",
+  "license": "MIT",
+  "keywords": [
+    "workflow",
+    "learning",
+    "junior",
+    "onboarding",
+    "sounding-board"
+  ]
+}

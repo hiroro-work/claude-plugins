@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-09-05
+
+### kabeuchi v1.0.0 / dev-workflow-bundle v2.2.0
+
+- feat(kabeuchi): add a sounding-board skill for a junior who cannot yet picture the task, let alone read the plan `mobpro` would write, and register it as a `dev-workflow-bundle` member
+  - `/kabeuchi <task>` grows one picture-first page, republished to the same URL as the junior's questions land on it, until the junior can say in their own words what they will be able to do once the task is done; it then writes a text handoff file and ends with a single `/mobpro --resume <path>` line that `dev-workflow` already accepts as an inherited specification. `dev-workflow` and `mobpro` are unchanged; skip it when the junior already understands the task
+  - Files: `skills/kabeuchi/{SKILL.md, README.md, .claude-plugin/plugin.json}`
+  - Registration: `kabeuchi` plugin entry (`source: ./skills/kabeuchi`, `skills: ["./"]`, v1.0.0) + `dev-workflow-bundle` `skills` array / description / version bump
+
 ## 2026-09-04
 
 ### dev-workflow v2.1.11 / dev-workflow-bundle v2.1.11

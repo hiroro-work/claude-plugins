@@ -11,17 +11,18 @@
 
 The AI reads the code the task touches and publishes one page: big pictures, few words, one card per idea. The junior asks questions in the chat; every answer lands on the page, and the page is republished to the same URL each turn, so the junior reads the page rather than the chat. The page sharpens in three stages — first roles and analogies with no file names at all, then the real names of the pieces, then the words the junior will meet in mobpro's plan and reviews. A collapsed log at the bottom keeps every question verbatim, so a lead who opens the page later can see how the understanding was built.
 
-The session ends when the junior can say in their own words what they will be able to do once the task is done. Nobody is quizzed; the invitation at the end of each turn just says that this is how it wraps up. At that point the skill writes a text version of the page to `.claude/plans/<slug>.kabeuchi.md` and ends with a single line:
+The session ends when the junior can say in their own words what they will be able to do once the task is done. Nobody is quizzed; the invitation at the end of each turn just says that this is how it wraps up. At that point the skill writes a text version of the page to `.claude/plans/<slug>.kabeuchi.md` and ends with two lines:
 
 ```text
 /mobpro --resume .claude/plans/<slug>.kabeuchi.md
+/dev-workflow --resume .claude/plans/<slug>.kabeuchi.md
 ```
 
-`dev-workflow` reads a file without frontmatter as an inherited specification and takes its first heading as the task, so mobpro starts from the junior's own restatement with no change on its side. The lead can read the same file for the detail the pictures leave out.
+Copy one of them. The first runs the build with the junior navigating and learning from it; the second runs it without that. `dev-workflow` reads a file without frontmatter as an inherited specification and takes its first heading as the task, so either run starts from the junior's own restatement with no change on its side. The lead can read the same file for the detail the pictures leave out.
 
 ## When to use it
 
-Only when the junior does not understand the task yet. It is not a phase of `dev-workflow` or `mobpro` and nothing there depends on it; a junior who can already read the plan should go straight to `/mobpro <task>`.
+Only when the junior does not understand the task yet. It is not a phase of `dev-workflow` or `mobpro` and nothing there depends on it; a junior who can already read the plan should go straight to `/mobpro <task>` or `/dev-workflow <task>`.
 
 ## Requirements
 

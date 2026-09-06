@@ -2,6 +2,14 @@
 
 ## 2026-09-06
 
+### kabeuchi v2.1.0 / dev-workflow-bundle v2.5.0
+
+- feat(kabeuchi): answer in the chat and republish the page only when the picture of the subject changes
+  - Each turn now answers the reader's question in the chat first, before any tool call touches the page. A card is edited only when the answer shows it to be wrong, missing a piece or misleading, or when a stage card is due; an answer that only explains what the page already shows leaves the page alone. The page is published only on a turn that changed a card, so the reader no longer waits for an edit and a publish on every exchange.
+  - The **Your questions** card is gone: the page holds the subject, not the conversation. The collapsed **How this page was built** log keeps the exchange — the reader's message verbatim, the answer in one line, and the card change when there was one — and is still written every turn, riding the next publish. A page from 2.0 that carries a Your questions card is left as it is on `--resume`.
+  - The handoff file follows: it renders the first six cards and drops the questions table.
+  - Files: `skills/kabeuchi/{SKILL.md, README.md}`
+
 ### kabeuchi v2.0.0 / dev-workflow-bundle v2.4.0
 
 - feat(kabeuchi): open the session to any subject and make the handoff a question instead of the ending

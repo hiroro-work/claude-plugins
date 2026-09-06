@@ -1,21 +1,21 @@
 ---
 name: kabeuchi
-description: A sounding-board session before a mobpro or dev-workflow run. Grows a picture-first, one-page HTML artifact with a junior who cannot yet read the task, republishing the same page every turn, until the junior can say in their own words what they will be able to do once the task is done; then writes a text handoff file and ends with two handoff lines, `/mobpro --resume <path>` and `/dev-workflow --resume <path>`, of which the reader copies one. Use before either run when the junior does not understand the task yet; optional, not a workflow phase.
-allowed-tools: Read, Glob, Grep, Write, Edit, Artifact, Skill(artifact-design), Bash(mkdir -p .claude/*)
+description: A sounding-board session that grows a picture-first, one-page HTML artifact with a reader who cannot yet picture the subject — a task they were handed, a question they want answered, a choice they need to talk through, in this codebase or outside it — answering in the chat and republishing the same page whenever the picture of the subject changes, until the reader says it has come together. It then asks whether to hand the page off to a `/mobpro` or `/dev-workflow` run: yes writes a text handoff file and ends with the two `--resume` lines, of which the reader copies one; no ends with the page's URL. Use for any walk-through that should leave a page behind; optional, not a workflow phase.
+allowed-tools: Read, Glob, Grep, Write, Edit, Artifact, Skill(artifact-design), WebFetch, WebSearch, Bash(mkdir -p .claude/*)
 ---
 
 # kabeuchi
 
 ```text
-/kabeuchi <task>
+/kabeuchi <subject>
 /kabeuchi --resume <slug or path>
 ```
 
-A junior who cannot yet read a plan asks about the task in the chat; every answer goes onto one page — big pictures, few words — republished to the same URL.
+A reader who cannot yet picture the subject asks about it in the chat and is answered there; one page — big pictures, few words — holds the picture of the subject and is republished to the same URL whenever that picture changes.
 
 ## Register
 
-Write for a junior who has never seen this codebase and may not know the framework or the language; assume they know nothing about the topic yet. In stage (a), each card explains through an everyday analogy before it names any part of the system. Complete sentences; the conclusion first, then the reason; a plain word over a technical one when both are exact. Whatever the picture already says is not repeated in words. Leaving things out is the method; a childish tone is not.
+Write for a reader who is new to the subject and may not know the codebase, the framework or the language; assume they know nothing about the topic yet. The register covers the chat answers as much as the page. In stage (a), each card explains through an everyday analogy before it names any part of the system. Complete sentences; the conclusion first, then the reason; a plain word over a technical one when both are exact. On the page, whatever the picture already says is not repeated in words. Leaving things out is the method; a childish tone is not.
 
 ## Language
 
@@ -23,31 +23,31 @@ Read only the `language` key from the YAML frontmatter of `~/.claude/dev-workflo
 
 ## The page
 
-Path `.claude/plans/<slug>.kabeuchi.html`, where `<slug>` is the ASCII kebab-case of the task. It is the single source: the artifact is this file, published as is. It follows the `Artifact` tool's page contract for the skeleton and the theme tokens. Its first line is an HTML comment holding `task: <the request verbatim, any "--" written "- -">` and, once published, `artifact_url: <url>`.
+Path `.claude/plans/<slug>.kabeuchi.html`, where `<slug>` is the ASCII kebab-case of the subject. It is the single source: the artifact is this file, published as is. It follows the `Artifact` tool's page contract for the skeleton and the theme tokens. Its first line is an HTML comment holding `subject: <the request verbatim, any "--" written "- -">` and, once published, `artifact_url: <url>`.
 
 The body is a column of `<section>` cards with fixed English headings, in this order:
 
-1. **The problem** — what is wrong or missing today, as the person affected feels it.
-2. **What you'll be able to do after** — what the junior will have when the task is done.
-3. **The pieces** — the parts of the system involved, each named by its role (what it does), and one picture of how they talk to each other.
-4. **Names for the pieces** — each role beside the real file, class or module that plays it.
-5. **Words you'll meet in the plan** — the words mobpro's plan and reviews use, and the task's own terms, each in one sentence.
-6. **Your questions** — every question the junior asked, with its answer as a picture and a few sentences, newest last.
-7. **In your words** — the junior's own statement of what they will be able to do.
-8. **Next** — the two handoff lines `/mobpro --resume .claude/plans/<slug>.kabeuchi.md` and `/dev-workflow --resume .claude/plans/<slug>.kabeuchi.md`, in that order, each on its own line. One sentence says that the reader copies one of them: the first when someone will navigate the build and learn from it, the second for a run without that.
-9. **How this page was built** — a `<details>` element, closed by default, holding one entry per turn: the junior's message verbatim and one line naming what changed on the page.
+1. **The problem** — what is wrong, missing or unclear today, as the person affected feels it.
+2. **What you'll have at the end** — what the reader will have, know or be able to do once the subject is settled.
+3. **The pieces** — the parts involved, each named by its role (what it does), and one picture of how they talk to each other.
+4. **Names for the pieces** — each role beside the real name of what plays it — a file, class or module, or a library, specification or term.
+5. **Words you'll meet in the plan** — the words the plan and its reviews will use, and the subject's own terms, each in one sentence.
+6. **In your words** — the reader's own words, verbatim, saying what has come together for them.
+7. **Next** — one sentence naming the work the page points to, composed from The problem and What you'll have at the end cards; then the two handoff lines `/mobpro --resume .claude/plans/<slug>.kabeuchi.md` and `/dev-workflow --resume .claude/plans/<slug>.kabeuchi.md`, in that order, each on its own line. One sentence says that the reader copies one of them: the first when someone will navigate the build and learn from it, the second for a run without that.
+8. **How this page was built** — a `<details>` element, closed by default, holding one entry per turn: the reader's message verbatim, the answer in one line when there was a question, and, when a card changed, one line naming the change. This is the only place the exchange is kept; the other cards hold the subject, not the conversation. A page written before this card set may carry a Your questions card: leave it as it is and add nothing to it.
+
+The Words you'll meet in the plan and Next cards are the handoff cards: written only when the reader chooses the handoff (§ Procedure step 6).
 
 Every card except the last is a picture first: one large inline SVG spanning the card's width, with at most three sentences beneath it. Inline SVG only: a `viewBox`, colours as `var(--token, #fallback)`, no `<style>` element. Nothing on the page states a design decision, an alternative or a build step.
 
 ## Stages
 
-The page sharpens in three stages; announce each move in one chat sentence. A stage's card appears when the junior's questions start to need it, never before.
+The page sharpens in two stages; announce the move in one chat sentence. A stage's card appears when the reader's questions start to need it, never before.
 
-- **(a) Roles and analogies.** The first three cards (The problem, What you'll be able to do after, The pieces). No file, class or function name in them.
+- **(a) Roles and analogies.** The first three cards (The problem, What you'll have at the end, The pieces). No real name of a piece in them.
 - **(b) Names.** The Names for the pieces card appears, once the questions stop being about the outline.
-- **(c) Vocabulary.** The Words you'll meet in the plan card appears, once an answer needs the plan's words.
 
-Every fact on the page comes from the code: before writing what a piece does, find it with Glob or Grep and read it.
+Every fact about the system comes from the code: before writing what a piece does, find it with Glob or Grep and read it. A fact from outside the repository comes from a source fetched with WebFetch or WebSearch, and the page names that source beside the fact.
 
 ## Dispatch authorization
 
@@ -55,17 +55,19 @@ This skill's procedure dispatches subagents, so invoking the skill **is** the re
 
 ## Procedure
 
-1. **Arguments.** `--resume <arg>`: resolve an existing path, else `.claude/plans/<arg>.kabeuchi.html`; `Read` the page, and when its first-line comment carries `artifact_url`, call `Artifact` with `action: "read"` on that URL before any publish, then publish with `url` set to it; resolve the language (§ Language) and continue at step 5. Otherwise the argument is the task: derive `<slug>` and run `mkdir -p .claude/plans`. If a page with that slug exists and its `task:` line matches, stop and point to `--resume <slug>`; if it belongs to another task, take the next free suffix (`-2`, `-3`).
+1. **Arguments.** `--resume <arg>`: resolve an existing path, else `.claude/plans/<arg>.kabeuchi.html`; `Read` the page, and when its first-line comment carries `artifact_url`, call `Artifact` with `action: "read"` on that URL before any publish, then publish with `url` set to it; resolve the language (§ Language) and continue at step 5. Otherwise the argument is the subject: derive `<slug>` and run `mkdir -p .claude/plans`. If a page with that slug exists and its `subject:` line matches, stop and point to `--resume <slug>`; if it belongs to another subject, take the next free suffix (`-2`, `-3`).
 2. **Language.** Resolve per § Language.
 3. **Design pass.** `Skill(artifact-design)` once, before the page's first write.
-4. **Orientation.** Read the code the task touches. Write the first three cards and the first entry of the How this page was built card, then publish: `file_path` the page, a one-sentence `description`, and `favicon` 🧱 only on a publish that carries no `url`. Write the returned URL into the first-line comment. Show the URL in one chat line, followed by the invitation of step 5.
-5. **Every turn.** Read the junior's message. Research on the main thread when the answer needs it. `Edit` the page: the answer as a new entry in the Your questions card (or a correction to an earlier card when the question shows it was unclear), the stage cards as § Stages allows, and the turn's entry in the How this page was built card. Publish to the same path; when only the How this page was built card changed, skip the publish and let the entry ride the next one. The chat carries one line saying what changed on the page and, as its last line, an open invitation: ask whether anything is still unclear, and say that once the junior can state in their own words what they will be able to do when the task is done, they should say so and the session wraps up. Never quiz, and never demand the statement.
-6. **Wrap-up.** When the junior gives that statement, compare it with the What you'll be able to do after card. A mismatch is corrected on the page (that card, or the Your questions card) and the turn continues as step 5. A match: add the Names for the pieces and Words you'll meet in the plan cards when either is still missing, write the In your words card with the statement verbatim, the Next card with the handoff line and the final entry of the How this page was built card, then publish. Write the handoff file (§ Handoff file). End the chat with the Next card's two handoff lines, in the card's order, as the chat's last two lines and nothing else.
+4. **Orientation.** Read the code the subject touches, or fetch the sources it rests on. Write the first three cards and the first entry of the How this page was built card, then publish: `file_path` the page, a one-sentence `description`, and `favicon` 🧱 only on a publish that carries no `url`. Write the returned URL into the first-line comment. Show the URL in one chat line, followed by the invitation of step 5.
+5. **Every turn.** Read the reader's message. Research on the main thread when the answer needs it. Answer in the chat first, in the register of § Register, before any tool call touches the page. Then decide whether the page changes: a card changes only when the answer changes what the page says about the subject — the question showed a card to be wrong, missing a piece or misleading in its analogy, so that card is corrected; or a stage card is due per § Stages. An answer that only explains what the page already shows changes no card. `Edit` the turn's entry into the How this page was built card every turn; publish to the same path only when a card changed, and let the log entries ride the next publish. Close the chat with one line — what changed on the page, or that the page is unchanged — and, as its last line, an open invitation: ask whether anything is still unclear, and say that once it has come together for them — they can say in their own words what they now understand, or what they will be able to do — they should say so and the session wraps up. Never quiz, and never demand it.
+6. **Wrap-up.** When the reader says it has come together, compare their words with the cards. A contradiction is corrected on the card concerned and the turn continues as step 5. Otherwise write the In your words card with their words verbatim and the turn's entry in the How this page was built card, then ask the **handoff question**, in the resolved language: whether to hand what the page holds to a `/mobpro` or `/dev-workflow` run and start building, saying what yes and what no each do, per the two branches below. It accepts yes or no. A reply that is neither — a question, a comment — is answered as in step 5, and the question is asked again.
+   - **Yes.** Add the Names for the pieces card when it is still missing, the handoff cards, and the turn's entry in the How this page was built card; then publish and write the handoff file (§ Handoff file) in the same tool-call burst. End the chat with the Next card's two handoff lines, in the card's order, as the chat's last two lines and nothing else.
+   - **No.** Write the turn's entry in the How this page was built card, then publish. End the chat with the page's URL (its path when the page is unpublished or the last publish failed) as its last line. No handoff file.
 
 ## Handoff file
 
-`.claude/plans/<slug>.kabeuchi.md`, written at wrap-up; a later wrap-up of the same page overwrites it. No frontmatter. Line 1 is `# ` followed by the junior's statement as one sentence (shortened when the In your words card holds more). Then the request verbatim, and the first seven cards in page order as text — prose and tables (roles to names, the vocabulary, each question with its answer) — with no pictures and without the How this page was built card.
+`.claude/plans/<slug>.kabeuchi.md`, written on the Yes branch of the wrap-up; a later wrap-up of the same page overwrites it. No frontmatter. Line 1 is `# ` followed by the Next card's sentence naming the work. Then the request verbatim, and the first six cards in page order as text — prose and tables (roles to names, the plan's words) — with no pictures and without the How this page was built card.
 
 ## Fallback
 
-When the `Artifact` tool is not on the tool surface, or a publish fails and its one retry in the same turn fails too, say so in one line and keep editing the page every turn without publishing for the rest of the session; the junior opens the page from disk. Everything else, including the wrap-up and the handoff file, is unchanged.
+When the `Artifact` tool is not on the tool surface, or a publish fails and its one retry in the same turn fails too, say so in one line and keep editing the page as step 5 says, without publishing, for the rest of the session; the reader opens the page from disk. Everything else, including the wrap-up and the handoff file, is unchanged.

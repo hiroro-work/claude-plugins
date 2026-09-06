@@ -1,5 +1,24 @@
 # Changelog
 
+## 2026-09-06
+
+### kabeuchi v2.1.0 / dev-workflow-bundle v2.5.0
+
+- feat(kabeuchi): answer in the chat and republish the page only when the picture of the subject changes
+  - Each turn now answers the reader's question in the chat first, before any tool call touches the page. A card is edited only when the answer shows it to be wrong, missing a piece or misleading, or when a stage card is due; an answer that only explains what the page already shows leaves the page alone. The page is published only on a turn that changed a card, so the reader no longer waits for an edit and a publish on every exchange.
+  - The **Your questions** card is gone: the page holds the subject, not the conversation. The collapsed **How this page was built** log keeps the exchange — the reader's message verbatim, the answer in one line, and the card change when there was one — and is still written every turn, riding the next publish. A page from 2.0 that carries a Your questions card is left as it is on `--resume`.
+  - The handoff file follows: it renders the first six cards and drops the questions table.
+  - Files: `skills/kabeuchi/{SKILL.md, README.md}`
+
+### kabeuchi v2.0.0 / dev-workflow-bundle v2.4.0
+
+- feat(kabeuchi): open the session to any subject and make the handoff a question instead of the ending
+  - `/kabeuchi <subject>` now takes a task, a question or a choice, in this codebase or outside it; a fact from outside the repository is fetched with WebFetch / WebSearch and the page names its source beside it. The register addresses a reader rather than a junior, the second card is **What you'll have at the end**, and the page sharpens in two stages (the vocabulary stage is gone).
+  - The session wraps up when the reader says it has come together, in their own words. The skill then asks once whether to hand the page off to a `/mobpro` or `/dev-workflow` run: yes adds the **Names for the pieces** and **Words you'll meet in the plan** cards, writes the handoff file and ends with the two `--resume` lines; no ends with the page's URL and writes no file. The question is asked every time.
+  - The **Next** card opens with one sentence naming the work the page points to, and the handoff file takes that sentence as its first line, so the task `dev-workflow` reads is one the reader has seen on the page.
+  - The argument is `<subject>` and the page's first-line key is `subject:`, so a page written by 1.x is not recognized by the slug check; hence the major bump.
+  - Files: `skills/kabeuchi/{SKILL.md, README.md, .claude-plugin/plugin.json}`
+
 ## 2026-09-05
 
 ### kabeuchi v1.1.0 / dev-workflow-bundle v2.3.0

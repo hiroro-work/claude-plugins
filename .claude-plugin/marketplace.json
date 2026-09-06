@@ -169,7 +169,7 @@
         "./skills/mobpro",
         "./skills/kabeuchi"
       ],
-      "version": "2.4.0",
+      "version": "2.5.0",
       "author": {
         "name": "hiropon"
       },
@@ -195,7 +195,7 @@
       "skills": [
         "./"
       ],
-      "version": "2.0.0",
+      "version": "2.1.0",
       "author": {
         "name": "hiropon"
       },

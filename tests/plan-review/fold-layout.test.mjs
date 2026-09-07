@@ -72,3 +72,21 @@ test("the overview grid lands on the fold's inner element, which the renderer cr
     "expected an overview grid rule targeting .fold-body",
   );
 });
+
+test("every token named in the figure-safe comment is defined in :root", () => {
+  const comment = css.match(/\/\*\s*Figure-safe tokens[\s\S]*?\*\//);
+  assert.ok(comment, "the Figure-safe tokens comment is missing from plan-view.css");
+
+  // The comment names the carve-outs too, so only the pairing lines carry the set.
+  const named = new Set(
+    comment[0]
+      .split("\n")
+      .filter((line) => /\bover\b|\bfor rules\b/.test(line))
+      .flatMap((line) => line.match(/--[a-z-]+/g) ?? []),
+  );
+  assert.ok(named.size > 0, "the figure-safe comment names no tokens");
+
+  const defined = new Set(css.match(/^\s*(--[a-z-]+):/gm)?.map((d) => d.trim().slice(0, -1)));
+  const dangling = [...named].filter((t) => !defined.has(t));
+  assert.deepEqual(dangling, [], `figure-safe tokens not defined in plan-view.css: ${dangling}`);
+});

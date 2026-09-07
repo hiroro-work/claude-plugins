@@ -2,6 +2,18 @@
 
 ## 2026-09-07
 
+### dev-workflow v2.2.0 / dev-workflow-bundle v2.7.0
+
+- fix(dev-workflow): anchor mob mode's plan-building stops on a draft of what the task produces, and stop them from narrating the research
+  - Checkpoints shipped the research that produced them — raw execution output and the reasoning over it. They now narrate what the research concluded, never the path that reached it.
+  - Orientation now drafts the thing the task produces, with example values, and each checkpoint names the part of that draft it feeds. Between a file-level map and line-level code there was no rung a junior could stand on, so a checkpoint's relevance had to be taken on trust.
+  - Asked what a checkpoint is for, mob mode answers from the definition it already carries rather than composing a new one.
+  - The first checkpoint opens its own turn, rather than riding along with the design-approach narration.
+  - A checkpoint now shows the code a decision turns on without putting the decision to the junior; the fork itself belongs to `### Choices I made` and is settled at Plan Approval.
+  - Mob mode's own words for its machinery no longer surface in junior-facing prose; the thing itself is named instead.
+  - A go-ahead that also says the point did not land is taken as one: the AI notes the point and advances without re-explaining, and the completion learning summary carries anything left open that way.
+  - Files: `skills/dev-workflow/references/mob-mode.md`
+
 ### kabeuchi v2.2.0 / dev-workflow-bundle v2.6.0
 
 - feat(kabeuchi): say what the subject is before what is wrong with it, and let `--reader` set who the page is written for

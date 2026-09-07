@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-09-07
+
+### kabeuchi v2.2.0 / dev-workflow-bundle v2.6.0
+
+- feat(kabeuchi): say what the subject is before what is wrong with it, and let `--reader` set who the page is written for
+  - A new first card, **What this is**, holds the subject itself — what it is, who uses it, what it does for them. Until now the page opened with The problem, and a subject the reader had never heard of went unnamed while the cards discussed its parts.
+  - `--reader "<who the reader is>"` sets the reader the page and the chat answers are written for; unset, it is the reader the skill already assumed. What it moves is how much prior knowledge is assumed, never the tone. A new **Reader** section also rules that nothing about the subject — the maturity of a codebase, the sophistication of a framework — may revise the reader upward. `--reader`'s value, or `default`, is recorded on the page as `reader:` and survives `--resume`, which `--reader` can override.
+  - **Words you'll meet in the plan** is renamed **Words you'll meet** and appears in the second stage beside Names for the pieces, instead of only on the handoff; the plan's own words are still added to it on the handoff. The wrap-up now brings the page to the second stage, on either branch, when the questions never did, so a page never ends without the real names and the subject's terms. **Next** is now the only card the handoff writes.
+  - The first stage's cards keep their roles and analogies for the life of the page — a real name is never added to them later — while the subject's own name belongs on What this is. Every term the reader meets for the first time now gets a sentence saying what it is where it first appears.
+  - Files: `skills/kabeuchi/{SKILL.md, README.md}`
+
 ## 2026-09-06
 
 ### kabeuchi v2.1.0 / dev-workflow-bundle v2.5.0

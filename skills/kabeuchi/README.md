@@ -5,16 +5,16 @@
 ## What it does
 
 ```text
-/kabeuchi <subject>
-/kabeuchi --resume <slug>
+/kabeuchi [--reader "<who the reader is>"] <subject>
+/kabeuchi --resume <slug> [--reader "<who the reader is>"]
 ```
 
-The AI reads the code the subject touches, or fetches the sources it rests on, and publishes one page: big pictures, few words, one card per idea. The reader asks questions in the chat and is answered there, right away. The page holds the picture of the subject, not the conversation: a card changes only when an answer shows it was wrong or incomplete, or when the page is ready for its next stage, and the page is republished to the same URL only then. The page sharpens in two stages — first roles and analogies with no real names at all, then the real names of the pieces. A fact from outside the repository carries its source beside it. A collapsed log at the bottom keeps every question verbatim with its answer in one line, so someone who opens the page later can see how the understanding was built.
+The AI reads the code the subject touches, or fetches the sources it rests on, and publishes one page: big pictures, few words, one card per idea. The first card says what the subject is — what it is, who uses it, what it does for them — before any card says what is wrong with it. The reader asks questions in the chat and is answered there, right away. The page holds the picture of the subject, not the conversation: a card changes only when an answer shows it was wrong or incomplete, when it brings a term the vocabulary card does not yet carry, or when the page is ready for its next stage, and the page is republished to the same URL only then. The page sharpens in two stages — first roles and analogies with no real names at all, then the real names of the pieces and the words of the subject. The first stage's cards keep their analogies for the life of the page; the real name of a piece lives on its own card, though the subject's own name is said plainly from the start. A fact from outside the repository carries its source beside it, and any term the reader is meeting for the first time gets one sentence saying what it is, in the chat answer or on the page wherever it first appears. A collapsed log at the bottom keeps every question verbatim with its answer in one line, so someone who opens the page later can see how the understanding was built.
 
-The session wraps up when the reader says it has come together — in their own words, what they now understand or what they will be able to do. Nobody is quizzed; the invitation at the end of each turn just says that this is how it wraps up. The skill then asks one question: whether to hand the page off to a `/mobpro` or `/dev-workflow` run and start building.
+The session wraps up when the reader says it has come together — in their own words, what they now understand or what they will be able to do. Nobody is quizzed; the invitation at the end of each turn just says that this is how it wraps up. If the questions never took the page to its second stage, the wrap-up brings it there, so no page ends without the real names and the subject's words. The skill then asks one question: whether to hand the page off to a `/mobpro` or `/dev-workflow` run and start building.
 
 - **No**: the page is published one last time and the session ends with its URL. No file is written.
-- **Yes**: the page gains the names of the pieces, the words the plan will use and one sentence naming the work to build; the skill writes a text version of the page to `.claude/plans/<slug>.kabeuchi.md`, and the chat ends with two lines:
+- **Yes**: the words the plan will use are added to the page's vocabulary card and one sentence names the work to build; the skill writes a text version of the page to `.claude/plans/<slug>.kabeuchi.md`, and the chat ends with two lines:
 
 ```text
 /mobpro --resume .claude/plans/<slug>.kabeuchi.md
@@ -22,6 +22,14 @@ The session wraps up when the reader says it has come together — in their own 
 ```
 
 Copy one of them. The first runs the build with the reader navigating and learning from it; the second runs it without that. `dev-workflow` reads a file without frontmatter as an inherited specification and takes its first heading as the task, so the handoff file opens with the page's sentence naming the work, and either run starts from it with no change on its side. Whoever leads the build can read the same file for the detail the pictures leave out.
+
+## Who it is written for
+
+Unset, `--reader` means someone new to the subject who may not know the codebase, the framework or the language. Pass `--reader "a first-year engineer, three months in"` or `--reader "a middle-schooler who has written some Python"` and every sentence — on the page and in the chat — is written for that reader instead.
+
+What the flag moves is how much prior knowledge is assumed. It does not move the tone: every reader gets the same complete sentences, and no reader is talked down to. Nothing about the subject moves it either — a mature codebase or a sophisticated framework says nothing about who is reading, and the skill is told not to revise the reader upward from what the subject looks like.
+
+`--reader`'s value, or `default` when it was not given, is recorded on the page as `reader:` in its first line, so `--resume` keeps it and you can tell afterwards which setting produced which page. Passing `--reader` on a resume replaces it.
 
 ## When to use it
 
@@ -41,5 +49,8 @@ The output language follows `dev-workflow`'s `language` setting.
 - **Why a separate skill.** The session is needed only sometimes, and often by a reader below the level `mobpro`'s plan is written for. Keeping it opt-in and outside the workflow lets a team try it without changing how `mobpro` runs, and lets the two artifacts stay different: this page holds the outline, the plan holds the decisions.
 - **Why the handoff question is asked every time.** Deciding for the reader whether the session leads to a build would rest on the AI's judgment, and a wrong "no" would silently drop the handoff. A wrong "yes" costs one extra question. The losses are not symmetric, so the question is always asked.
 - **Answers live in the chat, the page keeps the picture.** Putting every answer on the page as a new picture made each turn wait for an edit and a publish, and most answers only explained what the page already showed. Now the chat answers first, the log keeps the exchange, and the page changes only when the answer changes what it says about the subject.
+- **Why "What this is" is its own card.** Naming the subject could have been one or two extra sentences on The problem card. But every card leads with one large picture and allows at most three sentences under it, so that card's picture would have had to carry both what the thing is and what is wrong with it. A newcomer's first picture — who uses this, what it does for them — earns a card of its own.
+- **Why the vocabulary card moved out of the handoff.** Names arrive with the second stage, so that is when the words are needed; tying the card to the handoff meant a session that ended with "no" left no vocabulary at all. Moving it does not make it arrive on time by itself — a reader whose questions stay at the outline level for a long time reaches the second stage late — so the wrap-up also adds the names and the words when the session ended before that stage brought them. The stage trigger itself is unchanged: it decides when the cards appear, no longer whether they appear.
+- **Why `--reader` is a flag and not a setting.** Which reader the page should be written for is still a question being explored, so the cheapest loop wins: a flag can be different on every run, and a free-text value avoids fixing a list of profiles before we know what the useful ones are. If a project settles on one reader, the same value can later be read from a settings file without changing anything else.
 - **"Explain like I'm five" is about what to leave out**, not about tone. The page still speaks in complete sentences to an adult who is new to the subject; it leaves out design choices, alternatives and build order, and lets each picture carry what a paragraph would otherwise say.
 - **Some of `dev-workflow`'s definitions are written out again in this skill's own `SKILL.md`** — the `language` resolution and the slug rule (from `SKILL.md`) — because bundle members install independently and cannot locate a sibling's files at run time. When either changes in `dev-workflow`, align this skill by hand. The register started from `references/mob-mode.md` and is now this skill's own.

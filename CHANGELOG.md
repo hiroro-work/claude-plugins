@@ -2,6 +2,17 @@
 
 ## 2026-09-07
 
+### dev-workflow v2.2.1 / dev-workflow-bundle v2.7.1
+
+- fix(dev-workflow): a plan figure reads in both themes — the stylesheet gives its text a colour, and the tokens it may reach for are defined in one place
+  - `plan-approval.md` asked for figure colours as `var(--token, #fallback)` without saying which token names exist. A name the viewer's stylesheet does not define resolves to the hex written beside it, which is fixed to one theme, so a figure could come out white on white — and the instruction gave no way to tell that from a correct figure.
+  - `plan-view.css` now floors a figure's SVG text at `fill: currentColor`. SVG's initial fill is black, so a label that named no colour was invisible on the dark ground. The floor sits on the text rather than the `<svg>`: because fill inherits, flooring the root made a shape whose fill was an undefined token resolve to the ink colour and swallow the label on top of it — the same white-on-white symptom by another route. Mermaid diagrams are unaffected.
+  - The tokens a figure may use are listed once, in a comment above that stylesheet's `:root`, each beside the ground it belongs over — so a foreground and a background can no longer be paired across themes. The comment also says which side a newly added token belongs on.
+  - `plan-approval.md` keeps only what applies while a figure is being written: strokes and meaning-carrying fills come from `currentColor`, text takes no fill of its own except over a filled shape, and a figure wanting the viewer's palette reads that comment and writes the token with no fallback. It also now states that an inline-SVG figure is a `<figure>` wrapping the SVG and its caption, which the stylesheet's rule relies on and which was only inferable before.
+  - The always-read reference budget rises 80.5k → 81.2k to pay for the rule.
+  - A repository test asserts every token the comment names is defined in `:root`, since a rename there would otherwise leave a dangling name that only shows up as a figure quietly losing its colour.
+  - Files: `skills/dev-workflow/references/plan-approval.md`, `skills/dev-workflow/scripts/plan-review/public/plan-view.css`, `tests/dev-workflow/skill-size.test.mjs`, `tests/plan-review/fold-layout.test.mjs`
+
 ### dev-workflow v2.2.0 / dev-workflow-bundle v2.7.0
 
 - fix(dev-workflow): anchor mob mode's plan-building stops on a draft of what the task produces, and stop them from narrating the research

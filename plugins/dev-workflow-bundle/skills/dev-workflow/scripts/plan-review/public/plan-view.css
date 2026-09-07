@@ -1,3 +1,11 @@
+/* Figure-safe tokens — the only palette a plan figure may use, either side of a pair as a
+   fill. Add one here when it gives a figure a distinction it cannot already draw; chrome,
+   aliases (--rec, --risk*) and refinements (--*-border) stay out.
+     --fg, --muted        over --bg or --bg-soft
+     --accent-ink         over --accent-soft
+     --on-accent          over --accent
+     --approve, --revise, --changed   over their own -bg
+     --border             for rules and outlines */
 :root {
   /* Palette: warm, low-glare ground with a green accent (mirrors the eli5 artifact) */
   --page-bg: #eff2ee;      /* page ground — never the card surface */
@@ -287,6 +295,10 @@ details.section[open] > summary .sec-gist { display: none; }
 /* figures layer: a <figure> the gate merged in, carrying inline SVG */
 .sec-body figure { margin: 12px 0; text-align: center; }
 .sec-body figure svg { max-width: 100%; height: auto; }
+/* On the text, not the <svg>: fill inherits, so a root floor makes a shape whose fill is an
+   undefined token resolve to the ink colour and swallow the label on it. */
+.sec-body figure > svg text, #hero figure > svg text,
+.sec-body figure > svg tspan, #hero figure > svg tspan { fill: currentColor; }
 .sec-body figcaption { font-size: 12px; color: var(--muted); margin-top: 6px; }
 /* A quiet affordance, not a heading, so the figure stays loudest. Shared layout below. */
 details.fold > summary { font-size: 12px; color: var(--muted); padding: 4px 0; }

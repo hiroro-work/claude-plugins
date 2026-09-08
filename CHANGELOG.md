@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-09-09
+
+### artifactor v1.1.0 / dev-workflow-bundle v2.12.0
+
+- feat(artifactor): dispatch the drawing agent on `sonnet`
+  - The `Agent` dispatch in § Agent now passes `model: sonnet`. The agent draws what the main thread has already decided — it originates no fact — and SVG and HTML generation is work the smaller model does well, so the session's larger model is no longer spent on every redraw. The agent runs in the background, so the chat is not affected either way.
+  - Effort is still inherited from the session: the `Agent` tool has no per-dispatch effort parameter, and pinning it would need an agent definition, which is deferred until the inherited effort proves costly.
+  - Files: `skills/artifactor/SKILL.md`
+
 ## 2026-09-08
 
 ### artifactor v1.0.0 / dev-workflow-bundle v2.11.0

@@ -2,6 +2,17 @@
 
 ## 2026-09-08
 
+### kabeuchi v2.5.0 / dev-workflow-bundle v2.10.0
+
+- feat(kabeuchi): keep one page agent for the whole session and take every page write, and the design context, off the main thread
+  - The page agent is dispatched once and then resumed with `SendMessage` for every later change; it keeps its memory of the page and of the design skills it loaded, so they are loaded once per session instead of once per turn. Messages sent while it is busy queue in order, which replaces v2.4.0's one-agent-at-a-time and pending-spec rules.
+  - The main thread no longer loads `artifact-design` or `artifact-diagramming`, nor reads `references/page-agent-prompt.md`: the agent reads the reference itself from the skill's directory, and the design context never enters the main conversation. The main thread never writes the page either — log entries, first-line keys and the `artifact_url` all go to the agent — and reads it only at the wrap-up landing, for the handoff file.
+  - Every message carries a sequence number and each run reports the highest one it worked; the main thread publishes only on a landing that leaves nothing queued, so a publish never snapshots a half-edited page. A run that fails is resent once, then a fresh agent is dispatched; only when that fails too does the main thread load the design skills and draw itself.
+  - Orientation keeps the early publish: the first message creates the page with the first two cards, and the landing that publishes them sends the URL key and the remaining first-stage cards as the next message.
+  - The reference now also carries the page skeleton and theme-token rules, since the agent writes the page from its first line. `allowed-tools` gains `SendMessage` and `ToolSearch` (to fetch `SendMessage`'s schema when it is deferred); with `Agent` alone the skill falls back to one dispatch per change.
+  - The main thread's per-session read is now `SKILL.md` alone, 20.3k chars, down from 18.6k plus the 3.2k reference; the design skills leave the main context entirely.
+  - Files: `skills/kabeuchi/{SKILL.md, README.md, references/page-agent-prompt.md}`
+
 ### kabeuchi v2.4.0 / dev-workflow-bundle v2.9.0
 
 - feat(kabeuchi): draw the page in the background so the chat never waits for it, and publish the first two cards before the rest

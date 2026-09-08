@@ -1,6 +1,6 @@
 {
   "name": "kabeuchi",
-  "description": "A sounding-board session that grows a picture-first, one-page artifact with a reader who cannot yet picture the subject — a task, a question or a choice, in this codebase or outside it — until they say it has come together; then asks once whether to hand off to a /mobpro or /dev-workflow run, ending with the two --resume lines on yes or the page URL on no",
+  "description": "A sounding-board session that grows a picture-first, one-page artifact with a reader who cannot yet picture the subject — a task, a question or a choice, in this codebase or outside it — until they say it has come together; then asks once whether to hand off to a /mobpro or /dev-workflow run, ending with the two --resume lines on yes or the page URL on no. Requires the artifactor plugin, which draws the page",
   "author": {
     "name": "hiropon",
     "url": "https://github.com/hiroro-work"

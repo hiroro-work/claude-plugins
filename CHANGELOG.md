@@ -2,6 +2,17 @@
 
 ## 2026-09-08
 
+### kabeuchi v2.4.0 / dev-workflow-bundle v2.9.0
+
+- feat(kabeuchi): draw the page in the background so the chat never waits for it, and publish the first two cards before the rest
+  - After each answer, the turn's page edits go to a background `Agent` — the page agent — instead of being written on the main thread. The spec it receives carries every claim a card must make beside its source, so it draws and never originates a fact; the main thread keeps the research and decides what changes. The agent edits the file and reports; publishing stays on the main thread and runs when the agent lands, followed by one chat line with the URL. A turn that changes no card writes its log entry on the main thread as before.
+  - At most one page agent is out at a time; a spec ready while one is out waits as the pending spec and is dispatched when the running one lands. The main thread does not write the page while an agent is out. A failed agent is dispatched once more, then the spec is applied inline.
+  - Orientation publishes What this is and The problem (Verdict on a choice page) first, shows the URL, then dispatches the remaining first-stage cards — the reader has a page in the first turn.
+  - The wrap-up dispatches its cards while the handoff question is asked; the reply's spec lands on the session's last turn, which publishes, writes the handoff file (Yes) and ends with the two `--resume` lines or the URL.
+  - The card rules — one picture first, at most three sentences, the SVG constraints, what the page never states — now live once, in the new `references/page-agent-prompt.md`, which the main thread reads at the design pass and injects verbatim into every dispatch. `allowed-tools` gains `Agent`; without it the skill draws on the main thread as before.
+  - The per-session read grows from 15.2k to 18.6k chars of `SKILL.md` plus the 3.2k-char reference, accepted for the shorter turns.
+  - Files: `skills/kabeuchi/{SKILL.md, README.md, references/page-agent-prompt.md}`
+
 ### kabeuchi v2.3.0 / dev-workflow-bundle v2.8.0
 
 - feat(kabeuchi): let the reader decide how much the page teaches, and give a choice its own card set

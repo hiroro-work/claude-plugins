@@ -51,7 +51,7 @@ The **choice set**, for a subject that asks which of two or more courses to take
 
 Four cards teach: What this is, The pieces, Names for the pieces, Words you'll meet. Each is left out when the reader already knows what it would hold (§ Reader); a card left out is neither written nor announced later, except on a reframing turn (§ Procedure step 5) and for Words you'll meet on the Yes branch of the wrap-up (§ Procedure step 6), which writes it for the plan's words.
 
-How the page is built and how a card is drawn and worded — the skeleton and theme tokens, the first-line comment, one picture first, at most three sentences, the SVG constraints, what the page never states — is defined once, in `references/page-agent-prompt.md` § Page contract. The page agent (§ Page agent) reads that file itself; the main thread never reads it, except when it must draw the page on its own thread (§ Fallback).
+How the page is built and how a card is drawn and worded — the skeleton, the first-line comment, one picture first, at most three sentences, the SVG constraints, what the page never states — is defined once, in `references/page-agent-prompt.md` § Page contract; the page's one stylesheet is `references/page-head.html`, copied in verbatim. The page agent (§ Page agent) reads that file itself; the main thread never reads it, except when it must draw the page on its own thread (§ Fallback).
 
 ## Stages
 

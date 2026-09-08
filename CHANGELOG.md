@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-09-08
+
+### kabeuchi v2.3.0 / dev-workflow-bundle v2.8.0
+
+- feat(kabeuchi): let the reader decide how much the page teaches, and give a choice its own card set
+  - Whether a piece is called by its real name in the first stage, and whether the cards that teach — What this is, The pieces, Names for the pieces, Words you'll meet — appear at all, now follows the resolved reader. The default reader gets analogies, no real names and every card, as before; a reader who already knows the parts gets their names from the start and no card that would tell them what they know. The former rule kept real names out of the first-stage cards for the life of the page, whoever was reading.
+  - A subject that asks which of two or more courses to take is written with a second card set: **Verdict** (the course and the one constraint deciding it), **Evidence**, **Scope**, **Pitfalls**, **Open questions**, then the shared tail. The page's first-line comment carries `cards: explaining` or `cards: choice`, which `--resume` reads; a page without the key is an explaining page. The page rule that bars design decisions and alternatives now exempts the choice the subject itself poses.
+  - Orientation identifies the one constraint the subject turns on and puts it on The problem or Verdict, instead of waiting for a question to bring it out.
+  - The design pass also loads `artifact-diagramming`, and each picture draws the one mechanism its card claims, with the sentence carrying the card's conclusion in bold.
+  - A message in which the reader says who they are, or that the subject is or is not a choice, is a reframing turn: the `reader:` or `cards:` key changes and every existing card the new framing changes is rewritten on that turn.
+  - Files: `skills/kabeuchi/{SKILL.md, README.md}`
+
 ## 2026-09-07
 
 ### dev-workflow v2.2.1 / dev-workflow-bundle v2.7.1

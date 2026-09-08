@@ -10,9 +10,9 @@
   - Every message carries a sequence number and each run reports the highest one it worked; the main thread publishes only on a landing that leaves nothing queued, so a publish never snapshots a half-edited page. A run that fails is resent once, then a fresh agent is dispatched; only when that fails too does the main thread load the design skills and draw itself.
   - Orientation keeps the early publish: the first message creates the page with the first two cards, and the landing that publishes them sends the URL key and the remaining first-stage cards as the next message.
   - The wrap-up is the one place the main thread waits for the agent: it blocks on `TaskOutput` in the reply to the reader's yes or no, then publishes, writes the handoff file and ends in that same turn. The reader has nothing more to ask, so the wait costs them nothing, and the session's end no longer depends on a completion notification arriving. `allowed-tools` gains `TaskOutput`.
-  - The reference now also carries the page skeleton and theme-token rules, since the agent writes the page from its first line. `allowed-tools` gains `SendMessage` and `ToolSearch` (to fetch `SendMessage`'s schema when it is deferred); with `Agent` alone the skill falls back to one dispatch per change.
-  - The main thread's per-session read is now `SKILL.md` alone, 20.7k chars, down from 18.6k plus the 3.2k reference; the design skills leave the main context entirely.
-  - Files: `skills/kabeuchi/{SKILL.md, README.md, references/page-agent-prompt.md}`
+  - The reference now also carries the page skeleton, since the agent writes the page from its first line: a `<header>` with the title and a one-sentence standfirst before the cards, and one fixed stylesheet, `references/page-head.html`, copied in verbatim — the look no longer varies from session to session or with who draws. `allowed-tools` gains `SendMessage` and `ToolSearch` (to fetch `SendMessage`'s schema when it is deferred); with `Agent` alone the skill falls back to one dispatch per change.
+  - The main thread's per-session read is now `SKILL.md` alone, 20.8k chars, down from 18.6k plus the 3.2k reference; the design skills leave the main context entirely.
+  - Files: `skills/kabeuchi/{SKILL.md, README.md, references/page-agent-prompt.md, references/page-head.html}`
 
 ### kabeuchi v2.4.0 / dev-workflow-bundle v2.9.0
 

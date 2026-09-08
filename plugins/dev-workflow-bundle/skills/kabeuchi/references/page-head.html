@@ -1,0 +1,140 @@
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif&family=BIZ+UDPGothic:wght@400;700&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<style>
+  :root {
+    --bg: #E7EAE5;
+    --surface: #F4F5F1;
+    --ink: #1B2329;
+    --muted: #6D7A76;
+    --rule: #C7CEC6;
+    --accent: #2F6E8F;
+    --accent-soft: #DCE8EE;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #151A1E;
+      --surface: #1E252A;
+      --ink: #E3E8E3;
+      --muted: #93A09A;
+      --rule: #333C41;
+      --accent: #82B8D6;
+      --accent-soft: #1F3340;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #151A1E;
+    --surface: #1E252A;
+    --ink: #E3E8E3;
+    --muted: #93A09A;
+    --rule: #333C41;
+    --accent: #82B8D6;
+    --accent-soft: #1F3340;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "BIZ UDPGothic", "Hiragino Sans", "Noto Sans JP", system-ui, sans-serif;
+    font-size: 16px;
+    line-height: 1.9;
+    -webkit-font-smoothing: antialiased;
+    max-width: 880px;
+    margin: 0 auto;
+    padding: 4.5rem 1.5rem 6rem;
+    display: flex;
+    flex-direction: column;
+    gap: 3.5rem;
+  }
+
+  header { display: flex; flex-direction: column; gap: .85rem; }
+  .eyebrow {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: .72rem;
+    font-weight: 600;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  h1 {
+    font-family: "Instrument Serif", "Hiragino Mincho ProN", serif;
+    font-weight: 400;
+    font-size: clamp(2.3rem, 6vw, 3.4rem);
+    line-height: 1.15;
+    letter-spacing: .01em;
+    margin: 0;
+    text-wrap: balance;
+  }
+  .standfirst { margin: 0; max-width: 34em; color: var(--muted); font-size: 1rem; }
+
+  section {
+    border-top: 1px solid var(--rule);
+    padding-top: 1.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+  }
+  h2 {
+    font-family: "Instrument Serif", "Hiragino Mincho ProN", serif;
+    font-weight: 400;
+    font-size: 1.7rem;
+    line-height: 1.2;
+    margin: 0;
+    letter-spacing: .01em;
+  }
+
+  figure {
+    margin: 0;
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-radius: 2px;
+    padding: 1.6rem 1.6rem 1.2rem;
+    overflow-x: auto;
+  }
+  figure svg { display: block; width: 100%; min-width: 620px; max-width: 100%; height: auto; color: var(--ink); }
+  figcaption { margin-top: .8rem; color: var(--muted); font-size: .85rem; line-height: 1.7; }
+
+  svg text { font-family: "BIZ UDPGothic", "Hiragino Sans", "Noto Sans JP", sans-serif; fill: var(--ink, #1B2329); }
+  svg .lbl { font-size: 12px; fill: var(--muted, #6D7A76); }
+  svg .name { font-size: 14px; font-weight: 700; }
+  svg .sub { font-size: 11px; fill: var(--muted, #6D7A76); }
+  svg .acc { fill: var(--accent, #2F6E8F); font-size: 12px; font-weight: 700; }
+  svg .mono { font-family: "IBM Plex Mono", monospace; font-size: 10px; fill: var(--muted, #6D7A76); }
+
+  p { margin: 0; max-width: 36em; }
+  p + p { margin-top: .5rem; }
+  p.verdict {
+    font-weight: 700;
+    border-left: 3px solid var(--accent);
+    padding-left: .9rem;
+    margin-top: .9rem;
+  }
+  p.src {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: .8rem;
+    line-height: 1.75;
+    color: var(--muted);
+    max-width: 48em;
+    margin-top: .9rem;
+  }
+
+  details { border-top: 1px solid var(--rule); padding-top: 1.5rem; }
+  summary {
+    font-family: "Instrument Serif", "Hiragino Mincho ProN", serif;
+    font-size: 1.7rem;
+    cursor: pointer;
+    list-style: none;
+  }
+  summary::marker, summary::-webkit-details-marker { display: none; }
+  summary::before { content: "\25B8\00a0"; color: var(--muted); font-size: .8em; }
+  details[open] summary::before { content: "\25BE\00a0"; }
+  summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+  .log-entry {
+    padding: 1.1rem 0;
+    border-top: 1px solid var(--rule);
+    font-size: .92rem;
+    line-height: 1.75;
+    max-width: 40em;
+    color: var(--muted);
+  }
+</style>

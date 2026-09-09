@@ -90,3 +90,24 @@ test("every token named in the figure-safe comment is defined in :root", () => {
   const dangling = [...named].filter((t) => !defined.has(t));
   assert.deepEqual(dangling, [], `figure-safe tokens not defined in plan-view.css: ${dangling}`);
 });
+
+// A figure's <text> with no fill of its own falls to SVG's initial black and all but
+// disappears on the dark ground. The wrapper varies — a bare <svg> lands in a <p> in a
+// section and directly under #hero — so the floor is checked by where it reaches, not by
+// the markup the figures layer asks for.
+test("the figure colour floor reaches every SVG but mermaid's", () => {
+  const floors = styleRules(css)
+    .filter((r) => /\bfill\s*:\s*currentColor\b/.test(r.body))
+    .flatMap((r) => r.selector.split(",").map((s) => s.trim().replace(/\s+/g, " ")));
+  assert.ok(floors.length > 0, "no fill: currentColor rule found in plan-view.css");
+
+  for (const leaf of ["text", "tspan"]) {
+    for (const host of [".sec-body", "#hero"]) {
+      const required = `${host} svg:not(.mermaid *) ${leaf}`;
+      assert.ok(floors.includes(required), `the colour floor is missing ${required}`);
+    }
+  }
+  // A figure combinator would miss both the bare <svg> and the one marked splits out of its
+  // <figure>; mermaid needs excluding by name instead, since its diagram sits in a figure too.
+  assert.deepEqual(floors.filter((s) => /figure/.test(s)), []);
+});

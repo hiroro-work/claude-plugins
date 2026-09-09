@@ -2,6 +2,13 @@
 
 ## 2026-09-09
 
+### dev-workflow v2.2.2 / dev-workflow-bundle v2.12.1
+
+- fix(dev-workflow): keep a plan figure's SVG labels readable in dark mode
+  - `<text>` with no `fill` of its own falls to SVG's initial black, so a figure's labels all but vanished on the dark ground. The colour floor in `plan-view.css` only reached `figure > svg`, which misses a figure written as a bare `<svg>` — the shape agents actually produce — and one that `marked` splits out of its `<figure>`. The floor now reaches every SVG under `#hero` or `.sec-body`, with mermaid excluded by name so it keeps the palette it bakes.
+  - Category: `missing-branch`
+  - Files: `skills/dev-workflow/scripts/plan-review/public/plan-view.css`, `tests/plan-review/fold-layout.test.mjs`
+
 ### artifactor v1.1.0 / dev-workflow-bundle v2.12.0
 
 - feat(artifactor): dispatch the drawing agent on `sonnet`

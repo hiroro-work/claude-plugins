@@ -149,7 +149,7 @@
       "skills": [
         "./"
       ],
-      "version": "2.2.1",
+      "version": "2.2.2",
       "author": {
         "name": "hiropon"
       },
@@ -157,7 +157,7 @@
     },
     {
       "name": "dev-workflow-bundle",
-      "description": "Development workflow bundle (includes peer + extract-rules + dev-workflow + rules-review + tidy + prose-polish + mobpro + kabeuchi)",
+      "description": "Development workflow bundle (includes peer + extract-rules + dev-workflow + rules-review + tidy + prose-polish + mobpro + kabeuchi + artifactor)",
       "source": "./plugins/dev-workflow-bundle",
       "skills": [
         "./skills/ask-peer",
@@ -167,9 +167,10 @@
         "./skills/tidy",
         "./skills/prose-polish",
         "./skills/mobpro",
-        "./skills/kabeuchi"
+        "./skills/kabeuchi",
+        "./skills/artifactor"
       ],
-      "version": "2.10.0",
+      "version": "2.12.1",
       "author": {
         "name": "hiropon"
       },
@@ -189,13 +190,26 @@
       "category": "workflow"
     },
     {
+      "name": "artifactor",
+      "description": "A background drawing hand for a one-page, picture-first HTML artifact that grows over a session: one agent dispatched once and resumed with a message each turn, the page republished to the same URL whenever a section changes. Used on its own with /artifactor, or by a skill such as kabeuchi that supplies what the page holds",
+      "source": "./skills/artifactor",
+      "skills": [
+        "./"
+      ],
+      "version": "1.1.0",
+      "author": {
+        "name": "hiropon"
+      },
+      "category": "workflow"
+    },
+    {
       "name": "kabeuchi",
-      "description": "A sounding-board session that grows a picture-first, one-page artifact with a reader who cannot yet picture the subject — a task, a question or a choice, in this codebase or outside it — until they say it has come together; then asks once whether to hand off to a /mobpro or /dev-workflow run, ending with the two --resume lines on yes or the page URL on no",
+      "description": "A sounding-board session that grows a picture-first, one-page artifact with a reader who cannot yet picture the subject — a task, a question or a choice, in this codebase or outside it — until they say it has come together; then asks once whether to hand off to a /mobpro or /dev-workflow run, ending with the two --resume lines on yes or the page URL on no. Requires the artifactor plugin, which draws the page",
       "source": "./skills/kabeuchi",
       "skills": [
         "./"
       ],
-      "version": "2.5.0",
+      "version": "3.0.0",
       "author": {
         "name": "hiropon"
       },

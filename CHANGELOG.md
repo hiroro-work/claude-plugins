@@ -1,6 +1,40 @@
 # Changelog
 
+## 2026-09-09
+
+### dev-workflow v2.2.2 / dev-workflow-bundle v2.12.1
+
+- fix(dev-workflow): keep a plan figure's SVG labels readable in dark mode
+  - `<text>` with no `fill` of its own falls to SVG's initial black, so a figure's labels all but vanished on the dark ground. The colour floor in `plan-view.css` only reached `figure > svg`, which misses a figure written as a bare `<svg>` — the shape agents actually produce — and one that `marked` splits out of its `<figure>`. The floor now reaches every SVG under `#hero` or `.sec-body`, with mermaid excluded by name so it keeps the palette it bakes.
+  - Category: `missing-branch`
+  - Files: `skills/dev-workflow/scripts/plan-review/public/plan-view.css`, `tests/plan-review/fold-layout.test.mjs`
+
+### artifactor v1.1.0 / dev-workflow-bundle v2.12.0
+
+- feat(artifactor): dispatch the drawing agent on `sonnet`
+  - The `Agent` dispatch in § Agent now passes `model: sonnet`. The agent draws what the main thread has already decided — it originates no fact — and SVG and HTML generation is work the smaller model does well, so the session's larger model is no longer spent on every redraw. The agent runs in the background, so the chat is not affected either way.
+  - Effort is still inherited from the session: the `Agent` tool has no per-dispatch effort parameter, and pinning it would need an agent definition, which is deferred until the inherited effort proves costly.
+  - Files: `skills/artifactor/SKILL.md`
+
 ## 2026-09-08
+
+### artifactor v1.0.0 / dev-workflow-bundle v2.11.0
+
+- feat(artifactor): add a skill that grows a one-page, picture-first artifact in the background, for any conversation or calling skill
+  - `/artifactor [<subject>]` starts a page — with no subject, one titled "Session notes" that takes its title from the first turn that shows what the conversation is about — and from then on each answer is followed by one message to a background agent carrying what came up, each fact beside its source; the agent decides which sections change, redraws them, and the page is republished to the same URL when the redraw lands. `/artifactor stop` publishes once more and ends with the URL; `--resume <slug>` picks a page up with a fresh agent. Default sections: What came up, Decided, Open, Next, then the log How this page was built that closes every page.
+  - The agent protocol — one agent per session resumed with `SendMessage`, numbered messages, a per-run report, publishing only on a landing that leaves nothing queued, a `TaskOutput` wait where the procedure needs one, fallbacks for a missing `SendMessage` or `Agent` — and the agent's contract, skeleton and fixed stylesheet come from kabeuchi v2.5.0, generalised: a section definition says what it holds and when it changes, a message may name the changes or leave the judgment to the agent, a section may be text-only, and the report field is `changed`. The log entry is written by the sender in the resolved language and appended verbatim; the contract says which rule wins.
+  - A skill grows a page of its own by loading `Skill(artifactor) --caller` and driving the agent per § Agent with its own page definition; § Standalone does not run for a caller.
+  - Registration: `artifactor` plugin entry (`source: ./skills/artifactor`, `skills: ["./"]`, v1.0.0) + `dev-workflow-bundle` `skills` array / description / version, and the member enumerations in `dev-workflow-triage`, `verify-bundle-sync` and dev-workflow's README.
+  - Files: `skills/artifactor/{SKILL.md, README.md, .claude-plugin/plugin.json, references/agent-prompt.md, references/page-head.html}`
+
+### kabeuchi v3.0.0 / dev-workflow-bundle v2.11.0
+
+- feat(kabeuchi): draw the page through `artifactor` and keep only what is kabeuchi's own
+  - **Breaking**: kabeuchi now requires the `artifactor` plugin (the bundle carries it; install both when installing kabeuchi alone). Without `Skill(artifactor)` the skill says so and stops.
+  - § Page agent, the agent contract and the stylesheet moved to artifactor; kabeuchi loads `Skill(artifactor) --caller` at step 3 and supplies its page definition — path, the `reader:` / `cards:` keys, the card set with what each card holds and when it changes, reader, register, stage, language, favicon 🧱 — and names every card change itself. Orientation, the per-turn spec, the wrap-up wait and the handoff are unchanged in behaviour; landing, waiting and fallbacks are artifactor's rules.
+  - The How this page was built card is artifactor's log section; kabeuchi supplies only the entry text.
+  - Per-session read on the main thread rises from 20.8k chars (kabeuchi alone) to 28.6k (kabeuchi 17.4k + artifactor 11.2k), accepted: the protocol now serves more than one caller, and the design context stays off the main thread as before.
+  - Files: `skills/kabeuchi/{SKILL.md, README.md}`; removed `skills/kabeuchi/references/{page-agent-prompt.md, page-head.html}`
 
 ### kabeuchi v2.5.0 / dev-workflow-bundle v2.10.0
 

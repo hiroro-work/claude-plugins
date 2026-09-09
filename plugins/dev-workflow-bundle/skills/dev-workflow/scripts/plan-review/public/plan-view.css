@@ -296,9 +296,13 @@ details.section[open] > summary .sec-gist { display: none; }
 .sec-body figure { margin: 12px 0; text-align: center; }
 .sec-body figure svg { max-width: 100%; height: auto; }
 /* On the text, not the <svg>: fill inherits, so a root floor makes a shape whose fill is an
-   undefined token resolve to the ink colour and swallow the label on it. */
-.sec-body figure > svg text, #hero figure > svg text,
-.sec-body figure > svg tspan, #hero figure > svg tspan { fill: currentColor; }
+   undefined token resolve to the ink colour and swallow the label on it. Every SVG the
+   figures layer brings in needs the floor, whatever it is wrapped in: a bare <svg> lands in
+   a <p> here and directly under #hero there, and text with no fill of its own falls to
+   black. Mermaid bakes its own palette, and its diagram sits inside a figure like any
+   other, so the only way to leave it alone is to exclude .mermaid by name. */
+.sec-body svg:not(.mermaid *) text, #hero svg:not(.mermaid *) text,
+.sec-body svg:not(.mermaid *) tspan, #hero svg:not(.mermaid *) tspan { fill: currentColor; }
 .sec-body figcaption { font-size: 12px; color: var(--muted); margin-top: 6px; }
 /* A quiet affordance, not a heading, so the figure stays loudest. Shared layout below. */
 details.fold > summary { font-size: 12px; color: var(--muted); padding: 4px 0; }

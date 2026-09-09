@@ -1,0 +1,18 @@
+{
+  "name": "artifactor",
+  "description": "A background drawing hand for a one-page, picture-first HTML artifact that grows over a session: one agent is dispatched once, resumed with a message each turn, and the page is republished to the same URL whenever a section changes. Used on its own with /artifactor, or by another skill that supplies what the page holds",
+  "author": {
+    "name": "hiropon",
+    "url": "https://github.com/hiroro-work"
+  },
+  "homepage": "https://github.com/hiroro-work/claude-plugins",
+  "repository": "https://github.com/hiroro-work/claude-plugins",
+  "license": "MIT",
+  "keywords": [
+    "workflow",
+    "artifact",
+    "notes",
+    "diagram",
+    "session"
+  ]
+}

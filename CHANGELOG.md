@@ -2,6 +2,24 @@
 
 ## 2026-09-09
 
+### dev-workflow v2.3.1 / dev-workflow-bundle v2.13.1
+
+- fix(dev-workflow): make the review launch the first numbered step of Check / Test
+  - The launch was step 0, placed between the phase heading and step 1, so it read as a preamble and was skipped; the reviews then ran serially after the tests. It is now step 1 and the remaining steps are renumbered.
+  - Category: `missing-branch`
+  - Files: `skills/dev-workflow/SKILL.md`, `skills/dev-workflow/references/review-launch.md`
+- fix(dev-workflow): judge a check command's out-of-scope rewrite by its content, not its line count
+  - "Trivial formatting" was capped at 5 whitespace or comment lines, so a formatter re-aligning a table stopped the run although the diff carried no content and would recur on the next run. A whitespace-only rewrite of any size is now trivial; the 5-line cap remains for comment lines.
+  - Category: `wrong-default`
+  - Files: `skills/dev-workflow/SKILL.md`
+
+### extract-rules v1.29.5 / dev-workflow-bundle v2.13.1
+
+- fix(extract-rules): skip an uncertain Reach judgement when the candidate has no staging path
+  - Only the Durability test routed an uncertain candidate to staging or skip; Reach had no such clause, so a narrow-reach framework candidate kept on its consequence alone landed in the canonical set on one observation. Reach now routes an uncertain judgement the same way, and names the narrow-reach, consequence-only case as uncertain unless the consequence would escape the project's existing review.
+  - Category: `missing-branch`
+  - Files: `skills/extract-rules/references/conversation-mode.md`
+
 ### dev-workflow v2.3.0 / dev-workflow-bundle v2.13.0
 
 - feat(dev-workflow): the confirm-remaining-steps gate at Update Rules takes `session-only`

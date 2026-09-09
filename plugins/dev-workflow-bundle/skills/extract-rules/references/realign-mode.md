@@ -97,7 +97,7 @@ On an applied `split`, keep the entry against whichever `resulting_labels` name 
 
 ## Step RA5 — Security Self-Check and report
 
-Run the Security Self-Check (same as SKILL.md Step 6.5) on every file written, including any `.examples.md` the follow-through touched. Then report per `references/report-templates.md` § Realign Mode, one section per target file, adding a not-applied line for any accepted entry whose `Edit` did not land.
+Run the Security Self-Check (same as SKILL.md Step 6.5) on every file written, including any `.examples.md` the follow-through touched. Then report per § Report format (Step RA5), one section per target file, adding a not-applied line for any accepted entry whose `Edit` did not land.
 
 ## Parse failure and schema violation (main thread)
 
@@ -137,6 +137,38 @@ Emit a single fenced JSON block at the end of the response, matching this schema
 ````
 
 `resulting_labels` is required on a `split` entry and omitted on every other verdict. Every rule in the target file appears exactly once in `rules`, `keep` entries included — an omitted rule reads as a missing judgement. `mechanical_edits` carries an entry for each non-`keep` rule and nothing else.
+
+## Report format (Step RA5)
+
+Realign Mode returns a prose report, one section per file judged.
+
+```markdown
+## Realigned .claude/rules/project.md
+
+Judged 38 rules — keep 24 / drop 7 / split 4 / reshape 3
+
+### Dropped (7)
+- **Batch job retry wiring** - records how one job was wired, not how the next should be (referrers: 0)
+- **Modal close-button placement** - restates a norm the file already carries under another name (referrers: 1)
+
+### Split (4)
+- **Migration ordering and backfill batching** → 2 rules: migration ordering; backfill batch sizing (referrers: 0)
+
+### Reshaped (3)
+- **Feature-flag rollout gate** - 1,120 → 340 chars; cut the account of the first rollout, kept the norm and its trigger (referrers: 2)
+
+### Not applied (1)
+- **Retry-budget accounting** (drop) - `old_string` no longer matched after an earlier edit rewrote the region
+
+### Examples updated
+- Removed 6 orphaned entries from `.claude/rules-extras/project.examples.md` — one per applied drop; the not-applied drop keeps its entry
+```
+
+Every non-`keep` rule appears in exactly one section, each entry carrying the referrer count Step RA3's gate presented. Omit a section whose count is 0. When every rule was kept, report the `keep` count and state that nothing changed.
+
+A rule the user excluded at the Step RA3 gate counts as `keep`. Name the exclusions on one line below the counts.
+
+**Not applied** lists every accepted edit that did not land, naming the rule and the verdict it was accepted under. The rule still appears in its verdict's section — the counts are counts of judgements (§ Step RA4's **What the counts mean** paragraph). Omit it when every accepted edit landed.
 
 ## Sub-skill caller directive
 

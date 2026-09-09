@@ -145,3 +145,45 @@ Partial results: under top-level `status: "compacted"`, callers branch on each f
 
 See `SKILL.md` § Sub-skill caller directive.
 
+## Report format (Step CP4)
+
+Compaction Mode returns a fenced JSON block (the only output) — not a Markdown report. The canonical schema is § Step CP4: Emit Structured Summary. The main thread (caller) renders human-readable output if needed.
+
+**Human-readable rendering examples** (illustrative — the caller chooses the format):
+
+`status: "compacted"` (typical success path):
+
+```text
+Compaction complete (threshold: 40000 chars)
+
+- .claude/rules/project.rules.local.md: 47600 → 31200 chars (under threshold, converged in 2 iters, 12 edits)
+- .claude/rules/languages/typescript.local.md: 41200 → 28500 chars (under threshold, converged in 1 iter, 8 edits)
+
+Total: 2 files compacted, 82600 chars saved
+```
+
+`status: "compacted"` with mixed per-file outcomes:
+
+```text
+Compaction partial (threshold: 40000 chars)
+
+- .claude/rules/languages/typescript.local.md: 41200 → 28500 chars (under threshold, converged in 1 iter, 8 edits)
+- .claude/rules/project.rules.local.md: 47600 → 42000 chars (over threshold, partial in 2 iters, 14 edits)
+  → 1 structural_note: consider splitting patterns into per-domain files
+
+Total: 2 files processed, 1 under threshold, 1 still over threshold
+```
+
+`status: "no-actionable"`:
+
+```text
+No compaction needed — no files exceed threshold (40000 chars)
+```
+
+`status: "error"`:
+
+```text
+Compaction failed: <reason>
+```
+
+Each per-file entry's `per_file_status` carries the loop outcome (`converged` / `partial` / `unresolved` / `error` / `skipped-below-threshold`); the caller uses this to surface follow-up actions to the user (e.g. via a user-gate that accepts/rejects per file). The `skipped-below-threshold` value appears only in explicit-paths mode for caller-passed paths whose char count was already at or below `compaction_threshold` (see § Step CP2 (f)).

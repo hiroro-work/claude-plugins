@@ -10,7 +10,7 @@ Single or multiple PRs can be specified.
 2. Check if output directory exists (default: `.claude/rules/`)
    - If not exists: Error "Run /extract-rules first to initialize rule files."
 
-3. Load existing rule files to understand current rules (if `split_output: true`, load `<output_dir>/<name>.md`, `<output_dir>/<name>.local.md`, and `<examples_output_dir>/<name>.examples.md`; when `examples_output_dir` differs from `output_dir`, also scan `<output_dir>/<name>.examples.md` for any legacy co-located files). Additionally load `<staging_output_dir>/project.staging.local.md` if present — used by the Step P5 staging-match branch. Skip silently if the staging file does not yet exist.
+3. Load existing rule files (`SKILL.md` § Step 1's **"Load existing rule files"** paragraph). The staging file it loads is what the Step P5 staging-match branch reads.
 
 4. Verify `gh` CLI is available and authenticated
    - Run `gh auth status` to confirm authentication
@@ -105,4 +105,66 @@ Same as Step C5 in Conversation Extraction Mode (see `references/conversation-mo
 5. **Delete promoted staging entries**: per § Step C5's **"Delete promoted staging entries"** step.
 6. Update `.examples.md`: Resolve the target path via `examples_output_dir` (`<examples_output_dir>/<name>.examples.md`). Create the file and any missing parent directories under `examples_output_dir` when absent. Follow the common generation procedure in `examples-format.md` to add examples for each new rule. (Per § Step C5's **"Update `.examples.md`"** step, staging-only items do **not** receive `.examples.md` entries — only canonical writes do.)
 7. Run Security Self-Check (same as Step 6.5; include the staging file when any staging append landed in step 4)
-8. Report what was added including `canonical_skip_count`, `promoted_count`, `staged_count`. See `report-templates.md` § PR Review Extraction Mode for format.
+8. Report what was added including `canonical_skip_count`, `promoted_count`, `staged_count`. See § Report format (Step P5).
+
+## Report format (Step P5)
+
+**Single PR:**
+
+```markdown
+## Extracted from PR Review
+
+**PR**: #123 - PR title
+**Comments analyzed**: 15 (3 bot comments filtered)
+
+### Added to frameworks/rails.local.md:
+#### Project-specific patterns
+- `fetchWithRetry(url, options)` - API call wrapper with retry
+
+#### Examples (rails.examples.md)
+- Added usage example for `fetchWithRetry()`
+
+### Promoted from staging (2nd observation):
+- `enqueueWithDelay(job, delay)` - background job dispatch wrapper  (→ .claude/rules/project.md)
+
+### Newly staged (1st observation, awaiting re-observation):
+- `withTenantScope(query)` - multi-tenancy query wrapper  (→ .claude/rules-staging/project.staging.local.md)
+
+### No changes:
+- No project-specific rules found in general feedback
+```
+
+The `### Promoted from staging` / `### Newly staged` sections follow the same per-section invariant as `references/conversation-mode.md` § Report format (Step C5 item 8). Staging gating applies only to project-level patterns — language / framework / integration entries (like the `fetchWithRetry()` example above when scoped to `frameworks/rails.local.md`) bypass staging.
+
+**Multiple PRs:**
+
+```markdown
+## Extracted from PR Review (cross-PR analysis)
+
+**PRs analyzed**: 5
+| PR | Title | Comments |
+|----|-------|----------|
+| #123 | Feature A | 12 |
+| #456 | Fix B | 8 |
+| org/other#78 | Refactor C | 15 |
+| #789 | Feature D | 6 |
+| #101 | Update E | 9 |
+
+**Total comments**: 50 (7 bot comments filtered)
+
+### Added to frameworks/rails.md:
+#### Principles (organizational emphasis — recurring across PRs)
+- DRY厳格 (ビジネス値の定数化を徹底, ビューへのハードコード禁止)
+
+### Added to frameworks/rails.local.md:
+#### Project-specific patterns
+- `fetchWithRetry(url, options)` - API call wrapper with retry
+
+#### Examples (rails.examples.md)
+- Added Good/Bad for DRY厳格
+- Added usage example for `fetchWithRetry()`
+
+### Skipped (general knowledge, single PR only):
+- const over let (PR #123 only)
+- Early returns (PR #456 only)
+```

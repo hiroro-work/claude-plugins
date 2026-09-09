@@ -157,7 +157,7 @@ Omit the `### Promoted from staging` and `### Newly staged` sections entirely wh
 
 ## Compaction Mode (Step CP4)
 
-Compaction Mode returns a fenced JSON block (the only output) — not a Markdown report. See `SKILL.md` § Step CP4: Emit Structured Summary for the canonical schema. The main thread (caller) renders human-readable output if needed.
+Compaction Mode returns a fenced JSON block (the only output) — not a Markdown report. See `references/compaction-procedure.md` § Step CP4: Emit Structured Summary for the canonical schema. The main thread (caller) renders human-readable output if needed.
 
 **Human-readable rendering examples** (illustrative — the caller chooses the format):
 
@@ -196,7 +196,7 @@ No compaction needed — no files exceed threshold (40000 chars)
 Compaction failed: <reason>
 ```
 
-Each per-file entry's `per_file_status` carries the loop outcome (`converged` / `partial` / `unresolved` / `error` / `skipped-below-threshold`); the caller uses this to surface follow-up actions to the user (e.g. via a user-gate that accepts/rejects per file). The `skipped-below-threshold` value appears only in explicit-paths mode for caller-passed paths whose char count was already at or below `compaction_threshold` (see SKILL.md § Step CP1 step 3).
+Each per-file entry's `per_file_status` carries the loop outcome (`converged` / `partial` / `unresolved` / `error` / `skipped-below-threshold`); the caller uses this to surface follow-up actions to the user (e.g. via a user-gate that accepts/rejects per file). The `skipped-below-threshold` value appears only in explicit-paths mode for caller-passed paths whose char count was already at or below `compaction_threshold` (see `references/compaction-procedure.md` § Step CP2 (f)).
 
 ## Realign Mode (Step RA5)
 

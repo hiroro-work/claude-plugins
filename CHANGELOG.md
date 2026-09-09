@@ -2,6 +2,15 @@
 
 ## 2026-09-10
 
+### extract-rules v1.29.7 / dev-workflow-bundle v2.13.4
+
+- refactor(extract-rules): move Update / Restructure Mode into `references/`, split the report templates by mode, and add a README
+  - `## Update Mode` and `## Restructure Mode` now live in `references/update-mode.md` and `references/restructure-mode.md`, reached through a skeleton in `SKILL.md`; `references/resolve-references.md` folds into `restructure-mode.md`, whose Step R2.5 was its only caller. `SKILL.md` shrinks from 39,994 to 30,239 chars.
+  - `references/report-templates.md` keeps only the Full Extraction template; every other mode's template moves next to that mode's procedure, so a plain `/extract-rules` no longer loads six modes' report formats and each other mode reads one reference file instead of two. The read set for Full Extraction Mode drops from 72,184 to 51,523 chars.
+  - Restated procedure text is now defined once and cross-referenced: "load existing rule files" is a paragraph under Step 1 that Update, Restructure, and PR Review point at, and each mode enumeration that had drifted out of sync now names its condition — the security self-check covers every mode that writes rule files, the deduplication check every mode that extracts new rules.
+  - New `skills/extract-rules/README.md` carries the guidance that does not change what the agent does at runtime: choosing between `--update` / `--restructure` / `--realign` / `--compact`, the post-major-version-bump workflow, how staging behaves, and the merge-rules / apply-rules relationship.
+  - No behavior change. Files: `skills/extract-rules/SKILL.md`, `skills/extract-rules/README.md`, `skills/extract-rules/references/**`
+
 ### peer v2.6.5 / dev-workflow-bundle v2.13.3
 
 - refactor(ask-peer): compress the Planning audit items and the Process bullets in `SKILL.md`

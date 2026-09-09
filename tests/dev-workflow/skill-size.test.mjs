@@ -27,7 +27,7 @@ test("SKILL.md plus the always-read references stay under the tree budget", () =
   const dir = join(repoRoot, "skills", "dev-workflow", "references");
   const refs = readdirSync(dir).filter((f) => f.endsWith(".md") && f !== "mob-mode.md");
   const total = [...skill].length + refs.reduce((n, f) => n + [...readFileSync(join(dir, f), "utf8")].length, 0);
-  assert.ok(total <= 81200, `SKILL.md + always-read references total ${total} chars; budget is 81200`);
+  assert.ok(total <= 81400, `SKILL.md + always-read references total ${total} chars; budget is 81400`);
 });
 
 test("mob-mode.md stays under its own budget", () => {

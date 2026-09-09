@@ -2,6 +2,12 @@
 
 ## 2026-09-09
 
+### dev-workflow v2.3.0 / dev-workflow-bundle v2.13.0
+
+- feat(dev-workflow): the confirm-remaining-steps gate at Update Rules takes `session-only`
+  - The gate offered `proceed` / `pr-only` / `skip`, so a run could keep the PR side alone but not the session side alone — the session-derived phases could only be reached by also agreeing to the PR extraction. `session-only` is the mirror of `pr-only`: it runs this extraction, Self-Retrospective, and Workability Retrospective, and marks PR Rule Extraction completed unrun. PR Rule Extraction now names that marking as its own skip condition, the way both retrospectives already did — until now the only answer that marked it was `skip`, which marked every listed phase alike, so the phase never had to read the marking. The degenerate case is unchanged — PR Rule Extraction is always listed, so when only one side is listed the answers stay `proceed` / `skip`.
+  - Files: `skills/dev-workflow/SKILL.md`
+
 ### extract-rules v1.29.4 / dev-workflow-bundle v2.12.2
 
 - fix(extract-rules): decide "settled" by how a convention came about, not only by conformance

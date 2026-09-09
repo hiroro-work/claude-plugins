@@ -49,23 +49,11 @@ Always generate one `.examples.md` per rule category (regardless of `split_outpu
 - No `paths:` frontmatter
 - Skip generating the file if no examples exist for any rule in the category
 
-## Relationship with merge-rules
-
-When merge-rules promotes project-specific patterns to Principles, it converts the pattern format and moves examples to `## Principles Examples`:
-- Pattern `` `useAuth() → { user, login, logout }` - auth hook interface `` → Principle `Auth hook interface (useAuth)`
-- Pattern example under `## Project-specific Examples` → moved to `## Principles Examples` with the converted principle name as `###` title
-
-After apply-rules applies merged org rules, a project's `.examples.md` may contain both:
-- `## Principles Examples` — includes examples for both original principles and promoted patterns
-- `## Project-specific Examples` — project-local patterns that were not promoted
-
-apply-rules automatically cleans up duplicates: when a `.local.md` pattern is removed because it matches a promoted Principle, the corresponding `## Project-specific Examples` entry is also removed.
-
 ## Entry removal
 
 An entry lives as long as its rule does. A `###` title matches its rule's name exactly, so once the rule is gone the entry is unreachable — remove it in the same pass that removes the rule.
 
-Two paths remove a rule: apply-rules dropping a `.local.md` pattern a promoted Principle now covers (§ Relationship with merge-rules above), and Realign Mode applying a `drop` or a `split` (`references/realign-mode.md` § `.examples.md` follow-through). Neither generates examples nor rewrites a rule file's `## Examples` reference section.
+Two paths remove a rule: apply-rules dropping a `.local.md` pattern that a Principle promoted by merge-rules now covers (`README.md` § Relationship with merge-rules and apply-rules), and Realign Mode applying a `drop` or a `split` (`references/realign-mode.md` § `.examples.md` follow-through). Neither generates examples nor rewrites a rule file's `## Examples` reference section.
 
 ## Good/Bad Contrast Guidelines
 
@@ -92,15 +80,15 @@ Concrete cases:
   - Rule file `.claude/rules/languages/typescript.md` references `./typescript.examples.md`
   - Rule file `.claude/rules/project.md` references `./project.examples.md`
 
-When `examples_output_dir` is changed and `--restructure` regenerates the rule layout, this reference section is rewritten with the new relative path. Modes that emit or maintain this reference section (Full Extraction Step 6, Update Step U5, Restructure Step R4, Conversation Step C5, Conversation Candidate Apply Step A2, PR Review Step P5) must use the same relative-path calculation.
+When `examples_output_dir` is changed and `--restructure` regenerates the rule layout, this reference section is rewritten with the new relative path. Every mode that emits or maintains this reference section uses the same relative-path calculation.
 
-**Note**: In incremental modes (Conversation Step C5, Conversation Candidate Apply Step A2, PR Review Step P5), staging-only project-level entries (1st-observation candidates written to `<staging_output_dir>/project.staging.local.md` rather than `<output_dir>/project.md`) **skip** the `.examples.md` generation step. Examples are generated on promote (2nd observation lands in canonical). See `conversation-mode.md` § Step C5's **"Update `.examples.md`"** step for the canonical statement.
+**Note**: staging-only entries skip this generation step and get their examples on promote — `references/conversation-mode.md` § Step C5's **"Update `.examples.md`"** step is the canonical statement.
 
 **Direction is one-way: rule file → examples file only.** `.examples.md` files themselves never carry a `## Examples` reference section — no self-reference (link to themselves), no link to a sibling `.examples.md`. When generating or updating an examples file, do not append a reference section. Templates and subagent prompts that scaffold examples files must omit this section.
 
 ## Common Generation Procedure
 
-This procedure applies to all modes (Full Extraction, Update, Restructure, Conversation, Conversation Candidate Apply, PR Review). After generation, run the Portability check (below).
+This procedure applies to every mode that adds new rules. After generation, run the Portability check (below).
 
 ### For Full Extraction / Restructure
 

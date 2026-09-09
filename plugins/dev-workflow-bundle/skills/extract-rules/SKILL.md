@@ -30,7 +30,7 @@ Analyzes existing codebase to identify what Claude would get wrong without proje
 # Multiple specs allowed (space-separated) → cross-analysis detects org-wide principles
 ```
 
-**Change-origin flags**: extract-rules scopes a change-based extraction only from a conversation session (`--from-conversation`) or a PR (`--from-pr`) — it has **no** diff-base / commit-sha origin argument. A `--base-commit <sha>` (or similar diff-range) argument belongs to diff-scoped reviewer skills, not here; passing one is unsupported. Use `--from-conversation` / `--from-pr` for change-based extraction, or no flag for a full-codebase scan.
+**Change-origin flags**: a change-based extraction is scoped only by `--from-conversation` or `--from-pr`. This skill accepts no diff-base / commit-sha origin argument such as `--base-commit <sha>`; passing one is unsupported.
 
 ## Configuration
 
@@ -45,7 +45,7 @@ Settings file: `extract-rules.local.md` (YAML frontmatter only, no markdown body
 | `exclude_patterns` | `[]` | Exclude file patterns (e.g., `*.generated.ts`, `*.d.ts`) |
 | `output_dir` | `.claude/rules` | Output directory for rule files (`.md` and `.local.md`) |
 | `examples_output_dir` | `.claude/rules-extras` | Output directory for `.examples.md` files. Defaults to a sibling directory **outside** `.claude/rules/**` so examples are not auto-loaded into context on session start. Set to `output_dir` (or any path under `output_dir`) to opt examples back into auto-load |
-| `staging_output_dir` | `.claude/rules-staging` | Output directory for staged project-level patterns extracted in incremental modes (`--from-conversation` / `--from-pr` / `--apply-conversation-candidates`). On 1st observation, project-level patterns land here; on 2nd observation (matched in a later incremental run or by `--update`), they are promoted to `<output_dir>/project.md` and removed from staging. Defaults to a sibling directory **outside** `.claude/rules/**` so staged candidates are not auto-loaded into context on session start. Set to `output_dir` (or any path under `output_dir`) to opt staging back into auto-load. Language / framework / integration patterns bypass staging and land directly in their respective `.local.md` files (gating is scoped to project-level patterns). |
+| `staging_output_dir` | `.claude/rules-staging` | Output directory for 1st-observation project-level patterns staged by incremental modes. Defaults to a sibling directory **outside** `.claude/rules/**` so staged candidates are not auto-loaded into context on session start. Set to `output_dir` (or any path under `output_dir`) to opt staging back into auto-load. Staging gating and the promote path: `references/conversation-mode.md` § Step C5 and § Mode interaction summary |
 | `language` | `ja` | Report language (e.g., `ja`) |
 | `split_output` | `true` | Separate Principles (.md) and patterns (.local.md) |
 | `resolve_references` | `true` | Resolve file references during restructure |
@@ -74,7 +74,7 @@ min_cluster_size: 3
 
 ## Output Structure
 
-Three output directories are involved: `output_dir` for rule files (`.md` / `.local.md`), `examples_output_dir` for `.examples.md` files, and `staging_output_dir` for staged 1st-observation project-level patterns from incremental modes. The `paths:` frontmatter on rule files is preserved as a human-facing category-scope hint — its loader-side semantics is not empirically verified, and the actual auto-load boundary is determined by directory placement only.
+Three output directories are involved: `output_dir` for rule files (`.md` / `.local.md`), `examples_output_dir` for `.examples.md` files, and `staging_output_dir` for staged 1st-observation project-level patterns from incremental modes. The `paths:` frontmatter on rule files is a human-facing category-scope hint; the auto-load boundary is determined by directory placement only.
 
 **Default** (`split_output: true`):
 ```text
@@ -100,25 +100,7 @@ Three output directories are involved: `output_dir` for rule files (`.md` / `.lo
 
 Principles (portable across projects) and Project-specific patterns (local) are separated by default.
 
-**Hybrid mode** (`split_output: false`):
-```text
-.claude/rules/                     # output_dir (inside auto-load scope)
-├── languages/
-│   └── typescript.md              # Principles + Project-specific patterns
-├── frameworks/
-│   └── react.md                   # Principles + Project-specific patterns
-└── project.md                     # Domain, architecture, conventions
-
-.claude/rules-extras/              # examples_output_dir (outside auto-load scope)
-├── languages/
-│   └── typescript.examples.md     # Examples
-├── frameworks/
-│   └── react.examples.md          # Examples
-└── project.examples.md            # Examples
-
-.claude/rules-staging/             # staging_output_dir (outside auto-load scope)
-└── project.staging.local.md       # 1st-observation project-level candidates (incremental modes only)
-```
+**Hybrid mode** (`split_output: false`): no `<name>.local.md` — each `<name>.md` carries both `## Principles` and `## Project-specific patterns`. The other two directories are unchanged.
 
 **Layered frameworks** (Rails, Django, Spring, etc.):
 When a framework has distinct architectural layers, generate layer-specific files:
@@ -172,6 +154,8 @@ Search for `extract-rules.local.md`:
 **Extract settings** (`target_dirs`, `exclude_dirs`, `exclude_patterns`, `output_dir`, `examples_output_dir`, `staging_output_dir`, `language`, `split_output`, `resolve_references`, `compaction_threshold`) from the config file. See Configuration section above for defaults.
 
 **`language` resolution:** skill config → Claude Code settings (`~/.claude/settings.json` `language` field) → default `ja`
+
+**Load existing rule files** (incremental modes; Full Extraction skips it): read `<output_dir>/<name>.md`, `<output_dir>/<name>.local.md`, and `<examples_output_dir>/<name>.examples.md`. When `examples_output_dir` does not exist yet (legacy projects that co-located examples under `output_dir`), fall back to `<output_dir>/<name>.examples.md`. Also read `<staging_output_dir>/project.staging.local.md` when present — the staging-match branch needs it; skip silently when it does not exist.
 
 ### Step 2: Detect Project Type
 
@@ -236,7 +220,7 @@ Also analyze non-code documentation:
 
 Extract explicit coding rules and guidelines from these documents.
 
-**Deduplication check:** Read any files under `.claude/rules/` to build a set of already-documented rules. Rules extracted in Step 4 that overlap with these existing rules should be skipped. Note: CLAUDE.md is NOT a deduplication source — rules should exist in `.claude/rules/` even if also mentioned in CLAUDE.md. This check applies to all modes (Full Extraction, Update, Conversation, Conversation Candidate Apply, PR Review).
+**Deduplication check:** Read any files under `.claude/rules/` to build a set of already-documented rules. Rules extracted in Step 4 that overlap with these existing rules should be skipped. Note: CLAUDE.md is NOT a deduplication source — rules should exist in `.claude/rules/` even if also mentioned in CLAUDE.md. This check applies to every mode that extracts new rules.
 
 ### Step 6: Generate Output
 
@@ -330,130 +314,39 @@ After generating all rule files, verify no sensitive information was included:
    - Internal URLs: `(internal|staging|localhost:[0-9]+)`
 2. If found, redact with placeholders (e.g., `API_KEY_REDACTED`) and warn the user
 
-**Note:** This check applies to all modes that generate or update rule files (Full Extraction, Update, Restructure, Conversation Extraction, Conversation Candidate Apply, Realign). Also check `.examples.md` files.
+**Note:** This check applies to all modes that write rule files. Also check `.examples.md` files.
 
 ### Step 7: Report Summary
 
-Display analysis summary. See `references/report-templates.md` for format.
+Display analysis summary. See `references/report-templates.md` § Full Extraction Mode (Step 7) for format.
 
 ---
 
 ## Update Mode
 
-When `--update` is specified, re-scan the codebase and add new patterns while preserving existing rules.
+When `--update` is specified, re-scan the codebase and add new patterns while preserving existing rules. Update Mode reads the staging file and promotes re-matched project-level patterns to canonical; it never writes new staging entries.
 
-**Staging awareness**: Update Mode reads the staging file under `staging_output_dir` (when present) and promotes any staged project-level patterns that re-match against fresh code observations to canonical (`<output_dir>/project.md`, the single hybrid file for project-level patterns), removing them from staging. Update Mode does **not** write new entries to staging — un-matched new patterns from this run land directly in canonical. See `references/conversation-mode.md` § Mode interaction summary for the full per-mode staging behavior.
+Read `references/update-mode.md` for the full processing steps (U1-U6); re-read it when a `Step U` reference no longer resolves in context. Key flow:
 
-**Operational note**: After a dependency's major-version bump, run `--update` so the Step U3 staleness check flags removed symbols. The check only scans inline `` `symbol` `` in `.local.md`'s `## Project-specific patterns` — `.examples.md` is not auto-scanned, so manually review it for the affected framework(s).
-
-### Step U1: Load Settings and Check Prerequisites
-
-1. Load settings from `extract-rules.local.md` (same as Step 1 in Full Extraction Mode)
-
-2. Check if output directory exists (default: `.claude/rules/`)
-   - If not exists: Error "Run /extract-rules first to initialize rule files."
-   - If `split_output: true` and hybrid files exist (`.md` files containing both `## Principles` and `## Project-specific patterns`): warn that hybrid files were found — recommend running `--restructure` to migrate to split format
-   - If `split_output: false` and `.local.md` files exist: warn that orphaned `.local.md` files were found — recommend deleting orphaned files manually or running `--restructure`
-
-3. Load existing rule files to understand current rules (load `<output_dir>/<name>.md`, `<output_dir>/<name>.local.md`, and `<examples_output_dir>/<name>.examples.md` when split). When `examples_output_dir` does not yet exist (e.g. legacy projects where examples were co-located under `output_dir`), fall back to loading `<output_dir>/<name>.examples.md`. Additionally load `<staging_output_dir>/project.staging.local.md` if present — this file is required for the Step U4 staging-match branch. Skip silently if the staging file does not yet exist.
-
-### Step U2: Re-scan Codebase
-
-Execute Step 2-5 from Full Extraction Mode:
-- Detect project type
-- Collect sample files
-- Analyze by category
-- Analyze documentation
-
-### Step U3: Staleness Check
-
-Before adding new rules, check existing project-specific patterns for staleness:
-
-1. Collect patterns from `## Project-specific patterns` sections:
-   - When `split_output: true`: from `.local.md` files
-   - When `split_output: false`: from `## Project-specific patterns` sections in `.md` files
-2. For each pattern that has an inline code signature (`` `symbol` ``), verify the symbol still exists in the codebase using Grep
-   - Skip patterns without searchable symbols (e.g., principles, anti-patterns like "No default exports")
-   - For combination patterns (e.g., `` `pathFor() + url()` ``), check each symbol individually
-3. Patterns whose symbols can no longer be found → Flag as potentially stale in the Step U6 report
-4. Do NOT auto-delete stale rules — only report them for user review
-
-### Step U4: Compare and Merge
-
-For each extracted principle/pattern:
-
-1. **Check if already exists**: Compare with existing rules (check both shared and local files if `split_output: true`). Evaluate the branches below in order, first match wins:
-   - Exact match → Skip
-   - Similar but different → Keep both (let user review)
-   - **Cross-format duplicate check**: A project-specific pattern may have been promoted to a Principle by merge-rules. Check if the pattern's description semantically matches an existing principle name in the corresponding `.md` file (use AI judgment: case-insensitive, synonyms). For example, `` `useAuth() → { user, login, logout }` - auth hook interface `` is a duplicate of `Auth hook interface (useAuth)` in `## Principles`. Skip patterns that already exist as Principles.
-   - **Staging match (project-level patterns only)**: if the pattern matches an entry in `<staging_output_dir>/project.staging.local.md` per the staging-match criterion (see `references/conversation-mode.md` § Step C5's "staging-match criterion" paragraph), schedule a **promote** — append to `<output_dir>/project.md` (the single hybrid file for project-level patterns) in Step U5, then delete the matched entry from staging in Step U5 (move-atomicity: canonical-first, staging-delete-second). Update Mode does not write new staging entries; un-matched project-level patterns land directly in canonical.
-   - New → Add
-
-2. **Preserve manual edits**: Do not modify existing rules
-
-### Step U5: Append New Rules
-
-1. **New category detected** (e.g., new framework/language): Create new rule files following Step 6 format. Report as "New" in Step U6.
-2. Append new principles to `## Principles` section
-3. Append new project-specific patterns to `## Project-specific patterns` section
-4. **When `split_output: true`**: Principles go to `<output_dir>/<name>.md`, patterns go to `<output_dir>/<name>.local.md`. Create missing files with proper frontmatter.
-5. For `<output_dir>/project.md`: always append to the single file
-6. Maintain file structure and formatting
-7. **Update `.examples.md`**: Resolve the target path via `examples_output_dir` (`<examples_output_dir>/<name>.examples.md`). Create the file (and any missing parent directories under `examples_output_dir`) when absent. Follow the common generation procedure in `references/examples-format.md` to add examples for each new rule. Promotes from staging (item 8) count as canonical writes and get an entry too.
-8. **Promote staging matches** (project-level patterns flagged in Step U4 as staging matches): append each to `<output_dir>/project.md` (the single hybrid file for project-level patterns, per item 5) and, after verifying the canonical write, `Edit` `<staging_output_dir>/project.staging.local.md` to remove the corresponding bullet. If the staging-delete `Edit` fails because the bullet is no longer uniquely matchable, leave the duplicate — the next session's canonical-match skip resolves it. Update Mode does not write new staging entries.
-
-### Step U5.5: Security Self-Check
-
-Run Security Self-Check (same as Step 6.5) on new/updated files, **including the staging file** if any staging-delete edits landed in Step U5 (the staging file was rewritten by the staging-delete `Edit`).
-
-### Step U6: Report Changes
-
-Report what was added per file. Also report any stale rules found in Step U3. Include `canonical_skip_count` and `promoted_count` (Update Mode never increments `staged_count`). See `references/report-templates.md` for format.
+1. Load settings; check prerequisites and load existing rule files
+2. Re-scan the codebase (Step 2-5 of Full Extraction Mode)
+3. Staleness check on existing project-specific patterns
+4. Compare, merge, and append new rules; promote staging matches
+5. Security Self-Check, then report
 
 ---
 
 ## Restructure Mode
 
-When `--restructure` is specified, re-analyze the codebase to determine the optimal file structure, then merge existing rule content into the new structure. Use this when the project has evolved (new frameworks, architectural changes) or when `split_output` settings change. After updating the extract-rules skill itself, which mode you need depends on what changed: `--restructure` when the **file layout** should change, `--realign` when the **extraction criteria** did (§ Realign Mode).
+When `--restructure` is specified, re-analyze the codebase to determine the optimal file structure, then merge existing rule content into the new structure. Use this when the project has evolved (new frameworks, architectural changes) or when `split_output` settings change; `README.md` § Choosing a mode says which mode a given change calls for.
 
-**Note**: Restructure Mode does NOT run the Step U3 staleness check — use `--update` first so stale symbols are flagged for manual review (see the Update Mode operational note for the post-major-version-bump workflow).
+Read `references/restructure-mode.md` for the full processing steps (R1-R5); re-read it when a `Step R` reference no longer resolves in context. Key flow:
 
-### Step R1: Load Settings and Snapshot Existing Rules
-
-1. Load settings (same as Step 1 in Full Extraction Mode)
-2. Check `output_dir` exists → Error if not: "Run /extract-rules first to initialize rule files."
-3. Read and parse all existing rule files: `<output_dir>/**/<name>.md` and `<output_dir>/**/<name>.local.md` (rule files), plus `<examples_output_dir>/**/<name>.examples.md` (examples files). When `examples_output_dir` differs from `output_dir`, also scan `<output_dir>/**/<name>.examples.md` to pick up legacy co-located examples written by older runs; treat such legacy files as candidates to migrate during Step R4.
-
-### Step R2: Re-analyze Codebase
-
-Execute Step 2-5 from Full Extraction Mode to determine the ideal file structure.
-
-### Step R2.5: Resolve File References
-
-Skip this step if `resolve_references` is `false`. Default is `true`.
-
-Scan existing rule content (loaded in R1) for file references (Markdown links, text references like "See `<path>`", `@path` references), resolve them, extract rules from referenced files, and merge into the R1 snapshot. Rules from references are treated as existing rules (take priority on conflict in R4). See `references/resolve-references.md` for detailed processing steps.
-
-### Step R3: Show Restructure Plan and Confirm
-
-Compare old and new file structures, display planned changes (Keep/New/Remove per file), and wait for user confirmation before proceeding. If references were resolved in R2.5, include the number of rules extracted from referenced files in the plan display.
-
-### Step R4: Merge and Write
-
-1. Fresh extraction results as base, route existing rules (including rules extracted from resolved references) to appropriate new files by category/scope/layer/integration
-2. **Existing rules take priority** on conflict (respect manual edits, conversation-extracted rules, and reference-extracted rules)
-3. Unmatched rules → `project.md` as fallback; preserve custom sections in the most relevant file
-4. Apply `split_output` setting (handle hybrid ↔ split transitions), deduplicate
-5. **Write new files first**, then remove old files no longer in the new structure
-6. **Handle `.examples.md`**: Write `.examples.md` files to `<examples_output_dir>/<name>.examples.md`, following the same structure changes as rule files. When R1 picked up legacy `<output_dir>/<name>.examples.md` files (co-located with rule files from older runs), move them to the new location under `examples_output_dir` and remove the legacy copies after the new file is written. Generate new `.examples.md` for categories that didn't have one (see `references/examples-format.md`).
-
-### Step R4.5: Security Self-Check
-
-Run Security Self-Check (same as Step 6.5) on all generated files.
-
-### Step R5: Report Summary
-
-Report structural changes, content merge summary, unmatched rules, and reference resolution results. See `references/report-templates.md` for format.
+1. Load settings; snapshot the existing rule files
+2. Re-analyze the codebase (Step 2-5 of Full Extraction Mode)
+3. Resolve file references in the snapshot (skipped when `resolve_references: false`)
+4. **USER CONFIRMATION** on the restructure plan, then merge and write
+5. Security Self-Check, then report
 
 ---
 
@@ -512,7 +405,7 @@ The input candidate file conforms to `references/conversation-mode.md` § Rule-c
 
 ### Step A2: Apply via Step C5 (main agent)
 
-Execute `references/conversation-mode.md` § Step C5 with the Step A1 candidate list standing in for C4's in-context extracted items, running **directly in the main agent** (no subagent — see the mode intro above). Step C5 item 1 resolves `canonical_files` / `staging_files` from settings directly (no prompt boundary). Step C5 then performs dedup / routing / staging append+promote / `.examples.md` generation (mined from the codebase per `references/examples-format.md`) / Security Self-Check, and returns its counter summary. Report to the user using the `references/report-templates.md` § Conversation Extraction Mode (Step C4) template, reused as-is (its `### Promoted from staging` / `### Newly staged` / `### No changes` subsections apply unchanged) — no new template section is added.
+Execute `references/conversation-mode.md` § Step C5 with the Step A1 candidate list standing in for C4's in-context extracted items, running **directly in the main agent** (no subagent — see the mode intro above). Step C5 item 1 resolves `canonical_files` / `staging_files` from settings directly (no prompt boundary). Step C5 then performs dedup / routing / staging append+promote / `.examples.md` generation (mined from the codebase per `references/examples-format.md`) / Security Self-Check, and returns its counter summary. Report to the user using the `references/conversation-mode.md` § Report format (Step C5 item 8) template, reused as-is (its `### Promoted from staging` / `### Newly staged` / `### No changes` subsections apply unchanged) — no new template section is added.
 
 ---
 
@@ -532,7 +425,7 @@ Read `references/compaction-procedure.md` for the full processing steps (CP1-CP5
 
 ## Realign Mode
 
-When `--realign [<path> ...]` is specified, re-judge rules already written against the current extraction criteria, then drop, split, or trim the ones that no longer meet them (§ Restructure Mode's intro says which of the two modes a given change calls for). Named paths judge only those files; no paths judges every rule file under `output_dir`.
+When `--realign [<path> ...]` is specified, re-judge rules already written against the current extraction criteria, then drop, split, or trim the ones that no longer meet them (`README.md` § Choosing a mode says which of the two modes a given change calls for). Named paths judge only those files; no paths judges every rule file under `output_dir`.
 
 **Against `--compact`**, which also shrinks a rule file: one invariant divides them — `--compact` preserves the set of norms a file states, merging near-duplicates and dropping an entry only where another already subsumes it, while `--realign` can take a norm away outright. When both apply to one file, realign first.
 
@@ -542,7 +435,7 @@ Read `references/realign-mode.md` for the full processing steps (RA1-RA5). Key f
 2. Dispatch one analysis subagent per target file, parse its fenced JSON verdict, and count each non-`keep` rule's referrers
 3. **USER APPROVAL GATE** — present the verdicts; nothing is written until it resolves
 4. Apply the accepted edits and follow through on the affected `.examples.md` entries
-5. Security Self-Check on every file written, then report per `references/report-templates.md` § Realign Mode
+5. Security Self-Check on every file written, then report per `references/realign-mode.md` § Report format (Step RA5)
 
 ---
 

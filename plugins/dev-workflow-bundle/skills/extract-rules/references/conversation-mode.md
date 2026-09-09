@@ -14,13 +14,7 @@ node <skill-path>/scripts/extract_session_messages.mjs <session-file> --output /
 
 Then read the output file with the Read tool.
 
-The script handles:
-- Parsing each JSON line and filtering to `type: "user"` and `type: "assistant"` only
-- Extracting text from `message.content` (both string and array formats), skipping `tool_use`, `thinking` blocks
-- Recovering user responses from interactive tools (`AskUserQuestion`, etc.) — these `tool_result` entries contain explicit user preferences and are high-value signals
-- By default, all messages are included without size limits
-- Optional `--max-chars` and `--max-per-message` flags to cap output size if needed (prioritizes recent messages — oldest are dropped first; newest message is always kept even if partially truncated)
-- Outputting in chronological order with `=== {role} ===` delimiters
+The script emits every user and assistant text message in chronological order. `--max-chars` and `--max-per-message` cap the output size when it is too large, dropping the oldest messages first.
 
 **Cleanup:** Delete the output file after reading it:
 
@@ -44,16 +38,11 @@ Read `references/extraction-criteria.md` before proceeding.
 
 Look for user preferences and classify them:
 
-**1. General best practice feedback** → Skip (do NOT extract):
-   - "Use const" "No magic numbers" "DRY" "Early returns" → General knowledge, AI already knows
-   Only extract if the project/team has made a specific choice beyond general best practices:
-   - "We use FP only, no classes" → Team-specific paradigm choice
+**1. General best practice feedback** → Skip. Extract only where the project or team has made a choice beyond general best practice.
 
-**2. Project-specific patterns** → Extract with concrete examples:
-   - "Use `RefOrNull<T>` for nullable refs" → Include type definition
-   - "Always use `pathFor()` with `url()`" → Include usage pattern
+**2. Project-specific patterns** → Extract, carrying the concrete signature the user named.
 
-**3. Code review feedback**: Identify underlying philosophy or specific patterns
+**3. Code review feedback**: Identify the underlying philosophy or the specific pattern behind it.
 
 **4. Routine re-application of existing patterns** → Skip (do NOT extract):
    - Code added by following an established codebase pattern without user guidance or correction — symmetric code duplication, template expansion, mechanical extension of an existing structure
@@ -126,12 +115,12 @@ Candidates: 2
    - Integration-specific → `<output_dir>/integrations/<framework>-<integration>.md`
    - Project-level → `<output_dir>/project.md` (but a conversation-extracted 1st-observation project-specific pattern stages first — see item 3 branch (iii); it reaches `project.md` only on promote)
 
-   **By default** (`split_output: true`): Conversation-extracted **project-specific patterns** always go to `.local.md` files. Principles may be added to shared files. `project.md` is always a single file — project-level items go there regardless of `split_output`. Promoting patterns to shared files should be done manually or via organization-level merge.
+   File split follows `SKILL.md` § Output Structure, with one addition: conversation-extracted **project-specific patterns** always go to `.local.md`, and promoting one to a shared file is a manual or organization-level-merge action.
 
 3. **Check for duplicates and route per category:**
    - **Project-level patterns** (routing target: `<output_dir>/project.md` — the single hybrid file for project-level patterns, per Step C5 item 2): 3-branch decision —
      - (i) **Canonical match**: if the pattern exact / semantic matches an entry in `<output_dir>/project.md` (or any `<output_dir>/<name>.md` Principles section, cross-format), skip. Increment `canonical_skip_count`. Cross-format example: `` `useAuth()` - auth hook interface `` matches `Auth hook interface (useAuth)` in `## Principles`.
-     - (ii) **Staging match**: if the pattern matches an entry in `<staging_output_dir>/project.staging.local.md` per the **staging-match criterion** — (a) inline code signature byte-equal **or** semantic-equivalent (same symbol / same API combination, ignoring whitespace and trivial reordering), **and** (b) context phrase semantically aligned — schedule a **promote** in item 4 (append the new observation to `<output_dir>/project.md`) and item 5 (delete the matched staging entry). Default case ((a)+(b) both hold): the canonical bullet uses the **current observation's** context phrase; the staging entry is removed in item 5 regardless of which context phrase was previously held. Edge cases: (a)-only (signature matches, context differs) → same-observation promote with overwritten context (same as default); (b)-only (context similar, signature differs) → not a match, fall through to branch (iii) (new staging append). Increment `promoted_count`.
+     - (ii) **Staging match**: if the pattern matches an entry in `<staging_output_dir>/project.staging.local.md` per the **staging-match criterion** — (a) inline code signature byte-equal **or** semantic-equivalent (same symbol / same API combination, ignoring whitespace and trivial reordering), **and** (b) context phrase semantically aligned — schedule a **promote** in item 4 (append the new observation to `<output_dir>/project.md`) and item 5 (delete the matched staging entry). The canonical bullet uses the **current observation's** context phrase, and the staging entry is removed in item 5 whichever phrase it previously held. Increment `promoted_count`.
      - (iii) **New** (also the fall-through target for branch (ii)'s (b)-only edge case): append to `<staging_output_dir>/project.staging.local.md` `## Project-specific patterns` section in item 4. Increment `staged_count`. **Staging staleness scan**: before appending, scan existing entries in the staging file's `## Project-specific patterns` section for content whose described behavior, exception condition, or usage pattern the new observation overrides or contradicts. For each such entry found: if the contradiction is unambiguous, annotate it inline with `[NEEDS REVIEW: may be superseded by the entry added below]` and increment `stale_flagged_count`. If the relationship is borderline, skip without annotation. Report `stale_flagged_count` alongside the other counters in the Step C5 summary (item 8); when zero, omit from the summary.
    - **Principles / Language / framework / integration patterns**: canonical match → skip (also increments `canonical_skip_count`); new → append to the routed target file immediately (staging bypassed).
 
@@ -147,7 +136,7 @@ Candidates: 2
 
 7. Run Security Self-Check (same as Step 6.5 in the main SKILL.md) on updated files, **including the staging file** if any new staging append landed in item 4 OR any staging-delete edit landed in item 5. Also read `references/security.md`.
 
-8. Return a summary including `canonical_skip_count`, `promoted_count`, `staged_count`, and `stale_flagged_count` (when non-zero). See `references/report-templates.md` § Conversation Extraction Mode for format.
+8. Return a summary including `canonical_skip_count`, `promoted_count`, `staged_count`, and `stale_flagged_count` (when non-zero). See § Report format (Step C5 item 8).
 
 ## Staging file body template
 
@@ -177,4 +166,37 @@ When item 4 creates `<staging_output_dir>/project.staging.local.md` for the firs
 
 Per-mode read / write / promote behavior on the staging file: Update reads + promotes but does not write; Conversation / PR Review / Conversation Candidate Apply read + write + promote; Full Extraction / Restructure / Compaction / Realign leave staging untouched.
 
-**Edge case — Full Extraction over a pre-populated staging directory**: if a user deletes `<output_dir>` and re-runs Full Extraction, the staging file persists outside `<output_dir>` and Full Extraction silently ignores it — the next `--from-conversation` / `--from-pr` / `--update` / `--apply-conversation-candidates` run can still promote those staged candidates against the freshly rebuilt canonical. If the staged candidates are no longer relevant after the rebuild, delete the staging directory manually before re-running incremental modes.
+
+## Report format (Step C5 item 8)
+
+```markdown
+## Extracted from Conversation
+
+### Added to languages/typescript.md:
+#### Principles
+- Immutability (spread, map/filter, const)
+
+#### Project-specific patterns
+- `RefOrNull<T extends { id: string }> = T | { id: null }` - nullable refs
+
+#### Examples (typescript.examples.md)
+- Added Good/Bad for Immutability
+- Added usage example for `RefOrNull<T>`
+
+### Promoted from staging (2nd observation):
+- `pathFor() + url()` - Page Object navigation pair  (→ .claude/rules/project.md)
+
+### Newly staged (1st observation, awaiting re-observation):
+- `useDataFetch(key)` - typed data hook with cache key  (→ .claude/rules-staging/project.staging.local.md)
+
+### No changes:
+- Functional style - Already documented
+```
+
+Each extracted pattern appears in exactly one section per run:
+
+- canonical match → `### No changes:` (contributes to `canonical_skip_count`)
+- staging match → `### Promoted from staging (2nd observation):` (contributes to `promoted_count`)
+- new staging append → `### Newly staged (1st observation, awaiting re-observation):` (contributes to `staged_count`)
+
+Omit the `### Promoted from staging` and `### Newly staged` sections entirely when the corresponding count is 0.

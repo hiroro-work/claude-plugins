@@ -46,7 +46,7 @@ Signals that a candidate is a record rather than a rule:
 - Its justification is that this is what was done, with no statement of what goes wrong otherwise.
 - Removing it would leave a future change equally consistent with what this project already does — different, not wrong.
 
-A settled convention is not caught by that removal signal: departing from it is wrong here, not merely different. "Settled" is shown by conformance visible across existing artifacts, or by an explicit user decision establishing the convention — never by the candidate's own assertion that it exists.
+A settled convention is not caught by that removal signal: departing from it is wrong here, not merely different. "Settled" is shown by conformance visible across existing artifacts, or by an explicit user decision establishing the convention. It is never shown by the candidate's own assertion that it exists. Conformance does not count when the source records a decision to leave things as they are for now. A candidate whose own wording is an account of where the work stands rather than a norm is not settled.
 
 Whether a candidate carries a code signature is **not** a signal either way.
 

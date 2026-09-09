@@ -2,17 +2,15 @@
 
 Unqualified references resolve as follows: `Step CP1`–`Step CP5` and their sub-steps ((a)–(f)) name sections of this file; `Step 1` and `Step 6.5` name `SKILL.md` § Full Extraction Mode steps; `§ Sub-skill caller directive` names the `SKILL.md` section; `§ Preservation rules` names `references/compaction-mode.md`.
 
-When `--compact` is specified, compact over-threshold rules files so they stay below Claude Code's per-file warning threshold. Target file selection, char-count check, and threshold filtering all happen inside this mode — callers invoke `--compact` without file arguments and let this mode resolve the target set.
-
-The Skill wrapper runs in the main thread, a subagent performs the compaction analysis, the main thread applies the resulting `mechanical_edits`, and a fenced JSON return contract is emitted for caller dispatch. Per-file outer loop with `max_iterations = 2` (default).
+The Skill wrapper runs in the main thread, a subagent performs the analysis, and the main thread applies the resulting `mechanical_edits`. Per-file outer loop with `max_iterations = 2` (default).
 
 ### Step CP1: Load Settings and Resolve Targets
 
 1. Load settings from `extract-rules.local.md` (same as Step 1 in Full Extraction Mode). `compaction_threshold` (default `40000`) is the filter applied below in step 3. `min_cluster_size` (default `3`) gates consolidation detection inside Step CP2 — it does not affect target resolution here
 2. Check `output_dir` exists. If not, emit `{"status": "error", "reason": "output directory not found"}` and stop
 3. Resolve targets:
-   - With explicit path arguments (caller-passed paths): use those paths. For each, `Read` the file content and measure its char count via the `Read` output length (do **not** use `Bash(wc -m)` — `Read` length matches Claude Code's char-count metric, while `wc -c` reports bytes which diverge for multi-byte content). All explicit paths join the Step CP2 target set, regardless of char count: under-threshold paths still enter Step CP2 so the consolidation pass can run on them — `mechanical_edits` will be empty for under-threshold files (the convergence check at (d) terminates them immediately), but `consolidation_proposals` may still be emitted. The `skipped-below-threshold` status (set at Step CP2 (d), not here — (f) merely records what (d) chose) labels these files. Explicit-paths mode accepts paths under either `output_dir` or `examples_output_dir` — callers needing to compact `.examples.md` files when `examples_output_dir != output_dir` must use this mode
-   - Without arguments: `Glob <output_dir>/**/*.md` (covers `.md` / `.local.md` uniformly — and also `.examples.md` if any are still co-located under `output_dir` from legacy runs, since the glob does not distinguish by extension). For each file, `Read` and measure its char count; collect entries with char count `> compaction_threshold` into the target set. **Note**: discovery mode does **not** surface sub-threshold files in `files_processed` (they are silently filtered out); to scan an under-threshold file for consolidation, invoke `--compact <path>` (or `--compact <path1> <path2> ...`) with explicit paths. **Discovery scope**: this branch scans `output_dir` only — when `examples_output_dir` differs from `output_dir` (including the default `.claude/rules-extras` configuration), `.examples.md` files under `examples_output_dir` are **not** discovered automatically; the explicit-paths route compacts them on demand
+   - With explicit path arguments (caller-passed paths): use those paths. For each, `Read` the file content and measure its char count via the `Read` output length (do **not** use `Bash(wc -m)`). All explicit paths join the Step CP2 target set regardless of char count, so the consolidation pass can run on under-threshold files (status per Step CP2 (f)). Explicit-paths mode accepts paths under either `output_dir` or `examples_output_dir`
+   - Without arguments: `Glob <output_dir>/**/*.md`. For each file, `Read` and measure its char count; collect entries with char count `> compaction_threshold` into the target set. **Note**: discovery mode does **not** surface sub-threshold files in `files_processed` (they are silently filtered out); to scan an under-threshold file for consolidation, invoke `--compact <path>` (or `--compact <path1> <path2> ...`) with explicit paths. **Discovery scope**: this branch scans `output_dir` only — when `examples_output_dir` differs from `output_dir` (including the default `.claude/rules-extras` configuration), `.examples.md` files under `examples_output_dir` are **not** discovered automatically; the explicit-paths route compacts them on demand
 
    Cache the per-file `Read` content keyed by path for reuse in Step CP2 (a) iter 1's dispatch payload
 4. If the target set is empty (no paths resolved at all — empty explicit-paths argument or zero discovery hits), emit `{"status": "no-actionable", "compaction_threshold": <int>, "min_cluster_size": <int>, "files_processed": [], "reason": "no targets resolved"}` and stop
@@ -21,7 +19,7 @@ The Skill wrapper runs in the main thread, a subagent performs the compaction an
 
 **Pre-register per-file tasks** — before entering the per-file outer loop, `TaskCreate` one task per file in the target set (e.g. `compact: <path>`). Mark each task `in_progress` (via `TaskUpdate`) before its first dispatch and `completed` after the per-file loop terminates (regardless of `per_file_status`). Per-iter progress within a file is tracked inline within this Step (no per-iter task). Where the Task tools are unavailable (e.g. the VSCode extension), skip the pre-registration and hold the per-file progress in main-thread context instead.
 
-For each file in the target set, run the per-file iteration loop. `max_iterations = 2` by default. Under-threshold files terminate at iter 1's (d) convergence check (chars_after ≤ compaction_threshold is already true), so their loop effectively runs once for consolidation detection only.
+For each file in the target set, run the per-file iteration loop. `max_iterations = 2` by default. Under-threshold files terminate at iter 1's (d) check, so their loop runs once for consolidation detection only.
 
 **(a) Read & dispatch (per-iter)**: On iter 1, reuse the cached content from Step CP1 step 3 — `chars_before` is that cache entry's char count. On iter `i ≥ 2`, re-`Read` the target file so the subagent operates on the post-prior-iter content. Spawn an `Agent` (`subagent_type: general-purpose`) with the dispatch prompt assembled from these `--- LABEL ---` sections:
 
@@ -57,7 +55,7 @@ For each file in the target set, run the per-file iteration loop. `max_iteration
 
 The same scope rail and no-op-fallback semantics from (c1) apply. Increment `applied_edits_count` for each successful `Edit` — the counter is **shared** between (c1) and (c2).
 
-**(d) Per-iter convergence check**: re-`Read` the target file to measure `chars_after_iter_i`. If `chars_after_iter_i ≤ compaction_threshold`, the file's compaction work is **complete**; terminate the loop. The per-file status is then **`skipped-below-threshold`** when the cumulative `applied_edits_count` across iters is `0` (no compaction-or-consolidation edits ever landed — this can only happen when the file was already at-or-below threshold on entry), or **`converged`** when the cumulative `applied_edits_count > 0` (one or more edits — compaction-mechanical or consolidation-synthesized — landed and the file is now at-or-below threshold).
+**(d) Per-iter convergence check**: re-`Read` the target file to measure `chars_after_iter_i`. If `chars_after_iter_i ≤ compaction_threshold`, the file's compaction work is **complete**; terminate the loop. The per-file status is then `skipped-below-threshold` or `converged` per (f).
 
 **(e) Continue or terminate**: if `i < max_iterations` and not converged, proceed to iter `i + 1` (back to (a)). If `i == max_iterations` and not converged, terminate the loop with per-file `status: "partial"` (the file was reduced but did not reach the threshold)
 
@@ -65,13 +63,11 @@ The same scope rail and no-op-fallback semantics from (c1) apply. Increment `app
 
 - `path`, `chars_before`, `chars_after` (the latest measured), `iterations_used`
 - `applied_edits_count` (sum across iters)
-- `structural_notes` — captured from iter 1 only (treat iter 1 as the source of truth). If iter 1 produced no parseable verdict (terminated via the (b) error paths), `structural_notes` is `[]`
-- `consolidation_proposals` — same iter-1-only discipline as `structural_notes` above. Iter 2's `consolidation_proposals_count` is ignored (the subagent should not re-emit them, and the main thread does not consume them if returned). If iter 1 produced no parseable verdict, `consolidation_proposals` is `[]`
-- `per_file_status` ∈ {`converged`, `partial`, `unresolved`, `error`, `skipped-below-threshold`}. Set by (d) (`converged` or `skipped-below-threshold` per the threshold-vs-applied-edits discrimination), (e) (`partial`), or (b) (`error` / `unresolved`). `skipped-below-threshold` means "compaction skipped because the file was already at-or-below threshold (no compaction-or-consolidation edits landed — cumulative `applied_edits_count == 0`), but Step CP2 still ran the per-file dispatch and any `consolidation_proposals` / `structural_notes` may be present"
+- `structural_notes` — captured from iter 1 only (treat iter 1 as the source of truth; disposition per `references/compaction-mode.md` § Contract). If iter 1 produced no parseable verdict (terminated via the (b) error paths), `structural_notes` is `[]`
+- `consolidation_proposals` — same iter-1-only discipline as `structural_notes` above. Iter 2's `consolidation_proposals_count` is ignored. If iter 1 produced no parseable verdict, `consolidation_proposals` is `[]`
+- `per_file_status` ∈ {`converged`, `partial`, `unresolved`, `error`, `skipped-below-threshold`}. Set by (d) (`skipped-below-threshold` when the cumulative `applied_edits_count` across iters is `0`, else `converged`), (e) (`partial`), or (b) (`error` / `unresolved`). `skipped-below-threshold` files still ran the per-file dispatch, so `consolidation_proposals` / `structural_notes` may be present
 - `below_threshold` = `chars_after ≤ compaction_threshold`
 - `reason` (set only when `per_file_status ∈ {error, unresolved}`; omitted otherwise — including for `converged` / `partial` / `skipped-below-threshold`)
-
-**Important**: `consolidation_proposals` are **auto-applied by the main thread synthesis sub-phase (c2)** — the subagent still emits them as detection-only output (the subagent does **not** call `Edit` itself, per the analysis-only / file-write contract in `references/compaction-mode.md` § Forbidden tool calls and § `consolidation_proposals` schema's Materialization disposition), and the main thread synthesizes the corresponding `Edit` calls from the cluster description. The `consolidation_proposals` array in the per-file record is the **applied-cluster trace**, not a caller-judgment note. `structural_notes` are **not applied** by this mode — they are surfaced as caller-judgment notes and the caller decides whether to act.
 
 ### Step CP3: Security Self-Check
 
@@ -80,13 +76,13 @@ Run Security Self-Check (same as Step 6.5 in Full Extraction Mode) on all modifi
 - `path`: the reverted file's path
 - `per_file_status: "error"`
 - `reason: "security check failed"`
-- `applied_edits_count: 0` (the revert wiped this file's landed edits — they no longer exist on disk)
-- `iterations_used`: the count of iters whose subagent dispatch returned a verdict before the revert (carry over from Step CP2 (f))
-- `structural_notes`: carry over from Step CP2 (f) (iter-1 captured notes survive the revert because they are caller-judgment notes about the file's prose, not edits that were wiped)
-- `consolidation_proposals`: carry over from Step CP2 (f) (same reasoning as `structural_notes` — cluster proposals are not file edits)
-- `chars_before`: the pre-Step-CP2 measurement (carry over from Step CP2 (f))
-- `chars_after`: the post-revert measurement, which equals `chars_before` since the revert restored the file to its pre-edit state
-- `below_threshold`: recomputed against the post-revert `chars_after` (so this matches whatever the file's threshold relation was before Step CP2 ran)
+- `applied_edits_count: 0`
+- `iterations_used`: carry over from Step CP2 (f)
+- `structural_notes`: carry over from Step CP2 (f)
+- `consolidation_proposals`: carry over from Step CP2 (f)
+- `chars_before`: carry over from Step CP2 (f)
+- `chars_after`: the post-revert measurement (equals `chars_before`)
+- `below_threshold`: recomputed against the post-revert `chars_after`
 
 ### Step CP4: Emit Structured Summary
 
@@ -143,7 +139,7 @@ Top-level `status` mapping:
   - `"output directory not found"` — Step CP1 step 2 directory check failed
   - `"no targets resolved"` — used with `status: "no-actionable"` from Step CP1 step 4 (top-level `reason` is optional in `no-actionable`; this token is its canonical value)
 
-Partial results: when top-level `status: "compacted"`, individual files in `files_processed` may carry `per_file_status` of `error` / `unresolved` / `partial` / `skipped-below-threshold` mixed with `converged`. Callers should branch on `per_file_status` per file rather than assume uniform success.
+Partial results: under top-level `status: "compacted"`, callers branch on each file's `per_file_status` rather than assume uniform success.
 
 ### Step CP5: Sub-skill caller directive
 

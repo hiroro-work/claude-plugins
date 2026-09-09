@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-09-10
+
+### peer v2.6.5 / dev-workflow-bundle v2.13.3
+
+- refactor(ask-peer): compress the Planning audit items and the Process bullets in `SKILL.md`
+  - The Peer Agent Personality is injected into every reviewer `dev-workflow` dispatches, and its 17 Planning audit items had grown to about 11.7k chars of rationale tails, example lists, and "this is distinct from" cross-notes. Each item is now its trigger, the required check, and its finding label; the `Fallback path`, `Parallelism`, and **Optional `Model:`** bullets state their decision rule once; the three "confirm intent first" spots are one bullet under `When Starting a Review`. `SKILL.md` shrinks from 21,742 to 12,512 chars.
+  - Every item name, the `Major` / `self-audit gap candidate` labels, the `Model:` validity rule, and the `## Dispatch authorization` section are unchanged.
+  - Files: `skills/ask-peer/SKILL.md`
+
 ## 2026-09-09
 
 ### extract-rules v1.29.6 / dev-workflow-bundle v2.13.2

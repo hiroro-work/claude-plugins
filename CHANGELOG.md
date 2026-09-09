@@ -2,6 +2,20 @@
 
 ## 2026-09-09
 
+### extract-rules v1.29.4 / dev-workflow-bundle v2.12.2
+
+- fix(extract-rules): decide "settled" by how a convention came about, not only by conformance
+  - The Durability test recognised a settled convention by conformance across existing artifacts or an explicit user decision. Something the team has simply not changed yet conforms just as visibly, so a migration deliberately deferred in one task could be extracted as a norm. Conformance no longer counts as evidence when the source records a decision to leave things as they are for now, and a candidate whose own wording is an account of where the work stands rather than a norm is not settled. Routing is unchanged.
+  - Category: `missing-branch`
+  - Files: `skills/extract-rules/references/extraction-criteria.md`
+
+### dev-workflow v2.2.3 / dev-workflow-bundle v2.12.2
+
+- fix(dev-workflow): retry a crit story ingest on what the response says, not on how it exited
+  - Every non-zero exit was retried, including ones that would fail identically, and a coverage rejection was excluded even though it names the hunks to fix. The ingest is now retried once, and only when the report names those hunks, whose placement is corrected first. A report naming hunks is not by itself a failure — crit emits one on a saved story it back-filled, with `"auto_repaired": true` and a zero exit. Failing that, crit still launches without the story, and the reviewer loses the commit body.
+  - Category: `wrong-default`
+  - Files: `skills/dev-workflow/references/commits.md`
+
 ### dev-workflow v2.2.2 / dev-workflow-bundle v2.12.1
 
 - fix(dev-workflow): keep a plan figure's SVG labels readable in dark mode

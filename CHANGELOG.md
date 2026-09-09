@@ -2,6 +2,13 @@
 
 ## 2026-09-09
 
+### extract-rules v1.29.6 / dev-workflow-bundle v2.13.2
+
+- refactor(extract-rules): move Compaction Mode's procedure to `references/compaction-procedure.md`
+  - `SKILL.md` kept the full `--compact` procedure (Steps CP1–CP5, about 20.8k chars) inline, so every `/extract-rules` invocation read it although no other mode uses it. The section is now a short intro, a pointer, and a key flow, in the shape `## Realign Mode` already uses; `SKILL.md` shrinks from 60,362 to 39,994 chars, under Claude Code's 40k per-file warning. In the moved procedure, repeated definitions (`skipped-below-threshold`, the `consolidation_proposals` synthesis contract, the Step CP3 record shape) are stated once. `references/compaction-mode.md`, the subagent payload, loses its architecture rationale and keeps every rule, schema, and heading.
+  - Behavior, the fenced JSON return contract, and the status / reason enums are unchanged. `references/report-templates.md` only re-points its two `Step CP` references to the new file.
+  - Files: `skills/extract-rules/SKILL.md`, `skills/extract-rules/references/compaction-procedure.md` (new), `skills/extract-rules/references/compaction-mode.md`, `skills/extract-rules/references/report-templates.md`
+
 ### dev-workflow v2.3.1 / dev-workflow-bundle v2.13.1
 
 - fix(dev-workflow): make the review launch the first numbered step of Check / Test

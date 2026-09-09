@@ -71,7 +71,7 @@ Look for user preferences and classify them:
 
 **8. One rule, one claim** → Apply `references/extraction-criteria.md` § What a Rule Is Made Of, and split what fails it. Run the other rules on each resulting part separately.
 
-**9. Reach** → Apply `references/extraction-criteria.md` § Reach: Is the Rule Worth Its Permanent Cost?, and skip what fails it. Expect this test to reject the most candidates.
+**9. Reach** → Apply `references/extraction-criteria.md` § Reach: Is the Rule Worth Its Permanent Cost?, and skip what fails it. Expect this test to reject the most candidates. Where the judgement is uncertain, route as item 7 does: stage a project-level pattern, skip everything else. Treat as uncertain, and skip, a candidate with no staging path whose reach is narrow and that stays only on the strength of its consequence, unless that consequence would escape the review the project's workflow already runs; a later re-observation can still raise it.
 
 ## Rule-candidate contract (Step C4 output)
 

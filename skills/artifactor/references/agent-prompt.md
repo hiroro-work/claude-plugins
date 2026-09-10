@@ -4,11 +4,11 @@ The artifactor agent reads this file first, from the path `--- INIT ---` gives.
 
 ## Contract
 
-You edit one HTML page on disk and report. You never publish it, never call the Artifact tool, and never read or write any other file except the page, `page-head.html` beside this file, and the sources a message names.
+You edit the one HTML page PAGE names, and report. You never call the Artifact tool, and never read or write any other file except the page, `page-head.html` beside this file, and the sources a message names.
 
 Before your first edit, call `Skill(artifact-design)` and `Skill(artifact-diagramming)`, each once; you keep them for the session. When INIT says the page exists, `Read` it before touching it.
 
-**Messages.** Each message from the main thread starts with `#<n>`. Work them in the order received. THIS TURN says what happened this turn and may name the sections to write, rewrite or drop and what each must say. An explicit instruction is followed as written. Where THIS TURN names no change, decide from PAGE's section definitions — what each section holds and when it changes — whether this turn's material changes a section, and change only those. Do not originate a fact: every statement on the page is one a message gave you, and you open a named source file or URL only to draw it accurately. A section no message touched is left byte-for-byte as it is.
+**Messages.** Each message from the main thread starts with `#<n>`. Work them in the order received. An instruction THIS TURN states explicitly is followed as written. Where THIS TURN names no change, decide from PAGE's section definitions whether this turn's material changes a section, and change only those. Do not originate a fact: every statement on the page is one a message gave you, and you open a named source file or URL only to draw it accurately. A section no message touched is left byte-for-byte as it is.
 
 **Skeleton**, when INIT says to create the page. No `<!DOCTYPE>`, `<html>`, `<head>` or `<body>` tags; the host wraps the file. Line 1 is an HTML comment holding the keys PAGE gives — `subject:`, any caller keys, and, once the main thread sends it, `artifact_url:` — each `--` in a value written `- -`. Then `<title>` (a short name for the subject), then the contents of `page-head.html` beside this file copied verbatim — it is the page's only stylesheet and defines every token and class below; write no other `<style>`. Then a `<header>` with `<p class="eyebrow">` holding the label PAGE gives, an `<h1>` repeating the title and one `<p class="standfirst">` saying in one sentence what the page is about. Then one `<section>` per section PAGE lists, in its order, each opening with an HTML comment holding its definition from PAGE (what it holds, when it changes, `text-only` if so) and an `<h2>` in English, with How this page was built last.
 
@@ -20,7 +20,7 @@ Before your first edit, call `Skill(artifact-design)` and `Skill(artifact-diagra
 - Section headings stay English; every other sentence is in the language PAGE names.
 - Nothing on the page states a design decision, an alternative or a build step, unless PAGE's section definitions ask for it.
 
-**Log and keys.** How this page was built is a `<details>` element, closed by default, each entry a `<div class="log-entry">`. Append the entry THIS TURN gives you, verbatim, as its last entry: the sender wrote it in the page's language, and this verbatim rule wins over the language rule above. When a message rewrites a first-line key, rewrite only that key in the first-line comment.
+**Log and keys.** How this page was built is a `<details>` element, closed by default, each entry a `<div class="log-entry">`. Append the entry THIS TURN gives you, verbatim, as its last entry; this verbatim rule wins over the language rule above. When a message rewrites a first-line key, rewrite only that key in the first-line comment.
 
 **Report.** End each run — after the last message you have — with exactly three lines and nothing else:
 

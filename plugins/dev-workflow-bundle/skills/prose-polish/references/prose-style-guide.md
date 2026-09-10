@@ -8,52 +8,50 @@ Rewrite **only** natural-language prose. Never alter, add, or drop any of the fo
 
 - Code, syntax, and program structure.
 - Identifiers — function / variable / type / class / module names.
-- Product / API / library / tool names used as proper nouns (e.g. `git`, `Promise`, `Agent`). These stay in their original form even when the surrounding prose is in another language. **Ordinary technical vocabulary is not preserved here** — apply the `Preserve-vs-translate litmus test` below to tell a preserved proper noun from translatable vocabulary.
+- Product / API / library / tool names used as proper nouns (e.g. `git`, `Promise`, `Agent`). **Ordinary technical vocabulary is not preserved here** — see the `Preserve-vs-translate litmus test` below.
 - String literals that carry program logic: keys, enum values, format specifiers, file paths, URLs, commands, config tokens.
 - Delimiters around a preserved token — do not add, remove, or change backticks, quotes, or other code-span decoration surrounding an identifier or code fragment. If a token appears bare in the source, keep it bare; refactor the wording around it, not its presentation.
-- Leading whitespace — never change a line's indentation. In indentation-sensitive formats (YAML block scalars, Python, nested Markdown lists) it carries structure, so a shifted indent breaks the file even when every word in it is right.
-- Structured-data syntax — prose sitting inside a YAML, JSON, or TOML value must stay parseable in place. Keep the value's original quoting style, and do not introduce a character that would re-open it as syntax: a `:` followed by a space inside an unquoted YAML scalar, a leading `-` / `#` / `[` / `{` / `|` / `>` / `*` / `&` / `%` / `@`, or an unbalanced quote. When the rewrite you want needs one of those, leave the value as it stands.
+- Leading whitespace — never change a line's indentation.
+- Structured-data syntax — prose sitting inside a YAML, JSON, or TOML value must stay parseable in place. Keep the value's original quoting style, and do not introduce a character that would re-open it as syntax: a `:` followed by a space inside an unquoted YAML scalar, a leading `-` / `#` / `[` / `{` / `|` / `>` / `*` / `&` / `%` / `@`, or an unbalanced quote.
 - Factual content — do not add claims, drop information, or reorder steps. Improve **only** concision and naturalness.
 
 When a candidate rewrite could change program behavior or touch a non-prose token, do not make it.
 
 ### Preserve-vs-translate litmus test
 
-The boundary between a preserved proper noun and translatable ordinary vocabulary is the most common source of unnatural code-mixing, so make it the deciding test for every word in the prose that traces back to the source language — **including one already written in the target language's own script**. For `ja`, a katakana rendering of an English term is a candidate like any other. Apply the four checks in order — first match wins:
+Decide every word in the prose that traces back to the source language by this test — **including one already written in the target language's own script**. Apply the four checks in order — first match wins:
 
-1. **Recoverability-test** — the word is already written in the target language's own script, and a reader who does not know the source-language original recovers its meaning from the word alone (`キャッシュ`, `レスポンス`). Keep it. A script-native token that fails this test (`セマンティクス`) falls through to the checks below.
+1. **Recoverability-test** — the word is already written in the target language's own script, and a reader who does not know the source-language original recovers its meaning from the word alone (`キャッシュ`, `レスポンス`). Keep it; a script-native token that fails it (`セマンティクス`) does not.
 2. **Preserve-test** — the word names a *specific* product, API, library, tool, format, standard, or code symbol that appears verbatim as a proper noun in code or docs (`git`, `Promise`, `Agent`, `JSON`, `URL`). Keep it verbatim, whether or not the source wrapped it in backticks.
 3. **Translate-test** — the word *describes* an action, state, quality, or relation and has an everyday equivalent in the target language. Translate it.
 4. **Default** — no test above clearly matches: translate.
 
-The preserve-test outranks the translate-default, so a recognized proper noun (`git` / `Promise` / `API` / `URL`) is never translated even when it appears bare. Ordinary vocabulary takes the translate side (for `ja`: `dispatch`→「呼び出す」 not 「dispatch する」, `stale`→「古い」 not 「stale だった」, `validate`→「検証する」, `scope`→「範囲」, `fallback`→「代替手段」, `semantics`→「意味づけ」 not 「セマンティクス」, `tie-break`→「同点時の決め方」 not 「タイブレーク」). These glosses show the translate-vs-code-mix contrast, not a fixed dictionary: pick the target word that reads most naturally in context, since one source word can map to different targets (`dispatch`→「振り分ける」 when it distributes work across workers, 「呼び出す」 when it invokes a call).
+Ordinary vocabulary takes the translate side (for `ja`: `dispatch`→「呼び出す」 not 「dispatch する」, `stale`→「古い」 not 「stale だった」, `validate`→「検証する」, `scope`→「範囲」, `fallback`→「代替手段」, `tie-break`→「同点時の決め方」 not 「タイブレーク」). Pick the target word that reads most naturally in context.
 
 ## General rules (all target languages)
 
 1. **Cut filler.** Remove words that add length without meaning — restating the obvious, hedging ("basically", "essentially"), and ceremony ("it should be noted that").
-2. **Say what the code does not.** A comment that paraphrases the code it sits above is noise: delete pure *what*-narration — including a comment that merely restates the definition of the construct it annotates, even when it names a specific subject (e.g. a `.prettierignore` / `.gitignore` entry commented "excludes `<file>`", or a type annotation whose comment repeats the declared type). Keep a comment only for a non-obvious *why* — a constraint, an invariant, a workaround — and state that *why* in one sentence, trimming mechanism or causal-chain detail a reader can infer while keeping detail needed to act correctly.
-3. **One idea per sentence — and per list item.** Split runaway sentences that chain three or more clauses; merge two sentences that state the same thing. An **unordered** bullet counts as one unit under this rule: when a single bullet carries three or more distinct claims, split it into separate bullets rather than leaving the reader to unpack one sentence. The recurring shape is an inline `(i)/(ii)/(iii)` enumeration, each element carrying its own sub-clauses, closed by a trailing verb far from its subject. Leave **numbered** items intact — splitting one renumbers every item below it, and prose elsewhere addresses list positions by number, so a split there silently breaks references. Rewrite such an item in place instead.
+2. **Say what the code does not.** A comment that paraphrases the code it sits above is noise: delete pure *what*-narration — including a comment that merely restates the definition of the construct it annotates. Keep a comment only for a non-obvious *why* — a constraint, an invariant, a workaround — and state that *why* in one sentence, trimming mechanism or causal-chain detail a reader can infer while keeping detail needed to act correctly.
+3. **One idea per sentence — and per list item.** Split runaway sentences that chain three or more clauses; merge two sentences that state the same thing. An **unordered** bullet counts as one unit under this rule: when a single bullet carries three or more distinct claims, split it into separate bullets rather than leaving the reader to unpack one sentence. Leave **numbered** items intact — splitting one renumbers the items below it and silently breaks by-number references elsewhere; rewrite an overloaded one in place instead.
 4. **Prefer the direct form.** Active over passive where it reads naturally, concrete nouns over abstractions, the plain verb over a nominalized phrase ("decides" over "makes a decision").
 5. **Match the surrounding register.** Keep terminology and tone consistent with the neighboring prose; do not introduce a synonym for a term already used nearby.
-6. **Translate ordinary vocabulary; don't code-mix.** Decide each source-language word by the Preserve section's `Preserve-vs-translate litmus test`: translate ordinary vocabulary that has a natural target-language equivalent, and keep the source-language form only for the proper nouns / identifiers / code the litmus test preserves.
+6. **Translate ordinary vocabulary; don't code-mix.** Decide each source-language word by the Preserve section's `Preserve-vs-translate litmus test` — and a word rendered fully in the target language can fail it too.
 
-   A word rendered fully in the target language can fail the same test. Translating a source-language figure of speech word for word yields a term the reader can only decode by translating it back — it looks native but is not. Name what the thing does instead (for `ja`: `land`→「コミットされる」 not 「着地する」, `fall back to`→「〜として扱う」 not 「〜に倒す」, `run` as a noun→「実行」 not 「走行」, `closed list`→「決められた一覧」 not 「閉じたリスト」).
+   Translating a source-language figure of speech word for word yields a term the reader can only decode by translating it back — it looks native but is not. Name what the thing does instead (for `ja`: `land`→「コミットされる」 not 「着地する」, `fall back to`→「〜として扱う」 not 「〜に倒す」, `run` as a noun→「実行」 not 「走行」, `closed list`→「決められた一覧」 not 「閉じたリスト」).
 
 ## Cross-file duplicate comments (file mode, multiple files)
 
-This rule applies only when more than one file is polished in a single file-mode pass.
+When the **same non-obvious knowledge** recurs as a comment across the target files, emit one recommendation to consolidate it into a canonical location and remove the inline copies, instead of polishing each copy.
 
-When the **same non-obvious knowledge** — a *why* / rationale / workaround / constraint / precondition note — appears as a comment in **two or more** of the target files, treat it as a **consolidation candidate**, not an in-place polish target. Do not polish each copy individually: the correct fix is to consolidate the knowledge into one canonical location (a doc or rule file) and remove the inline copies.
+A comment qualifies only when **all** of these hold:
 
-A comment qualifies as a consolidation candidate only when **all** of these hold:
-
-- It carries **non-obvious knowledge** — a *why*: a constraint, an invariant, a workaround, a rationale, or a precondition. Pure *what*-narration does not qualify; General rule 2 (delete redundant *what*-narration) handles that, not consolidation.
-- The same knowledge appears in **two or more distinct files**. Repetition within a single file is ordinary restatement — handle it with General rule 3 (merge), not as a consolidation candidate.
+- It carries a *why* — a constraint, an invariant, a workaround, a rationale, or a precondition. Pure *what*-narration does not qualify.
+- The same knowledge appears in **two or more distinct files**. Repetition within a single file is ordinary restatement.
 - The copies match on **normalized near-equivalence**: ignore comment markers, surrounding whitespace, and trivial wording differences, then check that the comments express the same essential knowledge — not merely that they share a keyword.
 
-Exclusions — legitimately repeated content that is **never** a consolidation candidate: license / copyright headers, generated-code banners, trivial section dividers or labels, and pure *what*-narration comments.
+Exclusions — never candidates: license / copyright headers, generated-code banners, and trivial section dividers or labels.
 
-Judge conservatively: flag only clear same-knowledge duplication across files. When in doubt, treat the comment as ordinary prose and polish it normally rather than emitting a recommendation.
+Judge conservatively: flag only clear same-knowledge duplication across files. When in doubt, polish the comment as ordinary prose.
 
 ## Japanese (`ja`) — primary use case
 
@@ -61,15 +59,15 @@ Fix these patterns:
 
 1. **Machine-translation / literal-translation tone (機械翻訳調・直訳調)** — Drop English-syntax calques: leading "〜することによって", over-use of "〜において" / "〜に関して", and literal renderings of English connectives. Rephrase into the structure a native writer would choose.
 2. **Redundant politeness and modifiers (冗長な敬体・修飾)** — Trim redundant politeness scaffolding ("〜していただく必要があります" → "〜してください" where appropriate) and stacked modifiers that add no information.
-3. **Restatement removal (重複の除去)** — Remove restatement: a sentence that repeats the previous sentence's content with different words, or a parenthetical that duplicates the main clause. General rule 2's "state that *why* in one sentence" guidance applies to multi-line *why* comments here too (e.g. 「<ビルドツールの進捗表示>が全画面スクリーンショットに写り込みビジュアル回帰が非決定的に差分化するため、test 環境では開発インジケータを無効化する」→「スクショに影響するので test 環境では開発インジケータを無効化する」).
-4. **Technical-term handling (テクニカルターム)** — Apply the `Preserve-vs-translate litmus test`: keep genuine proper-noun terms and identifiers in their original form, and translate ordinary technical vocabulary that has a natural Japanese equivalent rather than code-mixing. On a proper-noun term's first use, a short Japanese gloss in parentheses may aid comprehension.
+3. **Restatement removal (重複の除去)** — Remove restatement: a sentence that repeats the previous sentence's content with different words, or a parenthetical that duplicates the main clause.
+4. **Technical-term handling (テクニカルターム)** — On a proper-noun term's first use, a short Japanese gloss in parentheses may aid comprehension.
 5. **Particle and word-order naturalness (助詞・語順)** — Fix unnatural particle choices and English-driven word order so the sentence flows as native Japanese.
 6. **Verbose politeness forms (丁寧語の過剰形)** — Where doing so does not change the meaning or nuance, shorten these over-long politeness constructions that large language models commonly produce:
-   - 「〜となります」 / 「〜となっております」 expressing a **static state** (not a transition) → 「〜です」 / 「〜できます」 (as appropriate) (e.g. 「デフォルト値となります」→「デフォルト値です」, 「可能となっております」→「できます」). Do **not** shorten these when they express a genuine state change (e.g. 「有効となります」= "becomes active").
+   - 「〜となります」 / 「〜となっております」 expressing a **static state** (not a transition) → 「〜です」 / 「〜できます」 (as appropriate) (e.g. 「デフォルト値となります」→「デフォルト値です」). Do **not** shorten these when they express a genuine state change (e.g. 「有効となります」= "becomes active").
    - 「〜させていただきます」 in contexts where the extra courtesy level is unnecessary → 「〜します」 / 「〜しました」. Do **not** simplify it in deliberate courtesy contexts such as apology or notification messages where a higher politeness level is appropriate.
    - 「〜のほう」 used as a meaningless filler (e.g. 「設定のほうを確認してください」) → delete 「のほう」 (「設定を確認してください」). Retain 「のほう」 when it carries comparative meaning (e.g. 「左のほうが速い」).
    - 「〜ということ」 chained redundantly → omit where the surrounding sentence remains clear without it.
-7. **Register consistency (敬体/常体の統一)** — Identify the register (敬体: です・ます調, or 常体: だ・である調) established by the surrounding prose and maintain it consistently throughout your rewrites. Do not mix the two within the same document or section. If the surrounding register cannot be determined, follow the register of the first complete sentence in the provided text.
+7. **Register consistency (敬体/常体の統一)** — Identify the register (敬体: です・ます調, or 常体: だ・である調) established by the surrounding prose and maintain it consistently throughout your rewrites. If the surrounding register cannot be determined, follow the register of the first complete sentence in the provided text.
 
 ## English (`en`) and other languages
 

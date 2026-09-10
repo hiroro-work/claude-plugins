@@ -2,6 +2,17 @@
 
 ## 2026-09-10
 
+### rules-review v1.8.4 / dev-workflow-bundle v2.13.5
+
+- refactor(rules-review): define the verdict mapping once, compress the reviewer prompt, and add a README
+  - The rule for when a synthetic entry (`(review failed)`, `(rule not evaluated — ...)`) blocks a clean verdict was stated at eight places. `## Return contract` now defines the entry classes and the status mapping once, and `## 6. Aggregate Results` points at it. The JSON schema and the `status` / `reason` value sets are unchanged, so callers that parse the verdict need no update.
+  - `rule-doc-drift` findings now always carry `Confidence: low-confidence` (previously unspecified for well-corroborated drift). Callers route on `Classification`, so no caller behavior changes.
+  - The reviewer prompt no longer names skill development as its application context — the `(for skill development: ...)` examples in three paragraphs violated the rule against context-fixed vocabulary in distributed bundle skills.
+  - `Model:` / `Files:` are defined in `## Usage` only; `## 1. Prepare` parses them by reference. `SKILL.md` shrinks from 28,695 to 20,888 chars, read once per `dev-workflow` run and again whenever Verify Fixes re-runs the check.
+  - The reviewer data-prep step now reuses the rule file content read while matching rules to changed files, instead of reading each rule file a second time.
+  - New `skills/rules-review/README.md` carries what the agent does not need at runtime: what the check does and does not cover, how `.examples.md` files are picked up, and what to do with a `rule-doc-drift` finding.
+  - Files: `skills/rules-review/SKILL.md`, `skills/rules-review/README.md`
+
 ### extract-rules v1.29.7 / dev-workflow-bundle v2.13.4
 
 - refactor(extract-rules): move Update / Restructure Mode into `references/`, split the report templates by mode, and add a README

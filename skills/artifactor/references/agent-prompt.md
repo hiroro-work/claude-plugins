@@ -1,6 +1,6 @@
 # Agent prompt
 
-The artifactor agent reads this file first, from the absolute path its first message gives under `--- INIT ---`; the main thread never reads it, except when it must draw the page itself (`SKILL.md` § Fallback). `<base dir>` is this skill's directory as the harness reports it; never hardcode it. § Contract is addressed to the agent. § Message sections says what the main thread puts in each message.
+The artifactor agent reads this file first, from the path `--- INIT ---` gives.
 
 ## Contract
 
@@ -31,11 +31,3 @@ last: <the highest # you worked in this run>
 ```
 
 `changed` is `yes` when any message in this run wrote, rewrote or dropped a section other than How this page was built, or created the page, or changed a first-line key other than `artifact_url:`.
-
-## Message sections
-
-`--- INIT ---`, first message to an agent only: the absolute path of this file; `create` or `exists` for the page; and, when this agent replaces a failed one, the content the failed one did not land.
-
-`--- PAGE ---`, in the first message and again whenever a value changes: the page's path; the first-line keys as they must read; the eyebrow label; the reader and what they already know; the register; the resolved language; and the sections in order — for each, its heading, what it holds, when it changes, and `text-only` when it draws no picture.
-
-`--- THIS TURN ---`, in every message: the log entry verbatim when the turn has one; what happened this turn — what was said, what was found, each fact beside the file path or URL it came from; and, when the main thread has decided them, the sections that change, each with whether it is written, rewritten or dropped, the claims it must make and the one sentence that carries its conclusion. Key rewrites, when any, are listed last.

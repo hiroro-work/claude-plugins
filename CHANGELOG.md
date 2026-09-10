@@ -2,6 +2,12 @@
 
 ## 2026-09-10
 
+### kabeuchi v3.0.1 / artifactor v1.1.1 / dev-workflow-bundle v2.13.6
+
+- **Ownership between kabeuchi and artifactor is now single-sited.** The spec of what the main thread puts in each `--- INIT ---` / `--- PAGE ---` / `--- THIS TURN ---` section moved out of `artifactor/references/agent-prompt.md` into `artifactor/SKILL.md` § Agent, which is the file the main thread reads; the reference is now the agent's contract alone. kabeuchi no longer restates artifactor's page contract, its landing and publish rules, or the sourcing rule, and its **spec** term points at artifactor's THIS TURN section instead of redefining it.
+- **kabeuchi resolves `language` through artifactor.** Its own byte-identical copy of the rule is gone. `Skill(artifactor) --caller` now loads at Procedure step 2, ahead of reader and language resolution at step 3, so the rule is in context on both the fresh and the `--resume` path.
+- **Startup read shrinks.** `kabeuchi/SKILL.md` 17,380 → 14,101 chars; `artifactor/SKILL.md` plus `references/agent-prompt.md` 16,946 → 14,972 chars.
+
 ### rules-review v1.8.4 / dev-workflow-bundle v2.13.5
 
 - refactor(rules-review): define the verdict mapping once, compress the reviewer prompt, and add a README

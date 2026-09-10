@@ -1,6 +1,6 @@
 # Timing
 
-Read from `SKILL.md` § Timing. The run keeps its own clock so a supervisor can see where a task spent its time, per phase, without reading session logs. Two scripts under `<base dir>/scripts/timing/` do the work; the workflow only calls them at fixed moments.
+Read from `SKILL.md` § Timing. Two scripts under `<base dir>/scripts/timing/` do the work; the workflow only calls them at the moments below.
 
 ## Events
 

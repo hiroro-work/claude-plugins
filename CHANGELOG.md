@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-09-11
+
+### dev-workflow v2.3.3 / dev-workflow-bundle v2.13.9
+
+- **Completion no longer deletes the decomposition state file.** Phase 19's cleanup step excluded only the plan file, so a run with subtasks still pending removed `.claude/plans/dev-workflow.<slug>.md` and the `--resume` command it had just printed pointed at nothing. Step 2 already deletes the file when the last subtask finishes; the cleanup step now leaves it alone in every case.
+- **`<base dir>` is defined at Load Settings.** Its only definition sat in `references/plan-approval.md`, read at Phase 5, while `timing.md` needs it on the run's first tool call and five other references use it. Phase 1 step 1 now carries the definition and `plan-approval.md` drops its copy.
+- **The fresh / stale decision for background reviews names its own test.** `review-launch.md` cited "Phase 9 step 5's comparison", which does not exist. § Launch now records `git diff <base-commit> --stat` after dispatch, and § Collect calls a result fresh when no fix round ran and the same command's output is unchanged.
+- **`review_fix_files` is initialized at Check / Test entry.** Phases 10 and 11 write it and Phase 12 branches on it, but nothing set it; a Trivial run, which skips both writers, reached Phase 12 with the variable undefined. The initialization sits in Phase 9 rather than Phase 10 because Phase 9 runs on every tier.
+- **`<tip>` is defined where the chain path uses it.** `commits.md` § Procedure step 6 now says `<tip>` = the ref's target; the only prior definition was inside `snapshots.md` § Absorb review fixes, on a path skipped when the residue is empty.
+- **The Update Rules gate says what "one side" means.** The reduced `proceed` / `skip` choice applies when only session-derived or only PR-derived phases are listed.
+- **Mob mode's five plan-review lenses are a main-thread read, not a reviewer scope.** `mob-mode.md` § Plan shape said Plan Review "reads this shape through five lenses", which contradicted the `normal` run mode's rules-only reviewer dispatch — and mob + `normal` is the default mob run. The reviewer dispatch now keeps the run mode's scope; Phase 4 step 3 applies the lenses on the main thread, as `SKILL.md` already described. The alternative — pinning mob's Plan Review to full scope — was not taken.
+- Sizes: `SKILL.md` 28,985 → 29,181 chars; `mob-mode.md` 13,024 → 13,108. Budgets unchanged.
+
 ## 2026-09-10
 
 ### dev-workflow v2.3.2 / dev-workflow-bundle v2.13.8

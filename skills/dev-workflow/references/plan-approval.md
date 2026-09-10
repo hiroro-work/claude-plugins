@@ -1,6 +1,6 @@
 # Plan approval surfaces
 
-Read from `SKILL.md` Phase 5 (Plan Approval) and from `plan-artifact.md` § Team-review gate. Unqualified `§` references point into this file. `<base dir>` is this skill's directory as the harness reports it; never hardcode it.
+Read from `SKILL.md` Phase 5 (Plan Approval) and from `plan-artifact.md` § Team-review gate. Unqualified `§` references point into this file.
 
 ## Files
 

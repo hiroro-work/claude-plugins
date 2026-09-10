@@ -33,7 +33,7 @@ Replaces `plan-format.md`'s sections at every tier (no compact shape). Headings 
 - `### How we'll check it works` — one line per check, each naming the Build order step it verifies.
 - `### Watch-outs` — optional; open points and risks. Omit when empty.
 
-Plan Review reads this shape through five lenses instead of `plan-format.md`'s criteria: structure (the five required headings, step and item forms); hidden choices (a step or ordering that rests on a fork the choices never name); coverage (every step reached by a check); plain enough to follow (could someone new predict each unit's diff?); cross-file consistency. The absence of Overview / Decisions / Test plan is never a finding. After applying findings, explain each briefly as "which lens this is". Never re-dispatch the reviewer, including Phase 4's approach-rewrite exception.
+In Plan Review the reviewer dispatch keeps the run mode's scope; step 3 then reads this shape on the main thread through five lenses instead of `plan-format.md`'s criteria: structure (the five required headings, step and item forms); hidden choices (a step or ordering that rests on a fork the choices never name); coverage (every step reached by a check); plain enough to follow (could someone new predict each unit's diff?); cross-file consistency. The absence of Overview / Decisions / Test plan is never a finding. After applying findings, explain each briefly as "which lens this is". Never re-dispatch the reviewer, including Phase 4's approach-rewrite exception.
 
 The browser gate composes the served copy from this plan; the figures layer always writes a `## Hero` block.
 

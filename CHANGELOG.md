@@ -2,6 +2,13 @@
 
 ## 2026-09-10
 
+### prose-polish v1.8.4 / dev-workflow-bundle v2.13.7
+
+- **The style guide is the single site for the preserve-vs-translate rule.** The two refactor prompts now name `references/prose-style-guide.md` § Preserve and its `Preserve-vs-translate litmus test` as binding instead of restating them. The guide is injected into the same dispatch payload in full and keeps every decision criterion — the four litmus checks, the Preserve bullets, and the seven `ja` patterns.
+- **`## Return contract` states each field once.** The per-`reason` "when to emit" list is gone: the enum lives in the schema, and each condition lives with the step that raises it. The JSON schema, the three `status` values, and the six `reason` values are unchanged, so callers that parse the verdict need no update.
+- **`recommendations` is defined in the file-mode dispatch prompt and `## Return contract`.** The field, its shape validation, and its independence from `status` are unchanged.
+- **Startup read shrinks.** `SKILL.md` 20,595 → 14,597 chars; `references/prose-style-guide.md` 11,520 → 8,687 chars. Both are read on every invocation, and the guide is also injected into the refactor dispatch in full.
+
 ### kabeuchi v3.0.1 / artifactor v1.1.1 / dev-workflow-bundle v2.13.6
 
 - **Ownership between kabeuchi and artifactor is now single-sited.** The spec of what the main thread puts in each `--- INIT ---` / `--- PAGE ---` / `--- THIS TURN ---` section moved out of `artifactor/references/agent-prompt.md` into `artifactor/SKILL.md` § Agent, which is the file the main thread reads; the reference is now the agent's contract alone. kabeuchi no longer restates artifactor's page contract, its landing and publish rules, or the sourcing rule, and its **spec** term points at artifactor's THIS TURN section instead of redefining it.

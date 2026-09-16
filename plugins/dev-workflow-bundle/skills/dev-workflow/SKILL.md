@@ -86,7 +86,7 @@ Phase starts, ends, and waits are marked per `references/timing.md`; Completion 
 
 ## Workflow artifacts
 
-Files this workflow writes as its own state are excluded from every diff, review payload, and commit: `.claude/plans/<slug>.md` (the plan), `.claude/plans/dev-workflow.<slug>.md` (decomposition state), `.claude/plans/rules-candidates-<date>.md`, `.claude/plans/timing-*.jsonl`, every other `.claude/plans/<slug>.*` staging file or directory (`.plan-review.*`, `.figures.md`, `.artifact.html`, `.absorb/`, `.retrospective.md`), and the git-side state `refs/dev-workflow/<slug>*`, `.git/dev-workflow.index`, `.git/dev-workflow-wt`. Everything else under the working tree is the task's.
+Files this workflow writes as its own state are excluded from every diff, review payload, and commit: `.claude/plans/<slug>.md` (the plan), `.claude/plans/dev-workflow.<slug>.md` (decomposition state), `.claude/plans/rules-candidates-<date>.md`, `.claude/plans/timing-*.jsonl`, every other `.claude/plans/<slug>.*` staging file or directory (`.plan-review.*`, `.figures.md`, `.artifact.html`, `.absorb/`, `.retrospective.md`), and the git-side state `refs/dev-workflow/<slug>*`, `.git/dev-workflow.index`, `.git/dev-workflow.start.index`, `.git/dev-workflow-wt`. Everything else under the working tree is the task's.
 
 ## Mode detection
 
@@ -100,7 +100,15 @@ This skill's procedure dispatches subagents, so invoking the skill **is** the re
 
 1. Run `pwd`; confirm the repository root. Abort if `git symbolic-ref -q HEAD` exits non-zero (detached HEAD). `<base dir>` = this skill's directory as the harness reports it; never hardcode it.
 2. Start the timing log (`references/timing.md` § Events, `--event start --new` for this phase).
-3. Record `<base-commit>` = `git rev-parse HEAD`. Every later diff is against it. Note whether `test -d .git` succeeds; when it does not (a linked worktree), the snapshot chain of `references/snapshots.md` is not built this run.
+3. Record `<base-commit>` = `git rev-parse HEAD`. Every later diff is against it. Note whether `test -d .git` succeeds; when it does not (a linked worktree), the snapshot chain of `references/snapshots.md` is not built this run and no `<start-tree>` is recorded. When it does, record `<start-tree>` = the working tree as it stands, in a throwaway index:
+
+   ```bash
+   GIT_INDEX_FILE=.git/dev-workflow.start.index git read-tree HEAD
+   GIT_INDEX_FILE=.git/dev-workflow.start.index git add -A
+   GIT_INDEX_FILE=.git/dev-workflow.start.index git write-tree          # → <start-tree>
+   ```
+
+   A non-zero exit anywhere records no `<start-tree>`: say so in one line and continue.
 4. Load and merge the settings; resolve the run mode, the `--artifact` override, and `mode`; emit `Output language: <value>`, `Run mode: <value>`, and `Mode: <value>`. In mob mode, read `references/mob-mode.md` now; in solo mode never open it.
 5. Register the nineteen phases with `TaskCreate`, subjects = the `## Phase N:` headings below minus the prefix. Mark each `in_progress` on entry and `completed` on exit in the same tool-call burst as the phase's first or last action. Mark the phases skipped by settings or run mode `completed` here; tier-derived skips are marked at Task Decomposition.
 

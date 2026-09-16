@@ -128,6 +128,8 @@ Candidates: 2
    - **Canonical writes** (existing items + items promoted from staging in 3 (ii)): use the same format as Step 6 in the main SKILL.md (see Format guidelines).
    - **Staging writes** (new project-level items per 3 (iii)): append to `<staging_output_dir>/project.staging.local.md`'s `## Project-specific patterns` section. Create the file (and any missing parent directories under `staging_output_dir`) when absent — the file body uses the template under § Staging file body template below.
 
+   **Write record**: for every bullet appended or promoted here, record the file's absolute path, the bullet line verbatim, and which § Report format (Step C5 item 8) section will list it. Item 6's `.examples.md` writes are not recorded. This record is the Audit Pass's target set (`references/audit-pass.md` § What the pass judges).
+
    **Move atomicity** (for promoted items): the order is (a) canonical append, (b) verify canonical write succeeded, (c) staging delete in item 5. Failures past (a) leave the canonical entry intact and either retry or leave a duplicate (next session's canonical-match skip resolves it).
 
 5. **Delete promoted staging entries**: for each item promoted in 3 (ii), `Edit` `<staging_output_dir>/project.staging.local.md` to remove the matched bullet. Construct `old_string` to include the target bullet line plus 1 surrounding line above and 1 below for uniqueness. If `Edit` fails because the resulting `old_string` is still not unique due to a concurrent edit or near-identical neighbors, leave the duplicate — next session's canonical-match skip resolves it. Staging file is never deleted as a whole even if the last entry is promoted (empty `## Project-specific patterns` section is acceptable).
@@ -136,7 +138,7 @@ Candidates: 2
 
 7. Run Security Self-Check (same as Step 6.5 in the main SKILL.md) on updated files, **including the staging file** if any new staging append landed in item 4 OR any staging-delete edit landed in item 5. Also read `references/security.md`.
 
-8. Return a summary including `canonical_skip_count`, `promoted_count`, `staged_count`, and `stale_flagged_count` (when non-zero). See § Report format (Step C5 item 8).
+8. Return a summary including `canonical_skip_count`, `promoted_count`, `staged_count`, and `stale_flagged_count` (when non-zero). See § Report format (Step C5 item 8). Return item 4's write record with it, unrendered — the caller hands it to the Audit Pass, and an empty record means the pass has nothing to judge.
 
 ## Staging file body template
 

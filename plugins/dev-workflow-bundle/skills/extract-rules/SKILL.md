@@ -332,7 +332,8 @@ Read `references/update-mode.md` for the full processing steps (U1-U6); re-read 
 2. Re-scan the codebase (Step 2-5 of Full Extraction Mode)
 3. Staleness check on existing project-specific patterns
 4. Compare, merge, and append new rules; promote staging matches
-5. Security Self-Check, then report
+5. Security Self-Check
+6. Audit Pass over what was written, then report
 
 ---
 
@@ -387,7 +388,7 @@ Include in the agent prompt:
 - `staging_files`: list of existing staging file paths for staging-match detection — include the project-level staging file under `staging_output_dir` (gating is scoped to project-level patterns)
 - The subagent instructions from `references/conversation-mode.md`
 
-After the subagent completes, report the results to the user.
+After the subagent completes, run the Audit Pass over the write record it returned, then report the results to the user.
 
 ---
 
@@ -405,7 +406,7 @@ The input candidate file conforms to `references/conversation-mode.md` § Rule-c
 
 ### Step A2: Apply via Step C5 (main agent)
 
-Execute `references/conversation-mode.md` § Step C5 with the Step A1 candidate list standing in for C4's in-context extracted items, running **directly in the main agent** (no subagent — see the mode intro above). Step C5 item 1 resolves `canonical_files` / `staging_files` from settings directly (no prompt boundary). Step C5 then performs dedup / routing / staging append+promote / `.examples.md` generation (mined from the codebase per `references/examples-format.md`) / Security Self-Check, and returns its counter summary. Report to the user using the `references/conversation-mode.md` § Report format (Step C5 item 8) template, reused as-is (its `### Promoted from staging` / `### Newly staged` / `### No changes` subsections apply unchanged) — no new template section is added.
+Execute `references/conversation-mode.md` § Step C5 with the Step A1 candidate list standing in for C4's in-context extracted items, running **directly in the main agent** (no subagent — see the mode intro above). Step C5 item 1 resolves `canonical_files` / `staging_files` from settings directly (no prompt boundary). Step C5 then performs dedup / routing / staging append+promote / `.examples.md` generation (mined from the codebase per `references/examples-format.md`) / Security Self-Check, and returns its counter summary. Run the Audit Pass (`## Audit Pass` below) over Step C5's write record — its own subagent dispatch is separate from Step C5's no-subagent execution described above. Then report to the user using the `references/conversation-mode.md` § Report format (Step C5 item 8) template, reused as-is (its `### Promoted from staging` / `### Newly staged` / `### No changes` subsections apply unchanged) — the only section added to it is the audit's verdict section, per `references/audit-pass.md` § Report format.
 
 ---
 
@@ -451,6 +452,23 @@ Read `references/pr-review-mode.md` for the full processing steps (P1-P5). Key f
 4. Extract principles and patterns (same criteria as `references/extraction-criteria.md`)
 5. **Multiple PRs**: Cross-PR frequency analysis — general best practices that are repeatedly pointed out across different PRs are promoted as organizational emphasis (reframed with specific application context, not just restated)
 6. Append to existing rule files and update `.examples.md` (same as Step C5)
+7. Audit Pass over what was written
+
+---
+
+## Audit Pass
+
+Every incremental mode — Conversation Extraction, Conversation Candidate Apply, Update, and PR Review — runs this pass once its writes have landed, with no flag of its own. It re-judges the entries **that run wrote** against `references/extraction-criteria.md`, from an analysis subagent that is given the written entries and the criteria and is barred from reading the run's input. Never fold the pass back into the dispatch that wrote the entries.
+
+Read `references/audit-pass.md` for the full procedure. Key flow:
+
+1. Take the target entries from the write record the calling mode's write step kept; an empty record reports one line and returns
+2. Dispatch one analysis subagent and parse its fenced JSON verdict
+3. Apply the accepted `mechanical_edits` and follow through on the affected `.examples.md` entries
+4. Security Self-Check on every file the pass wrote
+5. Append the verdict section to the calling mode's report per `references/audit-pass.md` § Report format
+
+The four modes named above are the closed list. Full Extraction, Restructure, Compaction, and Realign do not run it; `--realign` is the way to put their output through the same criteria, over whatever an operator names. A parse failure or a schema violation leaves the run's writes as the extraction made them and is named in the report.
 
 ---
 

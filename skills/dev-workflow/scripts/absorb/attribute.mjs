@@ -3,14 +3,19 @@
 // commits that last touched the affected lines, and write one patch per target.
 //
 // Usage: node attribute.mjs --base <sha> --tip <sha> --out <dir> [--repo <path>]
+//                           [--start-tree <tree>]
 // Output (stdout, one JSON object):
 //   { "targets": [{ "commit": "<sha>", "subject": "...", "patch": "<path>", "hunks": n }],
 //     "trailing": { "patch": "<path>", "hunks": n } | null,
+//     "excluded": ["<path>"],
 //     "residue_files": n }
 // Attribution is per file when every hunk of the file agrees, per hunk otherwise.
 // Patches are zero-context: apply them with `git apply --unidiff-zero`.
 // Hunks nobody in the chain can own (lines from the base commit, new files no
 // chain commit touched, binary or renamed files) go to the trailing patch.
+// With --start-tree, a file no chain commit wrote whose content still matches that
+// tree changed before the run and is skipped whole: it lands in "excluded", in no
+// patch, and outside "residue_files".
 
 import { execFileSync } from "node:child_process";
 import { mkdirSync, writeFileSync } from "node:fs";
@@ -21,6 +26,7 @@ const repo = args.repo ?? process.cwd();
 const base = required("base");
 const tip = required("tip");
 const outDir = required("out");
+const startTree = "start-tree" in args ? required("start-tree") : null;
 
 const chain = git(["rev-list", "--reverse", `${base}..${tip}`]).split("\n").filter(Boolean);
 const rank = new Map(chain.map((sha, i) => [sha, i]));
@@ -28,13 +34,16 @@ const subjects = new Map(chain.map((sha) => [sha, git(["log", "-1", "--format=%s
 
 // Zero context: every change is its own hunk, so two edits in one file can go to two
 // different snapshot commits. Patches therefore apply with `git apply --unidiff-zero`.
-const diff = gitRaw(["diff", "--no-color", "--no-ext-diff", "-U0", "--no-renames", tip]); // keep the final newline: hunks need it
+const diff = gitRaw(["-c", "core.quotePath=false", "diff", "--no-color", "--no-ext-diff", "-U0", "--no-renames", tip]); // keep the final newline: hunks need it
 const files = splitFiles(diff);
 
 const byTarget = new Map(); // sha -> { header, hunks: [] }
 const trailing = { hunks: [] }; // entries: { header, body }
+const excluded = startTree ? unchangedSince(startTree, files) : [];
+const excludedSet = new Set(excluded);
 
 for (const file of files) {
+  if (excludedSet.has(file.path)) continue;
   if (file.binary) {
     trailing.hunks.push({ header: file.header, body: file.raw });
     continue;
@@ -85,7 +94,7 @@ if (trailing.hunks.length) {
   trailingOut = { patch, hunks: trailing.hunks.length };
 }
 
-process.stdout.write(JSON.stringify({ targets, trailing: trailingOut, residue_files: files.length }) + "\n");
+process.stdout.write(JSON.stringify({ targets, trailing: trailingOut, excluded, residue_files: files.length - excluded.length }) + "\n");
 
 // --- helpers -----------------------------------------------------------------
 
@@ -126,7 +135,7 @@ function splitFiles(text) {
     const pathMatch = /^\+\+\+ (?:b\/(.*)|\/dev\/null)$/m.exec(header);
     const minusMatch = /^--- (?:a\/(.*)|\/dev\/null)$/m.exec(header);
     const isDeleted = pathMatch && pathMatch[1] == null;
-    const path = isDeleted ? minusMatch?.[1] : pathMatch?.[1];
+    const path = (isDeleted ? minusMatch?.[1] : pathMatch?.[1])?.replace(/\t$/, "") ?? pathFromGitLine(header);
     const binary = /^Binary files /m.test(raw) || /^GIT binary patch/m.test(raw) || headerEnd === -1;
     const isNew = /^new file mode/m.test(header) || (minusMatch && minusMatch[1] == null);
     const hunks = [];
@@ -144,6 +153,16 @@ function splitFiles(text) {
   return out;
 }
 
+// A binary or mode-only diff carries no `---` / `+++` line to read the path from. Under
+// --no-renames both halves of the `diff --git` line are the same path, so solve for it.
+function pathFromGitLine(header) {
+  const m = /^diff --git (.*)$/m.exec(header);
+  if (!m || m[1].startsWith('"') || m[1].length % 2 === 0) return "";
+  const half = (m[1].length - 1) / 2;
+  const a = m[1].slice(0, half).slice(2);
+  return a === m[1].slice(half + 1).slice(2) ? a : "";
+}
+
 function gitRaw(argv) {
   try {
     return execFileSync("git", ["-C", repo, ...argv], { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
@@ -151,6 +170,17 @@ function gitRaw(argv) {
     process.stderr.write(`git ${argv.join(" ")} failed: ${err.stderr ?? err.message}\n`);
     process.exit(1);
   }
+}
+
+// Residue paths no chain commit wrote that still hold the content they had when the run began.
+// Two diffs over the residue paths only, so the rest of the working tree is never walked.
+function unchangedSince(tree, files) {
+  const paths = [...new Set(files.map((f) => f.path).filter(Boolean))];
+  if (!paths.length) return [];
+  const names = (argv) => new Set(git(argv).split("\0").filter(Boolean));
+  const changed = names(["-c", "core.quotePath=false", "diff", "--name-only", "-z", "--no-renames", tree, "--", ...paths]);
+  const touched = names(["-c", "core.quotePath=false", "diff", "--name-only", "-z", "--no-renames", base, tip, "--", ...paths]);
+  return paths.filter((path) => !changed.has(path) && !touched.has(path));
 }
 
 function git(argv, tolerate = false) {

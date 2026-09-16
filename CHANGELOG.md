@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-09-16
+
+### dev-workflow v2.3.4 / dev-workflow-bundle v2.13.10
+
+- **The crit gate says what happens to a comment on the chain path.** Category: missing-branch. `crit-gate.md` ended a commented round with "the commit stays pending and is rebuilt and re-reviewed", which three callers share — but on the commit gate's chain path the candidate is an existing snapshot commit that editing the tree cannot change, and no rebuild procedure existed for it. That path now joins the rule `commits.md` § Procedure step 7 already applies to the same situation at the chat gate: the applied edits land in the post-commit extra commit of Interactive Commits, and the new round opens on the same candidate. The cohesion path and mob mode's unit review read the shared sentence unchanged.
+- **Changes that predate the run stay out of the commits.** Category: missing-branch. The absorb procedure derived its residue from the whole working tree, so a tracked file another task had already edited, or an untracked file already sitting there, reached `attribute.mjs`, found no owner in the chain, and landed in a commit labelled `review fixes` — visible at the commit gate, but needing the plan rebuilt by hand every time. Load Settings now records the working tree as it stood when the run began, and the absorb procedure leaves out every residue file no step wrote whose content still matches it. `attribute.mjs` gains a `--start-tree` option and reports what it left out in a new `excluded` field, so callers reading its JSON see one more key. A file that was already dirty *and* edited by the task is not split — it lands whole in its step's commit.
+- Sizes: `SKILL.md` 29,181 → 29,662 chars, and its budget 29,200 → 29,800 to pay for the Load Settings block. `crit-gate.md` 3,888 → 4,115; the conditionally-read and reference-tree budgets are unchanged.
+
 ## 2026-09-11
 
 ### dev-workflow v2.3.3 / dev-workflow-bundle v2.13.9

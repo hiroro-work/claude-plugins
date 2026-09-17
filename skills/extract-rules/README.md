@@ -35,6 +35,14 @@ Two consequences:
 - A staged candidate you already believe in can be moved into `.local.md` by hand rather than waiting for a re-observation.
 - Deleting `output_dir` and re-running a full extraction leaves the staging file untouched, because it lives outside `output_dir`. The next incremental run will promote those candidates against the rebuilt canonical. Delete the staging directory by hand first when the staged candidates no longer apply.
 
+## Audit after an incremental run
+
+Every incremental run (`--from-conversation`, `--from-pr`, `--update`) ends by reading back what it just wrote and judging it again against the extraction criteria. The judgement is made by a separate analysis pass that never sees the conversation, the PR comments, or the code the run scanned — only the written rule text. That is the one reading under which the criteria's exit test works: a rule that only makes sense to someone who remembers the session it came from fails it.
+
+The pass drops, splits, or trims what no longer qualifies, and lists every such entry with its reason at the end of the run's report. It never touches rules written before the run — `--realign` is for those.
+
+There is no setting to turn it off, and it never asks for confirmation, so a run invoked from an automated workflow behaves the same as an interactive one. Review its report before committing if you want the last word on a drop.
+
 ## Relationship with merge-rules and apply-rules
 
 `merge-rules` promotes a project-specific pattern to a Principle across projects: the bullet `` `useAuth() → { user, login, logout }` - auth hook interface `` becomes the Principle `Auth hook interface (useAuth)`, and its example moves from `## Project-specific Examples` to `## Principles Examples` under the converted name.

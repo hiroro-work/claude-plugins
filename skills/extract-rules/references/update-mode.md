@@ -61,10 +61,15 @@ For each extracted principle/pattern:
 6. Maintain file structure and formatting
 7. **Update `.examples.md`**: Resolve the target path via `examples_output_dir` (`<examples_output_dir>/<name>.examples.md`). Create the file (and any missing parent directories under `examples_output_dir`) when absent. Follow the common generation procedure in `references/examples-format.md` to add examples for each new rule. Promotes from staging (item 8) count as canonical writes and get an entry too.
 8. **Promote staging matches** (project-level patterns flagged in Step U4): append each to `<output_dir>/project.md` per item 5, then delete the matched staging bullet — move atomicity and the staging-delete failure disposition are `references/conversation-mode.md` § Step C5 items 4–5.
+9. **Write record**: keep one per bullet written in items 1–5 (a newly created category file's bullets from item 1 included) or promoted in item 8, in the shape `references/conversation-mode.md` § Step C5 item 4's **Write record** paragraph defines. Item 7's `.examples.md` writes are not recorded.
 
 ### Step U5.5: Security Self-Check
 
 Run Security Self-Check (same as Step 6.5) on new/updated files, **including the staging file** if any staging-delete edits landed in Step U5 (the staging file was rewritten by the staging-delete `Edit`).
+
+### Step U5.7: Audit Pass
+
+Run `SKILL.md` § Audit Pass over Step U5's write record, per `references/audit-pass.md`. Its verdict section joins the Step U6 report.
 
 ### Step U6: Report Changes
 

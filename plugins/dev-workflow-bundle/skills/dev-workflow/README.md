@@ -75,7 +75,7 @@ check_commands:
   - "pnpm run typecheck"
 test_commands:
   - "Skill(run-tests)"        # Skill(<name>) entries only
-plan_artifact: "off"          # off | share | review; --artifact overrides
+plan_artifact: "off"          # off | share | review; publishes the plan plus the exchange that shaped it; --artifact overrides
 commit_review_gate: "diff"    # diff | crit
 custom_instructions: "Always use TDD."   # optional; rules and explicit requests win
 subagent_model:              # default {trivial: sonnet, simple: sonnet}; other tiers inherit

@@ -2,6 +2,8 @@
 
 Read from `SKILL.md` Phase 5 (Plan Approval) and from `plan-artifact.md` § Team-review gate. Unqualified `§` references point into this file.
 
+When the resolved `plan_artifact` is not `off`, either gate says in one line, before it waits, that approving publishes the plan and the exchange that shaped it as a shared page.
+
 ## Files
 
 All under `.claude/plans/`, all workflow artifacts: `<slug>.plan-review.md` (served copy = the plan plus figures), `<slug>.plan-review.prev.md` (previous served copy), `<slug>.figures.md`, and, written by the viewer, `<slug>.plan-review.comments.json`, `<slug>.plan-review.thread.json` (the workflow fills only `reply` and `disposition` in it), `<slug>.plan-review.url`. The canonical plan is never written from the served copy.

@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-09-19
+
+### dev-workflow v2.5.0 / dev-workflow-bundle v2.17.0
+
+- **The published Conversation history now says who said what.** Each item names whether it came from the person running the workflow or from the assistant, and the person's own words are quoted — one or two sentences, a longer turn cut with an ellipsis. A reader who was not in the room can now tell which side raised a decision, not only that it was made.
+- **Questions that changed nothing are kept.** The record covers every exchange while the plan was being made, because what someone did not yet understand is part of what a reader came to see. Credentials and talk unrelated to the task stay out.
+- **The record is written from what was said, not from memory.** Two sources feed it: the session log, read on every run now rather than only after a compaction, and the gate comment files, which hold wording the log never sees. `session-text.mjs` no longer passes off harness-injected text — slash-command expansions, injected skill bodies, reminders, hook feedback, task notifications — as something a person said, so a caller quoting a `user` line quotes a person.
+
 ## 2026-09-18
 
 ### dev-workflow v2.4.0 / dev-workflow-bundle v2.16.0

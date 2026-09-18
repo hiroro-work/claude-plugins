@@ -29,7 +29,7 @@ Merge rules per key, in order: `null` or an empty value in a higher layer clears
 | `check_commands` | none | Shell commands (lint / format / typecheck), run in order |
 | `test_commands` | `["Skill(run-tests)"]` | `Skill(<name>)` entries, run in order |
 | `hooks.on_complete` | none | `Skill(<name>)` or shell command strings, run as Completion Hooks |
-| `plan_artifact` | `off` | `off` / `share` / `review`: publish the approved plan, and the exchange that shaped it, as a claude.ai artifact; `review` also waits for the team's comments. `--artifact` overrides per run |
+| `plan_artifact` | `off` | `off` / `share` / `review`: publish the approved plan as a claude.ai artifact, along with the exchange that shaped it, quoting the person's own words; `review` also waits for the team's comments. `--artifact` overrides per run |
 | `commit_review_gate` | `diff` | `diff` / `crit`: how each commit's diff is shown at Interactive Commits. `crit` opens the crit browser reviewer |
 | `mode` | `solo` | `solo` / `mob`. `mob` is the learning-oriented run for a junior navigator: same phases and gates, plus the stops and narration `references/mob-mode.md` defines. `--mob` sets it for one run |
 | `self_retrospective.feedback` | none | Where Self-Retrospective posts its Findings: GitHub `owner/repo`, or a local directory path. Unset skips the phase |

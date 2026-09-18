@@ -149,7 +149,7 @@
       "skills": [
         "./"
       ],
-      "version": "2.4.0",
+      "version": "2.5.0",
       "author": {
         "name": "hiropon"
       },
@@ -170,7 +170,7 @@
         "./skills/kabeuchi",
         "./skills/artifactor"
       ],
-      "version": "2.16.0",
+      "version": "2.17.0",
       "author": {
         "name": "hiropon"
       },

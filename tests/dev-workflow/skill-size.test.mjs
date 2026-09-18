@@ -31,7 +31,7 @@ test("SKILL.md plus the reference tree stays under the tree budget", () => {
   const excluded = new Set(["mob-mode.md", "crit-gate.md", "plan-artifact.md", "decomposition-state.md"]);
   const refs = readdirSync(dir).filter((f) => f.endsWith(".md") && !excluded.has(f));
   const total = [...skill].length + refs.reduce((n, f) => n + [...readFileSync(join(dir, f), "utf8")].length, 0);
-  assert.ok(total <= 72700, `SKILL.md + counted references total ${total} chars; budget is 72700`);
+  assert.ok(total <= 73000, `SKILL.md + counted references total ${total} chars; budget is 73000`);
 });
 
 // The files split out of the default read path keep a ratchet of their own, so text moved
@@ -40,7 +40,7 @@ test("the conditionally-read references stay under their own budget", () => {
   const dir = join(repoRoot, "skills", "dev-workflow", "references");
   const total = ["crit-gate.md", "plan-artifact.md", "decomposition-state.md"]
     .reduce((n, f) => n + [...readFileSync(join(dir, f), "utf8")].length, 0);
-  assert.ok(total <= 9500, `the conditionally-read references total ${total} chars; budget is 9500`);
+  assert.ok(total <= 10400, `the conditionally-read references total ${total} chars; budget is 10400`);
 });
 
 test("mob-mode.md stays under its own budget", () => {

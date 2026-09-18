@@ -29,7 +29,7 @@ Merge rules per key, in order: `null` or an empty value in a higher layer clears
 | `check_commands` | none | Shell commands (lint / format / typecheck), run in order |
 | `test_commands` | `["Skill(run-tests)"]` | `Skill(<name>)` entries, run in order |
 | `hooks.on_complete` | none | `Skill(<name>)` or shell command strings, run as Completion Hooks |
-| `plan_artifact` | `off` | `off` / `share` / `review`: publish the approved plan as a claude.ai artifact; `review` also waits for the team's comments. `--artifact` overrides per run |
+| `plan_artifact` | `off` | `off` / `share` / `review`: publish the approved plan, and the exchange that shaped it, as a claude.ai artifact; `review` also waits for the team's comments. `--artifact` overrides per run |
 | `commit_review_gate` | `diff` | `diff` / `crit`: how each commit's diff is shown at Interactive Commits. `crit` opens the crit browser reviewer |
 | `mode` | `solo` | `solo` / `mob`. `mob` is the learning-oriented run for a junior navigator: same phases and gates, plus the stops and narration `references/mob-mode.md` defines. `--mob` sets it for one run |
 | `self_retrospective.feedback` | none | Where Self-Retrospective posts its Findings: GitHub `owner/repo`, or a local directory path. Unset skips the phase |
@@ -86,7 +86,7 @@ Phase starts, ends, and waits are marked per `references/timing.md`; Completion 
 
 ## Workflow artifacts
 
-Files this workflow writes as its own state are excluded from every diff, review payload, and commit: `.claude/plans/<slug>.md` (the plan), `.claude/plans/dev-workflow.<slug>.md` (decomposition state), `.claude/plans/rules-candidates-<date>.md`, `.claude/plans/timing-*.jsonl`, every other `.claude/plans/<slug>.*` staging file or directory (`.plan-review.*`, `.figures.md`, `.artifact.html`, `.absorb/`, `.retrospective.md`), and the git-side state `refs/dev-workflow/<slug>*`, `.git/dev-workflow.index`, `.git/dev-workflow.start.index`, `.git/dev-workflow-wt`. Everything else under the working tree is the task's.
+Files this workflow writes as its own state are excluded from every diff, review payload, and commit: `.claude/plans/<slug>.md` (the plan), `.claude/plans/dev-workflow.<slug>.md` (decomposition state), `.claude/plans/rules-candidates-<date>.md`, `.claude/plans/timing-*.jsonl`, every other `.claude/plans/<slug>.*` staging file or directory (`.plan-review.*`, `.figures.md`, `.artifact.html`, `.dialogue.md`, `.absorb/`, `.retrospective.md`), and the git-side state `refs/dev-workflow/<slug>*`, `.git/dev-workflow.index`, `.git/dev-workflow.start.index`, `.git/dev-workflow-wt`. Everything else under the working tree is the task's.
 
 ## Mode detection
 

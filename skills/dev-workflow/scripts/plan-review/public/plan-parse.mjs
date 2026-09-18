@@ -34,11 +34,16 @@ export const sectionOfBlockId = (id, decisionsSectionId) => {
 const HTML_ESCAPES = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" };
 export const escapeHtml = (t) => (t || "").replace(/[&<>"]/g, (c) => HTML_ESCAPES[c]);
 
-// One rule for every line walk in this file that has to know whether it is inside a fence.
-const FENCE_RE = /^\s*(`{3,}|~{3,})/;
+// One rule for every line walk that has to know whether it is inside a fence.
+export const FENCE_RE = /^\s*(`{3,}|~{3,})/;
 
-// Match-priority order. Prefixes come from plan-format.md and mob-mode.md § Plan shape;
-// keep in sync both ways — a heading renamed upstream silently all-collapses that plan.
+// The title the exporter appends its conversation-history section under. Held here so the
+// entry below matches whatever the exporter writes.
+export const DIALOGUE_TITLE = "Conversation history";
+
+// Match-priority order. Prefixes come from plan-format.md and mob-mode.md § Plan shape, except
+// the `dialogue` entry, which the exporter owns through DIALOGUE_TITLE above; keep in sync both
+// ways — a heading renamed upstream silently all-collapses that plan.
 // Each prefix stops short of an apostrophe, so straight vs. curly quotes cannot break it.
 const SECTION_TYPES = [
   { type: "overview", match: ["overview", "what we"], open: true },
@@ -48,7 +53,9 @@ const SECTION_TYPES = [
   { type: "test", match: ["test plan", "test", "how we"] },
   { type: "risks", match: ["risk", "unknown", "watch-out"] },
   { type: "context", match: ["context"], open: true },
+  { type: "dialogue", match: [DIALOGUE_TITLE.toLowerCase()] },
 ];
+
 export const OPEN_TYPES = new Set(SECTION_TYPES.filter((s) => s.open).map((s) => s.type));
 export const STEP_COLLAPSE_TYPES = new Set(SECTION_TYPES.filter((s) => s.collapseSteps).map((s) => s.type));
 

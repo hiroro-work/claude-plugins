@@ -16,10 +16,13 @@
  * Usage:
  *   node export-plan-html.mjs --plan <path.md> --out <path.html>
  *                             [--lang <ja|en>] [--title <text>] [--standalone]
+ *                             [--dialogue <path.md>]
  *
  * --plan   the Markdown to render. Figures are merged into it beforehand by whoever
  *          composes the served copy (references/visual-plan-review.md § Figures layer
  *          owns the insertion positions), never re-derived here.
+ * --dialogue  the exchange that shaped the plan, appended as a trailing section. The section
+ *          classifier gives its title a collapsed section, so the plan body reads as before.
  * --lang   language of the page's own generated text. UI chrome stays English. Default en.
  * --title  the page's <title>. Defaults to the plan's slug — a name, never a summary.
  *
@@ -34,7 +37,7 @@ import { parseArgs } from "node:util";
 
 // plan-parse.mjs is DOM-free at module scope, so Node can import it — no second escaping
 // table here.
-import { escapeHtml, stripFrontmatter } from "./public/plan-parse.mjs";
+import { DIALOGUE_TITLE, FENCE_RE, escapeHtml, inferSectionLevel, stripFrontmatter } from "./public/plan-parse.mjs";
 
 const log = (...args) => console.error(...args);
 const die = (msg) => { log(`error: ${msg}`); process.exit(1); };
@@ -48,6 +51,7 @@ try {
       lang: { type: "string" },
       title: { type: "string" },
       standalone: { type: "boolean", default: false },
+      dialogue: { type: "string" },
     },
   }));
 } catch (err) {
@@ -64,6 +68,27 @@ try {
   planMarkdown = stripFrontmatter(readFileSync(planPath, "utf8"));
 } catch (err) {
   die(`cannot read plan file ${planPath}: ${err.message}`);
+}
+
+if (opts.dialogue) {
+  // Never fatal: a page without the history beats no page at all.
+  let dialogue = "";
+  try {
+    dialogue = stripFrontmatter(readFileSync(resolve(opts.dialogue), "utf8")).trim();
+    if (!dialogue) log(`warning: no conversation history: ${opts.dialogue} is empty`);
+  } catch (err) {
+    log(`warning: no conversation history at ${opts.dialogue}: ${err.message}`);
+  }
+  if (dialogue) {
+    // A heading at the plan's own level would split the plan into another section.
+    let inFence = false;
+    const body = dialogue.split(/\r?\n/).map((line) => {
+      if (FENCE_RE.test(line)) { inFence = !inFence; return line; }
+      return inFence ? line : line.replace(/^#{1,6}\s+(.*)$/, "**$1**");
+    }).join("\n");
+    const hashes = "#".repeat(inferSectionLevel(planMarkdown.split(/\r?\n/)));
+    planMarkdown = `${planMarkdown.trimEnd()}\n\n${hashes} ${DIALOGUE_TITLE}\n\n${body}\n`;
+  }
 }
 
 const lang = opts.lang === "ja" ? "ja" : "en";

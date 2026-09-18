@@ -8,6 +8,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  DIALOGUE_TITLE,
   OPEN_TYPES,
   STEP_COLLAPSE_TYPES,
   anchorMatches,
@@ -117,6 +118,8 @@ test("classify maps known title prefixes and falls back to other", () => {
   assert.equal(classify("Risks / Unknowns"), "risks");
   assert.equal(classify("Context"), "context");
   assert.equal(classify("Appendix"), "other");
+  assert.equal(classify(DIALOGUE_TITLE), "dialogue");
+  assert.equal(OPEN_TYPES.has("dialogue"), false);
 });
 
 test("slugify falls back to `section` when a title has nothing to slug", () => {

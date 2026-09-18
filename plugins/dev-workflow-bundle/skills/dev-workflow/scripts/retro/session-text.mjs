@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 // Print the main-thread conversation text of the newest Claude Code session log for a
-// working directory, bounded in size, so a run whose context was compacted can recover
-// the user's corrections and the assistant's turns for the self-retrospective.
+// working directory, bounded in size.
 //
 // Usage: node session-text.mjs [--cwd <path>] [--file <jsonl>] [--since <ISO>] [--max-chars <n>]
 // Output: one line per text message, `[HH:MM:SS] user|assistant: <text>`; assistant text is
@@ -11,6 +10,10 @@
 // directory under ~/.claude/projects/ is the cwd with every character outside [A-Za-z0-9]
 // replaced by "-"; records are line-delimited JSON with `type`, `timestamp`, `isSidechain`,
 // and `message.content` blocks. A missing directory or file is reported on stderr, exit 2.
+//
+// A `user` record is not necessarily a person: the harness files slash-command expansions,
+// injected skill bodies, reminders, hook feedback and task notifications under the same type.
+// INJECTED_USER_TEXT drops those, so a caller quoting a user line quotes a person.
 
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { homedir } from "node:os";
@@ -24,6 +27,19 @@ const since = args.since ? Date.parse(args.since) : NaN;
 const file = args.file ?? newestLog(cwd);
 if (!file) process.exit(2);
 
+// Matched against the start of a `user` text block; a match means the harness wrote it.
+const INJECTED_USER_TEXT = [
+  /^<(command-message|command-name|command-args|system-reminder|task-notification|local-command-stdout|ide_selection|user-prompt-submit-hook)\b/,
+  /^Base directory for this skill:/,
+  /^\[Subagent hand-back\]/,
+  /^\[harness:/,
+  /^\(Re-invocation of \//,
+];
+
+// A skill body injected without a recognizable opening still announces itself by shape: a
+// person's turn is not a multi-section markdown document.
+const looksInjected = (t) => t.length > 400 && /^#{1,3} /m.test(t);
+
 const lines = [];
 for (const raw of readFileSync(file, "utf8").split("\n")) {
   if (!raw.trim()) continue;
@@ -33,7 +49,11 @@ for (const raw of readFileSync(file, "utf8").split("\n")) {
   if (rec.isSidechain) continue;
   if (!Number.isNaN(since) && Date.parse(rec.timestamp ?? "") < since) continue;
   const blocks = Array.isArray(rec.message?.content) ? rec.message.content : typeof rec.message?.content === "string" ? [{ type: "text", text: rec.message.content }] : [];
-  const text = blocks.filter((b) => b && b.type === "text" && typeof b.text === "string").map((b) => b.text.trim()).filter(Boolean).join(" ");
+  const texts = blocks.filter((b) => b && b.type === "text" && typeof b.text === "string").map((b) => b.text.trim()).filter(Boolean);
+  const kept = rec.type === "user"
+    ? texts.filter((t) => !INJECTED_USER_TEXT.some((re) => re.test(t)) && !looksInjected(t))
+    : texts;
+  const text = kept.join(" ");
   if (!text) continue;
   const limit = rec.type === "user" ? 1000 : 300;
   const clipped = text.length > limit ? text.slice(0, limit) + "…" : text;

@@ -62,7 +62,7 @@ Every run writes a per-phase timing log (`.claude/plans/timing-<stamp>.jsonl`, a
 
 ## Settings
 
-Settings files: `~/.claude/dev-workflow.local.md`, `.claude/dev-workflow.md`, `.claude/dev-workflow.local.md`, YAML frontmatter, merged in that order. Only these keys are read; others are named once at start and ignored.
+Settings files: `~/.claude/dev-workflow.local.md`, `.claude/dev-workflow.md`, `.claude/dev-workflow.local.md`, YAML frontmatter, merged in that order. Only these keys are read; others are named once at start and ignored. Source of truth for what each key does: the settings table in `SKILL.md`; keep the comments below in sync with it.
 
 ```yaml
 ---
@@ -75,7 +75,7 @@ check_commands:
   - "pnpm run typecheck"
 test_commands:
   - "Skill(run-tests)"        # Skill(<name>) entries only
-plan_artifact: "off"          # off | share | review; publishes the plan plus the exchange that shaped it; --artifact overrides
+plan_artifact: "off"          # off | share | review; publishes the plan plus the exchange that shaped it, quoting your own words; --artifact overrides
 commit_review_gate: "diff"    # diff | crit
 custom_instructions: "Always use TDD."   # optional; rules and explicit requests win
 subagent_model:              # default {trivial: sonnet, simple: sonnet}; other tiers inherit

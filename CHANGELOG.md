@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-09-18
+
+### kabeuchi v3.1.0 / dev-workflow-bundle v2.15.0
+
+- **The pieces is now two cards.** The pieces now gives the shape alone: every part carrying the role it plays and nothing else. They are laid along the route one use of the subject takes, with what passes between two parts on that route named on the edge. A new card, **How the pieces work**, redraws the same parts in the same positions and fills in what each one does. Nothing left the page — the detail moved to the second card. The explaining set goes from nine cards to ten, and the cards that teach from four to five.
+- **A page resumed from an earlier session gets both cards.** Its The pieces is rewritten to the new definition at the same time, and the handoff file gains the new card's section. The choice set has no The pieces and is untouched.
+
 ## 2026-09-16
 
 ### extract-rules v1.30.0 / dev-workflow-bundle v2.14.0

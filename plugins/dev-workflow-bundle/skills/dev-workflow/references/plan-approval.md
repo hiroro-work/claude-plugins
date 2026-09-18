@@ -2,7 +2,7 @@
 
 Read from `SKILL.md` Phase 5 (Plan Approval) and from `plan-artifact.md` § Team-review gate. Unqualified `§` references point into this file.
 
-When the resolved `plan_artifact` is not `off`, either gate says in one line, before it waits, that approving publishes the plan and the exchange that shaped it as a shared page.
+When the resolved `plan_artifact` is not `off`, either gate states in one line, before it waits: approving publishes the plan as a shared page, together with the exchange that shaped it, quoting the person's own words.
 
 ## Files
 

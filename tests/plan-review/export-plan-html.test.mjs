@@ -8,7 +8,7 @@
 
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { execFileSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, dirname } from "node:path";
@@ -57,13 +57,20 @@ const n = 1; // a fenced block, so the syntax colours are exercised
 // One subprocess per distinct argument set. Most assertions read the default output, and
 // spawning the exporter again for each of them was most of this file's runtime.
 const cache = new Map();
-function exportPlan(args = []) {
-  const key = JSON.stringify(args);
+function exportPlan(args = [], dialogue = null) {
+  const key = JSON.stringify([args, dialogue]);
   if (!cache.has(key)) {
     const dir = mkdtempSync(join(tmpdir(), "plan-export-"));
     const planPath = join(dir, "sample-plan.plan-review.md");
     const outPath = join(dir, "out.html");
     writeFileSync(planPath, PLAN);
+    // The dialogue path differs per call, so the flag is added here rather than by the
+    // caller, which would defeat the cache key.
+    if (dialogue !== null) {
+      const dialoguePath = join(dir, "sample-plan.dialogue.md");
+      writeFileSync(dialoguePath, dialogue);
+      args = [...args, "--dialogue", dialoguePath];
+    }
     execFileSync(process.execPath, [exporter, "--plan", planPath, "--out", outPath, ...args], { stdio: "pipe" });
     cache.set(key, readFileSync(outPath, "utf8"));
     rmSync(dir, { recursive: true, force: true });
@@ -73,13 +80,13 @@ function exportPlan(args = []) {
 
 // The embedded plan is data, not page markup. Strip it before asserting anything about the
 // page, or the plan's own prose answers the question instead of the page.
+const PLAN_SOURCE_RE = /<script type="application\/json" id="plan-source">([\s\S]*?)<\/script>/;
 const shells = new Map();
 const pageShell = (html) => {
-  if (!shells.has(html)) {
-    shells.set(html, html.replace(/<script type="application\/json" id="plan-source">[\s\S]*?<\/script>/, ""));
-  }
+  if (!shells.has(html)) shells.set(html, html.replace(PLAN_SOURCE_RE, ""));
   return shells.get(html);
 };
+const embedded = (html) => JSON.parse(PLAN_SOURCE_RE.exec(html)[1]).markdown;
 
 const SKELETON_TAG_RE = /<\/?(?:!doctype|html|head|body)[\s>]/i;
 
@@ -257,3 +264,61 @@ test("the plan's YAML frontmatter is not embedded in the exported page", () => {
   assert.match(html, /### Overview/, "the plan body did not survive the strip");
   rmSync(dir, { recursive: true, force: true });
 });
+
+// The history is appended into the plan's own Markdown, so the assertions read the embedded
+// JSON block rather than the page — that block is what the renderer sees.
+const DIALOGUE = `- **折りたたみの既定**: 履歴が長いと読みにくいので、既定は閉じておく。
+
+## この見出しは節を割ってしまう
+
+\`\`\`bash
+# このコメントは見出しではない
+echo hi
+\`\`\`
+`;
+
+test("--dialogue appends the history at the plan's own heading level", () => {
+  const markdown = embedded(exportPlan([], DIALOGUE));
+  assert.match(markdown, /^### Conversation history$/m, "no history section at the plan's level");
+  assert.ok(markdown.includes("履歴が長いと読みにくい"), "the history text is absent");
+  assert.ok(markdown.indexOf("### Conversation history") > markdown.indexOf("### Risks"), "the history is not last");
+});
+
+// A heading at the plan's level inside the history would start a section of its own, taking
+// the rest of the history out of the collapsed block.
+test("a heading inside the history is demoted, and a fenced hash is left alone", () => {
+  const markdown = embedded(exportPlan([], DIALOGUE));
+  assert.ok(markdown.includes("**この見出しは節を割ってしまう**"), "the heading was not demoted");
+  assert.ok(markdown.includes("# このコメントは見出しではない"), "a fenced comment was demoted");
+});
+
+test("the default output carries no history section", () => {
+  assert.equal(embedded(exportPlan()).includes("Conversation history"), false);
+});
+
+// Losing the whole artifact because the history is missing is the worse trade, so the export
+// stands and the warning is what surfaces the caller's mistake.
+function exportWithoutHistory(dialogue) {
+  const dir = mkdtempSync(join(tmpdir(), "plan-export-nodlg-"));
+  const planPath = join(dir, "sample-plan.plan-review.md");
+  const outPath = join(dir, "out.html");
+  const dialoguePath = join(dir, "sample-plan.dialogue.md");
+  writeFileSync(planPath, PLAN);
+  if (dialogue !== null) writeFileSync(dialoguePath, dialogue);
+  const res = spawnSync(
+    process.execPath,
+    [exporter, "--plan", planPath, "--out", outPath, "--dialogue", dialoguePath],
+    { encoding: "utf8" });
+  const html = readFileSync(outPath, "utf8");
+  rmSync(dir, { recursive: true, force: true });
+  return { status: res.status, stderr: res.stderr, html };
+}
+
+for (const [name, dialogue] of [["missing", null], ["empty", "\n \n"]]) {
+  test(`a ${name} history file warns on stderr and still exports`, () => {
+    const res = exportWithoutHistory(dialogue);
+    assert.equal(res.status, 0, res.stderr);
+    assert.match(res.stderr, /warning: no conversation history/);
+    assert.equal(embedded(res.html).includes("Conversation history"), false);
+  });
+}

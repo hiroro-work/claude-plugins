@@ -2,6 +2,11 @@
 
 ## 2026-09-18
 
+### dev-workflow v2.4.0 / dev-workflow-bundle v2.16.0
+
+- **A published plan now carries the exchange that shaped it.** With `plan_artifact` set to `share` or `review`, the artifact gains a trailing **Conversation history** section: one item per exchange that moved the plan, saying what was raised and what changed as a result. It renders collapsed, so a long history costs the plan body none of its readability, and a reader opens it when they want to know why the plan looks the way it does. Solo and mob runs both get it.
+- **The history is written once, right before publishing.** It lands in `<slug>.dialogue.md` beside the plan and is handed to the exporter through a new `--dialogue` flag. A run whose context was compacted recovers the exchange from the session log first. A missing or empty history warns and exports without the section.
+
 ### kabeuchi v3.1.0 / dev-workflow-bundle v2.15.0
 
 - **The pieces is now two cards.** The pieces now gives the shape alone: every part carrying the role it plays and nothing else. They are laid along the route one use of the subject takes, with what passes between two parts on that route named on the edge. A new card, **How the pieces work**, redraws the same parts in the same positions and fills in what each one does. Nothing left the page — the detail moved to the second card. The explaining set goes from nine cards to ten, and the cards that teach from four to five.

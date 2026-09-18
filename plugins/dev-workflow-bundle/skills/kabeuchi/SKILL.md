@@ -32,12 +32,13 @@ The body is a column of cards. The page's `cards:` key names which of two sets i
 1. **What this is** — the subject itself: for a thing, what it is, who uses it and what it does for them; for a question or a choice, what it is about and whom it touches. Nothing here is about the work ahead.
 2. **The problem** — what is wrong, missing or unclear today, as the person affected feels it, and the one constraint that makes it so.
 3. **What you'll have at the end** — what the reader will have, know or be able to do once the subject is settled.
-4. **The pieces** — the parts involved, each named by its role (what it does), and one picture of how they talk to each other.
-5. **Names for the pieces** — each role beside the real name of what plays it — a file, class or module, or a library, specification or term. On a choice page the roles are the parts Evidence and Scope name.
-6. **Words you'll meet** — the subject's own terms, each in one sentence.
-7. **In your words** — the reader's own words, verbatim, saying what has come together for them.
-8. **Next** — written only on the Yes branch of the wrap-up (§ Procedure step 6). One sentence naming the work the page points to, composed from The problem and What you'll have at the end cards (Verdict and Scope on a choice page); then the two handoff lines `/mobpro --resume .claude/plans/<slug>.kabeuchi.md` and `/dev-workflow --resume .claude/plans/<slug>.kabeuchi.md`, in that order, each on its own line. One sentence says that the reader copies one of them: the first when someone will navigate the build and learn from it, the second for a run without that.
-9. **How this page was built** — artifactor's log section; kabeuchi supplies only the entry, one per turn: the reader's message verbatim, the answer in one line when there was a question, and, when a card changed, one line naming the change. This is the only place the exchange is kept. A page written before this card set may carry a Your questions card: leave it as it is and add nothing to it.
+4. **The pieces** — every part involved, each carrying the role it plays and nothing else. Parts that always act together are one role. They are laid along the route one use of the subject takes, from where it enters to where its result comes out. What passes between two parts on that route is named on the edge between them.
+5. **How the pieces work** — the same parts in the same positions as The pieces, each part's behavior beside it. Every exchange between parts is drawn. The two change together. When The pieces was left out, it lays the parts out itself by that card's rule: parts that always act together are one role, laid along the route one use of the subject takes, with what passes between two parts named on the edge between them.
+6. **Names for the pieces** — each role beside the real name of what plays it — a file, class or module, or a library, specification or term. On a choice page the roles are the parts Evidence and Scope name.
+7. **Words you'll meet** — the subject's own terms, each in one sentence.
+8. **In your words** — the reader's own words, verbatim, saying what has come together for them.
+9. **Next** — written only on the Yes branch of the wrap-up (§ Procedure step 6). One sentence naming the work the page points to, composed from The problem and What you'll have at the end cards (Verdict and Scope on a choice page); then the two handoff lines `/mobpro --resume .claude/plans/<slug>.kabeuchi.md` and `/dev-workflow --resume .claude/plans/<slug>.kabeuchi.md`, in that order, each on its own line. One sentence says that the reader copies one of them: the first when someone will navigate the build and learn from it, the second for a run without that.
+10. **How this page was built** — artifactor's log section; kabeuchi supplies only the entry, one per turn: the reader's message verbatim, the answer in one line when there was a question, and, when a card changed, one line naming the change. This is the only place the exchange is kept. A page written before this card set may carry a Your questions card: leave it as it is and add nothing to it.
 
 The **choice set**, for a subject that asks which of two or more courses to take, is What this is, then these five in this order, then Names for the pieces onward as in the explaining set:
 
@@ -47,7 +48,7 @@ The **choice set**, for a subject that asks which of two or more courses to take
 4. **Pitfalls** — what goes wrong on the way, on any course, and what averts it.
 5. **Open questions** — what the verdict still rests on that nobody has settled, and who or what settles each.
 
-Four cards teach: What this is, The pieces, Names for the pieces, Words you'll meet. Each is left out when the reader already knows it (§ Reader); a card left out is neither written nor announced later, except on a reframing turn (§ Procedure step 5) or at the wrap-up (§ Procedure step 6).
+Five cards teach: What this is, The pieces, How the pieces work, Names for the pieces, Words you'll meet. Each is left out when the reader already knows it (§ Reader); a card left out is neither written nor announced later, except on a reframing turn (§ Procedure step 5) or at the wrap-up (§ Procedure step 6).
 
 A card here is a section in artifactor, which draws and words it (§ Page agent).
 

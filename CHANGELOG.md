@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-09-21
+
+### furikaeri v1.0.0 / dev-workflow-bundle v2.18.0
+
+- **New skill: a retrospective page from one session log.** `/furikaeri <session.jsonl>` (or no argument for the newest log of the current directory) publishes a single artifact: wall time split between the AI working and the person reading, thinking and typing; the phases the session moved through, with the time each cost; what went wrong, ranked by impact and quoting the person's own words; and the full exchange, collapsed by phase. Tool results never appear on the page, only tool names and counts.
+- **Numbers come from the log, judgement from a subagent.** `scripts/digest.mjs` reduces the log to human turns with a per-turn time split (a pause longer than `--gap-cap` minutes, 60 by default, is a break and leaves every total); a `sonnet` subagent by default (`--model` to change) names the phases and findings by turn index only; `scripts/render.mjs` rejects an analysis that does not cover every turn or quotes words that are not in the log, and computes every duration and share itself.
+- **Joins `dev-workflow-bundle`**, so installing the bundle brings it alongside mobpro and dev-workflow.
+- **Language follows the dev-workflow setting** (`language` in `~/.claude/dev-workflow.local.md`, `.claude/dev-workflow.md`, `.claude/dev-workflow.local.md`, then `~/.claude/settings.json`), `--lang` overriding; the page's fixed labels ship in Japanese and English.
+
 ## 2026-09-19
 
 ### dev-workflow v2.5.0 / dev-workflow-bundle v2.17.0

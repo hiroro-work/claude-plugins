@@ -1,0 +1,18 @@
+{
+  "name": "furikaeri",
+  "description": "Retrospective of a Claude Code session from its jsonl log: where the time went, split between the AI and the person, what went wrong, and the full exchange, published as one artifact page",
+  "author": {
+    "name": "hiropon",
+    "url": "https://github.com/hiroro-work"
+  },
+  "homepage": "https://github.com/hiroro-work/claude-plugins",
+  "repository": "https://github.com/hiroro-work/claude-plugins",
+  "license": "MIT",
+  "keywords": [
+    "retrospective",
+    "session",
+    "artifact",
+    "mob-programming",
+    "analysis"
+  ]
+}

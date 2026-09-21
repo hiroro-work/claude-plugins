@@ -157,7 +157,7 @@
     },
     {
       "name": "dev-workflow-bundle",
-      "description": "Development workflow bundle (includes peer + extract-rules + dev-workflow + rules-review + tidy + prose-polish + mobpro + kabeuchi + artifactor)",
+      "description": "Development workflow bundle (includes peer + extract-rules + dev-workflow + rules-review + tidy + prose-polish + mobpro + kabeuchi + artifactor + furikaeri)",
       "source": "./plugins/dev-workflow-bundle",
       "skills": [
         "./skills/ask-peer",
@@ -168,9 +168,10 @@
         "./skills/prose-polish",
         "./skills/mobpro",
         "./skills/kabeuchi",
-        "./skills/artifactor"
+        "./skills/artifactor",
+        "./skills/furikaeri"
       ],
-      "version": "2.17.0",
+      "version": "2.18.0",
       "author": {
         "name": "hiropon"
       },
@@ -210,6 +211,19 @@
         "./"
       ],
       "version": "3.1.0",
+      "author": {
+        "name": "hiropon"
+      },
+      "category": "workflow"
+    },
+    {
+      "name": "furikaeri",
+      "description": "Retrospective of one Claude Code session from its jsonl log, published as an artifact page: where the time went between the AI working and the person reading, thinking and typing, the phases, what went wrong ranked by impact, and the full exchange collapsed by phase. A sonnet subagent writes the analysis; every number is computed from the log",
+      "source": "./skills/furikaeri",
+      "skills": [
+        "./"
+      ],
+      "version": "1.0.0",
       "author": {
         "name": "hiropon"
       },

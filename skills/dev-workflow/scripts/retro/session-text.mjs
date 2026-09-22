@@ -1,19 +1,12 @@
 #!/usr/bin/env node
-// Print the main-thread conversation text of the newest Claude Code session log for a
-// working directory, bounded in size.
+// Print the main-thread conversation text of the newest Claude Code session log for a working directory.
 //
 // Usage: node session-text.mjs [--cwd <path>] [--file <jsonl>] [--since <ISO>] [--max-chars <n>]
-// Output: one line per text message, `[HH:MM:SS] user|assistant: <text>`; assistant text is
-// cut to 300 characters, user text to 1000. When the total exceeds --max-chars (default
-// 40000) assistant lines are dropped first, then the oldest lines.
-// Log location and shape are Claude Code internals observed, not documented: the project
-// directory under ~/.claude/projects/ is the cwd with every character outside [A-Za-z0-9]
-// replaced by "-"; records are line-delimited JSON with `type`, `timestamp`, `isSidechain`,
-// and `message.content` blocks. A missing directory or file is reported on stderr, exit 2.
-//
-// A `user` record is not necessarily a person: the harness files slash-command expansions,
-// injected skill bodies, reminders, hook feedback and task notifications under the same type.
-// INJECTED_USER_TEXT drops those, so a caller quoting a user line quotes a person.
+// Output: one line per text message, `[HH:MM:SS] user|assistant: <text>`. Over --max-chars (default 40000)
+// assistant lines are dropped first, then the oldest. Missing directory or file: stderr, exit 2.
+// Log location and shape are Claude Code internals observed, not documented: the project directory under
+// ~/.claude/projects/ is the cwd with every character outside [A-Za-z0-9] replaced by "-".
+// A `user` record is not necessarily a person: INJECTED_USER_TEXT drops harness-written text.
 
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { homedir } from "node:os";
@@ -36,8 +29,7 @@ const INJECTED_USER_TEXT = [
   /^\(Re-invocation of \//,
 ];
 
-// A skill body injected without a recognizable opening still announces itself by shape: a
-// person's turn is not a multi-section markdown document.
+// A skill body injected without a recognizable opening: a person's turn is not a multi-section markdown document.
 const looksInjected = (t) => t.length > 400 && /^#{1,3} /m.test(t);
 
 const lines = [];

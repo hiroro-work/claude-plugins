@@ -1,7 +1,4 @@
-// attribute.mjs must send each review-fix hunk to the snapshot commit that last wrote
-// the lines it touches, and everything else to the trailing patch. The scenario is the
-// one the workflow produces: a two-step snapshot chain, then edits that belong to step 1,
-// to step 2, to a new file nobody in the chain touched, and to a line from the base commit.
+// attribute.mjs sends each review-fix hunk to the snapshot commit that last wrote its lines, everything else to the trailing patch.
 
 import { test } from "node:test";
 import assert from "node:assert/strict";

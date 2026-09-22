@@ -1,8 +1,4 @@
-// mark.mjs / report.mjs give the supervisor a per-phase wall / waiting / active table without
-// parsing session logs. The report must subtract gate waits from wall time, list phases in
-// start order, and close an unterminated phase at the last event. A phase whose gate marks were
-// never issued reads as pure work, so the report flags it and `--at` lets the pair be filled in
-// afterwards.
+// mark.mjs / report.mjs: per-phase wall / waiting / active table.
 
 import { test } from "node:test";
 import assert from "node:assert/strict";

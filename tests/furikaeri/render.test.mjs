@@ -1,6 +1,4 @@
-// render.mjs computes every number from the digest and refuses an analysis whose phases do not
-// cover the turns or whose quote is not verbatim. It must escape message text, render the
-// markdown subset, and switch fixed labels by --lang.
+// render.mjs: analysis validation, escaping, markdown subset, --lang labels.
 
 import { test } from "node:test";
 import assert from "node:assert/strict";

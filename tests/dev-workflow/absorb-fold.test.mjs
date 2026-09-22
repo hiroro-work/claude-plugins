@@ -1,7 +1,5 @@
-// The full absorb path from references/snapshots.md § Absorb review fixes: attribute the
-// residue, apply each patch as a fixup in a throwaway worktree, autosquash, add the trailing
-// commit, and land the chain with read-tree + commit. The landed history must carry each
-// review fix in the step that owns its lines, end with a clean tree, and run no hooks.
+// Full absorb path (references/snapshots.md § Absorb review fixes): attribute, fixup in a worktree,
+// autosquash, trailing commit, land. Must run no hooks.
 
 import { test } from "node:test";
 import assert from "node:assert/strict";

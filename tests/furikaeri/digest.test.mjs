@@ -1,6 +1,4 @@
-// digest.mjs turns a session log into turns with a time split. It must recognize a person's
-// prompt, an AskUserQuestion answer and a declined tool call as human turns, drop injected text,
-// sidechains and meta records, split each turn into AI and human time, and mark long gaps as breaks.
+// digest.mjs: human-turn recognition, injected-text dropping, AI/human time split, breaks.
 
 import { test } from "node:test";
 import assert from "node:assert/strict";

@@ -1,8 +1,4 @@
-// Shared fixtures for the plan-review viewer's process-level tests.
-//
-// serve.mjs is a top-level script with no exports, so every test drives it as a
-// child process and observes it through HTTP, the files it writes, and its exit
-// code.
+// Shared fixtures for the plan-review process-level tests; serve.mjs has no exports, so it is driven as a child process.
 
 import { spawn } from "node:child_process";
 import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
@@ -18,9 +14,7 @@ const SERVE = fileURLToPath(
 const URL_DEADLINE_MS = 10_000;
 const URL_POLL_MS = 25;
 
-// The one shape the sidecar is allowed to hold: a loopback URL on a random port,
-// one line. Anchored so a torn read of a half-written file keeps polling instead
-// of yielding a truncated port.
+// Anchored so a torn read of a half-written URL file keeps polling.
 export const URL_FILE_SHAPE = /^http:\/\/127\.0\.0\.1:\d+\/\n$/;
 
 const PLAN_FILE = "plan.md";
@@ -46,8 +40,6 @@ export const SAMPLE_PLAN = `## Plan
 sample
 `;
 
-// The server writes its sidecars next to the plan, so every run gets its own
-// directory rather than a shared one.
 export async function makeWorkspace(t, extra = {}) {
   const dir = await mkdtemp(join(tmpdir(), "plan-review-test-"));
   const ws = {
@@ -58,8 +50,6 @@ export async function makeWorkspace(t, extra = {}) {
     readJson: async (name) => JSON.parse(await readFile(join(dir, name), "utf8")),
   };
 
-  // Every server started against this workspace dies before the directory goes,
-  // so a still-listening process never writes into a path that has been removed.
   t.after(async () => {
     await Promise.all(ws.children.map((h) => (h.child.kill("SIGKILL"), h.closed)));
     await rm(dir, { recursive: true, force: true });
@@ -71,35 +61,28 @@ export async function makeWorkspace(t, extra = {}) {
   return ws;
 }
 
-// `process.execPath` rather than a bare "node" so the child runs on the same
-// Node as the test runner.
 export function spawnServe(ws, args) {
   const child = spawn(process.execPath, [SERVE, ...args], { stdio: ["ignore", "pipe", "pipe"] });
   const handle = { child, stdout: "", stderr: "" };
 
-  // Decode per stream rather than per chunk: a multi-byte character split across
-  // two chunks would otherwise be concatenated as two broken Buffers.
+  // Decode per stream: a multi-byte character split across chunks would break.
   child.stdout.setEncoding("utf8");
   child.stderr.setEncoding("utf8");
   child.stdout.on("data", (chunk) => (handle.stdout += chunk));
   child.stderr.on("data", (chunk) => (handle.stderr += chunk));
-  // "close" rather than "exit": the captured output is only complete once the
-  // stdio streams have ended.
+  // "close", not "exit": output is complete only once the stdio streams end.
   handle.closed = new Promise((resolve) => child.on("close", (code, signal) => resolve({ code, signal })));
 
   ws.children.push(handle);
   return handle;
 }
 
-// Never pass --port: a busy explicit port makes serve.mjs open a browser even
-// under --no-open.
+// Never pass --port: a busy explicit port makes serve.mjs open a browser even under --no-open.
 export function serveArgs(ws, extra = []) {
   return ["--plan", ws.path(PLAN_FILE), "--no-open", ...extra];
 }
 
-// The URL file is written at listen time, so polling it is the documented way to
-// learn the random port. The "listening on" stderr line is not part of the
-// contract, so it is deliberately not used as the readiness signal.
+// The URL file is the readiness contract; the "listening on" stderr line is not.
 async function waitForBaseUrl(ws) {
   const deadline = Date.now() + URL_DEADLINE_MS;
   while (Date.now() < deadline) {
@@ -115,8 +98,7 @@ async function waitForBaseUrl(ws) {
 }
 
 export async function startViewer(t, ws, extra = ["--wait"]) {
-  // A previous run in the same workspace leaves its URL behind, and polling would
-  // otherwise return that dead port.
+  // A previous run's URL file would otherwise return a dead port.
   await rm(ws.path(`${PLAN_ID}.url`), { force: true });
   const handle = spawnServe(ws, serveArgs(ws, extra));
   handle.base = await waitForBaseUrl(ws);
@@ -125,8 +107,7 @@ export async function startViewer(t, ws, extra = ["--wait"]) {
 
 export const getPlan = async (base) => (await fetch(`${base}/api/plan`)).json();
 
-// The submit response is sent before the stdout line is written, so a caller that
-// is not waiting for the process to exit has to wait for the line itself.
+// The submit response is sent before the stdout line is written.
 export async function waitForStdoutJson(handle, deadlineMs = 5_000) {
   const deadline = Date.now() + deadlineMs;
   while (Date.now() < deadline) {

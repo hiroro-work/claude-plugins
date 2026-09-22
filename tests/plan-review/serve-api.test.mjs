@@ -1,5 +1,4 @@
-// HTTP surface: what /api/plan ships, how /api/submit validates and records, and
-// how the static handler refuses.
+// HTTP surface: /api/plan, /api/submit validation and recording, static handler refusals.
 
 import test from "node:test";
 import assert from "node:assert/strict";
@@ -39,9 +38,7 @@ test("/api/plan normalizes the stored thread and drops rounds it cannot repair",
     plan: PLAN_ID,
     rounds: [
       {
-        // An explicit round that differs from the array index, so the test can tell
-        // a preserved round from a positional one — and can tell that entry ids are
-        // built from the index rather than from the round.
+        // A round that differs from the array index, so a preserved round is told from a positional one.
         round: 7,
         submitted_at: "2026-01-01T00:00:00.000Z",
         entries: [
@@ -223,8 +220,6 @@ test("/api/submit rejects a body over the size cap", async (t) => {
   const ws = await makeWorkspace(t);
   const server = await startViewer(t, ws);
 
-  // Passed as a raw string: the cap fires while the body is still being read, so
-  // nothing needs to parse and one allocation is enough.
   const res = await submit(server.base, "x".repeat(5_000_001));
 
   assert.equal(res.status, 413);
@@ -238,17 +233,14 @@ test("the static handler serves the viewer page, and nothing outside public/", a
   assert.equal(index.status, 200);
   assert.match(index.headers.get("content-type"), /text\/html/);
 
-  // The viewer page imports this as an ES module, which the browser refuses to
-  // run unless the server names it as JavaScript.
   const parse = await fetch(`${server.base}/plan-parse.mjs`);
   assert.equal(parse.status, 200);
   assert.match(parse.headers.get("content-type"), /text\/javascript/);
 
   assert.equal((await fetch(`${server.base}/nope.css`)).status, 404);
 
-  // `new URL` collapses `..` before the handler's containment guard sees it, so
-  // none of these reaches the 403 branch. What is asserted is the observable
-  // property: no spelling of an escape returns a file.
+  // `new URL` collapses `..` before the containment guard, so none of these reaches the 403 branch;
+  // what is asserted is that no escape returns a file.
   const escapes = ["/../serve.mjs", "/%2e%2e/serve.mjs", "/..%2fserve.mjs", "/public/../../serve.mjs"];
   const results = await Promise.all(escapes.map((p) => fetch(`${server.base}${p}`)));
 

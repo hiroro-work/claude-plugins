@@ -1,20 +1,10 @@
 #!/usr/bin/env node
 /**
- * Extract user/assistant text messages from a Claude Code session .jsonl file.
- *
- * Loads the entire file then processes lines in reverse to prioritize recent messages (where
- * corrections and preferences are most likely to appear). Outputs only text
- * content, skipping tool_use, thinking, and other non-text blocks.
- * Also recovers user responses from interactive tools (AskUserQuestion, etc.)
- * stored as tool_result entries — these contain explicit user preferences.
+ * Extract user/assistant text messages from a Claude Code session .jsonl file, newest first.
+ * Also recovers user answers stored as tool_result entries (AskUserQuestion etc.).
  *
  * Usage:
  *   node extract_session_messages.mjs <session.jsonl> [--output <file>] [--max-chars <n>] [--max-per-message <n>]
- *
- * Options:
- *   --output           Output file path (default: stdout)
- *   --max-chars        Total output character cap (default: no limit)
- *   --max-per-message  Per-message character cap (default: no limit)
  */
 
 import { readFileSync, writeFileSync } from "node:fs";
@@ -157,7 +147,6 @@ const main = () => {
   const maxChars = values["max-chars"] ? parseNonNegativeInt(values["max-chars"], "--max-chars") : Infinity;
   const maxPerMessage = values["max-per-message"] ? parseNonNegativeInt(values["max-per-message"], "--max-per-message") : Infinity;
 
-  // Entire file loaded into memory — acceptable for typical session files up to ~10MB
   const lines = readFileSync(sessionFile, "utf-8").split("\n");
   const { messages, skippedLines } = parseSessionLines(lines);
   const { kept, totalChars } = applyLimits(messages, maxChars, maxPerMessage);

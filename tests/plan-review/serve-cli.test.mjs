@@ -1,5 +1,4 @@
-// Startup and shutdown contract: the URL sidecar, the stdout purity rule, and
-// the documented exit codes.
+// Startup and shutdown contract: URL sidecar, stdout purity, exit codes.
 
 import test from "node:test";
 import assert from "node:assert/strict";
@@ -42,8 +41,6 @@ test("stdout carries the submit JSON and nothing else", async (t) => {
   assert.match(payload.submitted_at, /^\d{4}-\d{2}-\d{2}T[\d:.]+Z$/);
 });
 
-// The progress and warning lines all go to stderr, so a run that emits warnings
-// must still leave stdout parseable as a whole.
 test("a warning about a malformed thread file does not reach stdout", async (t) => {
   const ws = await makeWorkspace(t, {
     [`${PLAN_ID}.thread.json`]: JSON.stringify({ rounds: [{ round: 1 }] }),
@@ -57,8 +54,6 @@ test("a warning about a malformed thread file does not reach stdout", async (t) 
   assert.doesNotThrow(() => JSON.parse(server.stdout.trim()));
 });
 
-// Without --wait the viewer stays up after a submit, which is what lets a caller
-// run several review rounds against one process.
 test("without --wait the server keeps serving after a submit", async (t) => {
   const ws = await makeWorkspace(t);
   const server = await startViewer(t, ws, []);

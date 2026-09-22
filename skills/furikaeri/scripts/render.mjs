@@ -2,10 +2,8 @@
 // Render the retrospective page from a digest (digest.mjs) and the analysis JSON the agent returned.
 //
 // Usage: node render.mjs --digest <digest.json> --analysis <analysis.json> --out <page.html> [--lang ja|en]
-// Every number on the page is computed here from the digest: the analysis only names phases and
-// findings by turn index. The analysis is validated first; on a violation nothing is written and
-// the violations are printed one per line on stderr with exit 3, so the caller can hand them back
-// to the agent for one more attempt.
+// Every number is computed from the digest; the analysis only names phases and findings by turn index.
+// On a validation failure nothing is written, violations go to stderr one per line, exit 3.
 //
 // Analysis shape:
 // { title, dek, eyebrow,

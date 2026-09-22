@@ -2,12 +2,9 @@
 // Append one timing event to the run's timing log.
 //
 // Usage: node mark.mjs --phase "<phase name>" --event start|end|wait|resume [--at <ISO 8601>] [--file <path>] [--dir <dir>]
-// With `--event start --new` and no --file, a new log `<dir>/timing-<YYYYMMDD-HHMMSS>.jsonl` is
-// created (dir defaults to the repository root's .claude/plans) and its path is printed; every other call without
-// --file appends to the newest timing-*.jsonl in that dir (a later phase's `start` included). Each line: {"phase","event","t"} with t in ISO 8601 UTC.
-// `wait` marks the moment a user gate (or a background wait) is presented; `resume` the moment
-// the run continues. report.mjs subtracts those spans from the phase's wall time.
-// `--at` changes only the event's timestamp, never which log is written to.
+// `--event start --new` without --file creates `<dir>/timing-<YYYYMMDD-HHMMSS>.jsonl` (dir defaults to the
+// repository root's .claude/plans) and prints its path; every other call appends to the newest log there.
+// Each line: {"phase","event","t"}. `wait`/`resume` bracket a user gate; report.mjs subtracts those spans.
 
 import { execFileSync } from "node:child_process";
 import { appendFileSync, mkdirSync, readdirSync, statSync, writeFileSync } from "node:fs";
@@ -20,8 +17,7 @@ if (!["start", "end", "wait", "resume"].includes(event)) {
   process.stderr.write("--event must be start|end|wait|resume\n");
   process.exit(2);
 }
-// Not the caller's directory: a `cd` in some earlier command would put the log elsewhere, and
-// `newest()` would then send the rest of the run to a different file — a wrong table, not a gap.
+// The repository root, not the caller's directory: a `cd` earlier in the run would send later marks to a different log.
 const dir = args.dir ?? join(repoRoot() ?? ".", ".claude", "plans");
 const now = new Date();
 const at = args.at === undefined ? now : new Date(typeof args.at === "string" ? args.at : NaN);

@@ -1,33 +1,15 @@
 #!/usr/bin/env node
 /**
- * Write a plan document out as a single self-contained, viewer-only HTML page.
- *
- * Renders through the gate's own public/plan-{view.css,parse.mjs,render.mjs}, inlined, so
- * the two cannot drift. No interactive layer, no requests: the Markdown is embedded.
- *
- * Default output is a fragment: the artifact host supplies the skeleton and forbids the
- * file writing its own. `--standalone` adds it, for local viewing.
- *
- * Only cdnjs scripts + Google Fonts: the artifact CSP blocks anything else silently. Mermaid
- * comes from there too, rather than being left to the artifact host to draw.
- *
- * Node built-ins only (no node_modules).
+ * Write a plan as a single self-contained, viewer-only HTML page, rendered through the gate's own
+ * public/plan-{view.css,parse.mjs,render.mjs} inlined so the two cannot drift.
+ * Default output is a fragment (the artifact host supplies the skeleton); --standalone adds it.
+ * Only cdnjs scripts + Google Fonts: the artifact CSP blocks anything else silently.
  *
  * Usage:
  *   node export-plan-html.mjs --plan <path.md> --out <path.html>
- *                             [--lang <ja|en>] [--title <text>] [--standalone]
- *                             [--dialogue <path.md>]
+ *                             [--lang <ja|en>] [--title <text>] [--standalone] [--dialogue <path.md>]
  *
- * --plan   the Markdown to render. Figures are merged into it beforehand by whoever
- *          composes the served copy (references/visual-plan-review.md § Figures layer
- *          owns the insertion positions), never re-derived here.
- * --dialogue  the exchange that shaped the plan, appended as a trailing section. The section
- *          classifier gives its title a collapsed section, so the plan body reads as before.
- * --lang   language of the page's own generated text. UI chrome stays English. Default en.
- * --title  the page's <title>. Defaults to the plan's slug — a name, never a summary.
- *
- * stdout is left empty; progress and errors go to stderr.
- * Exit codes: 0 written, 1 usage or I/O error.
+ * Exit codes: 0 written, 1 usage or I/O error. stdout stays empty.
  */
 
 import { readFileSync, writeFileSync } from "node:fs";
@@ -35,8 +17,6 @@ import { basename, dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 
-// plan-parse.mjs is DOM-free at module scope, so Node can import it — no second escaping
-// table here.
 import { DIALOGUE_TITLE, FENCE_RE, escapeHtml, inferSectionLevel, stripFrontmatter } from "./public/plan-parse.mjs";
 
 const log = (...args) => console.error(...args);
@@ -71,7 +51,6 @@ try {
 }
 
 if (opts.dialogue) {
-  // Never fatal: a page without the history beats no page at all.
   let dialogue = "";
   try {
     dialogue = stripFrontmatter(readFileSync(resolve(opts.dialogue), "utf8")).trim();
@@ -105,8 +84,7 @@ const css = readPublic("plan-view.css");
 const parseSrc = readPublic("plan-parse.mjs");
 const renderSrc = readPublic("plan-render.mjs");
 
-// Inlining two modules into one means plan-render.mjs's single leading import of
-// plan-parse.mjs must go; any import left behind throws at parse time and kills the page.
+// plan-render.mjs' single leading import of plan-parse.mjs must go; any import left behind kills the page at parse time.
 const stripParseImport = (src, name) => {
   const out = src.replace(/^import\s+\{[\s\S]*?\}\s+from\s+["']\.\/plan-parse\.mjs["'];?\s*$/m, "");
   if (/^\s*import\s/m.test(out)) {
@@ -115,13 +93,10 @@ const stripParseImport = (src, name) => {
   return out;
 };
 
-// A script type no browser executes, so nothing in the plan text is parsed as markup or
-// code. `</script` is the one sequence that would still end the block early.
+// A script type no browser executes; `</script` is the one sequence that would still end the block.
 const jsonBlock = (id, value) =>
   `<script type="application/json" id="${id}">${JSON.stringify(value).replace(/<\/script/gi, "<\\/script")}</script>`;
 
-// The served copy's suffix comes off here rather than at the title, so the eyebrow and
-// the <title> name the plan the same way.
 const planId = basename(planPath).replace(/\.md$/i, "").replace(/\.plan-review$/i, "");
 const pageTitle = opts.title || planId;
 
@@ -135,15 +110,12 @@ const bootstrap = `
     const PLAN = JSON.parse(document.getElementById("plan-source").textContent);
     document.getElementById("app").insertAdjacentHTML("afterbegin", PLAN_SHELL_HTML);
 
-    // No open/close override: the section classifier's own default holds, the same one the
-    // gate renders under.
     const renderer = createRenderer({
       labels: LABELS[${JSON.stringify(lang)}],
       atAGlance: true,
       hooks: { renderDiagrams: renderMermaidDiagrams },
     });
 
-    // No error UI here — at least keep the failure attributable.
     renderer.renderPlan(preparePlan(PLAN.markdown, PLAN.id)).catch((err) => console.error(err));
 `;
 
@@ -158,8 +130,7 @@ const headParts = [
 ];
 
 const bodyParts = [
-  // `lang` here, not on `<html>`: the fragment has none, and plan-view.css picks the line
-  // length off it (--measure).
+  // `lang` here, not on <html>: the fragment has none, and plan-view.css reads --measure off it.
   `<div id="app" lang="${lang}"></div>`,
   jsonBlock("plan-source", { id: planId, markdown: planMarkdown }),
   `<script src="${MARKED_SRC}" integrity="${MARKED_SRI}" crossorigin="anonymous" referrerpolicy="no-referrer"></script>`,

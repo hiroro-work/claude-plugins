@@ -1,10 +1,5 @@
-// Static checks on export-plan-html.mjs' output.
-//
-// Why static: every constraint here fails *silently* in the browser that matters. The
-// artifact host's CSP drops a blocked stylesheet or request with no console error and no
-// visible sign, and a skeleton tag the host forbids is stripped rather than reported. So
-// eyeballing the exported page proves nothing about these, and this file is the only place
-// they are caught.
+// Static checks on export-plan-html.mjs' output: every constraint here fails silently in the artifact
+// host (its CSP drops a blocked resource with no error, and forbidden skeleton tags are stripped).
 
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -17,10 +12,8 @@ import { fileURLToPath } from "node:url";
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
 const exporter = join(repoRoot, "skills", "dev-workflow", "scripts", "plan-review", "export-plan-html.mjs");
 
-// A plan that mentions the very tokens the assertions look for — `<!doctype>`, `<body>`,
-// `fetch(`, `esm.sh`. A grep over the whole file would match those and pass or fail on the
-// plan's prose rather than on the page, which is exactly the mistake `pageShell` below
-// exists to prevent.
+// A plan that mentions the very tokens the assertions look for, so a grep over the whole file would
+// match the plan's prose instead of the page.
 const PLAN = `# Plan
 
 Some preamble.
@@ -54,8 +47,7 @@ const n = 1; // a fenced block, so the syntax colours are exercised
 - 制約違反はブラウザ上で無言に失敗する
 `;
 
-// One subprocess per distinct argument set. Most assertions read the default output, and
-// spawning the exporter again for each of them was most of this file's runtime.
+// One subprocess per distinct argument set; the default output is shared.
 const cache = new Map();
 function exportPlan(args = [], dialogue = null) {
   const key = JSON.stringify([args, dialogue]);
@@ -64,8 +56,6 @@ function exportPlan(args = [], dialogue = null) {
     const planPath = join(dir, "sample-plan.plan-review.md");
     const outPath = join(dir, "out.html");
     writeFileSync(planPath, PLAN);
-    // The dialogue path differs per call, so the flag is added here rather than by the
-    // caller, which would defeat the cache key.
     if (dialogue !== null) {
       const dialoguePath = join(dir, "sample-plan.dialogue.md");
       writeFileSync(dialoguePath, dialogue);
@@ -78,8 +68,7 @@ function exportPlan(args = [], dialogue = null) {
   return cache.get(key);
 }
 
-// The embedded plan is data, not page markup. Strip it before asserting anything about the
-// page, or the plan's own prose answers the question instead of the page.
+// Strip the embedded plan before asserting on the page.
 const PLAN_SOURCE_RE = /<script type="application\/json" id="plan-source">([\s\S]*?)<\/script>/;
 const shells = new Map();
 const pageShell = (html) => {
@@ -102,7 +91,6 @@ test("the title sits within the first 8KB, which is all the host scans", () => {
 });
 
 test("the title names the plan rather than summarising it", () => {
-  // Default: the plan's slug, with the served-copy suffix off — not its Goal sentence.
   assert.match(exportPlan(), /<title>sample-plan<\/title>/);
   assert.match(exportPlan(["--title", "Export Constraints"]), /<title>Export Constraints<\/title>/);
 });
@@ -143,13 +131,8 @@ test("both theme states are styled, neither only behind a media query", () => {
   assert.ok(shell.includes('[data-theme="light"]'), "the OS-preference block is not guarded against an explicit light choice");
 });
 
-// The renderer holds a mermaid fence in whichever tag follows from the caller's own diagram
-// hook, so the hook is also what keeps the fence out of the host's reach. A page that declared
-// the hook without shipping a library would leave every diagram as unrendered source.
-// Both literals are asserted whole rather than by pattern. A wildcard version with a wildcard
-// hash would stay green through a bump that forgot the hash — and a refused script is silent,
-// so every diagram on both surfaces would vanish with nothing failing. Spelling them out makes
-// a bump edit this test, which is where the two get noticed together.
+// Both literals asserted whole: a wildcard hash would stay green through a bump that forgot the hash,
+// and a refused script is silent.
 const MERMAID_SRC = "https://cdnjs.cloudflare.com/ajax/libs/mermaid/11.15.0/mermaid.min.js";
 const MERMAID_SRI = "sha512-HH52omhHpZF6RfVnGiQwYgYm4H/ya2xsZYLl5xJ4+tLfX+rN4+8zF7V/H/KLeicPrKZYi1g6iBmVkk2AhXTGlg==";
 
@@ -160,9 +143,7 @@ test("the page draws its own diagrams, from a pinned cdnjs mermaid", () => {
   assert.ok(shell.includes(MERMAID_SRI), "the pinned mermaid SRI is absent");
 });
 
-// The bootstrap's own createRenderer call. plan-render.mjs is inlined whole, so a bare grep
-// over the page would read that file's jsdoc and comments as if they were the call — the same
-// reason the --lang test below asserts on this line rather than on the label text.
+// plan-render.mjs is inlined whole, so a bare grep would match its own comments; assert on the bootstrap's createRenderer line.
 const rendererCall = (source) => source.match(/const renderer = createRenderer\(\{[\s\S]*?\n\s*\}\);/)[0];
 const bootstrapCall = (html) => rendererCall(pageShell(html));
 
@@ -174,8 +155,6 @@ const optionKeys = (source) => {
   return body.split(",").map((s) => s.split(":")[0].trim()).filter(Boolean).sort();
 };
 
-// The whole option set, not the absence of one name: an override under any other name would
-// unfold the plan to full length again just as silently.
 test("no open/close override, so the reference sections arrive closed", () => {
   assert.deepEqual(optionKeys(pageShell(exportPlan())), ["atAGlance", "hooks", "labels"]);
 });
@@ -184,8 +163,6 @@ test("the at-a-glance digest is on, so the page opens on the Decisions", () => {
   assert.ok(bootstrapCall(exportPlan()).includes("atAGlance: true"));
 });
 
-// The renderer returns silently when the slot is absent, and this page can show the reader no
-// error — so the flag assertion above would keep passing over a digest that renders nowhere.
 test("the digest's slot travels with the page", () => {
   assert.match(pageShell(exportPlan()), /id="at-a-glance"/);
 });
@@ -200,32 +177,24 @@ test("--standalone adds the skeleton, with the page content in the body", () => 
   assert.ok(head.includes("<title>"), "the title is not in the head");
 });
 
-// Assert on the bootstrap's own line, not on the label text: plan-render.mjs' LABELS table
-// is inlined whole, so BOTH strings appear in every export and a build that ignored --lang
-// entirely would still satisfy a raw-string check.
+// LABELS is inlined whole, so both strings appear in every export; assert on the bootstrap line.
 test("--lang picks the language of the page's own generated text", () => {
   assert.match(pageShell(exportPlan(["--lang", "ja"])), /labels: LABELS\["ja"\]/);
   assert.match(pageShell(exportPlan(["--lang", "en"])), /labels: LABELS\["en"\]/);
 });
 
-// The fragment carries no <html> of its own, so plan-view.css reads the language — and with it
-// the line length it sets — off the app root instead.
 test("--lang reaches the app root, which is where the stylesheet reads it", () => {
   assert.match(exportPlan(["--lang", "ja"]), /<div id="app" lang="ja"><\/div>/);
   assert.match(exportPlan(["--lang", "en"]), /<div id="app" lang="en"><\/div>/);
 });
 
-// A surface flag here would ship the export's chrome into the review surface, whose DOM the
-// comment-anchoring contract is written against, with the rest of this suite still green.
 test("the gate takes no surface flag, so its DOM is unchanged", () => {
   const indexHtml = readFileSync(
     join(repoRoot, "skills", "dev-workflow", "scripts", "plan-review", "public", "index.html"), "utf8");
   assert.deepEqual(optionKeys(indexHtml), ["diff", "hooks", "labels"]);
 });
 
-// The CSP-shaped assertions above all read the exporter's output, so nothing in this file
-// constrains the gate page's own external references. The gate is served from localhost and
-// is under no CSP of its own, so the set below is a convention rather than an enforced limit.
+// The gate is served from localhost under no CSP, so this set is a convention, not an enforced limit.
 test("the gate page's external references stay within the hosts it is allowed", () => {
   const indexHtml = readFileSync(
     join(repoRoot, "skills", "dev-workflow", "scripts", "plan-review", "public", "index.html"), "utf8");
@@ -235,11 +204,8 @@ test("the gate page's external references stay within the hosts it is allowed", 
   assert.deepEqual(unexpected, [], `unexpected external host(s): ${unexpected.join(", ")}`);
 });
 
-// The exporter cannot read index.html's <script>/<link> tags — they are static markup, not
-// data — so the two carry the same pinned URLs and hashes by hand. Only the exporter's copy
-// is checked above; without this, index.html could go stale or unpinned with the suite green.
-// Mermaid is absent from both sides and so out of this pair's reach: it is loaded at runtime
-// from the plan-render.mjs both surfaces share, where there is only one copy to keep.
+// index.html's <script>/<link> tags are static markup the exporter cannot read, so both carry the same
+// pinned URLs by hand. Mermaid is loaded at runtime from plan-render.mjs and is outside this pair.
 test("the gate page and the export pin the same CDN and font resources", () => {
   const indexHtml = readFileSync(
     join(repoRoot, "skills", "dev-workflow", "scripts", "plan-review", "public", "index.html"), "utf8");
@@ -251,8 +217,6 @@ test("the gate page and the export pin the same CDN and font resources", () => {
   assert.deepEqual(hashes(exporterSrc), hashes(indexHtml), "integrity hashes differ");
 });
 
-// The page carries the plan's Markdown verbatim in a JSON block, so a frontmatter left on it
-// would ship inside the published page even though nothing renders it.
 test("the plan's YAML frontmatter is not embedded in the exported page", () => {
   const dir = mkdtempSync(join(tmpdir(), "plan-export-fm-"));
   const planPath = join(dir, "sample-plan.plan-review.md");
@@ -265,8 +229,7 @@ test("the plan's YAML frontmatter is not embedded in the exported page", () => {
   rmSync(dir, { recursive: true, force: true });
 });
 
-// The history is appended into the plan's own Markdown, so the assertions read the embedded
-// JSON block rather than the page — that block is what the renderer sees.
+// The history lives in the embedded Markdown, so assert on the JSON block.
 const DIALOGUE = `- **折りたたみの既定**: 履歴が長いと読みにくいので、既定は閉じておく。
 
 ## この見出しは節を割ってしまう
@@ -284,8 +247,6 @@ test("--dialogue appends the history at the plan's own heading level", () => {
   assert.ok(markdown.indexOf("### Conversation history") > markdown.indexOf("### Risks"), "the history is not last");
 });
 
-// A heading at the plan's level inside the history would start a section of its own, taking
-// the rest of the history out of the collapsed block.
 test("a heading inside the history is demoted, and a fenced hash is left alone", () => {
   const markdown = embedded(exportPlan([], DIALOGUE));
   assert.ok(markdown.includes("**この見出しは節を割ってしまう**"), "the heading was not demoted");
@@ -296,8 +257,6 @@ test("the default output carries no history section", () => {
   assert.equal(embedded(exportPlan()).includes("Conversation history"), false);
 });
 
-// Losing the whole artifact because the history is missing is the worse trade, so the export
-// stands and the warning is what surfaces the caller's mistake.
 function exportWithoutHistory(dialogue) {
   const dir = mkdtempSync(join(tmpdir(), "plan-export-nodlg-"));
   const planPath = join(dir, "sample-plan.plan-review.md");

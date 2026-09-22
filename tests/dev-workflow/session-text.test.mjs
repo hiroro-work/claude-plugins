@@ -1,6 +1,4 @@
-// session-text.mjs feeds the self-retrospective when context was compacted. It must keep
-// main-thread user and assistant text, drop subagent turns, tool blocks and thinking, clip
-// long turns, and shed assistant lines first when the output would exceed the cap.
+// session-text.mjs: main-thread text only, clipping, assistant lines shed first.
 
 import { test } from "node:test";
 import assert from "node:assert/strict";

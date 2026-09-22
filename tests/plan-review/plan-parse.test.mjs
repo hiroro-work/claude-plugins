@@ -1,8 +1,4 @@
-// Unit tests for the plan-review viewer's plan parsing.
-//
-// public/plan-parse.mjs is the browser's own module, imported here unchanged.
-// Everything it holds is free of the DOM, so collectBlockTexts — which stayed in
-// index.html and which buildDiff calls — is passed in as a stub.
+// Unit tests for public/plan-parse.mjs; collectBlockTexts (which stayed in index.html) is stubbed.
 
 import assert from "node:assert/strict";
 import test from "node:test";
@@ -34,9 +30,7 @@ import {
   slugify,
 } from "../../skills/dev-workflow/scripts/plan-review/public/plan-parse.mjs";
 
-// buildDiff's block collector, stubbed: one "block" per non-blank line. Enough
-// to tell which section the collector was called for, which is all buildDiff
-// does with the result.
+// buildDiff's block collector, stubbed: one "block" per non-blank line.
 const blocksByLine = (body) => new Set(body.split("\n").map((l) => l.trim()).filter(Boolean));
 
 test("parseSections keeps everything before the first ### as the preamble", () => {
@@ -71,8 +65,6 @@ test("inferSectionLevel picks ## when the plan puts its sections there", () => {
   assert.equal(inferSectionLevel(md.split("\n")), 2);
   const { sections } = parseSections(md);
   assert.deepEqual(sections.map((s) => s.type), ["overview", "decisions", "buildorder"]);
-  // The bug this guards: with the level fixed at ###, Build order landed inside the
-  // Decisions section and its Alternative field swallowed the whole numbered list.
   const [item] = parseDecisions(sections[1].body).items;
   assert.equal(item.alternative, "a");
 });
@@ -82,8 +74,7 @@ test("inferSectionLevel counts distinct section types, so per-decision sub-headi
     .map((n) => `### Decision ${n}: choice ${n}\n\n**Question**: q${n}\n\n**Recommendation**: r${n}\n`)
     .join("\n");
   const md = `## Overview\n\nb\n\n## Decisions\n\n${decisions}\n## Build order\n\n1. x\n\n## Test plan\n\n- t\n`;
-  // Five ### headings against four ## ones: by heading count level 3 would win and swallow
-  // Build order into the last Alternative again. Level 3 carries one type, level 2 carries four.
+  // Five ### headings against four ## ones: level 3 carries one type, level 2 four.
   assert.equal(inferSectionLevel(md.split("\n")), 2);
   const { sections } = parseSections(md);
   assert.deepEqual(sections.map((s) => s.type), ["overview", "decisions", "buildorder", "test"]);
@@ -99,7 +90,6 @@ test("parseSections keeps the Plan wrapper and the Hero block in the preamble at
   const md = "## Plan\n\n## Hero\n<figure>H</figure>\n\n## Overview\n\nb\n\n## Risks\n\n- r\n";
   const { preamble, sections } = parseSections(md);
   assert.deepEqual(sections.map((s) => s.title), ["Overview", "Risks"]);
-  // Reserved for the preamble, where splitPreamble gives the figure its own slot.
   assert.equal(splitPreamble(preamble).hero, "<figure>H</figure>");
 });
 
@@ -169,9 +159,7 @@ test("parseOverview reads the Now / After shape and its per-file Scope lines", (
     { kind: "", file: "CHANGELOG.md / marketplace.json", summary: "bump", steps: "" },
     { kind: "delete", file: "old.md", summary: "", steps: "" },
   ]);
-  // The per-file lines win over the `N files` figure, so a miscount in prose cannot show.
   assert.equal(ov.fileCount, 4);
-  // What is neither a field nor a Scope line survives for the structured render to place.
   assert.equal(ov.rest, "<figure><svg></svg><figcaption>cap</figcaption></figure>");
 });
 
@@ -210,8 +198,6 @@ test("parseDecisions splits on **Question** and trims each field", () => {
 test("parseDecisions folds a numbered bold heading into the Question that follows it", () => {
   const { items } = parseDecisions("**1. naming**\n\n- **Question**: q\n- **Recommendation**: r\n");
   assert.equal(items.length, 1);
-  // How many blank lines the fold leaves between the two is incidental; that both
-  // ended up in one question is the contract.
   assert.match(items[0].question, /^1\. naming\s+q$/);
 });
 
@@ -222,7 +208,6 @@ test("parseDecisions folds a sub-heading into the Question that follows it", () 
   assert.equal(preamble, "");
   assert.equal(items.length, 2);
   assert.match(items[0].question, /^Decision 1: naming\s+q1$/); // the # marks come off with the head
-  // The heading of the item that follows must not trail into this Alternative.
   assert.equal(items[0].alternative, "a1");
   assert.match(items[1].question, /Decision 2: layout/);
 });
@@ -271,7 +256,6 @@ test("escapeHtml escapes the four characters it names", () => {
 test("sectionOfBlockId reads the section out of either id form", () => {
   assert.equal(sectionOfBlockId("build-order::3"), "build-order");
   assert.equal(sectionOfBlockId("decision-2", "decisions"), "decisions");
-  // A plan with no Decisions section leaves the caller's id empty.
   assert.equal(sectionOfBlockId("decision-2", ""), "");
   assert.equal(sectionOfBlockId("loose"), "");
 });
@@ -287,8 +271,7 @@ test("emptyDiff is the pre-revise shape index.html holds until buildDiff replace
   }
 });
 
-// The rename sweep lists in both READMEs name SECTION_TYPES as the site a renamed
-// plan heading has to reach. These two Sets are what a missed rename would break.
+// Both READMEs' rename sweep lists name SECTION_TYPES; these Sets are what a missed rename breaks.
 test("OPEN_TYPES and STEP_COLLAPSE_TYPES follow the SECTION_TYPES flags", () => {
   assert.deepEqual([...OPEN_TYPES].sort(), ["buildorder", "context", "decisions", "overview", "whyorder"]);
   assert.deepEqual([...STEP_COLLAPSE_TYPES], ["buildorder"]);
@@ -316,8 +299,6 @@ test("buildDiff sends a changed Decisions section to prevDecisionSigs, not prevB
 
   assert.equal(diff.sectionStatus.get("decisions"), "changed");
   assert.equal(diff.prevBlockTexts.has("decisions"), false);
-  // The signature's own spelling is opaque — what matters is that the recorded
-  // one is the previous item's, so the current item reads as changed.
   const sigs = diff.prevDecisionSigs.get("decisions");
   assert.equal(sigs.size, 1);
   assert.equal(sigs.has(decisionSig(parseDecisions(sections[0].body).items[0])), false);
@@ -329,9 +310,7 @@ test("buildDecisionDigest gives one row per Decision, numbered as the cards are"
   const { sections } = parseSections(
     "### Decisions\n\n- **Question**: どちらの `env` にするか\n- **Recommendation**: artifact だけに出す。理由はこう\n\n- **Question**: 2 問目\n- **Recommendation**: 2 つ目の答え\n");
   const digest = buildDecisionDigest(sections);
-  // The row's number is what names the card it links to, through the shared id helper.
   assert.deepEqual(digest.items.map((it) => decisionBlockId(it.n)), ["decision-1", "decision-2"]);
-  // stripped of markup and normalized, the way sectionGist leaves a section's first line
   assert.equal(digest.items[0].question, "どちらの env にするか");
   assert.equal(digest.items[0].recommendation, "artifact だけに出す。理由はこう");
 });
@@ -341,16 +320,12 @@ test("buildDecisionDigest returns null when the plan has no Decisions section", 
   assert.equal(buildDecisionDigest(sections), null);
 });
 
-// A Decisions section whose body never resolves into cards renders as plain prose, and the
-// digest has nothing to link to — the same disposition as having no section at all.
 test("buildDecisionDigest returns null when card detection finds no items", () => {
   const { sections } = parseSections("### Decisions\n\nNo user decisions were required.\n");
   assert.equal(sections[0].type, "decisions");
   assert.equal(buildDecisionDigest(sections), null);
 });
 
-// sectionGist skips a line opening on `#`, `>`, or `<`, which would leave the row showing a
-// bare number. excerptOf takes the line as it stands instead.
 test("buildDecisionDigest falls back to a raw excerpt when the gist comes out empty", () => {
   const { sections } = parseSections(
     "### Decisions\n\n- **Question**: > quoted question\n- **Recommendation**: # heading-shaped answer\n");
@@ -359,8 +334,6 @@ test("buildDecisionDigest falls back to a raw excerpt when the gist comes out em
   assert.equal(row.recommendation, "# heading-shaped answer");
 });
 
-// The renderer numbers each decisions section's cards from 1 of its own, so a second section
-// offers no unambiguous card for a row to link to. The digest covers the first alone.
 test("buildDecisionDigest digests the first Decisions section only", () => {
   const { sections } = parseSections(
     "### Decisions\n\n- **Question**: first\n- **Recommendation**: a\n\n"
@@ -399,7 +372,6 @@ test("splitPreamble separates the Hero block from the rest of the preamble", () 
 test("splitPreamble leaves hero empty when no such block exists, and ignores a fenced lookalike", () => {
   assert.equal(splitPreamble("just prose").hero, "");
   assert.equal(splitPreamble("just prose").prose, "just prose");
-  // A "## Hero" inside a fence is code the plan is quoting, not a figures block.
   assert.equal(splitPreamble("```\n## Hero\nnot a hero\n```").hero, "");
 });
 
@@ -419,16 +391,12 @@ test("preparePlan falls back to one section for a plan with no headings", () => 
   assert.deepEqual(model.sections.map((x) => x.id), ["plan"]);
   assert.equal(model.sections[0].body, "no headings at all");
   assert.equal(model.riskCount, 0);
-  // The fallback section already carries the whole document; leaving it in the preamble too
-  // would draw every word twice.
   assert.equal(model.preamble, "");
 });
 
 test("splitPreamble keeps the first Hero block and drops a repeated one", () => {
   const { prose, hero } = splitPreamble("lead\n\n## Hero\nfirst\n\n## Hero\nsecond");
   assert.equal(hero, "first");
-  // Skipped means dropped, not demoted to prose — a second hero rendered as preamble text
-  // would put the same figure on the page twice.
   assert.ok(!prose.includes("second"), "the repeated block leaked into the preamble");
   assert.ok(prose.includes("lead"), "the leading prose was lost");
 });
@@ -441,8 +409,6 @@ test("YAML frontmatter is dropped, so its bookkeeping reaches no rendering surfa
   assert.deepEqual(sections.map((s) => s.title), ["Overview"]);
 });
 
-// The strip is start-anchored and non-greedy, so a plan opening on a thematic break must keep
-// everything between it and the next one.
 test("a leading thematic break is not mistaken for frontmatter", () => {
   const md = "---\n\n### Overview\n- **Goal**: g\n\n---\n\n### Test plan\n- t\n";
   const { sections } = parseSections(md);

@@ -5,8 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Plan Review — dev-workflow</title>
 
-  <!-- Google Fonts is the one font host the artifact CSP admits, so the export uses the same
-       faces. highlight.js themes are stylesheets the CSP blocks silently — see plan-view.css. -->
+  <!-- Google Fonts is the one font host the artifact CSP admits; highlight.js theme stylesheets are blocked silently (see plan-view.css). -->
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
     rel="stylesheet"
@@ -51,7 +50,6 @@
     } from "./plan-parse.mjs";
     import { AFFORDANCE_ATTR, HERO_SECTION_ID, PLAN_SHELL_HTML, LABELS, createRenderer, md, renderMermaidDiagrams } from "./plan-render.mjs";
 
-    // afterbegin, so the shell precedes the #done panel this page keeps last in #app.
     document.getElementById("app").insertAdjacentHTML("afterbegin", PLAN_SHELL_HTML);
 
     // comments: id -> { text, excerpt, kind } ; switches: id -> excerpt
@@ -60,7 +58,6 @@
     // Assigned via innerHTML in init: developer-controlled markup, never user data.
     let KBD_HINT = "<kbd>a</kbd> approve · <kbd>r</kbd> request changes · <kbd>⌘/Ctrl+↵</kbd> send";
     let APPLY_NOTE = "Requesting changes applies a comment to the plan document right away, or answers it here when it asks rather than asks for a change.";
-    // conversation-log labels, localized in init alongside SWITCH_MSG
     let TH = {
       you: "you",
       round: (n) => `Round ${n}`,
@@ -82,9 +79,8 @@
 
     const COMMENT_BLOCK_TAGS = ["P", "BLOCKQUOTE", "PRE", "H4", "H5", "H6", "FIGURE"];
 
-    // The one definition of a review block — comment layer and diff layer both read it, so a
-    // block is never commentable without being diffable. Children are snapshotted first so a
-    // mutating caller (attachElementComments wraps tables) cannot disturb the walk.
+    // The one definition of a review block: comment and diff layers both read it. Children are snapshotted
+    // first because attachElementComments wraps tables mid-walk.
     function commentTargets(root) {
       const out = [];
       for (const c of Array.from(root.children)) {
@@ -98,8 +94,6 @@
       return out;
     }
 
-    // Safe to read prev pre-highlight against current post-highlight: normText collapses
-    // whitespace and highlight.js only wraps tokens in spans, so both normalize the same.
     function collectBlockTexts(bodyMarkdown) {
       const tmp = document.createElement("div");
       tmp.innerHTML = md(bodyMarkdown);
@@ -114,8 +108,6 @@
         const c = state.comments.get(id);
         const txt = c ? c.text.trim() : "";
         const excerpt = (c && c.excerpt) || state.switches.get(id) || "";
-        // kind tells the caller which source the anchored block came from, so it never
-        // has to infer that from the excerpt text; only a <figure> anchor is "figure".
         const kind = (c && c.kind) || "prose";
         let body = switched ? SWITCH_MSG + (txt ? "\n\n" + txt : "") : txt;
         if (body.trim()) out.push({ block: id, section: sectionOfBlockId(id, DECISIONS_SECTION_ID), excerpt, kind, body });
@@ -143,8 +135,7 @@
 
     function selectDecision(v) {
       state.decision = v;
-      // Each radio has a distinct name, so it stays its own Tab stop rather than being
-      // collapsed out when the sibling is checked — hence exclusivity enforced here.
+      // Distinct radio names keep each a Tab stop, so exclusivity is enforced here.
       document.querySelectorAll(".decision-radio").forEach((r) => { r.checked = (r.value === v); });
       document.getElementById("send-btn").disabled = false;
     }
@@ -152,8 +143,7 @@
     function makeCommentArea(placeholder) {
       const area = document.createElement("textarea");
       area.className = "comment-input";
-      // plan-render.mjs' collapseBuildOrderSteps leaves anything carrying this outside the
-      // disclosure it builds, so a collapsed Build order step stays commentable.
+      // plan-render.mjs' collapseBuildOrderSteps leaves anything carrying this outside its disclosure; rename both.
       area.dataset[AFFORDANCE_ATTR] = "";
       area.placeholder = placeholder;
       area.hidden = true;
@@ -175,7 +165,6 @@
       return { btn, area };
     }
 
-    // The card's interactive layer, passed as a hook; the export passes none.
     function decorateDecisionCard({ card, id, n, excerpt, hasAlternative }) {
       if (hasAlternative) {
         const toggle = document.createElement("div");
@@ -198,12 +187,9 @@
       affordanceHead.set(card, btn);
     }
 
-    // Tags whose textarea is appended *inside* the element, where that is valid flow content;
-    // every other block receives it as a sibling. DIV is the synthetic table wrapper below.
+    // Tags whose textarea goes inside the element; every other block gets it as a sibling. DIV is the table wrapper.
     const AREA_INSIDE = new Set(["LI", "BLOCKQUOTE", "DIV", "FIGURE"]);
-    // Each commentable block's comment affordance, so a thread box can be placed above it.
     const affordanceHead = new WeakMap();
-    // Put an affordance inside the block where the tag accepts flow content, beside it otherwise.
     const placeAffordance = (el, node) => {
       if (!AREA_INSIDE.has(el.tagName)) { el.insertAdjacentElement("afterend", node); return; }
       // A <figcaption> is only valid as the figure's first or last child, so go in front of it.
@@ -214,8 +200,7 @@
     function attachComment(el, id) {
       el.classList.add("commentable");
       el.dataset.blockId = id;
-      // Captured before collapseBuildOrderSteps strips the separator and before the affordances
-      // join — either would shift the text a thread entry matches against.
+      // Captured before collapseBuildOrderSteps and the affordances change the text a thread entry matches.
       el.dataset.anchorKey = anchorNorm(el.textContent);
       const excerpt = excerptOf(el.textContent);
       const kind = el.tagName === "FIGURE" ? "figure" : "prose";
@@ -229,14 +214,11 @@
       wireCommentToggle(btn, area, id, excerpt, kind);
       el.appendChild(btn);
       placeAffordance(el, area);
-      // The textarea, not the button: only its parent distinguishes the two placeAffordance
-      // branches, which is what threadBox tests. The button is always inside the block.
       affordanceHead.set(el, area);
     }
 
     function attachElementComments(bodyEl, sectionId) {
       let n = 0;
-      // A table gets a wrapper to carry the affordances, which a <table> itself cannot hold.
       const targets = commentTargets(bodyEl).map((t) => {
         if (t.tagName !== "TABLE") return t;
         const w = document.createElement("div");
@@ -244,9 +226,7 @@
         w.appendChild(t);
         return w;
       });
-      // prevBlockTexts has an entry only for a "changed" non-decisions section, so this lookup
-      // alone selects which sections mark blocks. Read textContent before attachComment appends
-      // the 💬 button, which would pollute it.
+      // Read textContent before attachComment appends the 💬 button.
       const prevSet = diff.prevBlockTexts.get(sectionId) || null;
       for (const t of targets) {
         if (prevSet && !t.dataset.mermaidFigure && !prevSet.has(normText(t.textContent))) t.classList.add("block-changed");
@@ -255,17 +235,13 @@
     }
 
     let THREAD = [];
-    // As the renderer handed it back: its shell ids are not this page's to know.
     let HERO_EL = null;
     let DECISIONS_SECTION_ID = "";
     const threadBoxes = new Map();
 
-    // An entry written before `anchor` existed, or one whose anchor lost its section, still
-    // has its block id to fall back on.
     const entrySection = (e) => (e.anchor && e.anchor.section) || sectionOfBlockId(e.block, DECISIONS_SECTION_ID);
 
-    // Null sends the entry to the log alone. A figure resolves by section (one per section),
-    // since its own text is SVG labels or a mermaid fence's source — neither an anchor.
+    // A figure resolves by section: its own text is SVG labels or fence source.
     function findAnchorTarget(e) {
       const secId = entrySection(e);
       if (!secId) return null;
@@ -333,8 +309,6 @@
         box = document.createElement("div");
         box.className = "thread";
         box.dataset[AFFORDANCE_ATTR] = "";
-        // Above the block's own input, but only when that input is a child: the sibling case
-        // already lands right, and moving it would drag the thread along.
         const head = affordanceHead.get(target);
         if (head && head.parentNode === target) target.insertBefore(box, head);
         else placeAffordance(target, box);
@@ -343,7 +317,6 @@
       return box;
     }
 
-    // The log carries every entry either way, so this pass duplicates, never moves.
     function renderThread() {
       const loose = new Set();
       for (const round of THREAD) {
@@ -416,9 +389,7 @@
 
       DECISIONS_SECTION_ID = (sections.find((s) => s.type === "decisions") || {}).id || "";
 
-      // Built here rather than at module scope because its labels come from `lang`.
       const renderer = createRenderer({
-        // The "Changed" / "New" badges stay English UI chrome and are not localized.
         labels: LABELS[lang] || LABELS.en,
         diff,
         hooks: {
@@ -431,10 +402,8 @@
       const { planEl, heroEl } = await renderer.renderPlan(model);
       HERO_EL = heroEl;
 
-      // After the collapse, so a thread stays outside the <details> and visible on a collapsed
-      // step; matching reads the anchor key captured before it, not live text.
+      // After the collapse, so a thread stays outside the <details> on a collapsed step.
       renderLog(planEl, renderThread());
-      // A fold holding a replayed exchange opens — the reply is why the page was re-launched.
       for (const box of threadBoxes.values()) {
         const fold = box.closest("details.fold");
         if (fold) fold.open = true;
@@ -452,14 +421,11 @@
     document.addEventListener("keydown", (e) => {
       if (e.isComposing) return;                                            // mid-IME (e.g. Japanese) — don't hijack
       if (document.getElementById("app").classList.contains("submitted")) return; // gate already sent
-      // Submit chord: Cmd/Ctrl+Enter, works anywhere including a comment field.
-      // Bare Enter is intentionally NOT bound — it must keep toggling <details>
-      // summaries and activating focused buttons/links natively.
+      // Bare Enter is deliberately unbound: it must keep toggling <details> and activating buttons natively.
       if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
         if (state.decision) { e.preventDefault(); submit(); }
         return;
       }
-      // Decision shortcuts: bare a/r, only outside text-entry fields and unmodified.
       const active = document.activeElement;
       const tag = active ? active.tagName : "";
       if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
@@ -468,8 +434,6 @@
       else if (e.key === "r") { e.preventDefault(); selectDecision("revise"); }
     });
 
-    // `instance` changes per process, so polling the old one while it shuts down reloads
-    // nothing and a connection failure in between is the expected gap.
     function startPolling() {
       if (!INSTANCE) return; // nothing to compare against — a reload would fire on the first poll
       const deadline = Date.now() + POLL_GIVEUP_MS;
@@ -506,11 +470,9 @@
           body: JSON.stringify({ decision: state.decision, comments }),
         });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        // `submitting` stays true on success (not reset) — the "submitted" class added
-        // here is the keydown guard's first early-return, so re-entry can't slip through.
+        // `submitting` stays true on success; the "submitted" class is the keydown guard's early return.
         document.getElementById("app").classList.add("submitted");
         const done = document.getElementById("done");
-        // Only a revise brings the gate back, on the same port, so the tab waits here.
         if (state.decision === "revise") {
           done.textContent = POLL_MSG;
           startPolling();

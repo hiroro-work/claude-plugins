@@ -1,7 +1,5 @@
-// Cross-reference integrity for the dev-workflow tree, replacing the retired cross-reference
-// lint skill. Every `§ <Heading>` must name a heading that exists in SKILL.md or a references file,
-// every `references/<file>.md` and `scripts/<path>.mjs` named in prose must exist, and the v1
-// `Step N` vocabulary must not reappear (v2 phases are `Phase N`).
+// Cross-reference integrity for the dev-workflow tree: every `§ <Heading>` and named references/ or
+// scripts/ path must exist; v1 `Step N` vocabulary must not reappear.
 
 import { test } from "node:test";
 import assert from "node:assert/strict";

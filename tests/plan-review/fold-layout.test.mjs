@@ -1,10 +1,5 @@
-// Static checks on the plan viewer's folded-prose layout.
-//
-// Why static: plan-render.mjs needs a DOM, so no test here renders it. And the failure this
-// guards against is invisible outside a browser — a browser wraps a <details>' non-summary
-// children in one ::details-content box, so `display: grid` on the <details> itself silently
-// collapses every block into a single cell instead of erroring. Eyeballing the markup proves
-// nothing; this file is the only place it is caught.
+// Static checks on the folded-prose layout: a browser wraps a <details>' non-summary children in one
+// ::details-content box, so `display: grid` on the <details> silently collapses every block into one cell.
 
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -17,8 +12,7 @@ const viewerDir = join(repoRoot, "skills", "dev-workflow", "scripts", "plan-revi
 const css = readFileSync(join(viewerDir, "plan-view.css"), "utf8");
 const render = readFileSync(join(viewerDir, "plan-render.mjs"), "utf8");
 
-// Style rules as (prelude, declarations) pairs. At-rules are descended into rather than
-// captured, so a rule inside a media query is checked like any other.
+// (prelude, declarations) pairs; at-rules are descended into.
 function styleRules(source) {
   const text = source.replace(/\/\*[\s\S]*?\*\//g, "");
   const out = [];
@@ -55,7 +49,6 @@ test("no grid or flex container is a <details> element", () => {
     if (!/display\s*:\s*(inline-)?(grid|flex)\b/.test(body)) continue;
     for (const one of selector.split(",")) {
       const s = subject(one);
-      // ::details-content is the box itself, so styling that one is the way to do it.
       if (/^details\b/.test(s) && !s.includes("::details-content")) offenders.push(one.trim());
     }
   }
@@ -77,7 +70,6 @@ test("every token named in the figure-safe comment is defined in :root", () => {
   const comment = css.match(/\/\*\s*Figure-safe tokens[\s\S]*?\*\//);
   assert.ok(comment, "the Figure-safe tokens comment is missing from plan-view.css");
 
-  // The comment names the carve-outs too, so only the pairing lines carry the set.
   const named = new Set(
     comment[0]
       .split("\n")
@@ -91,10 +83,8 @@ test("every token named in the figure-safe comment is defined in :root", () => {
   assert.deepEqual(dangling, [], `figure-safe tokens not defined in plan-view.css: ${dangling}`);
 });
 
-// A figure's <text> with no fill of its own falls to SVG's initial black and all but
-// disappears on the dark ground. The wrapper varies — a bare <svg> lands in a <p> in a
-// section and directly under #hero — so the floor is checked by where it reaches, not by
-// the markup the figures layer asks for.
+// A figure's <text> with no fill falls to SVG's black and disappears on the dark ground; the floor is
+// checked by where it reaches, since the wrapper varies.
 test("the figure colour floor reaches every SVG but mermaid's", () => {
   const floors = styleRules(css)
     .filter((r) => /\bfill\s*:\s*currentColor\b/.test(r.body))
@@ -107,7 +97,5 @@ test("the figure colour floor reaches every SVG but mermaid's", () => {
       assert.ok(floors.includes(required), `the colour floor is missing ${required}`);
     }
   }
-  // A figure combinator would miss both the bare <svg> and the one marked splits out of its
-  // <figure>; mermaid needs excluding by name instead, since its diagram sits in a figure too.
   assert.deepEqual(floors.filter((s) => /figure/.test(s)), []);
 });

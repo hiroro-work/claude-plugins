@@ -1,13 +1,10 @@
 #!/usr/bin/env node
-// Render a timing log as a Markdown table: per phase, wall time, time spent waiting on the
-// user (or a background gate), and active time = wall − waiting. Phases are listed in the
-// order they started; an unterminated phase is closed at the last event's time and marked.
-// A phase with no wait/resume pair at all yet a long active time is flagged under the table. A
-// phase that held no gate is one of those too, so the note asks rather than concludes.
+// Render a timing log as a Markdown table: per phase, wall, waiting (user gate) and active = wall − waiting.
+// An unterminated phase is closed at the last event and marked; a phase with no wait/resume pair but a
+// long active time is flagged under the table.
 //
 // Usage: node report.mjs --file <timing.jsonl> [--out <dir>] [--title <text>]
-// --out writes `<dir>/<YYYY-MM-DD>-<basename>.md` with the same table and prints its path;
-// without it the table goes to stdout.
+// --out writes `<dir>/<YYYY-MM-DD>-<basename>.md` and prints its path; otherwise the table goes to stdout.
 
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { basename, join } from "node:path";

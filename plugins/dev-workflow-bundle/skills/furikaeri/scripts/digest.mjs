@@ -2,20 +2,13 @@
 // Turn a Claude Code session log (jsonl) into a digest the analysis and the page are built from.
 //
 // Usage: node digest.mjs (--file <jsonl> | --cwd <path>) --out-dir <dir> [--gap-cap <minutes>] [--max-chars <n>]
-// Writes <out-dir>/digest.json (every human turn with its timing, tool calls and assistant text)
-// and <out-dir>/transcript.md (a bounded text rendering of the same turns for the analysis agent).
-// Prints the two paths and the turn count. Exit 2 when no log is found.
+// Writes <out-dir>/digest.json and <out-dir>/transcript.md, prints the two paths and the turn count.
+// Exit 2 when no log is found.
 //
-// Log location and shape are Claude Code internals observed, not documented: the project
-// directory under ~/.claude/projects/ is the cwd with every character outside [A-Za-z0-9]
-// replaced by "-"; records are line-delimited JSON with `type`, `timestamp`, `isSidechain`,
-// `isMeta`, `origin.kind` and `message.content` blocks.
-//
-// A human turn is a `user` record that a person wrote: a text block (with harness-injected text
-// dropped), an answer to AskUserQuestion, or a declined tool call. Time is split per human turn:
-// AI time runs from the person's send to the last assistant record before the next human turn,
-// and the rest of the span is the person's. A span longer than --gap-cap (default 60 minutes)
-// is a break: it is marked on the turn and left out of every total.
+// Log location and shape are Claude Code internals observed, not documented: the project directory under
+// ~/.claude/projects/ is the cwd with every character outside [A-Za-z0-9] replaced by "-".
+// AI time runs from the person's send to the last assistant record before the next human turn; the rest
+// of the span is the person's. A span longer than --gap-cap is a break and left out of every total.
 
 import { mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
@@ -63,9 +56,7 @@ for (const rec of records) {
   for (const b of blocksOf(rec)) if (b.type === "tool_use" && b.name === "AskUserQuestion") askIds.add(b.id);
 }
 
-// Classify every user record: a human turn (with its text and kind) or nothing. A record marked
-// `origin.kind: "human"` is trusted as a person's turn; only the explicit harness tags are stripped
-// from it. An older record without `origin` also goes through the shape heuristic.
+// A record marked `origin.kind: "human"` is trusted; an older record without `origin` goes through the shape heuristic.
 function humanTurn(rec) {
   if (rec.isMeta) return null;
   const blocks = blocksOf(rec);

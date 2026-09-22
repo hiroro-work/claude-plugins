@@ -1,30 +1,22 @@
-// Plan parsing for the plan-review viewer.
-//
-// DOM-free, window-free, no module-level mutable state, so the browser surfaces and the
-// Node tests share this file. Keep it that way; walks needing `marked` stay in index.html.
+// Plan parsing for the plan-review viewer. DOM-free with no module-level mutable state: the browser
+// surfaces and the Node tests share it.
 
 export const stripMd = (t) => (t || "").replace(/[*`]/g, "").trim();
 export const normText = (t) => (t || "").replace(/\s+/g, " ").trim();
 export const excerptOf = (t) => normText(t).slice(0, 40);
 
-// One normal form for both sides of an anchor comparison: the browser's excerpt is rendered
-// DOM text while the caller writes its anchor from Markdown source.
 export const anchorNorm = (t) =>
   normText(String(t || "").replace(/!?\[([^\]]*)\]\([^)]*\)/g, "$1").replace(/[*_`~]/g, "")).toLowerCase();
-// Tolerant on length: an anchor is a prefix of the block, or the block of the anchor once an
-// edit shortened it. The floor keeps a near-empty block from matching everything.
+// An anchor may be a prefix of the block or vice versa; the floor keeps a near-empty block from matching everything.
 export const anchorMatches = (a, b) => {
   if (!a || !b) return false;
   const [short, long] = a.length <= b.length ? [a, b] : [b, a];
   return short.length >= 8 && long.startsWith(short);
 };
-// The id a Decision's card carries, which the digest's in-page link targets and
-// sectionOfBlockId reads back. Written once: a scheme changed at only one of those sites
-// would break block-id routing with nothing to fail.
+// Decision card id; the digest's in-page link and sectionOfBlockId both depend on this scheme.
 const DECISION_ID_PREFIX = "decision-";
 export const decisionBlockId = (n) => `${DECISION_ID_PREFIX}${n}`;
 
-// Both id forms encode their section, so nothing is threaded through comment-state calls.
 export const sectionOfBlockId = (id, decisionsSectionId) => {
   const b = String(id || "");
   if (b.includes("::")) return b.slice(0, b.indexOf("::"));
@@ -34,17 +26,13 @@ export const sectionOfBlockId = (id, decisionsSectionId) => {
 const HTML_ESCAPES = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" };
 export const escapeHtml = (t) => (t || "").replace(/[&<>"]/g, (c) => HTML_ESCAPES[c]);
 
-// One rule for every line walk that has to know whether it is inside a fence.
 export const FENCE_RE = /^\s*(`{3,}|~{3,})/;
 
-// The title the exporter appends its conversation-history section under. Held here so the
-// entry below matches whatever the exporter writes.
+// Title of the section export-plan-html.mjs appends; SECTION_TYPES' dialogue entry matches it.
 export const DIALOGUE_TITLE = "Conversation history";
 
-// Match-priority order. Prefixes come from plan-format.md and mob-mode.md § Plan shape, except
-// the `dialogue` entry, which the exporter owns through DIALOGUE_TITLE above; keep in sync both
-// ways — a heading renamed upstream silently all-collapses that plan.
-// Each prefix stops short of an apostrophe, so straight vs. curly quotes cannot break it.
+// Match-priority order. Prefixes come from plan-format.md and mob-mode.md § Plan shape; a heading renamed
+// upstream silently all-collapses that plan. Each prefix stops short of an apostrophe.
 const SECTION_TYPES = [
   { type: "overview", match: ["overview", "what we"], open: true },
   { type: "decisions", match: ["decision", "choices i made"], open: true },
@@ -74,19 +62,13 @@ export function slugify(title) {
 const FRONTMATTER_RE = /^---\r?\n(?=[A-Za-z_][\w.-]*[ \t]*:)[\s\S]*?\r?\n---[ \t]*\r?\n/;
 export const stripFrontmatter = (t) => String(t || "").replace(FRONTMATTER_RE, "");
 
-// Section heading level, inferred rather than fixed. plan-format.md puts the sections at
-// `###` under a `## Plan` wrapper, but a plan written one level shallow would otherwise
-// collapse into a single section whose last field swallows every section below it. Score each
-// candidate level by how many distinct section *types* `classify` recognizes there and take
-// the best, shallowest on a tie; `## Plan` and the figures layer's `## Hero` are unrecognized,
-// so a canonical plan still scores `###` highest. Distinct types, not a count of headings: a
-// shallow plan giving each of five decisions its own `### Decision N:` sub-heading would
-// otherwise outscore its own `##` sections and land back on the bug this infers around.
+// Section heading level is inferred: score each level by the distinct section *types* classify recognizes
+// (not heading count), shallowest wins a tie. A plan written one level shallow would otherwise collapse
+// into one section.
 const LEVELLED_HEADING_RE = /^(#{2,4})\s+(.+?)\s*$/;
 const SECTION_LEVELS = [2, 3, 4];
 const DEFAULT_SECTION_LEVEL = 3;
-// Left out of the split at whatever level is chosen: both belong to the preamble, where
-// `splitPreamble` reads Hero back and the wrapper heading names no section of its own.
+// Hero and the `## Plan` wrapper belong to the preamble at any level.
 const RESERVED_HEADINGS = new Set(["plan", "hero"]);
 
 export function inferSectionLevel(lines) {
@@ -150,8 +132,7 @@ export function fieldValue(body, label) {
   return "";
 }
 
-// The kind tokens a Scope line may open with (plan-format.md § Overview). English on purpose:
-// field labels and headings already are, and a localized token would parse as part of the path.
+// Scope kind tokens (plan-format.md § Overview). English on purpose: a localized token would parse as part of the path.
 const SCOPE_KINDS = ["new", "edit", "delete"];
 const SCOPE_LINE_RE = new RegExp("^\\s{2,}[-*]\\s+(?:(" + SCOPE_KINDS.join("|") + ")\\s+)?(.+?)\\s*$");
 // `<path> — <summary> (step N)`; the step tag is optional and may hold a range or list.
@@ -159,9 +140,6 @@ const SCOPE_STEP_RE = /\s*\((?:steps?\s*)?(\d[\d\s,–-]*)\)\s*$/i;
 const OVERVIEW_FIELDS = ["Goal", "Now", "After", "Not changing", "Approach", "Highlights", "Difficulty", "Scope"];
 const FIELD_LINE_RE = /^\s{0,1}[-*]\s+\*\*([^*]+)\*\*\s*[:：]/;
 
-// Every field of either Overview shape (Goal, or Now / After / Not changing), the per-file
-// Scope lines nested under **Scope**, and `rest` — whatever else the section holds (a figure,
-// prose), as Markdown, so a structured render can still place it.
 export function parseOverview(body) {
   const ov = { scopeFiles: [], rest: "" };
   for (const f of OVERVIEW_FIELDS) ov[f === "Not changing" ? "notChanging" : f.toLowerCase()] = fieldValue(body, f);
@@ -193,7 +171,6 @@ export function parseOverview(body) {
     rest.push(line);
   }
   ov.rest = rest.join("\n").trim();
-  // The count the header shows: the per-file lines when present, else the `N files` figure.
   const m = /(\d+)/.exec(ov.scope);
   ov.fileCount = ov.scopeFiles.length || (m ? Number(m[1]) : 0);
   return ov;
@@ -210,17 +187,13 @@ export function countListItems(body) {
 
 export function parseDecisions(body) {
   const FIELD_RE = /^\s*(?:[-*]\s+)?\*\*(Question|Recommendation|Alternative)\*\*\s*[:：]?\s*(.*)$/;
-  // Only starts an item when a **Question** is the next non-blank line — splitting elsewhere
-  // truncates a Recommendation onto the next card.
+  // Only a following **Question** opens an item; splitting elsewhere truncates a Recommendation.
   const ITEM_HEAD_RE = /^\*\*(\d+[.)]\s*\S.*?)\*\*\s*$/;
-  // A sub-heading immediately above a **Question** is that item's title — the shape a plan
-  // takes when it gives each decision its own heading. Folded like the bold-numbered form,
-  // so the heading does not trail into the previous item's Alternative.
+  // A sub-heading right above a **Question** is that item's title.
   const HEADING_HEAD_RE = /^#{2,6}\s+(.+?)\s*$/;
   const items = [];
   const preamble = [];
   const lines = body.split("\n");
-  // Fence state after each line, so the lookahead reads it instead of re-scanning.
   const fenced = [];
   for (let i = 0, f = false; i < lines.length; i++) {
     if (FENCE_RE.test(lines[i])) f = !f;
@@ -248,8 +221,6 @@ export function parseDecisions(body) {
     if (m) {
       const f = m[1].toLowerCase();
       if (f === "question") {
-        // Fold into an item the heading rule just opened, so both shapes yield one item. Only
-        // then — two consecutive **Question** lines still open two items, as they always did.
         if (curFromHead && !cur.recommendation && !cur.alternative) {
           cur.question += (cur.question ? "\n\n" : "") + (m[2] || "");
           field = "question";
@@ -281,12 +252,9 @@ export function parseDecisions(body) {
 }
 
 const GIST_MAX = 120;
-// Shared, so a gist and the digest's fallback cut at the same length and mark it the same way.
 const capGist = (t) => (t.length > GIST_MAX ? t.slice(0, GIST_MAX - 1) + "…" : t);
 
-// The one-line gist a collapsed section shows beside its title. Read from Markdown rather
-// than the rendered body: the source has one unambiguous first line of prose, where a card
-// section's body holds several candidates.
+// Read from Markdown, not the rendered body: the source has one unambiguous first prose line.
 export function sectionGist(body) {
   let inFence = false;
   for (const raw of String(body || "").split("\n")) {
@@ -301,8 +269,7 @@ export function sectionGist(body) {
   return "";
 }
 
-// Row `n` is card `n` of the **first** decisions section: every such section numbers from 1,
-// so a plan with two has no unambiguous target. capGist catches fields sectionGist skips.
+// Row n is card n of the first decisions section; every section numbers from 1.
 export function buildDecisionDigest(sections) {
   const sec = (sections || []).find((s) => s.type === "decisions");
   if (!sec) return null;
@@ -317,10 +284,8 @@ export function buildDecisionDigest(sections) {
   };
 }
 
-// One derivation for both surfaces; a second copy would only show up side by side.
 export function preparePlan(markdown, id) {
   const { preamble: parsedPreamble, sections: parsed, body } = parseSections(markdown);
-  // With no headings, the preamble and the fallback section would both hold the whole document.
   const preamble = parsed.length ? parsedPreamble : "";
   const sections = parsed.length
     ? parsed
@@ -330,7 +295,6 @@ export function preparePlan(markdown, id) {
   const risksSection = sections.find((s) => s.type === "risks");
   const riskCount = risksSection ? countListItems(risksSection.body) : 0;
   if (risksSection) risksSection.itemCount = riskCount; // the section badge reads it back
-  // Header chips: the top-level steps of the first Build order, the cards of the first Decisions.
   const buildSection = sections.find((s) => s.type === "buildorder");
   const stepCount = buildSection ? countListItems(buildSection.body) : 0;
   const decisionsSection = sections.find((s) => s.type === "decisions");
@@ -338,9 +302,7 @@ export function preparePlan(markdown, id) {
   return { id, preamble, sections, overview, riskCount, stepCount, decisionCount };
 }
 
-// The figures layer's `## Hero` block lands in the preamble (visual-plan-review.md
-// § Figures layer). Split it out so the viewer can give it its own slot; `prose` is
-// everything else with the block headings taken off, as the preamble was before Hero.
+// Split the figures layer's `## Hero` block out of the preamble (visual-plan-review.md § Figures layer).
 export function splitPreamble(preamble) {
   const lines = String(preamble || "").split("\n");
   const prose = [];
@@ -353,8 +315,7 @@ export function splitPreamble(preamble) {
     if (FENCE_RE.test(line)) inFence = !inFence;
     const h = !inFence && /^##\s+(.+?)\s*$/.exec(line);
     if (h) {
-      // First wins, per visual-plan-review.md § Figures layer's File format. Skipped means
-      // dropped, not demoted to prose — that would put the same figure on the page twice.
+      // First Hero wins; a repeat is dropped, not demoted to prose.
       const isHero = h[1].trim() === "Hero";
       if (isHero && heroSeen) { target = skipped; continue; }
       if (isHero) { heroSeen = true; target = hero; continue; }
@@ -369,7 +330,7 @@ export function splitPreamble(preamble) {
 export const decisionSig = (it) => normText(`${it.question} ${it.recommendation} ${it.alternative}`);
 const collectDecisionSigs = (body) => new Set(parseDecisions(body).items.map(decisionSig));
 
-// Shape written here alone; index.html holds one until buildDiff replaces it.
+// Diff state shape; index.html's emptyDiff() mirrors it.
 //   sectionStatus:    id -> "new" | "changed" | "unchanged"
 //   prevBlockTexts:   id -> Set<normalized block text>         (changed sections only)
 //   prevDecisionSigs: id -> Set<normalized decision signature> (changed Decisions sections only)
@@ -384,8 +345,7 @@ export function emptyDiff() {
   };
 }
 
-// `collectBlockTexts` is injected: it needs a document and a Markdown renderer, which this
-// module has neither of by design.
+// `collectBlockTexts` is injected: it needs a document and a Markdown renderer.
 export function buildDiff(prevMarkdown, sections, collectBlockTexts) {
   const diff = emptyDiff();
   const prev = parseSections(prevMarkdown);

@@ -1,10 +1,4 @@
-// The timing log's location must not depend on where the caller happens to stand.
-//
-// mark.mjs is invoked once per phase transition, between arbitrary other commands, so the shell's
-// directory is whatever the previous command left. When the default log directory was relative, a
-// mark issued from inside the skill tree created a second log there and every later mark appended
-// to a different file — the run reported a wrong table rather than no table, and the stray log sat
-// in the distributed skill tree.
+// The timing log's location must not depend on the caller's cwd: a relative default once created a second log mid-run.
 
 import { test } from "node:test";
 import assert from "node:assert/strict";

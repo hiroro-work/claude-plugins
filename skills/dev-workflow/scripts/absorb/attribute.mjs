@@ -1,21 +1,16 @@
 #!/usr/bin/env node
-// Attribute the working tree's residue over a snapshot chain to the chain
-// commits that last touched the affected lines, and write one patch per target.
+// Attribute the working tree's residue over a snapshot chain to the chain commits that last
+// touched the affected lines, and write one patch per target.
 //
-// Usage: node attribute.mjs --base <sha> --tip <sha> --out <dir> [--repo <path>]
-//                           [--start-tree <tree>]
+// Usage: node attribute.mjs --base <sha> --tip <sha> --out <dir> [--repo <path>] [--start-tree <tree>]
 // Output (stdout, one JSON object):
 //   { "targets": [{ "commit": "<sha>", "subject": "...", "patch": "<path>", "hunks": n }],
 //     "trailing": { "patch": "<path>", "hunks": n } | null,
 //     "excluded": ["<path>"],
 //     "residue_files": n }
-// Attribution is per file when every hunk of the file agrees, per hunk otherwise.
+// Hunks nobody in the chain can own go to the trailing patch. With --start-tree, a file no chain
+// commit wrote whose content still matches that tree is skipped whole into "excluded".
 // Patches are zero-context: apply them with `git apply --unidiff-zero`.
-// Hunks nobody in the chain can own (lines from the base commit, new files no
-// chain commit touched, binary or renamed files) go to the trailing patch.
-// With --start-tree, a file no chain commit wrote whose content still matches that
-// tree changed before the run and is skipped whole: it lands in "excluded", in no
-// patch, and outside "residue_files".
 
 import { execFileSync } from "node:child_process";
 import { mkdirSync, writeFileSync } from "node:fs";
@@ -32,8 +27,6 @@ const chain = git(["rev-list", "--reverse", `${base}..${tip}`]).split("\n").filt
 const rank = new Map(chain.map((sha, i) => [sha, i]));
 const subjects = new Map(chain.map((sha) => [sha, git(["log", "-1", "--format=%s", sha])]));
 
-// Zero context: every change is its own hunk, so two edits in one file can go to two
-// different snapshot commits. Patches therefore apply with `git apply --unidiff-zero`.
 const diff = gitRaw(["-c", "core.quotePath=false", "diff", "--no-color", "--no-ext-diff", "-U0", "--no-renames", tip]); // keep the final newline: hunks need it
 const files = splitFiles(diff);
 
@@ -96,12 +89,10 @@ if (trailing.hunks.length) {
 
 process.stdout.write(JSON.stringify({ targets, trailing: trailingOut, excluded, residue_files: files.length - excluded.length }) + "\n");
 
-// --- helpers -----------------------------------------------------------------
 
 function ownerOf(file, hunk) {
   if (file.isNew) return null; // no old lines to blame; file-level fallback decides
-  // Blame the old-side lines the hunk replaces. A pure insertion has no old
-  // lines: blame the line before it, else the line after.
+  // A pure insertion has no old lines: blame the line before it, else the line after.
   let start = hunk.oldStart;
   let end = hunk.oldStart + hunk.oldLen - 1;
   if (hunk.oldLen === 0) {
@@ -153,8 +144,7 @@ function splitFiles(text) {
   return out;
 }
 
-// A binary or mode-only diff carries no `---` / `+++` line to read the path from. Under
-// --no-renames both halves of the `diff --git` line are the same path, so solve for it.
+// A binary or mode-only diff has no ---/+++ line; under --no-renames both halves of `diff --git` are the same path.
 function pathFromGitLine(header) {
   const m = /^diff --git (.*)$/m.exec(header);
   if (!m || m[1].startsWith('"') || m[1].length % 2 === 0) return "";
@@ -172,8 +162,7 @@ function gitRaw(argv) {
   }
 }
 
-// Residue paths no chain commit wrote that still hold the content they had when the run began.
-// Two diffs over the residue paths only, so the rest of the working tree is never walked.
+// Residue paths no chain commit wrote that still hold their content from when the run began.
 function unchangedSince(tree, files) {
   const paths = [...new Set(files.map((f) => f.path).filter(Boolean))];
   if (!paths.length) return [];

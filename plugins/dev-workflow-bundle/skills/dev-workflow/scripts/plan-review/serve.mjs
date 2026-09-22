@@ -1,23 +1,13 @@
 #!/usr/bin/env node
 /**
- * Local plan-review viewer for dev-workflow's visual plan-review gate.
- *
- * Transport only: serves the raw Markdown plan on 127.0.0.1, collects the browser's
- * submit into <plan-basename>.comments.json, appends it as a round to
- * <plan-basename>.thread.json, and writes the viewer URL to <plan-basename>.url at
- * listen time (the port is random, so a caller that backgrounded this reads it there).
- * Node built-ins only (no node_modules).
+ * Local plan-review viewer for dev-workflow's visual plan-review gate. Serves the plan on 127.0.0.1,
+ * records the browser's submit into <plan-basename>.comments.json and <plan-basename>.thread.json,
+ * and writes the viewer URL to <plan-basename>.url at listen time.
  *
  * Usage:
  *   node serve.mjs --plan <path> [--prev <path>] [--lang <ja|en>] [--wait] [--port <n>] [--no-open] [--timeout <sec>]
  *
- * --prev is the plan version reviewed on the previous launch; shipped as prevMarkdown
- * so the browser can highlight what changed. --lang controls only browser-generated
- * text, not UI chrome.
- *
- * stdout contract: in --wait mode the ONLY bytes on stdout are the final submit JSON
- * (one line), so the caller can `JSON.parse` the whole stream. Everything else → stderr.
- *
+ * stdout contract: in --wait mode the ONLY bytes on stdout are the final submit JSON (one line).
  * Exit codes: 0 submit, 124 timeout (default 24h; --timeout 0 disables), 130 SIGINT/SIGTERM, 1 startup error.
  */
 
@@ -27,7 +17,6 @@ import { basename, dirname, extname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import { spawn } from "node:child_process";
-// The viewer drops frontmatter anyway; stripping here keeps it out of the response body too.
 import { stripFrontmatter } from "./public/plan-parse.mjs";
 
 const log = (...args) => console.error(...args); // all progress → stderr
@@ -68,7 +57,6 @@ try {
   process.exit(1);
 }
 
-// An unreadable --prev is non-fatal: the viewer renders without a diff.
 let prevSource = null;
 if (opts.prev) {
   try {
@@ -92,13 +80,10 @@ const commentsPath = join(dirname(planPath), `${planId}.comments.json`);
 const urlPath = join(dirname(planPath), `${planId}.url`);
 const threadPath = join(dirname(planPath), `${planId}.thread.json`);
 
-// An absent or malformed thread file is non-fatal: the viewer renders no thread rather
-// than the run losing its gate.
 const DISPOSITIONS = new Set(["answered", "revised", "both"]);
 const str = (v) => (typeof v === "string" ? v : "");
 
-// Rounds read off disk and rounds appended here must be one shape, or a rename reaches
-// only half. The caller rewrites this file between launches — trust nothing in it.
+// Rounds read off disk and rounds appended here must share one shape.
 function makeEntry(e, fallbackId) {
   return {
     id: str(e.id) || fallbackId,
@@ -137,8 +122,7 @@ if (existsSync(threadPath)) {
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const publicDir = join(__dirname, "public");
 
-// Reload signal: changes per process start, so a page polling across a restart reloads
-// and one polling the still-shutting-down process does not.
+// Reload signal: changes per process start.
 const instance = `${process.pid}-${Date.now()}`;
 const planPayload = {
   id: planId,
@@ -228,7 +212,6 @@ function handleSubmit(req, res) {
               typeof c.body === "string" &&
               c.body.trim() !== "",
           )
-          // Normalized, not passed through: the caller routes on `kind`, so keep it two-valued.
           .map((c) => ({
             block: c.block,
             section: str(c.section),
@@ -247,8 +230,7 @@ function handleSubmit(req, res) {
       return sendJson(res, 500, { error: "write failed" });
     }
 
-    // An approve's comments are advisory (§ Decision mapping), so only a non-empty revise
-    // opens a round. `reply` / `disposition` are the caller's to fill.
+    // An approve's comments are advisory (§ Decision mapping), so only a non-empty revise opens a round.
     if (decision === "revise" && comments.length) {
       const roundNo = thread.rounds.length + 1;
       thread.rounds.push({
@@ -262,8 +244,6 @@ function handleSubmit(req, res) {
       try {
         writeFileSync(threadPath, JSON.stringify(thread, null, 2) + "\n");
       } catch (err) {
-        // Non-fatal: the submit is the gate's return value and comments.json already holds
-        // this round.
         log(`warning: cannot write ${threadPath}: ${err.message}`);
       }
     }
@@ -277,7 +257,6 @@ function handleSubmit(req, res) {
 function handle(req, res) {
   const url = new URL(req.url, "http://127.0.0.1");
   if (req.method === "GET" && url.pathname === "/api/plan") return sendJson(res, 200, planPayload);
-  // The post-revise poll hits this, not /api/plan: it runs for as long as the caller takes.
   if (req.method === "GET" && url.pathname === "/api/instance") return sendJson(res, 200, { instance });
   if (req.method === "POST" && url.pathname === "/api/submit") return handleSubmit(req, res);
   if (req.method === "GET") return serveStatic(res, url.pathname);
@@ -290,7 +269,6 @@ function openBrowser(urlStr) {
   const opener = process.platform === "darwin" ? "open" : isWin ? "start" : "xdg-open";
   const args = isWin ? ["", urlStr] : [urlStr];
   try {
-    // browser-open failure is non-fatal: stay up, exit code unaffected, nothing to stdout
     const child = spawn(opener, args, { stdio: "ignore", detached: true, shell: isWin });
     child.on("error", () => log(`could not launch a browser; open ${urlStr} manually`));
     child.unref();
@@ -301,15 +279,13 @@ function openBrowser(urlStr) {
 
 server = createServer(handle);
 
-// Set when a busy --port forced a random one: the caller's already-open tab points at the
-// old port, so it can no longer reach this process and a browser has to open regardless.
+// A busy --port forced a random one: the caller's open tab can't reach this process, so open a browser regardless.
 let bindRetried = false;
 let portFellBack = false;
 
 server.on("error", (err) => {
   if (err.code === "EADDRINUSE" && port !== 0 && !portFellBack) {
-    // A relaunch reuses the previous port, which that process may still be releasing.
-    // Exiting here would read to the caller as a startup failure and misfire its fallback.
+    // A relaunch may reuse a port the previous process is still releasing; exiting would read as a startup failure.
     if (!bindRetried) {
       bindRetried = true;
       log(`warning: port ${port} is busy — retrying once in 1s`);
@@ -328,8 +304,6 @@ server.on("error", (err) => {
 server.on("listening", () => {
   const urlStr = `http://127.0.0.1:${server.address().port}/`;
   log(`plan-review viewer listening on ${urlStr} (plan: ${planId})`);
-  // Written before the browser launch so a backgrounded caller can read it either way;
-  // failing to write is non-fatal.
   try {
     writeFileSync(urlPath, `${urlStr}\n`, "utf8");
   } catch (err) {

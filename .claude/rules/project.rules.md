@@ -2,122 +2,128 @@
 
 ## SKILL.md設計
 
-- シンプルな箇条書き形式を優先
-- エビデンス・信頼度等の詳細情報は不要（コンテキスト削減のため）
-- 一般知識で判断可能なことはルールに含めない
-- AIに判断を委ねる方針（細かく書きすぎない）
-- SKILL.md 内外の相互参照は、フェーズ番号**単独**（例: `Phase 9`）で書かず、安定した節見出し・フレーズを必ず含める。許容形は 2 つ: (i) 安定フレーズ単独（例: `` `references/snapshots.md` § Absorb review fixes ``）、(ii) **番号 + 安定記述子のペア形**（例: `Phase 9 (Check / Test)`）。禁止対象は bare number 単独参照のみ — ペア形なら番号がずれても記述子が grep 解決の anchor として残る。節の中の番号付き手順を指す `step N` は本条の対象外で、対象は節をまたいで位置を指す番号（フェーズ番号の類）。ただし同じファイルに同じ番号を持つ別のリストがあり、参照地点からどちらとも読める場合は、番号でなく手順の名前で呼ぶ
-- 呼び出し先が守るべき制約は、呼び出し先自身の規則に置く。呼び出し元の散文に書いた注意書きは、呼び出し契約にそれを運ぶ欄が無ければ一切届かない
-- 同意を求めるゲートの提示文は、その同意で何が起きるかを変えたときに必ず同期する掃き先へ含める。提示文は利用者が同意する前に読む唯一の文なので、機構側だけを更新して提示文を旧い意味のまま残すと、利用者は説明されていない放棄に同意する
+- **箇条書きを優先する**: SKILL.md はシンプルな箇条書きで書く
+- **根拠の詳細を書かない**: エビデンスや信頼度などの詳細は、コンテキストを減らすため書かない
+- **一般知識で足りることは書かない**: 一般知識で判断できることは書かない
+- **判断は AI に委ねる**: 細かく書きすぎない
+- **節をまたぐ参照に番号だけを書かない**: SKILL.md 内外の相互参照に `Phase 9` のような番号だけを書かない。安定した節見出しかフレーズ（例: `` `references/snapshots.md` § Absorb review fixes ``）か、番号と記述子の組（例: `Phase 9 (Check / Test)`）にする。番号がずれても記述子が検索の手がかりに残る。節の中の番号付き手順を指す `step N` は対象外だが、同じファイルに同じ番号を持つ別のリストがあってどちらとも読めるなら、手順の名前で呼ぶ
+- **呼び出し先への制約は呼び出し先の規則に置く**: 呼び出し先が守るべき制約は、呼び出し先自身の規則に書く。呼び出し元の散文に注意書きを書いても、呼び出し契約にそれを運ぶ欄が無ければ届かない
+- **同意ゲートの提示文も同期の対象にする**: 同意によって起きることを変えたら、ゲートの提示文も同じ変更で直す。利用者は同意する前にこの文しか読まない。機構だけ直すと、説明されていない放棄に同意させることになる
+- **下流へ例外を足すときは上流の断定も直す**: 上流の記述を転記している下流の文書に例外を足すなら、同じ反復で上流の断定的な記述も直す。レビューの指摘に応じた修正でも、片側だけ直せば新しい矛盾になる
+- **兄弟の手続きを写すときは理由が書かれた強い側に揃える**: 既存の手続きを写して新しい手続きを書くとき、規約が写し元の間で割れていたら、最も近い兄弟でなく理由が明記された側に揃える。割れている事実はコミットメッセージか PR 本文に残し、SKILL.md にも `references/*.md` にも書かない（実行時の判断を変えないため）
 
 ## allowed-tools設計
 
-- `Bash(*)`は避け、具体的なコマンドを指定（例: `Bash(git ls-files *)`）
-- 検索/参照系のBashコマンドは許可してよい
-- 必要な権限のみ追加（mkdir -p等）
+- **`Bash(*)` を避ける**: 具体的なコマンドを指定する（例: `Bash(git ls-files *)`）
+- **検索・参照系は許可してよい**: 検索や参照だけを行う Bash コマンドは許可してよい
+- **必要な権限だけを足す**: `mkdir -p` のように、手順が実際に使うものだけを足す
+- **警告されうるパターンは理由があるときだけ使う**: セキュリティスキャンで警告されうるパターンは、正当な理由があるときだけ使う
 
 ## セキュリティ
 
-- `.gitignore`に設定されているファイル/ディレクトリはデフォルトで除外
-- `.env`等の機密情報は抽出対象外
-- `git ls-files`を使用して追跡ファイルのみを対象にする
+- **gitignore 対象は既定で除外する**: `.gitignore` に載っているファイルとディレクトリは既定で除外する
+- **機密ファイルは抽出しない**: `.env` などの機密情報は抽出の対象にしない
+- **追跡ファイルだけを対象にする**: 走査の対象は `git ls-files` で追跡ファイルに限る
 
 ## ワークフロー
 
-- peerに相談する（作業計画レビュー、完了時チェック）
-- codex等の外部ツールにレビューを依頼
-- session 中断を挟んだ resume 後は、中断前の background `Agent` dispatch を失われた前提で扱う。完了通知を待ち続けず liveness を確認し、失われた executor を即座に再 dispatch する
+- **peer に相談する**: 作業計画のレビューと完了時のチェックを peer に頼む
+- **外部ツールにもレビューを頼む**: codex などの外部ツールにレビューを依頼する
+- **再開後は中断前のバックグラウンド呼び出しを失われたものとして扱う**: セッションの中断を挟んで再開したら、中断前にバックグラウンドで呼んだ `Agent` は失われた前提で扱う。完了通知を待ち続けずに生存を確かめ、失われた実行役はすぐ呼び直す
 
 ## ドキュメント言語
 
-- プラン文書（`.claude/plans/*.md` 等）は日本語で記述する
-- 実装物（SKILL.md、README.md、CHANGELOG.md、plugin.json の description 等、配布される成果物）は英語で記述する
-- ユーザーとの会話は日本語で行う（グローバル設定）
-- 配布される SKILL.md / `references/*.md` で、resolved `language` に従って出力を切り替える仕様を記述する場合、規律を述べる英語の本文と、実行時の描画を示す日英一対の例を分けて書く。**例を置いてよいのは、隣接する本文では述べきれない逐語内容を運ぶときに限る** — 本文が「何を伝えるか」を書けば足りるなら例は置かない。逐語内容に当たるのは 3 つで、読み手がそのまま書き写す固定文字列、言語によって変わる描画規約、再現しなければならないスロットの構造と配置。落とす側は、その出力が何を伝えなければならないかを本文で述べて置き換える。固定した例は語り口を固定してしまい、後続の出力がその語り口に引きずられるため。**適用除外は、ファイル自身の主題が当の規約であるもの**（現状 `skills/dev-workflow/references/plan-format.md`）。そこでは例そのものが規約の内容になる。散文の 1 行に `(A for en, B for ja)` の形で収めた対も本条の「例」だが、ブロックへ切り出す必要はない。ゲートが提示する選択肢の集合や、受け付ける入力形式の一覧は、例ではなく本文で列挙する — 保たなければならないのは集合であって言い回しではないので、集合さえ本文にあれば文言は実行ごとに変わってよい。置くと決めた例には、適用除外のファイルでも `language: ja` / `language: en` の両方を書く — 日本語だけの例は rules-review の低確度指摘を呼び込む
-- 対象言語へ訳した語は「元の語を知らない読者が、その語だけを見て意味を取れるか」で判定する。対象言語の文字で書かれていること自体を検査の免除理由にせず、原語の比喩表現をそのまま対象言語の動詞に置き換えない（落ちる例: `セマンティクス` / `タイブレーク` / `着地する`（land）/ `〜に倒す`（fall back to）/ `走行`（run）/ `閉じたリスト`（closed list）。同じ基準で `キャッシュ` `レスポンス` は通る）
-- 出力する散文は語彙だけでなく組み立て方も規定する。1 文 1 主張を箇条書きの項目にも適用し、参照は文頭ではなく文末に置き、括弧の入れ子を作らない。語彙だけを規定した状態では、(i)〜(iv) を 1 文に詰めて「を持つ」で閉じる形や、節参照が主語の位置を占める形が残る
-- 文体規則がサブエージェントへの入力として渡される仕組みの場合、その規則は自分が直接書く出力には自動適用されない。ユーザーに見せる散文は自分で書いたものでも明示的に推敲へ通す
-- 利用者に提示する文書では、項目を出典文書の記号ラベル（見出し番号、選択肢の英字、内部の状態名）で呼ばず、その項目が何であるかを述べる名前で呼ぶ。記号は出典を開いている者にしか解けないため、提示された文書だけを読む利用者には各項目が何の話か取れない
+- **プラン文書は日本語で書く**: `.claude/plans/*.md` などのプラン文書は日本語で書く
+- **配布物は英語で書く**: SKILL.md、README.md、CHANGELOG.md、plugin.json の description など、配布される成果物は英語で書く
+- **言語で出力を切り替える仕様は、英語の本文と日英の例を分ける**: 配布する SKILL.md / `references/*.md` で、解決済みの `language` に従って出力を変える仕様を書くときは、規律を英語の本文で述べ、実行時の描画は日英一対の例で示す。例を置くなら、次項の適用除外のファイルでも `language: ja` と `language: en` の両方を書く。日本語だけの例は rules-review の低確度の指摘を招く
+- **例は本文で言い切れない逐語内容があるときだけ置く**: 逐語内容とは、読み手がそのまま写す固定文字列、言語で変わる描画規約、再現すべきスロットの構造と配置の 3 つ。それ以外は、出力が何を伝えるべきかを本文で述べ、例を置かない。固定した例は語り口を固定し、後の出力を引きずる。散文の 1 行に `(A for en, B for ja)` の形で収めた対も例にあたるが、ブロックに切り出す必要はない。ファイルの主題がその規約そのものであるもの（現状は `skills/dev-workflow/references/plan-format.md`）は適用除外
+- **選択肢や入力形式の一覧は例でなく本文で列挙する**: ゲートが示す選択肢の集合や、受け付ける入力形式の一覧は本文で列挙する。守るべきは集合で、言い回しは実行ごとに変わってよい
+- **訳語は原語を知らない読者が読めるかで判定する**: 訳した語は「原語を知らない読者が、その語だけで意味を取れるか」で判定する。対象言語の文字で書かれていることを免除の理由にしない。原語の比喩を対象言語の動詞へ置き換えただけの語も落とす（落ちる例: `セマンティクス` / `タイブレーク` / `着地する`（land）/ `〜に倒す`（fall back to）/ `走行`（run）/ `閉じたリスト`（closed list）。`キャッシュ` / `レスポンス` は通る）
+- **散文は語彙だけでなく組み立ても規定する**: 出力する散文の規則には語彙と組み立て方の両方を含める。1 文 1 主張を箇条書きの項目にも適用し、参照は文頭でなく文末に置き、括弧を入れ子にしない。語彙だけ規定すると、(i)〜(iv) を 1 文に詰めて「を持つ」で閉じる形や、節参照が主語に座る形が残る
+- **自分で書いた散文も明示的に推敲へ通す**: 文体規則がサブエージェントへの入力として渡される仕組みでは、その規則は自分が直接書く出力に自動では効かない。ユーザーに見せる散文は、自分で書いたものも推敲に通す
+- **提示する文書では記号ラベルでなく中身の名前で呼ぶ**: 利用者に提示する文書では、項目を出典の記号ラベル（見出し番号、選択肢の英字、内部の状態名）で呼ばず、それが何かを述べる名前で呼ぶ。記号は出典を開いている人にしか解けない
 
 ## SKILL.md の配布性
 
-- このリポジトリは配布用マーケットプレイスのため、SKILL.md にユーザー固有の情報（特定リポジトリ名 `owner/repo`、絶対パス、個人識別子等）をハードコードしない
-- リポジトリ情報やパスが必要な機能は設定ファイル（`.claude/<skill>.local.md` 等の frontmatter）経由で受け取る
-- `~/.claude/...` 配下のパス（例: `~/.claude/settings.json`）は **Claude Code の標準 config root** であり、ユーザー固有パスではない。SKILL.md からこれらを参照するのは配布性違反にならない。「絶対パスをハードコードしない」原則の対象は、特定ユーザーの `/Users/<name>/...` や個別プロジェクト固有の絶対パスに限る
-- 配布される一般用途スキル（`marketplace.json` の `dev-workflow-bundle` plugin の `skills` 配列に列挙される bundle skill）の SKILL.md prose / `references/*.md` prose には、**適用文脈固定の語彙**（Skill 開発、特定プロジェクトのアーキテクチャ、特定 framework 等）を直接埋めない。原理は抽象的な主文として書く。具体例は既定では付けず、主文だけでは適用先が判断できない場合に限り 1 つを **括弧書き** で添える。Why: producer 出力が triage で skill prose に verbatim 反映されるため、配布物として過剰仕様になる
-- 上記ルールの Source of truth は本ルール bullet 単独
-- 配布性ルールの **intra-bundle 例外とその厳格化**: 同一 SKILL.md 内の sibling Phase 参照と、`dev-workflow-bundle` の `skills` 配列メンバーである sibling skill 名の参照は「適用文脈固定の語彙」**ではない**（self-reference / intra-bundle reference は別レイヤー）。ただしこの例外は参照先が**実際にメンバーである場合に限る** — `.claude/skills/<name>/` 配下の project-local skill を配布 skill prose（plugin source `skills/<name>/**` 配下の SKILL.md / `references/*.md`）から参照すると、配布先に当該 skill が存在せず **dangling reference**（distribution leak）になる。判断軸: 「intra-bundle sibling だから OK」と reject する前に、`jq -r '(.plugins[] | select(.name == "dev-workflow-bundle") | .skills[])' .claude-plugin/marketplace.json` でメンバーシップを確認するのを明示の gate にする。列挙されていなければ例外は適用されず違反として扱い、参照を削除して rationale を self-contained に書き換える
-- **同梱スクリプトは Node の組み込みモジュールだけで書く**: プラグインは配布先へコピーされるだけでインストール工程が無く、リポジトリに `package.json` も置かない。`skills/<name>/scripts/**` の `.mjs` が npm パッケージを import すると、配布先では解決できず起動時に失敗する。import は `node:` 接頭辞付きの組み込みモジュールに限る。ブラウザへ読ませるライブラリはこの制約の対象外で、バージョンを固定した CDN から読み込む。宣言する場所は `public/*.html` に限らず、ブラウザ側で動く `.mjs` でも、タグを書き出す Node スクリプトでもよい
-
-## ローカルスキル設計
-
-- ルーチン用途（非対話環境での定期実行など）を想定するローカルスキル（`.claude/skills/<name>/`）は、外部プラグインスキルへの依存を避ける。Routine 環境に当該プラグインが install されていないと無条件失敗するため、参照したいベストプラクティスは `skills/<name>/references/` 配下に要旨を抽出して自己完結させる
-- スキル自身を修正する種類のルーチン（triage 等）では、1 改善 = 1 commit の粒度で落とす。複数 Finding が同一ファイルに当たる場合も、Finding ごとに対象ファイルを直前に再 Read → Edit を組み直し → commit を繰り返す。事前に「2 件目以降は conflict」と落とす過剰防衛はしない
-- 非対話／ルーチン実行を想定するスキルのうち、**サブスキル復帰点・ループ境界・非致命エラー処理点のいずれかを持つもの**には `§ No-Stall Principle` 節を SKILL.md 冒頭に明記する。そこが「一区切りつける」誘惑の入る場所なので、次の 3 点を明文化する。(i) 許容される唯一の非完走経路（fatal-abort exits）を closed list で列挙する。(ii) サブスキル復帰時は戻り値を意味判定し、即座に既存分岐へ戻す。(iii) 非致命エラー（`*-failed` / `overflow` 系）は記録して続行する。複数スキルで同名節を使う場合は表記を一致させ、クロスリファレンスは安定節見出しで行う。3 点のいずれも当てはまらない単一パスの末端スキル（他スキルを呼ばず、ループを持たず、単位ごとの非致命エラーを扱わないもの）は対象外で、節を置かないのが正しい
-- ephemeral 環境が主戦場のルーチンスキルが staging 文書を生成する場合、デフォルトを「成功時削除」にしない。(i) session 終了で workspace が破棄され蓄積しない、(ii) in-session に確認できる、(iii) 外部に canonical な永続記録がある、の 3 条件が揃えば「残す + `.gitignore` で commit 混入のみブロック」を優先する。SKILL.md に「gitignored／外部コメントが canonical record」を明記し、`rm` を allowed-tools に足さない（権限最小化）
-- 非対話／ルーチン実行スキルが staging ファイルを生成する際、書き込み先は `.claude/` 配下を避ける。Claude Code が `.claude/*` を sensitive file 扱いするため、`Write` 許可があっても permission dialog で停止する。代わりに repo root 直下の dedicated directory（例: `.triage/`）を使い、`.gitignore` で commit 混入をブロックする。SKILL.md に「`.claude/` 外に置くのは sensitive-path treatment 回避のため」と明記する
-- 非対話／ルーチン実行スキルでは、サブスキル復帰時の No-Stall 違反が観測された return point に「return-point no-stall reminder」をインライン bullet で配置する。SKILL.md 冒頭の `§ No-Stall Principle` 節と意図的に重複させる（抽象節だけでは agent が決定の瞬間に参照しないため）。reminder は `(regardless of outcome — <列挙>, any non-error result)` で非致命結果を closed list 列挙し、次 action を「next tool call で発行」と明示し、`§ No-Stall Principle` への安定参照を含める
-- 非対話／ルーチン実行スキルが GitHub issue / PR / 検索結果等の collection をループ処理する場合、per-invocation 件数 cap は subagent dispatch overhead を織り込んで保守的に設定する。経験則 `--limit 50` を初期値とし、`overflow=true`（cap 張り付き）を summary に明記する
-- 非対話／ルーチン実行スキルでは、`§ No-Stall Principle` に「Phase / per-X status transitions are non-stalling」段落を明記する。進捗管理ツールへの書き込みは in-memory state 操作で sensitive-path treatment / permission dialog が発生しない。phase 行 / per-item 行の `pending → in_progress → completed` 遷移は同一 tool-call burst 内で発行可能であり、ターン跨ぎの「summary 出力 → 次ターン flip」誘惑を排除する旨を SKILL.md prose で明示する
-- 非対話／ルーチン実行スキルで collection ループが 0 件で skip される経路では、複数 phase 行を **同一 tool-call burst でまとめて遷移**させる。遷移ごとにターンを分けると stall 誘発点が増えるため、0-item 経路は「multi-row flip in a single burst」として SKILL.md prose に明記する
-- 非対話／ルーチン実行スキルで分岐 path が下流の dispatch ブロック（reminder / status flip 等）を経由しない構造の場合、上流 sub-step 末尾に **forward jump pointer** を明示挿入する。短絡 path で「skip = 何もしない」と誤解されると下流の必須 transition が抜ける
-- 非対話／ルーチン実行スキルの `§ No-Stall Principle` 節で、同じ境界に条件で分かれる reminder を配置する場合、**両 variant を SKILL.md 上で並列に prose 記述**し、agent が runtime で applicable variant を選ぶ形を採る。dispatch 位置を分散させると参照しにくくなるため、closed-list 形式の reminder を同一位置に並べる
-- 多段階 subagent dispatch を伴うルーチンで、環境起因の spurious feedback（自動配置フック等）が実行を分断する構造的衝突がある場合、orchestrator スキルの SKILL.md に **canonical write-up 節**（`§ Stop hook structural conflict` 等）を立て、衝突メカニズム / correct behavior / Pre-flight 検知指針を集約する。Pre-flight で hook 登録を検出したときは abort せず summary に warning 行を出す（observability 目的）
-- 上記の orchestrator 集約とセットで、callee スキルの SKILL.md にも **short cross-reference note** を該当節周辺に追加する。callee 側 note は canonical を再記述せず、衝突文脈と「該当しない場合は無視」旨だけ 2–3 文で書き、orchestrator 節へ stable heading で参照する。orchestrator 単独修正だと callee subagent 内の決定点で参照されないため、cross-skill 構造的衝突は **orchestrator + 全 callee** ペアで documenting する
-- 非対話／ルーチン実行スキルの `§ No-Stall Principle` 節で non-fatal error class を列挙する場合、per-Finding / per-issue 単位の処理失敗（`comment-failed` / `close-failed` / `commit-failed` 等）に加えて、**per-turn 単位の environment-induced spurious feedback** も並列の non-fatal class として明記する。両者は disposition が同じ（記録して続行）だが発生粒度が異なるため、明示列挙がないと「フック指示に従って即 commit」誤動作を防げない
-- `Skill(<callee>)` 戻り点で stall が発生する callee（verdict が free-form prose のもの）には、**callee 側 SKILL.md に末尾 fenced JSON return contract を導入**する。`Skill()` は prompt 注入で明示的な return boundary が無く、prose verdict が turn 全体を消費して return-point reminder では救えない。callee 末尾の `{ "status": "...", ... }` で (i) verdict turn が短く閉じ、(ii) orchestrator が parse → 次 action の機械フローを組め、(iii) status mapping が callee 側で完結する。orchestrator reminder の増設だけでは不十分で、callee 出力契約自体を狭めるのが効く
-- 上記の callee-side fenced JSON return contract を導入する場合、orchestrator 側に **verdict parse-failure handling** を明示する。`status: "error"` を JSON 経路で受け取るケースと、JSON block 自体が parse できないケースは別経路として扱い、それぞれで「loop 終了 / 該当 counter increment / no retry」を mapping table に明文化する。これを抜くと callee 側 contract が破綻したときに orchestrator が無限 loop か沈黙のいずれかに落ちる
-- 集約サマリに同じ counter が複数の sub-condition から累積する場合、**warning 文字列を sub-condition ごとに differentiate** する。同一文字列に集約すると user が「どの sub-source が threshold を踏んだか」を identify できず、後追い triage で原因を切り分けられない
-- bundle 内 review 系スキルは **Pattern A**（Skill ラッパー + 内部 `Agent` dispatch + main-thread Edit / safety-rail / verdict）に揃える。review walk が main thread context を必要としないタスクでは (i) bias-free executor 確保、(ii) design pattern 一貫性、(iii) token 効率の 3 点で Pattern A が優位。新規作成・既存再構築では Process step を inline 実行で書かず、`Agent` dispatch + main-thread apply の 2 層に分ける。Pattern A 化は outer `Skill()` boundary の stall リスクとは直交した独立改善
-- review 系 skill の SKILL.md で interactive-only path が live caller 無く silent dead-code 化している場合、**path を deprecate** して標準フローに合流させる。retain して「standalone と sub-skill で切り替える」設計は (i) caller 側で mode を渡す術が無い、(ii) 直接利用時もその path が扱う判断を手動で下すのが合理的、の 2 点で正当化されない。「将来 caller が増えた時に役立つ」は trigger にならない
-- Pattern A skill で `Agent` 不可時の fallback 段落は、canonical write-up を持つ skill（`rules-review` SKILL.md `§ 5. Review` の **Claude Code path** / **Fallback path** bullet）にポインタを張る形に圧縮する。inline で 3 段落書き直すのは冗長で、上流 canonical の更新が伝播しない。skill 固有の specialization だけ 1 行追加する形に留める
-- Pattern A skill の subagent dispatch prompt では、payload セクションを `--- LABEL ---` fence で区切る convention を採る。ad-hoc な `## Sub-heading` 方式は subagent 側で payload 境界を見失いやすく、fence convention なら bundle 横断で template を流用できる
-- Pattern A skill の callee return JSON parse logic は、`verify-diff` § (b) Parse & apply の **first-match-wins evaluate-in-order** 規律を踏襲する: (1) verdict missing/malformed → (2) schema violation → (otherwise) apply。loop を持たない single-pass dispatch では verify-diff の (3) Converged / (4) Divergence は N/A なので圧縮する
-- subagent 返却 JSON の **per-entry shape validation は parse 時に行う**（apply 時ではない）。object array では、required key 欠落・値の型不一致・entry ごとの shape 違反を一括で schema violation と判定し、`{"status": "error", "reason": "verdict schema violation"}` で停止する。malformed entry が後段の `Edit` call を crash させる経路を未然に塞ぐ
-- subagent の `suggested_edits` / `mechanical_edits` の `old_string` には **1–3 lines of surrounding context** を含めて unique にする convention を dispatch prompt 内に明記する（short one-liners は collide して Edit fail）。後段 edit が前段 edit の rewrote した region と overlap して `old_string` not-found になる skip は **no-op fallback として正常**。SKILL.md に skip 時の counter 加算除外（`Increment <counter> only for entries whose Edit call succeeded — skipped entries do not count`）を明示する
-- Pattern A iteration loop スキルの SKILL.md frontmatter `allowed-tools` は、sibling Pattern A skill の `allowed-tools` 行を照合元にして mirror する。特に **`TaskCreate` / `TaskUpdate` の宣言は容易に抜ける**（pre-register 設計を prose に書きつつ frontmatter 宣言を落とすと、sub-skill 経由 invocation で permission dialog で停止する）。新規追加時は sibling の `allowed-tools` 行を 1 行 diff して付け落としを検出する
-- Pattern A iteration loop の (a) Dispatch sub-step で `affected_files` を再 Read する際、iter 1 では全件 Read、**iter `i ≥ 2` では iter `i-1` で `Edit` が成功したファイルのみ再 Read** する（untouched files は iter-1 snapshot を保持）。全件再 Read は wasted work で context 肥大を招く。iter 2+ では `git diff <Base ref>` も再実行して landed edits を反映する
-- 集約サマリで sub-skill counter 列を render する場合、**同じ counter を二重実装しない** — 同じ値を「warning 行」と「per-Finding record status token」の両方で独立に算出すると、後追い triage でどちらが正しいか判断できない。片方を唯一の算出元にして他方はそれを読む
-- orchestrator が per-Finding execution log で `[iter <iterations_used>/<max>]` を render する場合、**`<max>` は orchestrator が caller として実際に渡している integer をハードコード**する（プレースホルダ表記は禁止）。引数を渡さず callee の既定に委ねる場合も、その既定値を同じくハードコードする。プレースホルダのままだと複数 callee 呼び分けで denominator がブレる
-- スキルが固定 N 個の入力フィールドの有無で 2 mode を分岐する場合、**all-present → mode A、all-absent → mode B、partial（1〜N-1 個だけ provided）→ early return with schema** の 3 分岐契約を採る。partial を silent fallback として扱わず、暗黙に合流させもせず、`incomplete args` の bug signal として loud に surface する（caller テンプレの書き間違いが silent 通過する / mode を後追いできない、の 2 点で正当化されない）
-- Pattern A iter loop で executor が毎 iter ステートレスに推論する設計では、**iter 1 verdict から推論値を main thread context に capture して per-loop fixed として扱う**。iter 2+ は別値を返す可能性があるが上書きしない。理由は 2 つで、単一の安定推論値を報告しないと誤読源になること、divergence 比較に推論値を含めると毎 iter ノイズになること。iter 1 が parseable verdict を produce しなかった経路では `null` を per-target verdict object に書き、「iter-1 値なし」を識別可能にする
-- スキルが mode で空入力（empty diff / 空 collection / empty target）の disposition を分ける場合、**caller framing がある mode（explicit-args 系）では `conflict`**（caller が work あり signal なのに input が空 = bug）、**無い mode（auto-derive 系）では `skipped`**（informational）とする。同じ「空入力」でも bug 文脈と informational 文脈は別の disposition に分類する
-- 既存 mode の status enum に新 mode 専用値を追加する場合、**`<新値> は <新 mode> only` であり既存 mode 経路では emit されない旨を SKILL.md prose に明記**する。明記しないと既存 caller の switch 文が新値で沈黙落ちするか dead code 経路に入る。新値を「mode-additive」と位置付け、既存 caller 互換性を契約として守る
-- Pattern A skill が複数 target を loop する設計で safety rail として `git checkout HEAD -- <path>` を使う場合、**rail 発火の前段に「scope 外 write を `Edit` 呼び出し前に skip する pre-check」を必須**にする。pre-check が無いと、T1 の executor が T2 の path に edit を返した際、rail の `git checkout` が T2 で landing 済みの sibling edits を wipe する collateral-damage path が開く。pre-check で out-of-scope path を skip すれば実 write が無く revert も不要で、`reverted_paths` には informational に詰めて surface する
-- 1 つの SKILL.md が同型の **iteration loop を複数持つ**場合、`§ Return-point no-stall reminder` のような inline reminder bullet を **全 sibling loop に同型コピー**する。片方の loop にだけ置くと、無い loop の境界で stall が再発する（別 loop の reminder は active prompt として参照されない）。reminder wording も sibling 間で揃える: closed-list / next tool call / `§ No-Stall Principle` 安定参照の 3 要素を structural に整合させる
-- **stall risk は verdict の形で判定する**: `§ No-Stall Principle` 節で stall しうる callee を数える際、verdict が **free-form Markdown / 構造化 prose**（fenced JSON 末尾なし）の sub-skill はすべて同じ stall リスクを持つ。reviewer 系は構造化に見えても、fenced JSON return contract が無ければ同じ経路で stall する。新規 reviewer 系の追加・改修で stall を観測したら、callee 側に末尾 fenced JSON return contract の導入を検討する
-- **Routing-field classification by anchor position, not request type**: レビューコメント等の入力を分岐させる routing フィールドは、「要求の種類」ではなく「コメントがどこにアンカーされているか」という構造的な位置で分類する。種類ベースで分けると、複数の種類が混在するラウンドで first-match-wins の分岐が片方しか拾わず、残りのコメントが確定的に落ちる
-- **Split-baseline mirroring takes the reasoned-stronger convention**: 既存の sibling 手続きを写して新しい手続きを書くとき、その規約が baseline 間で割れている場合は、最も近い sibling ではなく **理由が明記されている強い側** の規約を採る。割れている事実は **commit message か PR 本文に記録する — SKILL.md 本体にも `references/*.md` にも書かない**。どちらも起動ごとに読まれるのに、どの兄弟がどちら側かという情報は実行時の判断を変えないため
+- **ユーザー固有の情報を埋め込まない**: 配布用のリポジトリなので、SKILL.md に特定のリポジトリ名（`owner/repo`）、絶対パス、個人の識別子を書かない
+- **リポジトリ情報は設定ファイルから受け取る**: リポジトリ名やパスが要る機能は、`.claude/<skill>.local.md` などの frontmatter から受け取る
+- **`~/.claude/` 配下は参照してよい**: `~/.claude/settings.json` などは Claude Code の標準の設定ディレクトリで、ユーザー固有のパスではない。禁止するのは `/Users/<name>/...` や特定プロジェクトの絶対パスに限る
+- **bundle スキルの本文に適用分野を固定する語彙を書かない**: `dev-workflow-bundle` の `skills` 配列にあるスキルの SKILL.md と `references/*.md` に、スキル開発・特定のアーキテクチャ・特定のフレームワークなど、使う分野を固定する語彙を書かない。原理を抽象的な主文で書き、主文だけでは適用先が決まらないときに限って例を 1 つ括弧書きで添える。triage では指摘の文面がそのまま本文に入るので、放っておくと配布物が特定の分野に偏る
+- **bundle 内の参照は例外だが、所属を確かめてから適用する**: 同じ SKILL.md 内の Phase 参照と、`dev-workflow-bundle` の `skills` 配列にある兄弟スキル名の参照は、前項の語彙にあたらない。ただし `.claude/skills/` にしかない開発用スキルを配布スキルの本文（plugin source の `skills/<name>/**` にある SKILL.md と `references/*.md`）から参照すると、配布先で参照が切れる。例外として扱う前に `jq -r '(.plugins[] | select(.name == "dev-workflow-bundle") | .skills[])' .claude-plugin/marketplace.json` で所属を確かめる。載っていなければ参照を消し、本文だけで意味が通るように書き直す
+- **同梱スクリプトは Node の組み込みモジュールだけで書く**: プラグインは配布先へコピーされるだけでインストール工程が無く、リポジトリに `package.json` も無い。`skills/<name>/scripts/**` の `.mjs` が npm パッケージを import すると、配布先で解決できず起動時に失敗する。import は `node:` 付きの組み込みモジュールに限る。ブラウザが読むライブラリは対象外で、バージョンを固定した CDN から読む。CDN を宣言する場所は `public/*.html` でも、ブラウザ側の `.mjs` でも、タグを書き出す Node スクリプトでもよい
 
 ## プラグイン構造
 
-- 単体スキルプラグインは direct-skill 方式（`source: "./skills/<skill-dir>"` + `skills: ["./"]`）を使う。`plugins/` 配下のラッパーディレクトリを作らない
-- **全プラグインの source 直下に `.claude-plugin/plugin.json` を置く**（direct-skill 方式も例外ではない）。マニフェストが無いとインストール後のキャッシュディレクトリ名からプラグイン名が推定され、名前空間の重複と別プラグイン同士の合流が起きる（[anthropics/claude-code#76234](https://github.com/anthropics/claude-code/issues/76234)）。`name` は marketplace.json の `name` と一致させる。`version` は書かない — marketplace.json を単一のバージョン源とし、plugin.json はそれを継承する（既存の `plugins/caffeinate` と `plugins/translate` だけが `version` を持ち、bump 時は marketplace.json とペアで更新する）
-- direct-skill 方式ではプラグイン名と skill ディレクトリ名が異なっても OK（例: plugin `peer` → skill `ask-peer`）
-- wrapper 方式（`plugins/<name>/`）は以下のいずれかに該当する場合のみ: (1) `agents/` を持つエージェント依存プラグイン、(2) `plugin.json` にフック定義を持つプラグイン、(3) 複数スキル bundle
-- wrapper には 2 サブパターン: (A) エージェント/フック wrapper、(B) bundle wrapper（marketplace.json 側の `skills` 配列で参照スキルを明示）
-- bundle では marketplace.json の `skills` 配列と `plugins/<bundle>/skills/` 配下のエントリセットを必ず一致させる。ずれると配布が壊れるため、`/verify-plugins` と `run-tests` で整合性を検証すること
-- **wrapper 配下の `skills/` エントリは symlink ではなく実ディレクトリコピー**。upstream の plugin cache が symlink を解決しない bug（[anthropics/claude-code#53948](https://github.com/anthropics/claude-code/issues/53948)）を回避するための暫定対応。検証ツール（`run-tests` の check 3、`/verify-plugins`）は symlink を要求せず、`SKILL.md` を含む実ディレクトリを合格として扱うこと — 要求したままにすると全 wrapper が毎回 FAIL し、恒常 FAIL が新規問題の検出を潰す。symlink 復活時は本 bullet と各検証ツールの exemption 記述をまとめて削除する
-- フックの自動設定が必要な場合はプラグイン化
-- PreCompactだけでなくStopフックも検討（Compactが発生しない場合に対応）
-- 設定が複雑なスキルには README.md を用意する。`skills/<name>/README.md` に置けば direct-skill 方式で source 直下に配置されるため、利用者に自動的に届く
-- プラグイン構造を変更する場合、`.claude-plugin/marketplace.json` だけでなく検証ツール（`.claude/skills/run-tests/SKILL.md`、`.claude/commands/verify-plugins.md`）とドキュメント（`CLAUDE.md`）の該当箇所もセットで更新する。片方だけ更新すると見落としが発生する
-- bundle skills（メンバーの権威は `marketplace.json` の `dev-workflow-bundle` plugin の `skills` 配列。解決コマンドは § SKILL.md の配布性 の intra-bundle 例外 bullet を参照）を編集する際は、`skills/<name>/`（canonical）と `plugins/dev-workflow-bundle/skills/<name>/`（bundle copy）の **両方** を同期する。upstream symlink bug（[anthropics/claude-code#53948](https://github.com/anthropics/claude-code/issues/53948)）の暫定対応で bundle copy が実体コピーになっているため、片方のみ編集すると `verify-bundle-sync` が drift を検出して `dev-workflow` Phase 9（Check / Test）/ `dev-workflow-triage` (d4) で FAIL する。同期は `cp -R skills/<name>/. plugins/dev-workflow-bundle/skills/<name>/`。symlink 復活時は `verify-bundle-sync` skill ごと本ルールも削除する
-- **bundle 全メンバーに複製する横断ディレクティブは byte-identical を保ち、メンバー追加時に必ず同梱する**: `## Dispatch authorization`（起動＝subagent 呼び出しの許可。inline 実行への差し替えを正当化するのは技術的可用性と caller の明示的な契約条項の 2 つだけで、権限の形をした制限はどちらでもない）は bundle の全メンバーの SKILL.md に**同一文言**で置く。各メンバーは単独インストール可能なので、兄弟スキルへのポインタでは解決できず自己完結した複製が必要。**配置は preamble 末尾 / 手続き本文の直前**（route 判断が起きる前に文脈に入っている必要があるため）。文言を変える時は 各メンバー × (canonical + bundle copy) の全箇所を 1 commit で sweep する（`verify-bundle-sync` は canonical↔bundle copy しか比較しないのでスキル間の一致は見ない）。**機械検査は `run-tests` の Check 7**（節の存在 + 本文の一致 — 見出しから次の `## ` までを `Read` して直接比較する。ハッシュコマンドは `allowed-tools` 外なので使わない）が担うので、bundle に新メンバーを追加する時は `marketplace.json` の 4 編集（別記）に加えて本節の同梱も必須 — 漏れると Check 7 が落ちる。先行する 2 節 `## Sub-skill caller directive` / `## Stop hook structural conflict (caller-side note)` は同じ「複数メンバーへの複製」形だが **全メンバー複製でも byte-identical でもない**（前者はスキル名でパラメータ化され、後者は § ローカルスキル設計 の指示どおり各スキル固有の衝突文脈を書く設計）。したがって両節は「複製節の先例」としてのみ引き、byte-identity の先例として引かない
-- 上流の記述を転記している下流ドキュメントへ例外を足す修正は、同じ反復のうちに上流の断定的な記述も掃く。レビュー指摘に応じた修正であっても、それ自体が新たな矛盾を作る側になりうる
+- **単体スキルは direct-skill 方式にする**: 単体スキルのプラグインは `source: "./skills/<skill-dir>"` + `skills: ["./"]` にし、`plugins/` 配下にラッパーを作らない。プラグイン名とスキルディレクトリ名は違ってよい（例: plugin `peer` → skill `ask-peer`）
+- **全プラグインに plugin.json を置く**: direct-skill 方式も含め、全プラグインの source 直下に `.claude-plugin/plugin.json` を置き、`name` を marketplace.json と揃える。無いとキャッシュディレクトリ名からプラグイン名が推定され、名前空間の重複や別プラグインの合流が起きる（[anthropics/claude-code#76234](https://github.com/anthropics/claude-code/issues/76234)）
+- **plugin.json に version を書かない**: バージョンは marketplace.json にだけ書き、plugin.json はそれを継承する。両方に書くと、上げるたびに 2 ファイルを直すことになる。例外は `plugins/caffeinate` と `plugins/translate` で、上げるときは marketplace.json と揃える
+- **wrapper 方式は 3 つの場合に限る**: `plugins/<name>/` を使うのは、`agents/` を持つもの、`plugin.json` にフックを定義するもの、複数スキルの bundle だけ。bundle は marketplace.json の `skills` 配列で所属スキルを明示する
+- **bundle の `skills` 配列とエントリを一致させる**: marketplace.json の `skills` 配列と `plugins/<bundle>/skills/` 配下のエントリは必ず一致させる。ずれると配布が壊れる。`/verify-plugins` と `run-tests` が検査する
+- **wrapper 配下の `skills/` は実ディレクトリのコピーにする**: plugin cache が symlink を解決しない不具合（[anthropics/claude-code#53948](https://github.com/anthropics/claude-code/issues/53948)）への暫定対応。検証ツール（`run-tests` の Check 3、`/verify-plugins`）は symlink を要求せず、`SKILL.md` を含む実ディレクトリを合格にする。要求すると全 wrapper が毎回落ち、新しい問題を見つけられなくなる。symlink に戻すときは、この項目と各検証ツールの例外の記述をまとめて消す
+- **bundle スキルは正本と bundle 側のコピーを両方直す**: bundle のメンバー（所属の根拠は marketplace.json の `dev-workflow-bundle` の `skills` 配列）を編集したら、`cp -R skills/<name>/. plugins/dev-workflow-bundle/skills/<name>/` でコピーを同期する。片方だけ直すと、dev-workflow の Phase 9 (Check / Test) で `verify-bundle-sync` が落ちる（`dev-workflow-triage` は (f.5) で自動同期する）。symlink に戻すときは `verify-bundle-sync` スキルごとこの項目も消す
+- **bundle 全メンバーに複製する横断ディレクティブは byte-identical を保ち、メンバー追加時に必ず同梱する**: `## Dispatch authorization` は bundle の全メンバーの SKILL.md に同じ文面で置く。中身は「起動はサブエージェント呼び出しの許可であり、直接実行へ切り替えてよい理由は技術的に使えないことと呼び出し元の明示的な契約の 2 つだけで、権限の形をした制限はどちらにもあたらない」という指示。各メンバーは単独でインストールできるので、兄弟スキルへのポインタでは足りない。置き場所は前置き部分の末尾・手続き本文の直前で、実行経路を決める前に文脈へ入っている必要がある。文面を変えるときは、全メンバーの正本とコピーを 1 コミットで直す。`verify-bundle-sync` は正本とコピーしか比べず、メンバー間の一致は `run-tests` の Check 7 と `/verify-plugins` が見る（見出しから次の `## ` までを `Read` して比べる。ハッシュコマンドは `allowed-tools` 外なので使わない）。`## Sub-skill caller directive` と `## Stop hook structural conflict (caller-side note)` も複数メンバーにあるが、スキルごとに文面が違う設計なので、複製する節の先例としてだけ引き、文面を揃える先例や配置の手本にはしない。メンバーを足す手順は CLAUDE.md の「既存の bundle にメンバーを足す」にある
+- **フックの自動設定が要るならプラグインにする**
+- **PreCompact だけでなく Stop フックも検討する**: Compact が起きないセッションにも対応するため
+- **設定が複雑なスキルには README.md を付ける**: `skills/<name>/README.md` に置けば source 直下に入り、利用者に届く
+- **構造を変えたら検証ツールと CLAUDE.md も直す**: プラグイン構造を変えるときは、`.claude-plugin/marketplace.json` に加えて、検証ツール（`.claude/skills/run-tests/SKILL.md`、`.claude/commands/verify-plugins.md`）と `CLAUDE.md` の該当箇所を同じ変更で直す
 
 ## バージョン管理 / リリース運用
 
-- bundle に含まれるスキル（メンバーの権威は `marketplace.json` の `dev-workflow-bundle` plugin の `skills` 配列）の version bump は、対応するスキル plugin と `dev-workflow-bundle` plugin を **常にペアで bump** する。CHANGELOG の version subsection 見出しも `### <skill> vX.Y.Z / dev-workflow-bundle vX.Y.Z` の対形式で書く（既存 CHANGELOG の不変条件）
-- `.claude/skills/<name>/` 配下の **project-local skill**（marketplace.json 未登録、配布されない）は version bump / CHANGELOG ペア bump ルールの対象外。`marketplace.json` の `plugins[]` に entry が無く、`plugin.json` の `version` も持たない。この分類は本 bullet が canonical。code review の version bump / CHANGELOG entry 漏れ finding には、marketplace.json で `grep` 確認後 reject する
-- **diff-level version-bump 義務**: bundle skill の `SKILL.md` / `references/**` を変更する diff には、同じ diff 内にペア version bump（`marketplace.json`）と `CHANGELOG.md` エントリが含まれていなければ違反。これは「per-Finding と別の bookkeeping commit にまとめる」commit 構造ルール（下記）とは **独立した diff-level の不変条件**で、commit 分離とは別概念として両立する（diff から決定論的にチェックでき、rules-review が機械検証できる）。project-local skill（上記）は対象外
-- bump 直前に `dev-workflow` plugin と `dev-workflow-bundle` plugin の現 version を `jq -r ...` で読む version-skew guard を入れる。比較は **`dev-workflow` の version が `dev-workflow-bundle` より厳密に大きい時だけ abort**（`dev-workflow-bundle ≥ dev-workflow` は bundle が先行する正常状態として通す）。この guard は `dev-workflow` vs `dev-workflow-bundle` のペアに限定し、全 member へ一般化しない（各 member は独立 version 系列を持ち、bundle より major が上のものもあるため、一般化すると常時誤 abort する）。abort 時は per-Finding コミットを preserve する
-- `marketplace.json` の version 書き換えは `jq | mv` ではなく `Edit` ツールで version 行を直接書き換える。`Bash(mv *)` を allowed-tools に追加せずに済むため、「allowed-tools は必要最小限」原則と整合する。Edit 直後に `jq empty` で構文整合性を再確認する
-- `Edit` で plugin の version を書き換えるときの `old_string` には plugin name + 周辺 + version を含める塊を取り、name の閉じる double-quote と末尾 `,` まで必ず含める（例: `"name": "dev-workflow",`）。trailing カンマを含めないと `"name": "dev-workflow-bundle"` の prefix と被って not-unique error になる。`replace_all` は禁止
-- 自動化スクリプトやルーチンスキルでスキルを更新した場合、CHANGELOG.md / marketplace.json の version bump は **per-Finding コミットとは別の bookkeeping commit** にまとめる（`chore(release): bump <plugins> (auto-triage YYYY-MM-DD)` のような subject）。「1 accepted Finding = 1 commit」ルールを維持し、scope check の意味を保つため
-- CHANGELOG.md のエントリは新しい version subsection を `## YYYY-MM-DD` 直下に **prepend** する（既存スタイル「新しい version が上」と整合）。同日複数 invocation が起きうる場合、commit subject 末尾に `(auto-triage YYYY-MM-DD)` 等のサフィックスを付けて commit log で区別できるようにする
-- CHANGELOG.md エントリ本文で過去 commit を参照する場合、生 commit hash ではなく `auto-triage #N` 形式を使う。commit hash の直接参照は reword / rebase で安定性が落ち、既存 entry の一貫性も壊す
-- CHANGELOG.md fix entry の `Category:` token は既存 taxonomy（`missing-branch` / `ambiguity` / `wrong-default`）の closed list から選ぶ。新規の記述的 token を発明しない。新 failure mode が収まらない場合は、まず 3 種いずれにマップ可能か判断し、それでも収まらない時のみ CHANGELOG ルール改定を経て新 token を導入する
+- **bundle メンバーはスキルと bundle をペアで上げる**: bundle のメンバー（所属の根拠は marketplace.json の `dev-workflow-bundle` の `skills` 配列）の version を上げるときは、そのスキルのプラグインと `dev-workflow-bundle` を必ず一緒に上げる。CHANGELOG の見出しも `### <skill> vX.Y.Z / dev-workflow-bundle vX.Y.Z` の対にする
+- **開発用スキルはバージョン管理の対象外**: `.claude/skills/<name>/` にしかない開発用スキル（marketplace.json に無く、plugin.json に `version` も無く、配布されない）には、version の引き上げも CHANGELOG の対も要らない。この分類の正本はこの項目。レビューで引き上げ漏れを指摘されたら、marketplace.json を `grep` して載っていないことを確かめてから退ける
+- **bundle スキルを変える差分にはバージョンと CHANGELOG を含める**: bundle スキルの `SKILL.md` / `references/**` を変える差分には、marketplace.json のペアの引き上げと CHANGELOG のエントリを同じ差分に含める。コミットの分け方（後述の記録用コミット）とは別の、差分単位の条件で、差分から機械的に検査できる
+- **引き上げ前に dev-workflow と bundle のバージョンのずれを確かめる**: 引き上げる直前に `dev-workflow` と `dev-workflow-bundle` の現在の version を `jq -r` で読み、`dev-workflow` が bundle より厳密に大きいときだけ中止する（bundle が先行するのは正常）。この検査はこの 2 つの組に限る。各メンバーは独自の版番号を持ち、bundle より major が大きいものもあるので、全メンバーに広げると常に誤って中止する。中止しても、それまでの Finding ごとのコミットは残す
+- **marketplace.json の version は `Edit` で書き換える**: `jq | mv` を使わず、`Edit` で version 行を直接書き換える。`Bash(mv *)` を `allowed-tools` に足さずに済む。書き換えた直後に `jq empty` で構文を確かめる
+- **version を書き換える `old_string` にはプラグイン名と末尾のカンマを含める**: `old_string` はプラグイン名から version までの塊にし、名前の閉じ引用符と末尾の `,` まで含める（例: `"name": "dev-workflow",`）。含めないと `"name": "dev-workflow-bundle"` の前方と一致して一意にならない。`replace_all` は使わない
+- **自動更新でのバージョンと CHANGELOG は別の記録用コミットにする**: スクリプトやルーチンがスキルを更新したら、version の引き上げと CHANGELOG は Finding ごとのコミットと分け、1 つの記録用コミットにまとめる（件名は `chore(release): bump <plugins> (auto-triage YYYY-MM-DD)` の形）。「採用した Finding 1 件 = 1 コミット」を保ち、範囲の検査を意味のあるものにするため
+- **CHANGELOG は日付の見出しの直下に新しい版を足す**: 新しい version の小見出しは `## YYYY-MM-DD` の直下の先頭に足す。同じ日に複数回実行しうるときは、コミット件名の末尾に `(auto-triage YYYY-MM-DD)` などを付けて区別する
+- **CHANGELOG でコミットを参照するときは `auto-triage #N` の形にする**: 生のコミットハッシュは reword や rebase で変わり、既存のエントリとも書き方が揃わない
+- **CHANGELOG の `Category:` は既存の 3 種から選ぶ**: fix エントリの `Category:` は `missing-branch` / `ambiguity` / `wrong-default` から選び、新しい語を作らない。収まらない失敗は、まず 3 種のどれかに当てはまらないか考える。それでも収まらないときだけ、この規則を改めてから新しい語を足す
+
+## ローカルスキル設計
+
+- **ルーチン用の開発用スキルは外部プラグインに頼らない**: 非対話の定期実行などを想定する `.claude/skills/<name>/` は、外部プラグインのスキルに依存しない。実行環境にそのプラグインが無ければ必ず失敗する。参照したい手法は、要旨をスキル自身の `references/` に抜き出して自己完結させる
+- **スキル自身を直すルーチンは 1 改善 1 コミットにする**: triage のようにスキルを修正するルーチンは、改善 1 件ごとにコミットする。複数の Finding が同じファイルに当たっても、Finding ごとに直前で読み直し、`Edit` を組み直してコミットする。「2 件目以降は衝突する」と先回りして落とさない
+- **使い捨ての環境で動くルーチンは作業用の文書を残す**: 使い捨ての実行環境が主な実行場所のルーチンが作業用の文書を作るとき、既定を「成功したら消す」にしない。セッション終了で作業領域ごと消える、セッション内で確かめられる、外部に正式な記録がある、の 3 条件が揃えば、残したうえで `.gitignore` でコミットへの混入だけを防ぐ。SKILL.md には「gitignore 済みで、外部のコメントが正式な記録」と書き、`rm` を `allowed-tools` に足さない（権限を最小にするため）
+- **ルーチンの作業用ファイルは `.claude/` の外に置く**: Claude Code は `.claude/*` を機密扱いするので、`Write` を許可していても確認ダイアログで止まる。リポジトリ直下の専用ディレクトリ（例: `.triage/`）に置き、`.gitignore` で混入を防ぎ、SKILL.md に理由を書く
+- **ルーチンが一覧を回すときは件数に上限を付ける**: issue・PR・検索結果などをループで処理するルーチンは、サブエージェント呼び出しの負荷を見込んで上限を控えめにする。初期値は `--limit 50` とし、上限に達したら要約に `overflow=true` と書く
+
+## 非対話ルーチンの停止防止
+
+- **非対話ルーチンには `§ No-Stall Principle` 節を置く**: 対象は、サブスキルの戻り点・ループの境界・非致命エラーの処理点のどれかを持つスキル。どれも持たない単一パスの末端スキルには置かない。節は SKILL.md の冒頭に置き、3 点を書く。完走しない唯一の経路（致命的な中止）の全件列挙。サブスキルから戻ったら戻り値を判定し、すぐ既存の分岐へ戻ること。非致命エラー（`*-failed` / `overflow` 系）は記録して続けること。非致命エラーには、項目単位の失敗（`comment-failed` / `commit-failed` など）に加え、Stop hook の誤発火のようにターン単位で環境が出す合図も挙げる。見出しは全スキルで揃え、相互参照は安定した節見出しで行う
+- **進捗の状態遷移でターンを区切らない**: `§ No-Stall Principle` に「Phase / per-X status transitions are non-stalling」段落を置く。進捗管理ツールへの書き込みは確認ダイアログを出さず、phase や項目の `pending → in_progress → completed` は同じツール呼び出しの連なりで出せる、と書く。0 件で処理を飛ばす経路では、複数の行を 1 回の連なりでまとめて遷移させ、SKILL.md にも「multi-row flip in a single burst」と書く。遷移ごとにターンを分けると止まりやすい
+- **作業量への不安による中断を禁じる**: 途中で止めたくなる様子が観測されたら、`§ No-Stall Principle` の末尾に 3 つ書く。禁止文「Aborting the routine mid-flow because cumulative `Skill()` loads "feel expensive", ... is a No-Stall Principle violation」。規模を管理する仕組み（件数の上限、`*_disabled` フラグ、反復の上限など）の全件列挙と「append here on future addition」。自覚を促す一文「If you find yourself reasoning "X Findings × Y callees would consume too much context — let me stop here", that is precisely the anti-pattern this clause forbids」。表記は「禁止」「forbidden」で揃える
+- **サブスキルの呼び出し直前と戻り点に注意書きを置く**: 停止が観測されたサブスキルの境界には、`§ No-Stall Principle` と意図的に重複させて注意書きを置く。抽象的な節だけでは、判断の瞬間に参照されない。呼び出し直前の `Pre-invocation reminder` には、次のツール呼び出しの名前と「JSON の判定は戻り値であり、ターンの区切りではない」ことを書く。戻り点の `Return-point no-stall reminder` には、非致命の結果の全件列挙（`(regardless of outcome — <列挙>, any non-error result)`）と、次の行動を次のツール呼び出しで出すことを書く。両方に `See § No-Stall Principle.` を付ける。同型のループが複数あれば全てに同じ形で置き、同じ境界で条件が分かれるなら両方の版を並べる。呼び出し先側の文言（`project.rules.local.md` の「戻り値の JSON を指示する文で終わりを命じない」）と必ず組にし、整理の段階で削らない
+- **短絡する経路には下流への移動先を書く**: 分岐が下流の必須処理（注意書き・状態遷移など）を通らない構造なら、上流の小手順の末尾に、下流のどこへ進むかを明示する。書かないと「飛ばす = 何もしない」と読まれ、必須の遷移が抜ける
+- **環境由来の衝突は呼び出し元にまとめ、呼び出し先には短い参照を置く**: 自動配置フックなどの誤った合図が多段の呼び出しを分断するなら、呼び出し元の SKILL.md に専用の節（`§ Stop hook structural conflict` など）を立て、仕組み・正しい振る舞い・事前検知の指針をまとめる。事前チェックでフックの登録を見つけても中止せず、要約に警告行を出す。全ての呼び出し先にも、該当する節の近くに、衝突の文脈と「該当しなければ無視」を 2〜3 文で書き、呼び出し元の節を見出しで参照する。呼び出し先で正本を書き直さない。呼び出し元だけ直すと、呼び出し先のサブエージェント内の判断点で参照されない
+
+## サブスキルの戻り値
+
+- **停止しやすいサブスキルは末尾の JSON で結果を返す**: 判定を自由形式の散文や Markdown で返すサブスキルは、構造化して見えても停止しやすい。`Skill()` には明示的な戻りの境界が無く、散文の判定がターン全体を使い、戻り点の注意書きでは救えない。呼び出し先の SKILL.md の末尾で `{ "status": "...", ... }` をコードフェンスで囲んで返させ、状態の対応づけも呼び出し先で完結させる。レビュー系を追加・改修して停止を見たら、まずこれを検討する
+- **呼び出し元は JSON の解釈失敗を別経路で扱う**: 呼び出し先が `status: "error"` を返した場合と、JSON 自体を解釈できない場合を分け、それぞれ「ループを終える / 該当するカウンタを増やす / 再試行しない」を対応表に書く。書かないと、契約が崩れたときに無限ループか無言の停止に陥る
+- **3 分岐でモードを決める**: 固定の N 個の入力フィールドの有無でモードを分けるなら、全てある → モード A、全て無い → モード B、一部だけ → スキーマ付きで早期に返す、の 3 分岐にする。一部だけの場合を黙って片方へ合流させず、`incomplete args` として目立たせる。呼び出し元のテンプレートの書き間違いが素通りするため
+- **空の入力はモードで扱いを分ける**: 呼び出し元が「作業あり」と示すモード（引数指定型）で入力が空なら `conflict`（不具合の兆候）、示さないモード（自動導出型）なら `skipped`（情報）にする
+- **新モード専用の状態値はそう明記する**: 既存の状態の列挙値に新モード専用の値を足すなら、「`<値>` は `<モード>` 専用で、既存のモードでは返さない」と SKILL.md に書く。書かないと、既存の呼び出し元の分岐が新しい値で黙って落ちる
+- **入力の振り分けはアンカーの位置で分類する**: レビューコメントなどの入力を振り分けるフィールドは、要求の種類でなく、コメントがどこに付いているかという構造上の位置で分類する。種類で分けると、複数の種類が混じるラウンドで先に一致した分岐だけが拾い、残りが確実に落ちる
+
+## Pattern A のレビュー系スキル
+
+- **bundle のレビュー系スキルは Pattern A にする**: Pattern A は、`Skill` のラッパーの中で `Agent` を呼び、`Edit`・安全装置・判定をメインスレッドに残す形。レビューの走査がメインスレッドの文脈を要らないなら、偏りのない実行役、設計の一貫性、トークン効率の 3 点で有利。新規作成や作り直しでは手順を直接実行する形で書かず、`Agent` の呼び出しとメインスレッドでの適用の 2 層に分ける。外側の `Skill()` の境界で止まるリスクとは別の、独立した改善として扱う
+- **`Agent` が使えないときの代替手段は正本へのポインタにする**: 正本は `rules-review` の SKILL.md `§ 5. Review` にある **Claude Code path** / **Fallback path** の項目。3 段落を書き直すと、正本の更新が伝わらない。スキル固有の差分だけを 1 行足す
+- **呼び出しプロンプトの区切りは `--- LABEL ---` にする**: 入力の各部を `--- LABEL ---` で区切る。`## 見出し` で区切ると、サブエージェントが入力の境界を見失いやすい
+- **戻り値の JSON は先に一致した条件で判定する**: `verify-diff` § (b) Parse & apply にならい、判定の欠落・不正 → スキーマ違反 → それ以外は適用、の順で評価する。ループの無い単発の呼び出しでは、収束と発散の判定は要らない
+- **エントリの形は解釈の時点で検査する**: サブエージェントが返す配列の各エントリは、適用時でなく解釈時に検査する。必須キーの欠落、値の型の不一致、エントリごとの形の違反は、まとめてスキーマ違反として `{"status": "error", "reason": "verdict schema violation"}` で止める。対象は `Edit` の `old_string` だけでなく、後段のツール呼び出しが参照する全てのフィールドで、空でない文字列かを確かめる
+- **`old_string` には前後 1〜3 行を含めさせる**: 呼び出しプロンプトで、`suggested_edits` / `mechanical_edits` の `old_string` に前後 1〜3 行を含めて一意にするよう指示する。短い 1 行は衝突して `Edit` が失敗する。前の編集が書き換えた範囲と重なって `old_string` が見つからないのは正常で、飛ばしてよい。カウンタは `Edit` が成功したエントリだけ数え、SKILL.md に `Increment <counter> only for entries whose Edit call succeeded — skipped entries do not count` と書く
+- **`allowed-tools` は兄弟の Pattern A スキルと突き合わせる**: 反復ループを持つ Pattern A スキルの `allowed-tools` は、兄弟の `allowed-tools` 行を照合元にして写し、足すときは 1 行ずつ比べる。特に `TaskCreate` / `TaskUpdate` は抜けやすく、抜けるとサブスキルとして呼ばれたときに確認ダイアログで止まる
+- **2 回目以降の反復では編集したファイルだけ読み直す**: 反復ループの呼び出しの小手順で、1 回目は `affected_files` を全て読む。`i ≥ 2` では前の反復で `Edit` が成功したファイルだけ読み直し、`git diff <Base ref>` も取り直す。全て読み直すと文脈が膨らむ
+- **1 回目の推論値をループの間は固定する**: 実行役が毎回ゼロから推論する設計では、1 回目の判定の推論値をメインスレッドに控え、ループの間は上書きしない。報告には安定した値が要り、発散の比較に入れると毎回ノイズになる。1 回目が解釈できる判定を返さなければ、対象ごとの判定の記録に `null` を書き、「1 回目の値なし」を見分けられるようにする
+- **範囲外への書き込みは `Edit` の前に飛ばす**: 複数の対象を回し、安全装置として `git checkout HEAD -- <path>` を使うなら、範囲外への書き込みを `Edit` の前に飛ばす確認を必ず置く。無いと、ある対象の実行役が別の対象のパスへ編集を返したとき、安全装置がその対象で済んだ編集まで消す。飛ばしたパスは `reverted_paths` に情報として載せる
+
+## 集約サマリ
+
+- **警告の文言は発生源ごとに変える**: 同じカウンタが複数の条件から積み上がるなら、警告の文言を条件ごとに変える。同じ文言にすると、どの条件がしきい値を超えたのか利用者が特定できない
+- **同じカウンタを 2 か所で計算しない**: 同じ値を警告行と記録の状態値の両方で別々に算出すると、後でどちらが正しいか判断できない。片方を唯一の算出元にし、もう片方はそれを読む
+- **`[iter <n>/<max>]` の分母は実際に渡す値を直書きする**: 呼び出し元が記録に反復回数を出すなら、分母には呼び出し元が実際に渡している整数を書く。引数を渡さず呼び出し先の既定に任せる場合も、その既定値を書く。プレースホルダのままだと呼び出し先ごとに分母がぶれる
 
 ## Examples
 

@@ -1,13 +1,13 @@
 # Compaction Mode — Subagent Instructions
 
-These instructions are dispatched to the subagent spawned in `references/compaction-procedure.md` § Step CP2 (a). The subagent reads one target rules file and returns a fenced JSON verdict containing three output arrays: `mechanical_edits` (safe to apply via `Edit` by the main thread), `structural_notes` (caller-judgment notes surfaced to the user, not applied automatically), and `consolidation_proposals` (cluster-merge proposals — detection-only from the subagent; the main thread synthesizes `Edit` calls from them in Step CP2 (c2)).
+These instructions are dispatched to the subagent spawned in `references/compaction-procedure.md` § Step CP2 (a). The subagent reads one target rules file and returns a fenced JSON verdict containing three output arrays: `mechanical_edits` (safe to apply via `Edit` by the main thread), `structural_notes` (caller-judgment notes shown to the user, not applied automatically), and `consolidation_proposals` (cluster-merge proposals — detection-only from the subagent; the main thread synthesizes `Edit` calls from them in Step CP2 (c2)).
 
 ## Contract
 
 - **Input**: one target file (path + full current content), the four compaction heuristics, the four consolidation heuristics, the `target_chars` threshold, the `min_cluster_size` integer, the current iter number, and the response-format schema. All inputs are passed via `--- LABEL ---` fence sections in the dispatch prompt
 - **Output**: a single fenced JSON block matching the per-iter schema (see § Per-iter response schema below). No prose narrative around the JSON
 - **Apply phase**: the main thread (Skill wrapper) applies `mechanical_edits` via `Edit`. The subagent does **not** call `Edit` directly (§ Forbidden tool calls)
-- **`structural_notes` disposition**: surfaced to the caller as user-facing notes, never auto-applied. Reserve `structural_notes` for proposals that cannot be safely expressed as mechanical edits
+- **`structural_notes` disposition**: passed to the caller as user-facing notes, never auto-applied. Reserve `structural_notes` for proposals that cannot be safely expressed as mechanical edits
 - **`consolidation_proposals` disposition**: detection-only from the subagent — do not emit `Edit` calls or `mechanical_edits` entries for these. The main thread reads `cluster_bullets[].snippet` as a byte-level prefix seed, extracts the verbatim full bullet from the current working-tree file, and synthesizes the `Edit` calls (`references/compaction-procedure.md` § Step CP2 (c2)).
 - **Two heuristic sets, distinct output arrays**: run both heuristic sets in a single dispatch and route output to distinct arrays. (a) Compaction heuristics (the original four) emit into `mechanical_edits` and `structural_notes`. (b) Consolidation heuristics (the four in § Consolidation heuristics below, gated by `min_cluster_size`) emit into `consolidation_proposals` only — never into `mechanical_edits`. The arrays do not share entries: a single observation classifies into exactly one array. `structural_notes` and `consolidation_proposals` are both collected from **iter 1 only**.
 
@@ -19,7 +19,7 @@ You are an **analysis-only** subagent. Your sole output is the fenced JSON verdi
 
 - `Edit` — propose edits as `mechanical_edits` entries in the JSON verdict; do not call `Edit` yourself
 - `Write` — propose new-file or full-rewrite cases as `structural_notes`; do not call `Write` yourself
-- Any other file-writing or working-tree-mutating tool (`NotebookEdit`, `Bash(rm *)`, `Bash(mv *)`, `Bash(cp *)`, `Bash(sed -i *)`, `Bash(jq ... > file)`, equivalent shell redirections) — do not call them; surface the intent as a `structural_note` instead
+- Any other file-writing or working-tree-mutating tool (`NotebookEdit`, `Bash(rm *)`, `Bash(mv *)`, `Bash(cp *)`, `Bash(sed -i *)`, `Bash(jq ... > file)`, equivalent shell redirections) — do not call them; record the intent in a `structural_note` instead
 
 If you find yourself reasoning "I should just apply this directly" — that is precisely the anti-pattern this section forbids. Emit the edit as a `mechanical_edits` entry and stop; the main thread will apply it.
 
@@ -61,7 +61,7 @@ Run these alongside the four compaction heuristics above, in the same iter-1 pas
 
 ### 1. Repeated higher-order action
 
-When the file contains multiple bullets that describe the same abstract action in different phrasings (the same underlying discipline applied to different scopes or framings), surface them as a single cluster.
+When the file contains multiple bullets that describe the same abstract action in different phrasings (the same underlying discipline applied to different scopes or framings), report them as a single cluster.
 
 **Closed criteria** — all three must hold:
 
@@ -71,7 +71,7 @@ When the file contains multiple bullets that describe the same abstract action i
 
 ### 2. Domain-concept phrasing variants
 
-When the file contains multiple bullets describing the same domain concept under different names or aliases (the same idea labeled by multiple terms, with each bullet defining or applying its own term), surface them as one cluster.
+When the file contains multiple bullets describing the same domain concept under different names or aliases (the same idea labeled by multiple terms, with each bullet defining or applying its own term), report them as one cluster.
 
 **Closed criteria** — both must hold:
 
@@ -80,7 +80,7 @@ When the file contains multiple bullets describing the same domain concept under
 
 ### 3. Same procedural pattern
 
-When the file contains multiple bullets that describe the same procedural shape across different domains (the same step sequence, the same conditional structure, the same loop / boundary pattern), surface them as one cluster.
+When the file contains multiple bullets that describe the same procedural shape across different domains (the same step sequence, the same conditional structure, the same loop / boundary pattern), report them as one cluster.
 
 **Closed criteria** — both must hold:
 
@@ -89,7 +89,7 @@ When the file contains multiple bullets that describe the same procedural shape 
 
 ### 4. Distributed same-anti-pattern bullets
 
-When the file contains multiple bullets each prohibiting the same form (the same "do not collapse X into Y", the same "avoid Z in W context") in different surface contexts, surface them as one cluster.
+When the file contains multiple bullets each prohibiting the same form (the same "do not collapse X into Y", the same "avoid Z in W context") in different surface contexts, report them as one cluster.
 
 **Closed criteria** — both must hold:
 
@@ -119,7 +119,7 @@ Each entry in `mechanical_edits`:
 
 - `old_string` must match exactly one location in the target file. Include **1–3 lines of surrounding context** so the snippet is unique within the file
 - **Verbatim character-class preservation**: emit `old_string` (and `new_string`) with the **exact byte sequence** present in the source file — do **not** normalize character classes during extraction. Specifically: preserve fullwidth / halfwidth distinctions for parentheses (`()` vs `（）`), brackets (`[]` vs `［］`), digits, and Latin letters; preserve dash / hyphen variants (ASCII `-` vs em-dash `—` vs en-dash `–` vs minus `−`); preserve whitespace classes (ASCII space vs ideographic space `　` vs non-breaking space); preserve ellipsis (`...` vs `…`) verbatim from the source. If you find yourself "cleaning up" punctuation while extracting `old_string`, stop — emit the bytes verbatim
-- The main thread re-`Read`s the file before each `Edit`, so subsequent entries in the same batch see the result of earlier landed edits. If a later entry's `old_string` is not found because an earlier edit rewrote that region, the main thread treats the entry as a no-op fallback and continues with the next entry — this is expected when multiple edits emit from the same iter-1 snapshot
+- The main thread re-`Read`s the file before each `Edit`, so subsequent entries in the same batch see the result of earlier applied edits. If a later entry's `old_string` is not found because an earlier edit rewrote that region, the main thread treats the entry as a no-op fallback and continues with the next entry — this is expected when multiple edits emit from the same iter-1 snapshot
 - The `file` field must match the dispatch's target file path; an entry whose `file` does not match is skipped without writing
 
 ## `structural_notes` schema
@@ -169,7 +169,7 @@ Soft targets for `cross_ref_text` and `merged_principle.text` wording in `consol
 
 - **Pattern-name shortening in `cross_ref_text`**: the name embedded in `cross_ref_text` may shrink to the head noun phrase of `merged_principle.name`, with the qualifier moved into the per-site parenthetical. `merged_principle.name` itself stays unchanged.
 
-- **Per-site `cross_ref_text` target**: ≤150 chars per entry. Keep incident pointers verbatim per § Preservation rules (iii)–(iv); compress the rest to a structural summary plus the load-bearing identifier.
+- **Per-site `cross_ref_text` target**: ≤150 chars per entry. Keep incident pointers verbatim per § Preservation rules (iii)–(iv); compress the rest to a structural summary plus the essential identifier.
 
 - **`merged_principle.text` target**: ≤400 chars. Per-site detail goes into the cross-refs, not the merged principle.
 

@@ -18,7 +18,7 @@ The caller passes these fields in natural language (the skill extracts them from
 - `File:` / `Files:` *(file mode — one or more paths, repo-relative or absolute)* — the files whose target-language prose is rewritten in place. Multiple paths may be listed (one per line or comma-separated), and the two forms may be mixed in one invocation; each entry is carried verbatim into `target_files`.
 - `Text:` *(text mode — the prose to refactor)* — the block of text to polish and return.
 - `Language:` *(optional, default `ja`, e.g. `ja` / `en`)* — the target language whose prose is refactored. In file mode, only prose in this language is rewritten.
-- `Model:` *(optional, default `sonnet`)* — the model id applied as the `model` parameter on the refactor `Agent` dispatch (Step 3 (a)). **Validity predicate**: valid only if it is one of the model ids the current `Agent` tool's `model` parameter accepts. Check the tool's live schema in this session. A full `claude-*` id (e.g. `claude-sonnet-5`) is not among its accepted aliases, so it is invalid. An absent or invalid value falls back to `sonnet`.
+- `Model:` *(optional, default `sonnet`)* — the model id applied as the `model` parameter on the refactor `Agent` dispatch (Step 3 (a)). **Validity predicate**: valid only if it is one of the model ids the current `Agent` tool's `model` parameter accepts. Check the tool's live schema in this session. A full `claude-*` id (e.g. `claude-sonnet-5`) is not among its accepted aliases, so it is invalid. An absent or invalid value is treated as `sonnet`.
 
 **Pass related files together (file mode)** — cross-file duplicate-comment detection works only across files listed in a **single** invocation.
 

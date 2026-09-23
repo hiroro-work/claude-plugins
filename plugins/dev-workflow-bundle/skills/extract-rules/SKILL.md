@@ -153,9 +153,9 @@ Search for `extract-rules.local.md`:
 
 **Extract settings** (`target_dirs`, `exclude_dirs`, `exclude_patterns`, `output_dir`, `examples_output_dir`, `staging_output_dir`, `language`, `split_output`, `resolve_references`, `compaction_threshold`) from the config file. See Configuration section above for defaults.
 
-**`language` resolution:** skill config → Claude Code settings (`~/.claude/settings.json` `language` field) → default `ja`
+**`language` resolution:** skill config → Claude Code settings (`~/.claude/settings.json` `language` field) → default `ja`. Write the report's prose in plain words, one claim per sentence, with no figure of speech translated word for word.
 
-**Load existing rule files** (incremental modes; Full Extraction skips it): read `<output_dir>/<name>.md`, `<output_dir>/<name>.local.md`, and `<examples_output_dir>/<name>.examples.md`. When `examples_output_dir` does not exist yet (legacy projects that co-located examples under `output_dir`), fall back to `<output_dir>/<name>.examples.md`. Also read `<staging_output_dir>/project.staging.local.md` when present — the staging-match branch needs it; skip silently when it does not exist.
+**Load existing rule files** (incremental modes; Full Extraction skips it): read `<output_dir>/<name>.md`, `<output_dir>/<name>.local.md`, and `<examples_output_dir>/<name>.examples.md`. When `examples_output_dir` does not exist yet (legacy projects that co-located examples under `output_dir`), use `<output_dir>/<name>.examples.md` instead. Also read `<staging_output_dir>/project.staging.local.md` when present — the staging-match branch needs it; skip silently when it does not exist.
 
 ### Step 2: Detect Project Type
 
@@ -177,7 +177,7 @@ Read `references/integration-criteria.md` for detection rules and classification
 
 Collect target files for analysis:
 
-1. **Get git-tracked files** using `git ls-files` (respects `.gitignore`). If not a git repo, fall back to Glob with manual exclusions from settings.
+1. **Get git-tracked files** using `git ls-files` (respects `.gitignore`). If not a git repo, use Glob instead, with manual exclusions from settings.
 2. Filter by `target_dirs`, `exclude_dirs`, `exclude_patterns`, and detected language extensions
 3. Sample 10-15 files per category, distributed across directories for representative coverage. Large projects (100+): prioritize directory diversity. Small projects (<10): analyze all files.
 
@@ -458,7 +458,7 @@ Read `references/pr-review-mode.md` for the full processing steps (P1-P5). Key f
 
 ## Audit Pass
 
-Every incremental mode — Conversation Extraction, Conversation Candidate Apply, Update, and PR Review — runs this pass once its writes have landed, with no flag of its own. It re-judges the entries **that run wrote** against `references/extraction-criteria.md`, from an analysis subagent that is given the written entries and the criteria and is barred from reading the run's input. Never fold the pass back into the dispatch that wrote the entries.
+Every incremental mode — Conversation Extraction, Conversation Candidate Apply, Update, and PR Review — runs this pass once its writes are done, with no flag of its own. It re-judges the entries **that run wrote** against `references/extraction-criteria.md`, from an analysis subagent that is given the written entries and the criteria and is barred from reading the run's input. Never merge the pass into the dispatch that wrote the entries.
 
 Read `references/audit-pass.md` for the full procedure. Key flow:
 
@@ -468,7 +468,7 @@ Read `references/audit-pass.md` for the full procedure. Key flow:
 4. Security Self-Check on every file the pass wrote
 5. Append the verdict section to the calling mode's report per `references/audit-pass.md` § Report format
 
-The four modes named above are the closed list. Full Extraction, Restructure, Compaction, and Realign do not run it; `--realign` is the way to put their output through the same criteria, over whatever an operator names. A parse failure or a schema violation leaves the run's writes as the extraction made them and is named in the report.
+The four modes named above are the complete list. Full Extraction, Restructure, Compaction, and Realign do not run it; `--realign` is the way to put their output through the same criteria, over whatever an operator names. A parse failure or a schema violation leaves the run's writes as the extraction made them and is named in the report.
 
 ---
 

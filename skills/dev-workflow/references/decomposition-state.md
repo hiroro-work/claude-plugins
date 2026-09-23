@@ -34,8 +34,8 @@ Validate on every read: the four top-level keys present, ids unique integers, `d
 
 ## Finish a subtask (Completion, decomposed runs only)
 
-1. If work items were excluded or deferred during this run and live only in prose, ask the user per item: add as a new `pending` subtask (with `depends_on` when order matters), fold into an existing pending subtask, or accept as out of scope. Items left in prose are invisible to `--resume`.
+1. If work items were excluded or deferred during this run and live only in prose, ask the user per item: add as a new `pending` subtask (with `depends_on` when order matters), merge into an existing pending subtask, or accept as out of scope. Items left in prose are invisible to `--resume`.
 2. Mark the subtask `completed`; write back.
 3. Ask for an optional PR URL (USER GATE); set `pr` when given.
-4. Find the next runnable subtask. If one exists and `landed_count > 0`: tell the user to open a PR for the landed commits, then start a new session with `--resume <slug>`. If one exists and nothing landed: tell the user to commit and open a PR first, because the next run takes a fresh `<base-commit>` and uncommitted changes would leak into the next subtask's diff. Add, when rule files remain uncommitted, that those need committing too. Never push.
+4. Find the next runnable subtask. If one exists and `landed_count > 0`: tell the user to open a PR for this run's commits, then start a new session with `--resume <slug>`. If one exists and `landed_count` is 0: tell the user to commit and open a PR first, because the next run takes a fresh `<base-commit>` and uncommitted changes would end up in the next subtask's diff. Add, when rule files remain uncommitted, that those need committing too. Never push.
 5. If no subtask remains: `rm -f <state-file path>` and list every subtask's title and `pr` in the summary.

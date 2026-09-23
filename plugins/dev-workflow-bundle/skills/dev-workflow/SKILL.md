@@ -22,7 +22,7 @@ Merge rules per key, in order: `null` or an empty value in a higher layer clears
 
 | Key | Default | Meaning |
 |---|---|---|
-| `reviewer` | `ask-peer` | Reviewer skill for Plan Review and Code Review. One of ask-peer / ask-claude / ask-codex / ask-gemini / ask-copilot / ask-agy; anything else falls back to `ask-peer` |
+| `reviewer` | `ask-peer` | Reviewer skill for Plan Review and Code Review. One of ask-peer / ask-claude / ask-codex / ask-gemini / ask-copilot / ask-agy; anything else uses `ask-peer` |
 | `code_review` | `true` | Whether Code Review runs |
 | `polish_prose` | `true` | Whether Polish Prose runs |
 | `language` | see below | Language of everything the user reads |
@@ -38,7 +38,7 @@ Merge rules per key, in order: `null` or an empty value in a higher layer clears
 | `workability_retrospective` | `enabled: false` | `enabled` turns on Workability Retrospective; `backlog_dir` (default `.claude/improvements`) holds its backlog files |
 | `custom_instructions` | none | Free-form development guidance (for example "Always use TDD") followed at Create Plan, Implement, and Tidy and handed to both reviewers. `.claude/rules/` and the user's explicit requests win on conflict |
 
-`language` resolves as: merged settings → `language` in `~/.claude/settings.json` → `ja`. Headings, phase names, commit messages, diffs, and paths stay as written; prose follows it. Keys this skill does not read are named once at Load Settings and ignored.
+`language` resolves as: merged settings → `language` in `~/.claude/settings.json` → `ja`. Headings, phase names, commit messages, diffs, and paths stay as written; prose follows it, in plain words, one claim per sentence. Keys this skill does not read are named once at Load Settings and ignored.
 
 ## Callee failure rule
 
@@ -203,7 +203,7 @@ Skipped when `hooks.on_complete` is unset, or with a one-line note when the tree
 
 ## Phase 14: Interactive Commits
 
-USER GATE. When the snapshot chain exists, first absorb the review layers' edits into it per `references/snapshots.md` § Absorb review fixes. Then read `references/commits.md` and follow § Procedure: one commit per Build order step from the chain, or cohesion grouping of the final diff when no chain exists, each landed through the accept gate, in the crit browser when `commit_review_gate` is `crit`. Initialize `landed_count = 0` on entry; the reference increments it. Never `git push`.
+USER GATE. When the snapshot chain exists, first absorb the review layers' edits into it per `references/snapshots.md` § Absorb review fixes. Then read `references/commits.md` and follow § Procedure: one commit per Build order step from the chain, or cohesion grouping of the final diff when no chain exists, each committed through the accept gate, in the crit browser when `commit_review_gate` is `crit`. Initialize `landed_count = 0` on entry; the reference increments it. Never `git push`.
 
 In mob mode, add the per-commit note and the already-reviewed accept variant per `references/mob-mode.md` § Commits.
 
@@ -229,7 +229,7 @@ Skipped unless `workability_retrospective.enabled` is `true` and Phase 15's gate
 
 ## Phase 19: Completion
 
-1. Summary in the resolved language: what was done, files changed, check/test result, review outcomes, rules updated, commits landed, the Self-Retrospective and Workability lines, the timing table per `references/timing.md` § Report, and one line per phase skipped or stopped early. List skipped callees and any uncommitted rule files.
+1. Summary in the resolved language: what was done, files changed, check/test result, review outcomes, rules updated, commits made, the Self-Retrospective and Workability lines, the timing table per `references/timing.md` § Report, and one line per phase skipped or stopped early. List skipped callees and any uncommitted rule files.
 2. Decomposed runs: read `references/decomposition-state.md` and follow its § Finish a subtask. It marks the subtask done, asks for an optional PR URL (USER GATE), and prints the `--resume` command or deletes the state file when all subtasks are done.
 3. In mob mode, add the learning summary and the paired resume commands per `references/mob-mode.md` § Completion.
 4. Delete this run's staging state: `rm -f` each existing staging file listed in § Workflow artifacts (named paths, no globs), `rm -rf .claude/plans/<slug>.absorb`, and `git update-ref -d` on each `refs/dev-workflow/<slug>*` ref. Never delete the plan file (`hooks.on_complete` owns archiving) or the decomposition state file (step 2 owns it).

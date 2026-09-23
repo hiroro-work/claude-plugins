@@ -104,7 +104,7 @@ Same as Step C5 in Conversation Extraction Mode (see `references/conversation-mo
 4. Append using standard format (per § Step C5's **"Append"** step — canonical-write / staging-write split + move atomicity)
 5. **Delete promoted staging entries**: per § Step C5's **"Delete promoted staging entries"** step.
 6. Update `.examples.md`: Resolve the target path via `examples_output_dir` (`<examples_output_dir>/<name>.examples.md`). Create the file and any missing parent directories under `examples_output_dir` when absent. Follow the common generation procedure in `examples-format.md` to add examples for each new rule. (Per § Step C5's **"Update `.examples.md`"** step, staging-only items do **not** receive `.examples.md` entries — only canonical writes do.)
-7. Run Security Self-Check (same as Step 6.5; include the staging file when any staging append landed in step 4)
+7. Run Security Self-Check (same as Step 6.5; include the staging file when any staging append was written in step 4)
 8. Run `SKILL.md` § Audit Pass over step 4's write record, per `references/audit-pass.md`. Its verdict section joins the report below
 9. Report what was added including `canonical_skip_count`, `promoted_count`, `staged_count`. See § Report format (Step P5).
 

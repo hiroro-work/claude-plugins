@@ -20,7 +20,7 @@ Resolve `language` by reading only the `language` key from the YAML frontmatter 
 
 ## Model
 
-`--model` is applied as the `model` parameter of the analysis `Agent` dispatch. It is valid only if it is one of the ids the current `Agent` tool's `model` parameter accepts; check the tool's live schema in this session. A full `claude-*` id is not among its aliases and is invalid. An absent or invalid value falls back to `sonnet`.
+`--model` is applied as the `model` parameter of the analysis `Agent` dispatch. It is valid only if it is one of the ids the current `Agent` tool's `model` parameter accepts; check the tool's live schema in this session. A full `claude-*` id is not among its aliases and is invalid. An absent or invalid value is treated as `sonnet`.
 
 ## Dispatch authorization
 

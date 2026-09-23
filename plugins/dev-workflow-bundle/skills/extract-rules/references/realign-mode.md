@@ -4,7 +4,7 @@ Deep reference for SKILL.md **Realign Mode** (Steps RA1–RA5). Realign re-judge
 
 ## Contract
 
-- **Input** (to the subagent): the sections § Step RA2 — Dispatch the analysis subagent enumerates — that fence list is the single statement of what crosses the boundary. The subagent `Read`s the target file and the criteria sections itself
+- **Input** (to the subagent): the sections § Step RA2 — Dispatch the analysis subagent enumerates — that fence list is the single statement of what reaches the subagent. The subagent `Read`s the target file and the criteria sections itself
 - **Output** (from the subagent): a single fenced JSON block matching § Response schema, with no prose around it
 - **Apply phase**: the main thread applies `mechanical_edits` via `Edit`, and only after the approval gate in Step RA3. The subagent does not call `Edit`
 
@@ -27,7 +27,7 @@ Two ways to arrive at the target list:
 
 Resolve `examples_output_dir` here — the follow-through needs it.
 
-**Shared `.md` files need a word at the gate.** A shared `.md` may carry Principles that merge-rules promoted organization-wide. Realign judges locally and its referrer count scans this repository only, so it cannot see that a Principle is load-bearing in another project. Discovery sweeps these files in without the operator having named them, so say which targets are shared `.md` when presenting the gate — under discovery always, and under named paths whenever one was named deliberately.
+**Shared `.md` files need a word at the gate.** A shared `.md` may carry Principles that merge-rules promoted organization-wide. Realign judges locally and its referrer count scans this repository only, so it cannot see that a Principle is relied on in another project. Discovery sweeps these files in without the operator having named them, so say which targets are shared `.md` when presenting the gate — under discovery always, and under named paths whenever one was named deliberately.
 
 ## Judgement criteria
 
@@ -42,10 +42,10 @@ The unit of judgement is a **rule** — one top-level bullet under a section hea
 
 ## Verdicts
 
-Assign each rule exactly one verdict from this closed list.
+Assign each rule exactly one verdict from this fixed list.
 
 - **`keep`** — passes the criteria in § Judgement criteria as written. No edit.
-- **`drop`** — fails the durability test (it records one piece of work rather than directing future work) or the reach test (it does not earn permanent context). Name which in the `reason`.
+- **`drop`** — fails the durability test (it records one piece of work rather than directing future work) or the reach test (it does not justify permanent context). Name which in the `reason`.
 - **`split`** — carries more than one claim. Emit the resulting rules, each judged on its own, so a split can yield fewer parts than the original had clauses. List each resulting rule's bold label in `resulting_labels`. When **every** part fails the criteria, the verdict is `drop`, not a `split` with nothing left — an empty `resulting_labels` is a schema violation that stops the run.
 - **`reshape`** — one durable, wide-reaching claim, but padded: an account of how the situation first came up, a restatement of a norm already present, or a description of current implementation state sits alongside the norm. Cut back to the norm, its trigger, and its discriminator.
 
@@ -53,9 +53,9 @@ Every entry carries a one-sentence `reason`, `keep` included — a `keep` states
 
 ## Step RA2 — Dispatch the analysis subagent (main thread)
 
-**One target file per dispatch, files processed in the order given.** Before the first dispatch, register one task per target file (`realign: <path>`) via `TaskCreate` and mark each `in_progress` before its dispatch. **Every row flips to `completed` on every outcome** — the file's edits landed, the user refused at the gate, or a parse failure stopped the run — and the outcome is carried in the report, not in the task status. Where the Task tools are unavailable, skip the registration and hold the progress in main-thread context; the report carries the outcomes either way.
+**One target file per dispatch, files processed in the order given.** Before the first dispatch, register one task per target file (`realign: <path>`) via `TaskCreate` and mark each `in_progress` before its dispatch. **Every row flips to `completed` on every outcome** — the file's edits were applied, the user refused at the gate, or a parse failure stopped the run — and the outcome is carried in the report, not in the task status. Where the Task tools are unavailable, skip the registration and hold the progress in main-thread context; the report carries the outcomes either way.
 
-Spawn an `Agent` (`subagent_type: general-purpose`) per file, assembling the prompt from these `--- LABEL ---` fence sections. This list is the **closed set** of what reaches the subagent; a constraint absent from it does not cross the boundary, however firmly this file states it:
+Spawn an `Agent` (`subagent_type: general-purpose`) per file, assembling the prompt from these `--- LABEL ---` fence sections. This list is the **closed set** of what reaches the subagent; a constraint absent from it is not passed on, however firmly this file states it:
 
 - `--- SKILL DIR ---`: this skill's absolute directory path, so the reference paths below resolve
 - `--- TARGET FILE ---`: the target file's absolute path, and the instruction to `Read` it in full before judging. Not its content — see § Contract
@@ -87,7 +87,7 @@ Apply the accepted `mechanical_edits` in order, per target file. Before each `Ed
 - Skip — without calling `Edit` — any entry whose `file` is not the target file it was returned for.
 - Skip an entry whose `old_string` is not found and continue. Two accepted edits can overlap a region an earlier one already rewrote.
 
-**What the counts mean.** The `keep` / `drop` / `split` / `reshape` counts are counts of **judgements**, fixed when the gate resolves and unchanged by what applies — a rule the user excluded moves to `keep` at the gate, and nothing after the gate moves a rule between verdicts. An accepted entry whose `Edit` did not land is **not** silently absorbed: record it and report it under § Step RA5's not-applied line, naming the rule and its intended verdict. That line is what keeps a `drop` that never landed from reading as a completed drop.
+**What the counts mean.** The `keep` / `drop` / `split` / `reshape` counts are counts of **judgements**, fixed when the gate resolves and unchanged by what applies — a rule the user excluded moves to `keep` at the gate, and nothing after the gate moves a rule between verdicts. An accepted entry whose `Edit` did not apply is **not** silently left out: record it and report it under § Step RA5's not-applied line, naming the rule and its intended verdict. That line is what keeps a `drop` that was never applied from reading as a completed drop.
 
 ### `.examples.md` follow-through
 
@@ -97,7 +97,7 @@ On an applied `split`, keep the entry against whichever `resulting_labels` name 
 
 ## Step RA5 — Security Self-Check and report
 
-Run the Security Self-Check (same as SKILL.md Step 6.5) on every file written, including any `.examples.md` the follow-through touched. Then report per § Report format (Step RA5), one section per target file, adding a not-applied line for any accepted entry whose `Edit` did not land.
+Run the Security Self-Check (same as SKILL.md Step 6.5) on every file written, including any `.examples.md` the follow-through touched. Then report per § Report format (Step RA5), one section per target file, adding a not-applied line for any accepted entry whose `Edit` did not apply.
 
 ## Parse failure and schema violation (main thread)
 
@@ -105,10 +105,10 @@ Evaluate in order, first match wins:
 
 1. **No fenced JSON block, or the JSON fails to parse** → report the failure to the user and stop.
 2. **Schema violation** → report and stop. Validate all of this here, before any `Edit`, so a malformed verdict cannot reach the apply phase:
-   - `rules` missing or not an array; an entry missing `label` / `verdict` / `reason`; a `verdict` outside the closed list; a `split` entry whose `resulting_labels` is missing, empty, or holds anything but non-empty strings.
+   - `rules` missing or not an array; an entry missing `label` / `verdict` / `reason`; a `verdict` outside the fixed list; a `split` entry whose `resulting_labels` is missing, empty, or holds anything but non-empty strings.
    - `rules[].label` values are **unique** within the file. A duplicate makes the Step RA3 exclusion ambiguous, and excluding one occurrence would silently exclude the other.
    - A `mechanical_edits` entry missing `file` / `label` / `old_string` / `new_string`.
-   - **Label correspondence, both directions**: every `mechanical_edits[].label` matches some `rules[].label`, and every non-`keep` rule has exactly one entry. Without the first, a rule the user excludes at the gate keeps its edit and lands a write the gate rejected; without the second, a missing entry is indistinguishable at Step RA5's not-applied line from one whose `Edit` did not apply.
+   - **Label correspondence, both directions**: every `mechanical_edits[].label` matches some `rules[].label`, and every non-`keep` rule has exactly one entry. Without the first, a rule the user excludes at the gate keeps its edit and makes a write the gate rejected; without the second, a missing entry is indistinguishable at Step RA5's not-applied line from one whose `Edit` did not apply.
 3. **Otherwise** → continue to the gate.
 
 A failure on any one target file stops the run before the gate — a partial gate would ask the approver to accept a set that is missing a file's judgements without saying so.
@@ -168,7 +168,7 @@ Every non-`keep` rule appears in exactly one section, each entry carrying the re
 
 A rule the user excluded at the Step RA3 gate counts as `keep`. Name the exclusions on one line below the counts.
 
-**Not applied** lists every accepted edit that did not land, naming the rule and the verdict it was accepted under. The rule still appears in its verdict's section — the counts are counts of judgements (§ Step RA4's **What the counts mean** paragraph). Omit it when every accepted edit landed.
+**Not applied** lists every accepted edit that did not apply, naming the rule and the verdict it was accepted under. The rule still appears in its verdict's section — the counts are counts of judgements (§ Step RA4's **What the counts mean** paragraph). Omit it when every accepted edit was applied.
 
 ## Sub-skill caller directive
 

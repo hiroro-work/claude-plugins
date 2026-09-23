@@ -93,7 +93,7 @@ Do NOT report general code quality, bugs, or design issues — only check what i
 
 Rules may include hard rules (binary compliance) and intent rules (judgment-based). Evaluate both. Report a borderline intent-rule case in the violation list with the `low-confidence` marker; the exact "No rule violations found" response is reserved for cases where you are confident no violations exist.
 
-For low-confidence intent-rule findings, make `Suggested fix` a resolution direction rather than a bare flag: check first whether the rule's intent is satisfied by relocating the flagged content to a more appropriate surface, and say where, instead of proposing deletion.
+For low-confidence intent-rule findings, make `Suggested fix` a resolution direction rather than a bare flag: check first whether the rule's intent is satisfied by relocating the flagged content to a more appropriate place, and say where, instead of proposing deletion.
 
 **Rule-doc drift classification**: when the code follows one behavior consistently across the diff and the surrounding codebase while the rule's text describes a different one, and the pattern looks intentionally established rather than an oversight, classify the finding as **`rule-doc-drift`** instead of a code violation. Supporting signals — judgment, not an automatic trigger: (i) the same "non-compliant" pattern at 3+ sites, all the same shape; (ii) the rule cites an **external platform signal** (a documented threshold, a version-pinned default, a documented API behavior) that the diff updates, with surrounding code or companion docs aligned to the new value; (iii) the rule cites a **numeric value / token / literal** conflicting with the diff's new default for the same concept, plus one further signal that the referent shifted intentionally. A sole new occurrence with no corroborating signal is a code violation. Report drift per `## Report Format`, with the Suggested fix set to the literal string `Route to extract-rules to update the rule document rather than fixing the code`. The caller decides whether to fix the code or update the rule; never apply a code change for one yourself.
 
@@ -126,12 +126,14 @@ For each violation, report:
 
 When the same rule line is violated at multiple locations or by multiple sub-rules, emit **one entry per (location, sub-rule)** pair — do not collapse them into a single entry.
 
+Write Description and Suggested fix in plain words, one claim per sentence, with no figure of speech translated word for word; the rule-doc-drift literal stays as given.
+
 If no violations are found, respond with exactly: "No rule violations found"
 ```
 
 Before launching reviewers, **prepare the data to embed in each prompt** (do NOT rely on reviewers running git commands themselves). Reuse the rule file content § 3. Match Rules to Changed Files already read — do not `Read` a rule file a second time here:
 - For each group, run `git diff <base-commit> -- <matched-files>` using the **union of files matched by any rule in that group**. The same file may appear in more than one group's diff.
-- For each rule file, resolve its `.examples.md` out of the two path lists § 2. Collect Rules step 1 gathered — no new filesystem probe. Take the rule file's path relative to `.claude/rules/` and replace the trailing `.md` (and a `.local` before it, when present) with `.examples.md`: `languages/ruby.md` and `languages/ruby.local.md` both give `languages/ruby.examples.md`. Look for that sub-path under `.claude/rules-extras/`; when it is absent, fall back to it beside the rule file (pre-split layout). Read each resolved file once — a `.md` and its `.local.md` resolve to the same one. Source of truth: extract-rules' `examples_output_dir` default; keep in sync (also § 2. Collect Rules step 1's second glob).
+- For each rule file, resolve its `.examples.md` out of the two path lists § 2. Collect Rules step 1 gathered — no new filesystem probe. Take the rule file's path relative to `.claude/rules/` and replace the trailing `.md` (and a `.local` before it, when present) with `.examples.md`: `languages/ruby.md` and `languages/ruby.local.md` both give `languages/ruby.examples.md`. Look for that sub-path under `.claude/rules-extras/`; when it is absent, look beside the rule file instead (pre-split layout). Read each resolved file once — a `.md` and its `.local.md` resolve to the same one. Source of truth: extract-rules' `examples_output_dir` default; keep in sync (also § 2. Collect Rules step 1's second glob).
 - If no `.examples.md` exists for any rule in the group, omit the `## Reference: Code Examples` section entirely from that reviewer prompt (do not write a placeholder line like `(no examples file)`).
 - **Resolve pointer rules before embedding**: if a matched rule file carries no inline enforceable rule text and instead defers its substance to a document outside the scanned tree via a reference link (an `@<path>` include, or a markdown link to a doc outside `.claude/rules/`), resolve that reference and `Read` the target so the embedded `## Rules to Check` content is the actual rule text. If the reference cannot be resolved (target missing, or outside readable scope), do **not** embed an empty stub: drop the rule from the group and record it as an explicit coverage gap per § 6. Aggregate Results.
 - When multiple rule files are embedded in one reviewer prompt, separate them with a `### <.claude/rules/... path>` sub-heading inside the `## Rules to Check` section.
@@ -141,7 +143,7 @@ For each reviewer, set the description / task label to the group category name (
 ### 6. Aggregate Results
 
 1. Collect results from all reviewers (parallel Agents or inline iterations).
-2. Decide clean vs. not by the entry-class mapping in `## Return contract`. When the consolidated list is empty, output `No rule violations found` as the final prose result, then emit the verdict per `## Return contract` and end the processing flow. A single synthetic entry falls through to step 3, which renders the list so the coverage gap surfaces loudly.
+2. Decide clean vs. not by the entry-class mapping in `## Return contract`. When the consolidated list is empty, output `No rule violations found` as the final prose result, then emit the verdict per `## Return contract` and end the processing flow. A single synthetic entry goes on to step 3, which renders the list so the coverage gap is clearly visible.
 3. If violations were found:
    - Output the consolidated violation list, organized by rule file.
    - Use the `## Report Format` field shape, keeping every `low-confidence` marker.
@@ -178,7 +180,7 @@ Status mapping (evaluate in order, first match wins):
 Field rules:
 
 - `violations_count`: non-negative integer. Total entries in the consolidated list for `violations`; `0` for `no-issues` and for `error`, even when the `error` list holds synthetic entries.
-- `reason`: a closed-enum string only when `status == "error"`, otherwise JSON `null`. No free-form text, newlines, or control characters, so the verdict stays mechanically parseable. Take the first that applies:
+- `reason`: one of the listed enum strings, only when `status == "error"`, otherwise JSON `null`. No free-form text, newlines, or control characters, so the verdict stays mechanically parseable. Take the first that applies:
   - `"diff collection failed"` — § 1. Prepare produced no usable changed-file list.
   - `"rule loading failed"` — matched rule files could not be read in § 3. Match Rules to Changed Files.
   - `"verdict parse failure"` — a reviewer group returned unparseable output even after the retry, so the list holds ≥ 1 `(review failed)` entry.

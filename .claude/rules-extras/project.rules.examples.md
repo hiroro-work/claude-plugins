@@ -155,7 +155,7 @@
 **Bad**: 本文を日本語で書く（配布物は英語という規則に反する）。日本語だけの例を置く（rules-review の低確度の指摘を招く）。
 
 ### 例は本文で言い切れない逐語内容があるときだけ置く
-**Good**: 逐語内容を運ぶ例だけを置く。そのまま出力される固定文字列（`upstream-override` / `先行合意上書き`）、言語で変わる描画規約（`Phase 10（Rules Compliance Review）` / `Phase 10 (Rules Compliance Review)`）、再現が要るスロットの構造（`<N>/<total> コミット適用済み` / `<N>/<total> commits landed`）。主題が規約そのものの `skills/dev-workflow/references/plan-format.md` では、例そのものが規約の内容なので残す。
+**Good**: 逐語内容を運ぶ例だけを置く。そのまま出力される固定文字列（`upstream-override` / `先行合意上書き`）、言語で変わる描画規約（`Phase 10（Rules Compliance Review）` / `Phase 10 (Rules Compliance Review)`）、再現が要るスロットの構造（`<N>/<total> コミット済み` / `<N>/<total> commits made`）。主題が規約そのものの `skills/dev-workflow/references/plan-format.md` では、例そのものが規約の内容なので残す。
 **Bad**: 言い回ししか示さない例を置く。「難易度判定（<tier> tier）により <steps> を skip しました」/「Skipped <steps> per the difficulty-skip matrix (<tier> tier)」は、本文に「工程名と難易度を名指しする 1 行」と書けば足りる。
 
 ### bundle 内の参照は例外だが、所属を確かめてから適用する

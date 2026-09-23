@@ -10,7 +10,7 @@ The Skill wrapper runs in the main thread, a subagent performs the analysis, and
 2. Check `output_dir` exists. If not, emit `{"status": "error", "reason": "output directory not found"}` and stop
 3. Resolve targets:
    - With explicit path arguments (caller-passed paths): use those paths. For each, `Read` the file content and measure its char count via the `Read` output length (do **not** use `Bash(wc -m)`). All explicit paths join the Step CP2 target set regardless of char count, so the consolidation pass can run on under-threshold files (status per Step CP2 (f)). Explicit-paths mode accepts paths under either `output_dir` or `examples_output_dir`
-   - Without arguments: `Glob <output_dir>/**/*.md`. For each file, `Read` and measure its char count; collect entries with char count `> compaction_threshold` into the target set. **Note**: discovery mode does **not** surface sub-threshold files in `files_processed` (they are silently filtered out); to scan an under-threshold file for consolidation, invoke `--compact <path>` (or `--compact <path1> <path2> ...`) with explicit paths. **Discovery scope**: this branch scans `output_dir` only — when `examples_output_dir` differs from `output_dir` (including the default `.claude/rules-extras` configuration), `.examples.md` files under `examples_output_dir` are **not** discovered automatically; the explicit-paths route compacts them on demand
+   - Without arguments: `Glob <output_dir>/**/*.md`. For each file, `Read` and measure its char count; collect entries with char count `> compaction_threshold` into the target set. **Note**: discovery mode does **not** list sub-threshold files in `files_processed` (they are silently filtered out); to scan an under-threshold file for consolidation, invoke `--compact <path>` (or `--compact <path1> <path2> ...`) with explicit paths. **Discovery scope**: this branch scans `output_dir` only — when `examples_output_dir` differs from `output_dir` (including the default `.claude/rules-extras` configuration), `.examples.md` files under `examples_output_dir` are **not** discovered automatically; the explicit-paths route compacts them on demand
 
    Cache the per-file `Read` content keyed by path for reuse in Step CP2 (a) iter 1's dispatch payload
 4. If the target set is empty (no paths resolved at all — empty explicit-paths argument or zero discovery hits), emit `{"status": "no-actionable", "compaction_threshold": <int>, "min_cluster_size": <int>, "files_processed": [], "reason": "no targets resolved"}` and stop
@@ -28,7 +28,7 @@ For each file in the target set, run the per-file iteration loop. `max_iteration
 - `--- CONSOLIDATION HEURISTICS ---`: the four heuristics enumerated in `references/compaction-mode.md` § Consolidation heuristics — emit into `consolidation_proposals` only, gated by the resolved `min_cluster_size`
 - `--- TARGET CHARS ---`: the resolved `compaction_threshold`
 - `--- MIN CLUSTER SIZE ---`: the resolved `min_cluster_size` integer
-- `--- ITER INFO ---`: current iter number (1 or 2), `max_iter` (2). On iter 2, also include a one-line summary of what iter 1 applied (the count of `mechanical_edits` landed and the iter-1 `chars_after` figure) so the subagent can plan an additional pass
+- `--- ITER INFO ---`: current iter number (1 or 2), `max_iter` (2). On iter 2, also include a one-line summary of what iter 1 applied (the count of `mechanical_edits` applied and the iter-1 `chars_after` figure) so the subagent can plan an additional pass
 - `--- COMPACTOR PROMPT ---`: the subagent instructions — the body of `references/compaction-mode.md`, included verbatim
 - `--- RESPONSE FORMAT ---`: the fenced JSON schema the subagent must emit (per-iter response, not the top-level skill return shape)
 
@@ -128,7 +128,7 @@ Top-level `status` mapping:
 - `no-actionable`: the target set was empty, **or** every file satisfies all three of (`applied_edits_count == 0`, empty `consolidation_proposals[]`, empty `structural_notes[]`)
 - `error`: top-level dispatch error (e.g. settings load failure, output directory missing). Per-file errors stay inside `files_processed` with `per_file_status: "error"` and do not propagate to the top
 
-`reason` enum (closed list):
+`reason` enum (fixed list):
 
 - Per-file `reason` (set when `per_file_status ∈ {error, unresolved}`):
   - `"verdict parse failure"` — subagent response had no fenced JSON block or failed to parse (Step CP2 (b) #1)
@@ -186,4 +186,4 @@ No compaction needed — no files exceed threshold (40000 chars)
 Compaction failed: <reason>
 ```
 
-Each per-file entry's `per_file_status` carries the loop outcome (`converged` / `partial` / `unresolved` / `error` / `skipped-below-threshold`); the caller uses this to surface follow-up actions to the user (e.g. via a user-gate that accepts/rejects per file). The `skipped-below-threshold` value appears only in explicit-paths mode for caller-passed paths whose char count was already at or below `compaction_threshold` (see § Step CP2 (f)).
+Each per-file entry's `per_file_status` carries the loop outcome (`converged` / `partial` / `unresolved` / `error` / `skipped-below-threshold`); the caller uses this to show follow-up actions to the user (e.g. via a user-gate that accepts/rejects per file). The `skipped-below-threshold` value appears only in explicit-paths mode for caller-passed paths whose char count was already at or below `compaction_threshold` (see § Step CP2 (f)).

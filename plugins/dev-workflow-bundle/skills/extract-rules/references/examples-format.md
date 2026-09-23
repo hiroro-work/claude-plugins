@@ -106,9 +106,9 @@ For each new rule added:
 
 ## Portability check (post-generation)
 
-After writing each example + description, re-read the pair and ask: "Does this description hold for every call site of this pattern, or does it leak assumptions from the specific site it was mined from?"
+After writing each example + description, re-read the pair and ask: "Does this description hold for every call site of this pattern, or does it carry over assumptions from the specific site it was mined from?"
 
-Common leaks:
+Assumptions commonly carried over:
 
 - **Test-file origin**: unit-test samples often describe the pattern in test-isolation terms. Either rewrite the description in production-contract terms with a production Good example, or add a `test-only` qualifier to the rule title
 - **Specific-site framing**: description references local variables / fixture names. Rewrite in terms of the pattern's contract

@@ -16,11 +16,11 @@ Before your first edit, call `Skill(artifact-design)` and `Skill(artifact-diagra
 
 - Every section except How this page was built, and except one PAGE marks text-only, is a picture first: a `<figure>` holding one large inline SVG spanning the section's width, drawing the one mechanism the section claims, and a one-sentence `<figcaption>`; beneath it at most three `<p>`, the one that carries the section's conclusion as `<p class="verdict">`, and sources, when the section has them, as one `<p class="src">`. A text-only section has the same `<p>` and no figure.
 - Inline SVG only: a `viewBox`, colours as `var(--token, #fallback)` using the stylesheet's tokens, its text classes (`lbl`, `name`, `sub`, `acc`, `mono`) for labels, no `<style>` element inside the SVG. Nothing the picture already says is repeated in words.
-- Write for the reader PAGE names, in the register PAGE gives: complete sentences, the conclusion first, then the reason, a plain word over a technical one when both are exact. A term the reader meets for the first time gets one sentence saying what it is where it first appears. The sentences around the conclusion take its register.
+- Write for the reader PAGE names, in the register PAGE gives: complete sentences with one claim each, the conclusion first, then the reason, a plain word over a technical one when both are exact, and no figure of speech translated word for word. A term the reader meets for the first time gets one sentence saying what it is where it first appears. The sentences around the conclusion take its register.
 - Section headings stay English; every other sentence is in the language PAGE names.
 - Nothing on the page states a design decision, an alternative or a build step, unless PAGE's section definitions ask for it.
 
-**Log and keys.** How this page was built is a `<details>` element, closed by default, each entry a `<div class="log-entry">`. Append the entry THIS TURN gives you, verbatim, as its last entry; this verbatim rule wins over the language rule above. When a message rewrites a first-line key, rewrite only that key in the first-line comment.
+**Log and keys.** How this page was built is a `<details>` element, closed by default, each entry a `<div class="log-entry">`. Append the entry THIS TURN gives you, verbatim, as its last entry; this verbatim rule wins over the language and register rules above. When a message rewrites a first-line key, rewrite only that key in the first-line comment.
 
 **Report.** End each run — after the last message you have — with exactly three lines and nothing else:
 

@@ -8,7 +8,7 @@ The purpose of rule extraction is to capture what Claude would get wrong or prod
 
 ## What a Rule Is Made Of
 
-A rule earns its place by what it contains, not by how much it explains. Keep three things:
+A rule is judged by what it contains, not by how much it explains. Keep three things:
 
 - **The norm** — the single thing to do, or not to do.
 - **The trigger** — the situation in which it applies.
@@ -57,9 +57,9 @@ Apply this third test to every candidate that survives the two above. It has two
 > **Reach** — how wide is the class of situations this fires in? A recurring shape of work, or one configuration of one component? Judge reach by the class of situations the rule fires in, not by the single artifact it was observed on.
 > **Consequence** — what happens if the rule is absent when the situation does come up? Something breaks quietly and is expensive to find, or the work is simply redone once?
 
-Keep the candidate when its reach is wide, **or** when a narrow reach pairs with a consequence that is silent, destructive, or expensive to recover from. Skip it when a narrow reach pairs with a consequence an ordinary rerun or review would absorb.
+Keep the candidate when its reach is wide, **or** when a narrow reach pairs with a consequence that is silent, destructive, or expensive to recover from. Skip it when a narrow reach pairs with a consequence an ordinary rerun or review would put right.
 
-One further signal to skip: **already enforced elsewhere**. When a mechanical check this project actually runs — a linter, a type checker, a test, an automated verification step whose failure surfaces in the normal workflow — catches the violation on its own, skip the candidate. A convention a linter *could* enforce but this project does not is still a rule.
+One further signal to skip: **already enforced elsewhere**. When a mechanical check this project actually runs — a linter, a type checker, a test, an automated verification step whose failure shows up in the normal workflow — catches the violation on its own, skip the candidate. A convention a linter *could* enforce but this project does not is still a rule.
 
 Expect this test to reject more candidates than the other two combined, and expect it to reject some that are genuinely true — being correct is not the bar.
 
@@ -91,7 +91,7 @@ Principles that **Claude already knows and would follow by default**:
 > - **Yes** → Extract it (e.g., Claude would use classes, but this team uses FP only)
 > - **No** → Skip it (e.g., Claude already uses const over let, avoids magic numbers)
 
-**Note**: in incremental modes the "Extract" action for **project-level patterns** is split across two observations; everything else lands in canonical directly. See `references/conversation-mode.md` § Rule-candidate contract's **"Staging-gating in contract terms"** paragraph.
+**Note**: in incremental modes the "Extract" action for **project-level patterns** is split across two observations; everything else goes into canonical directly. See `references/conversation-mode.md` § Rule-candidate contract's **"Staging-gating in contract terms"** paragraph.
 
 ---
 

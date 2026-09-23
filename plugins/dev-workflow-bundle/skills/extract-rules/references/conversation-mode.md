@@ -56,7 +56,7 @@ Look for user preferences and classify them:
 **6. Abstraction normalization** → Normalize before any write (canonical or staging): Before writing any extracted item, normalize its phrasing so the main sentence generalizes beyond the specific session and a re-observation of the same pattern can match it. Concrete identifiers that anchor the rule to a single incident — specific filenames, specific UI elements, one-time symptoms — are **dropped**, not relocated into a parenthetical suffix; retain one parenthetical only when the main sentence alone does not say where the rule applies (e.g., "component re-render after auth state change may lose ephemeral key state" rather than "`FooBar.tsx` reports missing key after login"). This caps the incident parenthetical only — the Principles format's own `Principle name (hint1, hint2, hint3)` hints are required and unaffected. Concrete code anchors survive elsewhere: see § Rule-candidate contract's **Examples** paragraph.
 
 **7. Durability** → Apply `references/extraction-criteria.md` § Durability: Would This Change What Gets Written Next Time?, and skip what fails it:
-   - Where the judgement is genuinely uncertain, staging can settle it — but only where a staging path exists. For a **project-level pattern** (`Type: pattern` with `Category: project`) stage it and let the second observation decide. Every other `Type` / `Category` combination bypasses staging (§ Rule-candidate contract's **Staging-gating in contract terms**), so an uncertain candidate there is **skipped**; a later re-observation can still raise it
+   - Where the judgement is genuinely uncertain, staging can decide it — but only where a staging path exists. For a **project-level pattern** (`Type: pattern` with `Category: project`) stage it and let the second observation decide. Every other `Type` / `Category` combination bypasses staging (§ Rule-candidate contract's **Staging-gating in contract terms**), so an uncertain candidate there is **skipped**; a later re-observation can still raise it
 
 **8. One rule, one claim** → Apply `references/extraction-criteria.md` § What a Rule Is Made Of, and split what fails it. Run the other rules on each resulting part separately.
 
@@ -97,7 +97,7 @@ Candidates: 2
 - **`Context`** — the **brief** context phrase (2-5 words, per the Step 6 Project-specific-patterns format). Used for the staging-match (b) context test, and — for `pattern` items — it is the **trailing context written into the rule bullet** (`` `Signature` - Context ``). Required-non-empty when `Type == pattern`; optional / informational for `principle` items.
 - **`Rule`** — the normalized rule text (already abstraction-normalized per Step C4 item 6). Always required-non-empty. **Written-bullet mapping**: for `principle` items the `Rule` text **supplies** the written bullet, reshaped into the Step 6 Principles format `Principle name (hints)` (lead noun phrase as the name, 2-4 implementation keywords as hints — reshaped, not written verbatim); for `pattern` items the `Rule` is the long-form retained for the semantic-dedup comparison (Step C5 item 3 (i) canonical match) and is **not** written into the bullet — the pattern bullet is `` `Signature` - Context ``.
 
-**Staging-gating in contract terms**: the staging 3-branch (defined by Step C5 item 3's "Check for duplicates and route per category") fires exactly when **`Type == pattern` AND `Category == project`**; every other combination — including a `project`-scope `principle`, which lands in `project.md`'s Principles section — bypasses staging and writes canonical directly.
+**Staging-gating in contract terms**: the staging 3-branch (defined by Step C5 item 3's "Check for duplicates and route per category") fires exactly when **`Type == pattern` AND `Category == project`**; every other combination — including a `project`-scope `principle`, which goes into `project.md`'s Principles section — bypasses staging and writes canonical directly.
 
 **Examples**: the contract carries **no** example field — Step C5 item 6 mines `.examples.md` content downstream from the codebase, keyed on the candidate's `Signature` (see `references/examples-format.md`).
 
@@ -134,9 +134,9 @@ Candidates: 2
 
 5. **Delete promoted staging entries**: for each item promoted in 3 (ii), `Edit` `<staging_output_dir>/project.staging.local.md` to remove the matched bullet. Construct `old_string` to include the target bullet line plus 1 surrounding line above and 1 below for uniqueness. If `Edit` fails because the resulting `old_string` is still not unique due to a concurrent edit or near-identical neighbors, leave the duplicate — next session's canonical-match skip resolves it. Staging file is never deleted as a whole even if the last entry is promoted (empty `## Project-specific patterns` section is acceptable).
 
-6. **Update `.examples.md`**: only for entries that landed in canonical files in item 4 (new items in non-project categories — principles / language / framework / integration; plus project-level items promoted from staging). Staging-only items (3 (iii)) do **not** receive `.examples.md` entries — the 2nd observation's site is used as the example source on promote. Resolve the target path via `examples_output_dir` (`<examples_output_dir>/<name>.examples.md`, where `<name>` is the routing category's file stem from Step C5 item 2 — `project` for project-level items, the `<lang>` / `<framework>` / `<framework>-<integration>` name for the other categories). Create the file and any missing parent directories under `examples_output_dir` when absent. Follow the common generation procedure in `references/examples-format.md` to add examples for each new rule.
+6. **Update `.examples.md`**: only for entries that went into canonical files in item 4 (new items in non-project categories — principles / language / framework / integration; plus project-level items promoted from staging). Staging-only items (3 (iii)) do **not** receive `.examples.md` entries — the 2nd observation's site is used as the example source on promote. Resolve the target path via `examples_output_dir` (`<examples_output_dir>/<name>.examples.md`, where `<name>` is the routing category's file stem from Step C5 item 2 — `project` for project-level items, the `<lang>` / `<framework>` / `<framework>-<integration>` name for the other categories). Create the file and any missing parent directories under `examples_output_dir` when absent. Follow the common generation procedure in `references/examples-format.md` to add examples for each new rule.
 
-7. Run Security Self-Check (same as Step 6.5 in the main SKILL.md) on updated files, **including the staging file** if any new staging append landed in item 4 OR any staging-delete edit landed in item 5. Also read `references/security.md`.
+7. Run Security Self-Check (same as Step 6.5 in the main SKILL.md) on updated files, **including the staging file** if any new staging append was written in item 4 OR any staging-delete edit was applied in item 5. Also read `references/security.md`.
 
 8. Return a summary including `canonical_skip_count`, `promoted_count`, `staged_count`, and `stale_flagged_count` (when non-zero). See § Report format (Step C5 item 8). Return item 4's write record with it, unrendered — the caller hands it to the Audit Pass, and an empty record means the pass has nothing to judge.
 
@@ -149,7 +149,7 @@ When item 4 creates `<staging_output_dir>/project.staging.local.md` for the firs
   ```markdown
   # Project Rules - Staging
 
-  1 回観測のみの候補ルール。次回 incremental 抽出走行（incremental extraction run — `--from-conversation` / `--from-pr` / `--update`）で再観測されたら canonical へ promote されます。手動で `.local.md` へ移動することも可能（promote 待たずに採用する場合）。
+  1 回だけ観測された候補ルールです。次の抽出（`--from-conversation` / `--from-pr` / `--update`）で再び観測されると、正式なルールファイルへ移り、このファイルから消えます。待たずに採用するなら、手動で `.local.md` へ移してください。
 
   ## Project-specific patterns
   ```
@@ -159,7 +159,7 @@ When item 4 creates `<staging_output_dir>/project.staging.local.md` for the firs
   ```markdown
   # Project Rules - Staging
 
-  1st-observation candidates awaiting re-observation before promotion to canonical. The next incremental extraction run (`--from-conversation` / `--from-pr` / `--update`) promotes a matched entry to canonical and removes it from this file. Manual move to `.local.md` is also acceptable if you want to adopt without waiting for re-observation.
+  Candidate rules seen once, waiting to be seen again. The next incremental extraction run (`--from-conversation` / `--from-pr` / `--update`) moves a matched entry to canonical and removes it from this file. To adopt one without waiting, move it to `.local.md` by hand.
 
   ## Project-specific patterns
   ```

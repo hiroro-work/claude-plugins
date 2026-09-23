@@ -90,7 +90,7 @@
       "skills": [
         "./"
       ],
-      "version": "1.30.0",
+      "version": "1.30.1",
       "author": {
         "name": "hiropon"
       },
@@ -126,7 +126,7 @@
       "skills": [
         "./"
       ],
-      "version": "2.6.5",
+      "version": "2.6.6",
       "author": {
         "name": "hiropon"
       },
@@ -149,7 +149,7 @@
       "skills": [
         "./"
       ],
-      "version": "2.5.0",
+      "version": "2.5.1",
       "author": {
         "name": "hiropon"
       },
@@ -171,7 +171,7 @@
         "./skills/artifactor",
         "./skills/furikaeri"
       ],
-      "version": "2.18.0",
+      "version": "2.18.1",
       "author": {
         "name": "hiropon"
       },
@@ -197,7 +197,7 @@
       "skills": [
         "./"
       ],
-      "version": "1.1.1",
+      "version": "1.1.2",
       "author": {
         "name": "hiropon"
       },
@@ -210,7 +210,7 @@
       "skills": [
         "./"
       ],
-      "version": "3.1.0",
+      "version": "3.1.1",
       "author": {
         "name": "hiropon"
       },
@@ -223,7 +223,7 @@
       "skills": [
         "./"
       ],
-      "version": "1.0.0",
+      "version": "1.0.1",
       "author": {
         "name": "hiropon"
       },
@@ -249,7 +249,7 @@
       "skills": [
         "./"
       ],
-      "version": "1.8.4",
+      "version": "1.8.5",
       "author": {
         "name": "hiropon"
       },
@@ -262,7 +262,7 @@
       "skills": [
         "./"
       ],
-      "version": "1.6.2",
+      "version": "1.6.3",
       "author": {
         "name": "hiropon"
       },
@@ -275,7 +275,7 @@
       "skills": [
         "./"
       ],
-      "version": "1.8.4",
+      "version": "1.8.5",
       "author": {
         "name": "hiropon"
       },

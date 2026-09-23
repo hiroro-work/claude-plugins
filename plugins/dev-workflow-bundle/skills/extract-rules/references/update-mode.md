@@ -4,7 +4,7 @@ Deep reference for `SKILL.md` **Update Mode**. The `### Mode Detection` entry th
 
 When `--update` is specified, re-scan the codebase and add new patterns while preserving existing rules.
 
-**Staging awareness**: Update Mode reads the staging file under `staging_output_dir` (when present), promotes staged project-level patterns that re-match fresh code observations to `<output_dir>/project.md`, and writes no new staging entries — un-matched new patterns land directly in canonical. Per-mode staging behavior: `references/conversation-mode.md` § Mode interaction summary.
+**Staging awareness**: Update Mode reads the staging file under `staging_output_dir` (when present), promotes staged project-level patterns that re-match fresh code observations to `<output_dir>/project.md`, and writes no new staging entries — un-matched new patterns go directly into canonical. Per-mode staging behavior: `references/conversation-mode.md` § Mode interaction summary.
 
 ### Step U1: Load Settings and Check Prerequisites
 
@@ -46,7 +46,7 @@ For each extracted principle/pattern:
    - Exact match → Skip
    - Similar but different → Keep both (let user review)
    - **Cross-format duplicate check**: A project-specific pattern may have been promoted to a Principle by merge-rules. Check if the pattern's description semantically matches an existing principle name in the corresponding `.md` file (use AI judgment: case-insensitive, synonyms). For example, `` `useAuth() → { user, login, logout }` - auth hook interface `` is a duplicate of `Auth hook interface (useAuth)` in `## Principles`. Skip patterns that already exist as Principles.
-   - **Staging match (project-level patterns only)**: per `references/conversation-mode.md` § Step C5's "staging-match criterion" paragraph, schedule a **promote** in Step U5. Update Mode does not write new staging entries; un-matched project-level patterns land directly in canonical.
+   - **Staging match (project-level patterns only)**: per `references/conversation-mode.md` § Step C5's "staging-match criterion" paragraph, schedule a **promote** in Step U5. Update Mode does not write new staging entries; un-matched project-level patterns go directly into canonical.
    - New → Add
 
 2. **Preserve manual edits**: Do not modify existing rules
@@ -65,7 +65,7 @@ For each extracted principle/pattern:
 
 ### Step U5.5: Security Self-Check
 
-Run Security Self-Check (same as Step 6.5) on new/updated files, **including the staging file** if any staging-delete edits landed in Step U5 (the staging file was rewritten by the staging-delete `Edit`).
+Run Security Self-Check (same as Step 6.5) on new/updated files, **including the staging file** if any staging-delete edits were applied in Step U5 (the staging file was rewritten by the staging-delete `Edit`).
 
 ### Step U5.7: Audit Pass
 

@@ -4,7 +4,7 @@ Deep reference for `SKILL.md` **Audit Pass**. The pass re-judges the entries an 
 
 ## Contract
 
-- **Input** (to the subagent): the sections § Dispatch enumerates — that fence list is the single statement of what crosses the boundary. The subagent `Read`s the target files and the criteria sections itself
+- **Input** (to the subagent): the sections § Dispatch enumerates — that fence list is the single statement of what reaches the subagent. The subagent `Read`s the target files and the criteria sections itself
 - **Output** (from the subagent): a single fenced JSON block matching § Response schema, with no prose around it
 - **Apply phase**: the main thread applies `mechanical_edits` via `Edit`. The subagent does not call `Edit`
 
@@ -28,7 +28,7 @@ The unit of judgement is one top-level bullet under a section heading. Never jud
 
 ## Verdicts
 
-`references/realign-mode.md` § Verdicts governs: its closed list of four, its definition of each, and its `reason` requirement all apply here unchanged. Do not add a verdict to that list.
+`references/realign-mode.md` § Verdicts governs: its fixed list of four, its definition of each, and its `reason` requirement all apply here unchanged. Do not add a verdict to that list.
 
 ## Forbidden tool calls
 
@@ -40,7 +40,7 @@ You are an **analysis-only** subagent. Your sole output is the fenced JSON verdi
 
 ## Dispatch (main thread)
 
-One dispatch covers the whole target set. Spawn an `Agent` (`subagent_type: general-purpose`), assembling the prompt from these `--- LABEL ---` fence sections. This list is the **closed set** of what reaches the subagent; a constraint absent from it does not cross the boundary, however firmly this file states it:
+One dispatch covers the whole target set. Spawn an `Agent` (`subagent_type: general-purpose`), assembling the prompt from these `--- LABEL ---` fence sections. This list is the **closed set** of what reaches the subagent; a constraint absent from it is not passed on, however firmly this file states it:
 
 - `--- SKILL DIR ---`: this skill's absolute directory path, so the reference paths below resolve
 - `--- TARGET ENTRIES ---`: for each file holding targets, its absolute path and, per target, the label the main thread derived and the bullet line verbatim, plus the instruction to `Read` each file in full before judging, to judge only the listed entries, and to echo each label back in `rules` unchanged
@@ -80,7 +80,7 @@ Evaluate in order, first match wins:
 
 1. **No write record returned**, or **no fenced JSON block, or the JSON fails to parse** → the pass did not run.
 2. **Schema violation** → the pass did not run. Validate all of this before any `Edit`:
-   - `rules` missing or not an array; an entry missing `label` / `file` / `verdict` / `reason`; a `verdict` outside the closed list; a `split` entry whose `resulting_labels` is missing, empty, or holds anything but non-empty strings.
+   - `rules` missing or not an array; an entry missing `label` / `file` / `verdict` / `reason`; a `verdict` outside the fixed list; a `split` entry whose `resulting_labels` is missing, empty, or holds anything but non-empty strings.
    - The `(file, label)` pairs in `rules` are **exactly** the targets the dispatch listed — none missing, none added, none repeated.
    - A `mechanical_edits` entry missing `file` / `label` / `old_string` / `new_string`.
    - **Correspondence, both directions**, matched on the `(file, label)` pair, never on `label` alone: every `mechanical_edits` pair matches some `rules` pair, and every non-`keep` entry has exactly one edit.
@@ -94,7 +94,7 @@ Apply the `mechanical_edits` in order, per file. Before each `Edit`, re-`Read` t
 
 - Skip an entry whose `old_string` is not found and continue.
 
-An entry whose `Edit` did not land is recorded and reported under § Report format's not-applied line. The verdict counts are counts of judgements and do not move with what applied.
+An entry whose `Edit` did not apply is recorded and reported under § Report format's not-applied line. The verdict counts are counts of judgements and do not move with what applied.
 
 ## `.examples.md` follow-through
 

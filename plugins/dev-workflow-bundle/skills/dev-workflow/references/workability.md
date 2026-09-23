@@ -12,7 +12,7 @@ First render the timing table so far: `node "<base dir>/scripts/timing/report.mj
 
 - **skill**: a multi-step procedure the workflow or the user performed by hand this run and that will recur in this project (regenerating a fixture, a release step sequence, a data migration check). Evidence: the steps taken and where the time went (cite the timing table row).
 - **lint-rule**: a finding from Rules Compliance Review, Code Review, or a user correction that a linter the project already has (or `check_commands`) could catch mechanically, so it never reaches review again. Evidence: the finding and the rule id or config that would enforce it. A convention that needs judgment is not a lint-rule candidate; it belongs to Update Rules.
-- **check-command**: a failure class that surfaced late (at review or at commit) and that a command in `check_commands` or `test_commands` would have caught at Check / Test. Evidence: the failure and the command.
+- **check-command**: a failure class that showed up late (at review or at commit) and that a command in `check_commands` or `test_commands` would have caught at Check / Test. Evidence: the failure and the command.
 
 At most **3** candidates per run. Before writing one, `Grep` the project for what it proposes: `.claude/skills/` for a skill of that shape, the linter configuration files at the repository root for the rule, the settings files for the command, and the backlog directory for an earlier candidate with the same subject. A duplicate is dropped. Zero candidates is a normal outcome.
 

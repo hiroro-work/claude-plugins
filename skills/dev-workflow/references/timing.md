@@ -13,7 +13,7 @@ Read from `SKILL.md` § Timing. Two scripts under `<base dir>/scripts/timing/` d
 | `wait` | immediately before any wait on the user or on a background gate: every USER GATE question, the browser plan review launch, a crit launch, the team-review hold, and every mob-mode learning stop (each per-unit diff review, each plan-building checkpoint, the post-commit-note question) |
 | `resume` | the first tool call after that wait ends |
 
-Issue each mark in the same tool-call burst as the transition it records; a mark is never a reason for a separate turn. `--at` records a moment other than now, to fill in a pair missed at the time (§ Report); it never changes which log the mark lands in. Phase names are the `## Phase N:` headings minus the prefix, exactly as the task rows use them. In mob mode, mark each Implement unit as its own phase `Implement: <unit heading>` (start / wait / resume / end), so the report shows where a unit's review took its time.
+Issue each mark in the same tool-call burst as the transition it records; a mark is never a reason for a separate turn. `--at` records a moment other than now, to fill in a pair missed at the time (§ Report); it never changes which log the mark goes to. Phase names are the `## Phase N:` headings minus the prefix, exactly as the task rows use them. In mob mode, mark each Implement unit as its own phase `Implement: <unit heading>` (start / wait / resume / end), so the report shows where a unit's review took its time.
 
 ## Report
 

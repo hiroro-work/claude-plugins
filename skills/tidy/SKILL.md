@@ -6,7 +6,7 @@ allowed-tools: Read, Edit, Agent, TaskCreate, TaskUpdate, Bash(git diff *), Bash
 
 # Tidy
 
-The cleanup walk runs in a fresh host-provided reviewer per iteration when reviewer dispatch is available; Edit application stays in the main thread. The skill loops the dispatch + apply cycle until the reviewer returns no more `mechanical_edits`, max iterations is reached, or a safety rail trips.
+The cleanup walk runs in a fresh host-provided reviewer per iteration when reviewer dispatch is available; Edit application stays in the main thread. The skill loops the dispatch + apply cycle until the reviewer returns no more `mechanical_edits`, max iterations is reached, or a safety rail stops the loop.
 
 **Scope**: invocation targets are **arbitrary source files** (application code, config, SKILL.md, any text). The skill does not restrict the changed-file set to a fixed directory prefix — any path in the diff is reviewed unless caught by the exclusion list (Step 1 step 3).
 
@@ -60,13 +60,13 @@ For each entry in `changed_files`, in the main thread:
 
 ### Step 3 — Iteration loop (i = 1 .. Max iterations)
 
-**Pre-register iteration tasks** — before entering the loop, `TaskCreate` one task per iteration with subject `iteration 1`, `iteration 2`, ..., `iteration <Max iterations>`. Mark `in_progress` (via `TaskUpdate`) before each dispatch, `completed` after parse + apply (a converged iteration marks `completed` immediately after parsing). On early convergence (no `mechanical_edits` returned) or safety-rail-triggered exit, mark remaining iteration tasks `completed` with the skip note recorded in the task's `description` field as `— skipped: converged` / `— skipped: <reason>`. Pre-registration is load-bearing when the host supports it: without it, executor-driven loops tend to stop at the first iteration that looks acceptable.
+**Pre-register iteration tasks** — before entering the loop, `TaskCreate` one task per iteration with subject `iteration 1`, `iteration 2`, ..., `iteration <Max iterations>`. Mark `in_progress` (via `TaskUpdate`) before each dispatch, `completed` after parse + apply (a converged iteration marks `completed` immediately after parsing). On early convergence (no `mechanical_edits` returned) or safety-rail-triggered exit, mark remaining iteration tasks `completed` with the skip note recorded in the task's `description` field as `— skipped: converged` / `— skipped: <reason>`. Pre-registration is essential when the host supports it: without it, executor-driven loops tend to stop at the first iteration that looks acceptable.
 
-**Task tools unavailable fallback** (e.g. the VSCode extension, a Codex host, or a nested subagent context where progress-tracking tools were not surfaced): skip the pre-registration step and hold iteration state (current `i`, cumulative `applied_edits_count`, `notes_remaining_count`, accumulated `out_of_scope`, `reverted_paths`) in main-thread context instead. Progress tracking is not correctness-critical — the loop semantics in (a)–(c) are unaffected.
+**Task tools unavailable fallback** (e.g. the VSCode extension, a Codex host, or a nested subagent context where progress-tracking tools were not provided): skip the pre-registration step and hold iteration state (current `i`, cumulative `applied_edits_count`, `notes_remaining_count`, accumulated `out_of_scope`, `reverted_paths`) in main-thread context instead. Progress tracking is not correctness-critical — the loop semantics in (a)–(c) are unaffected.
 
 #### (a) Dispatch reviewer
 
-On `i == 1`, use the snapshot from Step 2. On `i ≥ 2`, only re-`Read` the subset of `changed_files` whose path appeared in a successfully-applied `mechanical_edits` entry during iter `i - 1` (untouched files keep their iter-1 snapshot). For that same re-read subset, also re-run the per-file `git diff` so the diff payload reflects edits that landed in prior iterations; files outside the subset keep their iter-1 diff.
+On `i == 1`, use the snapshot from Step 2. On `i ≥ 2`, only re-`Read` the subset of `changed_files` whose path appeared in a successfully-applied `mechanical_edits` entry during iter `i - 1` (untouched files keep their iter-1 snapshot). For that same re-read subset, also re-run the per-file `git diff` so the diff payload reflects edits applied in prior iterations; files outside the subset keep their iter-1 diff.
 
 Dispatch a fresh reviewer through the current host's reviewer-dispatch mechanism. In Claude Code, use the `Agent` tool when it is exposed and callable and no caller-imposed nesting bound applies (see the **Reviewer-dispatch unavailable fallback** paragraph below) — passing the parsed `Model` value (§ Invocation contract) as the `Agent` `model` parameter only when it resolved to a valid override, and omitting it otherwise (absent **or** invalid → inherit). Apply the same `Model` decision on every iteration's dispatch. In Codex, use the exposed subagent / delegation mechanism when available. Assemble the dispatch prompt from the five sections below, each framed with a clear `--- LABEL ---` fence:
 
@@ -87,7 +87,7 @@ Dispatch a fresh reviewer through the current host's reviewer-dispatch mechanism
 > Classify each finding:
 >
 > - **mechanical_edit**: a fix that can be applied as a textual replacement — removing a redundant narration comment, deleting a dead branch, replacing a defensive guard on an already-safe path, collapsing a needless local helper, expanding a nested ternary into an `if`/`else`, or a behavior-preserving structural improvement that meets the CLEANUP CHECKLIST's § Behavior-preserving structural improvements conditions. Return as a `{file, old_string, new_string, rationale}` Edit
-> - **structural_note**: a fix that requires moving content between files, deleting sections, rewriting large portions, or carries any risk of behavior change. Return as a `{file, description}` note. These will **not** be applied automatically — the caller surfaces them via `notes_remaining_count`
+> - **structural_note**: a fix that requires moving content between files, deleting sections, rewriting large portions, or carries any risk of behavior change. Return as a `{file, description}` note. These will **not** be applied automatically — they are counted in `notes_remaining_count`
 >
 > `old_string` must match exactly one location in the current file. Include **1–3 lines of surrounding context** so the snippet is unique.
 >
@@ -129,8 +129,8 @@ Dispatch failures (reviewer-dispatch tool error / timeout / empty response) are 
    - cumulative `applied_edits_count > 0` AND `structural_notes == []` → `applied-edits` (notes count = 0)
    - `structural_notes != []` (regardless of cumulative count) → if cumulative > 0 then `applied-edits` (with `notes_remaining_count > 0`), else `notes-left`
 4. **Otherwise** — apply `mechanical_edits` in order:
-   - For each entry, verify `file ∈ changed_files`; if not, record the path in an `out_of_scope` list and skip the entry without calling `Edit`. The `out_of_scope` list is later surfaced via `reverted_paths` in the terminal verdict if non-empty.
-   - For each in-scope entry, re-`Read` the target file (so `old_string` matches the current contents after any earlier edit landed), then call `Edit`.
+   - For each entry, verify `file ∈ changed_files`; if not, record the path in an `out_of_scope` list and skip the entry without calling `Edit`. The `out_of_scope` list is later listed in `reverted_paths` in the terminal verdict if non-empty.
+   - For each in-scope entry, re-`Read` the target file (so `old_string` matches the current contents after any earlier edit was applied), then call `Edit`.
    - If an `old_string` is not found, skip that entry and continue with the next. This is expected when the reviewer emits multiple edits from a single snapshot and a later edit overlaps a region an earlier one already rewrote — the skip is a no-op fallback, not an error.
    - Increment `applied_edits_count` only for entries whose `Edit` call succeeded — skipped entries do not count.
    - After the edits (applied or skipped), if at least one Edit succeeded, run the safety rails in (c), then continue to iteration `i + 1`. If all entries skipped, also continue (the next iter will re-dispatch with the current file state).
@@ -166,7 +166,7 @@ End your response with a single fenced JSON block matching the schema in `§ Ret
 - Only review files that have uncommitted changes (default mode) or that appear in the `Base ref`-vs-HEAD diff — diff-scoped, not a full audit
 - Project conventions (`.claude/rules/`, `CLAUDE.md`) override the checklist where they conflict
 - Don't chase perfection — fix real cleanup wins, note structural ones, move on
-- **Sub-skill scope note (caller-side)**: when this skill runs as a sub-skill, structural changes are surfaced via `notes_remaining_count` rather than applied. The caller decides whether and how to act on them. See `§ Sub-skill caller directive` for the no-stall discipline that applies on the sub-skill invocation path.
+- **Sub-skill scope note (caller-side)**: when this skill runs as a sub-skill, structural changes are counted in `notes_remaining_count` rather than applied. The caller decides whether and how to act on them. See `§ Sub-skill caller directive` for the no-stall discipline that applies on the sub-skill invocation path.
 
 ## Return contract
 
@@ -192,7 +192,7 @@ Field semantics:
 - `status`:
   - `no-actionable-findings`: the iteration loop converged with cumulative `applied_edits_count == 0` AND no `structural_notes` outstanding
   - `applied-edits`: at least one mechanical fix was applied across the iteration loop (cumulative `applied_edits_count > 0`); `notes_remaining_count` may be `0` (clean convergence) or `> 0` (notes alongside applied edits)
-  - `notes-left`: cumulative `applied_edits_count == 0` AND `notes_remaining_count > 0` (only structural changes were flagged, surfaced via `notes_remaining_count`)
+  - `notes-left`: cumulative `applied_edits_count == 0` AND `notes_remaining_count > 0` (only structural changes were flagged, counted in `notes_remaining_count`)
   - `error`: an internal error occurred — see `reason`
 - `iterations_used`: number of iterations whose reviewer dispatch returned a verdict, **including the iteration whose verdict triggered convergence**. Step 1 early returns (no changed files after exclusion) count as `0`
 - `applied_edits_count`: non-negative integer count of `Edit` calls whose result is still on disk at the time the verdict is emitted. For `verdict parse failure` / `verdict schema violation` / `dispatch error` / `scope violation`, this is the cumulative count of successful `Edit` calls across earlier iterations of the same invocation (none of these recovery paths revert in-scope edits — `scope violation` only flags the offending out-of-scope paths informationally). The exception is `frontmatter broken`: its recovery reverts the edited file itself (or skips the revert for an untracked HEAD-absent path), so the count drops accordingly
@@ -205,10 +205,10 @@ Field semantics:
 - `reason: "verdict parse failure"` — an iteration found no fenced JSON block in the reviewer response, or JSON parse failed
 - `reason: "verdict schema violation"` — an iteration parsed the JSON but required keys (`mechanical_edits`, `structural_notes`) are missing, values are not arrays, or any entry fails the per-entry shape spec
 - `reason: "frontmatter broken"` — a per-iteration safety rail re-read after Edit shows the YAML frontmatter no longer parses; the offending file is reverted via `git checkout HEAD -- <file>` (or left as-is for untracked HEAD-absent paths and recorded in `reverted_paths`)
-- `reason: "scope violation"` — the pre-check accumulated one or more out-of-scope target paths in `mechanical_edits` (the writes were already skipped; the verdict surfaces the rejected paths informationally in `reverted_paths`)
+- `reason: "scope violation"` — the pre-check accumulated one or more out-of-scope target paths in `mechanical_edits` (the writes were already skipped; the verdict lists the rejected paths informationally in `reverted_paths`)
 - `reason: "dispatch error"` — a reviewer-dispatch tool call errored, timed out, or returned an empty response
 
-In each `error` case, surface the verdict via the JSON instead of attempting recovery; the caller decides how to handle it.
+In each `error` case, report the verdict in the JSON instead of attempting recovery; the caller decides how to handle it.
 
 ## Dispatch failure
 

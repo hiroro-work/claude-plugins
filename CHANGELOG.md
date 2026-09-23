@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-09-23
+
+### dev-workflow v2.5.1 / peer v2.6.6 / extract-rules v1.30.1 / rules-review v1.8.5 / tidy v1.6.3 / prose-polish v1.8.5 / kabeuchi v3.1.1 / artifactor v1.1.2 / furikaeri v1.0.1 / dev-workflow-bundle v2.18.1
+
+Plain-prose pass: the wording of a skill carries into what Claude writes while running it, so the English figures of speech in these instructions showed up as literal, unnatural phrases in the user's language (for Japanese, 着地する or 閉じたリスト).
+
+- fix(dev-workflow, peer, extract-rules, rules-review, tidy, prose-polish, kabeuchi, artifactor, furikaeri): the common figures of speech are replaced with a plain word chosen for each sentence. "land" becomes a commit being made or already on the branch, an edit being applied, or a pattern going into a file. "surface" becomes report, show, list, or come up. "fall back to" becomes use … instead. "closed list" becomes a fixed or complete list, or only these values. "rests on", "turns on", "settle", "two roads", and "leak into" go the same way. Behavior is unchanged. Headings, bold labels, tokens, and defined terms (express lane, landing turn, absorb) keep their names.
+- fix(dev-workflow, peer, extract-rules, rules-review, kabeuchi, artifactor, furikaeri): the text written for the user is asked for in plain words, one claim per sentence. Each skill's existing language or register sentence carries it: dev-workflow's `language` paragraph, the peer persona's Communication Style, extract-rules' `language` resolution, rules-review's reviewer Report Format, kabeuchi § Register, artifactor's page agent prompt, and furikaeri's analysis prompt. All but dev-workflow also rule out a figure of speech translated word for word; dev-workflow's `SKILL.md` has no room under its budget for that clause. tidy and prose-polish write no prose for the user, and mobpro runs dev-workflow, so they get no such sentence.
+- fix(extract-rules): the header of a new staging file is rewritten in plain words in both languages. Existing staging files keep theirs.
+- fix(dev-workflow): the Interactive Commits cancel report reads `<N>/<total> commits made`. `SKILL.md` goes from 29,750 to 29,782 chars, under the unchanged 29,800 budget.
+
 ## 2026-09-21
 
 ### furikaeri v1.0.0 / dev-workflow-bundle v2.18.0

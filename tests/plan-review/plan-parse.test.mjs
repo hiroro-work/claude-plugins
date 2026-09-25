@@ -230,6 +230,40 @@ test("parseDecisions ignores field lines inside a code fence", () => {
   assert.equal(items.length, 1);
 });
 
+test("parseDecisions reads numbered items and lifts their indented rationale bullets back to list level", () => {
+  const { items } = parseDecisions(
+    "1. **Question**: q1\n   - **Recommendation**: r1\n     - why\n   - **Alternative**: a1\n\n"
+    + "2. **Question**: q2\n   **Recommendation**: r2\n",
+  );
+  assert.equal(items.length, 2);
+  assert.deepEqual(items[0], { question: "q1", recommendation: "r1\n- why", alternative: "a1" });
+  assert.equal(items[1].recommendation, "r2");
+});
+
+test("parseDecisions accepts the colon inside the bold label", () => {
+  const { items } = parseDecisions("**Question:** q\n**Recommendation:** r\n**Alternative：** a\n");
+  assert.deepEqual(items, [{ question: "q", recommendation: "r", alternative: "a" }]);
+});
+
+test("parseDecisions keeps every numbered Alternative", () => {
+  const { items } = parseDecisions("- **Question**: q\n- **Recommendation**: r\n- **Alternative 1**: a1\n- **Alternative 2**: a2\n");
+  assert.equal(items.length, 1);
+  assert.equal(items[0].alternative, "a1\n\na2");
+});
+
+test("parseDecisions lifts the rationale bullets under each numbered Alternative on its own", () => {
+  const { items } = parseDecisions(
+    "1. **Question**: q\n   - **Alternative 1**: a1\n     - x\n   - **Alternative 2**: a2\n     - y\n",
+  );
+  assert.equal(items[0].alternative, "a1\n- x\n\na2\n- y");
+});
+
+test("parseDecisions leaves unbolded field labels as prose", () => {
+  const { items, preamble } = parseDecisions("- Question: q\n- Recommendation: r\n- Alternative: a\n");
+  assert.equal(items.length, 0);
+  assert.match(preamble, /Question: q/);
+});
+
 test("anchorNorm strips links and emphasis and lowercases", () => {
   assert.equal(anchorNorm("**Bold** and [a link](http://x/) and `code`"), "bold and a link and code");
   assert.equal(anchorNorm("  Two   spaces  "), "two spaces");

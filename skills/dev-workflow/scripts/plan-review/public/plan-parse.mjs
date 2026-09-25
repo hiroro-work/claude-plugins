@@ -186,7 +186,8 @@ export function countListItems(body) {
 }
 
 export function parseDecisions(body) {
-  const FIELD_RE = /^\s*(?:[-*]\s+)?\*\*(Question|Recommendation|Alternative)\*\*\s*[:：]?\s*(.*)$/;
+  // Plans drift into `1. **Question**`, `**Question:**` and `**Alternative 2**`; the label group stays bare.
+  const FIELD_RE = /^\s*(?:(?:[-*]|\d+[.)])\s+)?\*\*(Question|Recommendation|Alternative)(?:\s+\d+)?\s*[:：]?\*\*\s*[:：]?\s*(.*)$/;
   // Only a following **Question** opens an item; splitting elsewhere truncates a Recommendation.
   const ITEM_HEAD_RE = /^\*\*(\d+[.)]\s*\S.*?)\*\*\s*$/;
   // A sub-heading right above a **Question** is that item's title.
@@ -209,7 +210,7 @@ export function parseDecisions(body) {
   };
   let cur = null, field = null, curFromHead = false;
   const open = (question, fromHead) => {
-    cur = { question, recommendation: "", alternative: "" };
+    cur = { question: [question], recommendation: [], alternative: [] };
     items.push(cur);
     field = "question";
     curFromHead = !!fromHead;
@@ -221,15 +222,15 @@ export function parseDecisions(body) {
     if (m) {
       const f = m[1].toLowerCase();
       if (f === "question") {
-        if (curFromHead && !cur.recommendation && !cur.alternative) {
-          cur.question += (cur.question ? "\n\n" : "") + (m[2] || "");
+        if (curFromHead && !cur.recommendation.length && !cur.alternative.length) {
+          cur.question.push(m[2] || "");
           field = "question";
         } else {
           open(m[2] || "", false);
         }
       } else if (cur) {
         field = f;
-        cur[f] = m[2] || "";
+        cur[f].push(m[2] || ""); // a second Alternative must not replace the first
       } else {
         preamble.push(line); // stray Recommendation/Alternative before any Question — keep, don't drop
       }
@@ -240,15 +241,24 @@ export function parseDecisions(body) {
       open(h[1], true);
       continue;
     }
-    if (cur && field) cur[field] += "\n" + line;
+    if (cur && field) cur[field][cur[field].length - 1] += "\n" + line;
     else if (!cur) preamble.push(line);
   }
   for (const it of items) {
-    it.question = it.question.trim();
-    it.recommendation = it.recommendation.trim();
-    it.alternative = it.alternative.trim();
+    for (const k of ["question", "recommendation", "alternative"]) {
+      it[k] = it[k].map((seg) => dedentTail(seg).trim()).filter(Boolean).join("\n\n");
+    }
   }
   return { items, preamble: preamble.join("\n").trim() };
+}
+
+// Under a numbered item the rationale bullets sit 4+ columns in, which markdown reads as paragraph text.
+function dedentTail(text) {
+  const [first, ...rest] = text.split("\n");
+  const indents = rest.filter((l) => l.trim()).map((l) => l.match(/^ */)[0].length);
+  if (!indents.length) return text;
+  const cut = Math.min(...indents);
+  return [first, ...rest.map((l) => l.slice(Math.min(cut, l.match(/^ */)[0].length)))].join("\n");
 }
 
 const GIST_MAX = 120;

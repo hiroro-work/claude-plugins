@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-09-25
+
+### dev-workflow v2.5.2 / dev-workflow-bundle v2.18.2
+
+- fix(dev-workflow): the plan review page now turns more ways of writing a Decision into a card, so the Keep / Switch radio buttons appear on every card that has an Alternative. It accepts numbered items (`1. **Question**:`), a colon inside the bold label (`**Question:**`), and numbered Alternatives (`**Alternative 1**`, `**Alternative 2**`). A Recommendation or Alternative that appears twice in one item is joined instead of the last one replacing the others. Before, a Decisions section written in any of these shapes was shown as plain text with no switch. Rationale bullets indented under a numbered item now render as a list. A card without an Alternative still gets no switch.
+- fix(dev-workflow): `plan-format.md` now states the Decisions line shape: each field is a `- **Label**:` bullet, never a numbered item. `mob-mode.md`'s `### Choices I made` points to that shape instead of restating it.
+
 ## 2026-09-23
 
 ### dev-workflow v2.5.1 / peer v2.6.6 / extract-rules v1.30.1 / rules-review v1.8.5 / tidy v1.6.3 / prose-polish v1.8.5 / kabeuchi v3.1.1 / artifactor v1.1.2 / furikaeri v1.0.1 / dev-workflow-bundle v2.18.1

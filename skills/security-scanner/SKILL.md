@@ -108,21 +108,22 @@ Parse the GitHub URL to extract owner, repo, branch, path, and determine scan ty
    - If branch is empty, omit `?ref=` parameter (uses default branch)
    - Use WebFetch with prompt: "Extract the JSON array of files. For each item, return: name, type (file/dir), download_url"
 2. Determine content type and fetch accordingly:
-   - **If `plugin.json` exists**: Full plugin scan (fetch all plugin files)
+   - **If `.claude-plugin/plugin.json` exists**: Full plugin scan (fetch all plugin files)
    - **If `skills/` exists**: Skill scan (fetch skill directories)
    - **If `SKILL.md` exists**: Single skill directory scan (fetch all files in directory)
    - **If none of the above**: Error "No scannable content found. Expected plugin.json, skills/ directory, or SKILL.md."
 3. Recursively fetch required directories:
    - `skills/` → fetch subdirectories → fetch `SKILL.md` files
    - `agents/` → fetch all `*.md` files (if exists)
-   - `hooks/` → fetch all `*.md` files (if exists)
+   - `hooks/` → fetch `hooks.json` (if exists)
+   - every script a hook or skill invokes (e.g. `skills/*/scripts/**`, `skills/*/*.sh`)
    - `commands/` → fetch all `*.md` files (if exists)
 
 #### Step 2-URL-3: Fetch File Contents
 
 **For plugin scan**, fetch:
-- `plugin.json`, `README.md`, `.mcp.json`
-- `skills/*/SKILL.md`, `agents/*.md`, `hooks/*.md`, `commands/*.md`
+- `.claude-plugin/plugin.json` (including any `hooks` field), `README.md`, `.mcp.json`, `hooks/hooks.json`
+- every file under `skills/`, `agents/*.md`, `commands/*.md`, and every script a hook or skill invokes
 
 **For skill directory scan** (skills/ or single skill), fetch:
 - All files in the skill directory
@@ -217,7 +218,7 @@ For each non-trusted plugin:
 2. **Read all executable content:**
    - `skills/*/SKILL.md` - Skill definitions and instructions
    - `agents/*.md` - Agent system prompts (if exists)
-   - `hooks/*.md` - Hook definitions (if exists)
+   - `.claude-plugin/plugin.json` `hooks` field and `hooks/hooks.json` - Hook definitions, plus every script they invoke (if exists)
    - `commands/*.md` - Command definitions (if exists)
    - `.mcp.json` - MCP server configurations (if exists)
 
@@ -250,8 +251,8 @@ Look for dangerous command patterns:
 - Persistence: `crontab`, `launchctl`
 - Privilege escalation: `sudo`, `doas`
 
-#### Natural Language Threats (CRITICAL)
-**Carefully read and analyze system prompts, instructions, and documentation for:**
+#### Natural Language Threats
+Read system prompts, instructions, and documentation for:
 
 - **Data exfiltration instructions**: Instructions to read sensitive files (SSH keys, credentials, API keys, private data) and send them externally
 - **Hidden malicious actions**: Instructions to perform harmful actions while appearing helpful

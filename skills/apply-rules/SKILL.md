@@ -65,7 +65,7 @@ language: ja
 
 CLI argument `<source>` overrides the config's `source` field.
 
-**Examples directory (no configuration key).** `.examples.md` files live in a sibling of the rules directory: that path with any trailing `/` removed and `-extras` appended — `<output_dir>-extras` in the target project, `<source>-extras` on the source side, `.claude/rules-extras/` under the default `output_dir`. Reading takes each rule file's examples from the derived directory first and from the rule file's own directory only when that misses, so a **pre-split layout** — examples still beside the rule files — is still picked up; writing always targets the derived directory. apply-rules does not read extract-rules' `examples_output_dir`. Source of truth for the derived name is extract-rules' `examples_output_dir` default; keep in sync when that default changes.
+**Examples directory (no configuration key).** `.examples.md` files live in a sibling of the rules directory: that path with any trailing `/` removed and `-extras` appended — `<output_dir>-extras` in the target project, `<source>-extras` on the source side, `.claude/rules-extras/` under the default `output_dir`. Reading takes each rule file's examples from the derived directory first and from the rule file's own directory only when that misses, so a **pre-split layout** — examples still beside the rule files — is still picked up; writing always targets the derived directory. apply-rules does not read extract-rules' `examples_output_dir`.
 
 ## Processing Flow
 
@@ -95,7 +95,7 @@ Parse URL to extract owner, repo, branch, and path:
   → owner: `org`, repo: `repo`, branch: `main`, path: `.claude/rules`
 
 **Note on ambiguous refs:** Branch names may contain `/` (e.g., `feature/rules-v2`), and refs can also be tags or SHAs:
-- Try resolving ref candidates from longest prefix first using `gh api repos/{owner}/{repo}/git/ref/{candidate}`
+- Try ref candidates from the longest prefix first: `gh api repos/{owner}/{repo}/git/ref/heads/{candidate}`, then `gh api repos/{owner}/{repo}/git/ref/tags/{candidate}`; for a SHA-shaped candidate use `gh api repos/{owner}/{repo}/commits/{candidate}`
 - Alternatively, the user can specify components separately in the config:
   ```yaml
   source_repo: org/repo

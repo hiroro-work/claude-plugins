@@ -23,7 +23,7 @@ copilot -p "Your question or task here" --allow-all-tools
 | Option | Description |
 |--------|-------------|
 | `-p` | Non-interactive prompt mode (required for scripting) |
-| `--model MODEL` | Specify model (e.g., `claude-sonnet-4.5`, `gpt-5`, `gpt-5-mini`) |
+| `--model MODEL` | Specify model (run `copilot --help` for accepted IDs) |
 | `--allow-all-tools` | Auto-approve all tool executions (required for -p) |
 | `--continue` | Resume the most recent session |
 
@@ -40,7 +40,7 @@ copilot -p "How do I implement a binary search in Python?" --allow-all-tools
 **Use a specific model:**
 
 ```bash
-copilot -p "Review this code for potential issues" --model gpt-5 --allow-all-tools
+copilot -p "Review this code for potential issues" --model <model> --allow-all-tools
 ```
 
 **Let Copilot make changes automatically:**
@@ -58,5 +58,5 @@ copilot -p "Now add error handling to that function" --continue --allow-all-tool
 ## Notes
 
 - The `-p` flag runs Copilot non-interactively and requires `--allow-all-tools`
-- Default model is claude-sonnet-4.5; use `--model` to switch models
+- Use `--model` to override the default model
 - The command inherits the current working directory

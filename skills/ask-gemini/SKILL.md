@@ -40,7 +40,7 @@ gemini -p "How do I implement a binary search in Python?"
 **Use a specific model:**
 
 ```bash
-gemini -p -m gemini-3.1-pro-preview "Review this code for potential issues"
+gemini -p -m <model> "Review this code for potential issues"
 ```
 
 **Let Gemini make changes automatically:**

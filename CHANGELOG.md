@@ -1,5 +1,25 @@
 # Changelog
 
+## 2026-10-01
+
+### peer v2.6.7 / rules-review v1.8.6 / tidy v1.6.4 / prose-polish v1.8.6 / furikaeri v1.0.2 / artifactor v1.1.3 / security-scanner v1.3.2 / apply-rules v2.1.3 / merge-rules v2.1.3 / translate v1.1.2 / ask-codex v1.2.4 / ask-gemini v1.2.3 / ask-copilot v1.0.5 / dev-workflow-bundle v2.18.3
+
+Prompt-audit pass for current models, which follow instructions literally: wording written for older models is removed or restated plainly, and claims the repository no longer backs are corrected. Behavior is unchanged except where noted.
+
+- fix(peer): the persona's "Always ask why are you doing it this way?" becomes "Challenge why the approach was chosen". A dispatched reviewer has no channel to get an answer, and the unconditional wording contradicted the rule that questions are asked only when an interactive channel exists.
+- fix(rules-review): the reviewer prompt no longer refers to "cycle 1" or "every review cycle". Each reviewer is a single dispatch and never sees the caller's loop. The cross-file scope, same-rule complete enumeration, and citation-matching requirements are unchanged.
+- fix(tidy): the return rule is stated once. The scope rail no longer describes the global revert it replaced.
+- fix(prose-polish): the file-mode refactor prompt no longer asks the subagent to write its reasoning before the JSON block. The parser ignores that prose, and each edit's `rationale` already carries the reason.
+- fix(furikaeri): the final report lists its lines and ends with the return contract's JSON block. The old "at most four lines … Nothing else." contradicted that contract.
+- fix(security-scanner): the natural-language threat check drops its `(CRITICAL)` and "Carefully read and analyze" emphasis.
+- fix(security-scanner): URL and installed-plugin scans look for the manifest at `.claude-plugin/plugin.json` and read hook definitions from its `hooks` field and `hooks/hooks.json`, plus every script a hook or skill invokes. Before, they looked for a root `plugin.json` and `hooks/*.md`, so a plugin's hook scripts were never read.
+- fix(tidy): the `Model` field no longer mentions a mode gate this skill does not have.
+- fix(artifactor): `## Dispatch authorization` moves from the end of the file to just before `## Agent`, so it is read before the dispatch path is chosen. Its text is unchanged.
+- fix(apply-rules): a ref candidate is resolved with `git/ref/heads/…`, then `git/ref/tags/…`, and a SHA-shaped candidate with `commits/…`. The bare `git/ref/{candidate}` form cannot resolve a branch, tag, or SHA.
+- fix(translate): `/tr` dispatches its agent with the `Agent` tool, not `Task`.
+- fix(ask-codex, ask-gemini, ask-copilot): examples use a `<model>` placeholder instead of model IDs that go out of date. ask-copilot no longer claims a default model.
+- fix(apply-rules, merge-rules, rules-review, tidy): notes addressed to maintainers ("Source of truth …; keep in sync") are removed from the skill text, which is read on every run. They do not change what the skill does.
+
 ## 2026-09-25
 
 ### dev-workflow v2.5.2 / dev-workflow-bundle v2.18.2

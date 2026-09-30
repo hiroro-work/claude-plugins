@@ -44,7 +44,7 @@ marketplace.json の各プラグインを `source` プレフィックスで分�
 
 **wrapper 方式（`source: "./plugins/..."`）**:
 - `source` ディレクトリが存在すること
-- `<source>/skills/` がある場合、配下エントリがシンボリックリンクであること、参照先 `skills/<skill>/SKILL.md` が存在すること
+- `<source>/skills/` がある場合、配下エントリが、参照先 `skills/<skill>/SKILL.md` が存在するシンボリックリンクか、`SKILL.md` を含む実ディレクトリであること
 - `<source>/agents/` がある場合、各 `.md` ファイルに YAML frontmatter が存在すること
 - `<source>/.claude-plugin/plugin.json` が存在し、`name` が marketplace.json の `name` と一致すること
 - bundle の場合（`skills` 配列が specific パスを含む）: `skills` 配列の各パスが `skills/<name>/SKILL.md` に解決されること、かつ `<source>/skills/` 配下のエントリセットと一致すること
@@ -63,7 +63,7 @@ marketplace.json の全プラグインについて:
 
 ### 5. bundle 横断ディレクティブの同一性
 
-`dev-workflow-bundle` の `skills` 配列の各メンバーの `SKILL.md` が `## Dispatch authorization` 節を持ち、その本文が全メンバーで byte-identical であること（`run-tests` Check 7 と同一項目。source of truth は `.claude/rules/project.rules.md` § プラグイン構造 の「**bundle 全メンバーに複製する横断ディレクティブは byte-identical を保ち、メンバー追加時に必ず同梱する**」bullet）。
+`dev-workflow-bundle` の `skills` 配列の各メンバーの `SKILL.md` が `## Dispatch authorization` 節を持ち、その本文が全メンバーで byte-identical であること（`run-tests` Check 7 と同じ項目）。
 
 ### 6. スキル・エージェント動作確認
 
@@ -92,7 +92,7 @@ marketplace.json の各プラグインについて、`source` プレフィック
 **wrapper 方式（`source: "./plugins/..."`）**:
 
 1. `source` ディレクトリが存在すること
-2. `<source>/skills/` がある場合、配下エントリが **シンボリックリンク（参照先 `skills/<skill>/SKILL.md` が存在）または `SKILL.md` を含む実ディレクトリ** であること。全 wrapper は commit `56026cb` で symlink から実コピーへ変換済み（[anthropics/claude-code#53948](https://github.com/anthropics/claude-code/issues/53948) 回避）なので、実ディレクトリを不備として報告しないこと（source of truth: `.claude/rules/project.rules.md` § プラグイン構造 の wrapper エントリ bullet）
+2. `<source>/skills/` がある場合、配下エントリが **シンボリックリンク（参照先 `skills/<skill>/SKILL.md` が存在）または `SKILL.md` を含む実ディレクトリ** であること。実ディレクトリを不備として報告しない
 3. `<source>/agents/` がある場合、各 `.md` に YAML frontmatter が存在すること。`<source>/.claude-plugin/plugin.json` が存在し、`name` が marketplace.json の `name` と一致すること
 4. **bundle の場合** (`skills` 配列が specific パスを含む): 配列内の各パスが `skills/<name>/SKILL.md` に解決されること、かつ `<source>/skills/` 配下のエントリセットと `skills` 配列のセットが一致すること（どちらか一方にしかないエントリを検出）
 
@@ -127,16 +127,7 @@ jq . skills/<skill-dir>/.claude-plugin/plugin.json > /dev/null
 
 ### Step 6.5: bundle 横断ディレクティブの同一性確認
 
-`dev-workflow-bundle` の `skills` 配列を反復し、各メンバーの `SKILL.md` に `## Dispatch authorization` 見出しがあること、かつ節本文のハッシュが全メンバーで一致することを確認してください（検証項目 5）。欠落または分岐しているメンバーを報告します。
-
-```bash
-for e in $(jq -r '(.plugins[] | select(.name=="dev-workflow-bundle") | .skills[])' .claude-plugin/marketplace.json); do
-  n="${e#./skills/}"
-  # 前後の空行を trim してから比較する（run-tests Check 7 と同じ delimitation。
-  # trim しないと末尾空行だけの差分を文言分岐と誤判定する）
-  printf '%-14s %s\n' "$n" "$(awk '/^## Dispatch authorization$/{f=1;next} f&&/^## /{exit} f{print}' "skills/$n/SKILL.md" | sed -e '/./,$!d' | tail -r | sed -e '/./,$!d' | tail -r | md5 -q)"
-done
-```
+`dev-workflow-bundle` の `skills` 配列を反復し、各メンバーの `SKILL.md` に `## Dispatch authorization` 見出しがあることを確認してください。各メンバーの節本文（見出しの次の行から次の `## ` 見出しの手前まで、前後の空行を除く）を `Read` で読み、全メンバーで 1 文字も違わないことを確かめます（検証項目 5）。欠落または分岐しているメンバーを報告します。
 
 ### Step 7: スキル・エージェント動作テスト
 

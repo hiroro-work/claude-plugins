@@ -84,6 +84,6 @@ secondary_language: en   # Default target when primary detected (default: en)
    - If `--to <lang>` is specified, include: `--to <lang>`
    - Append the user's text to translate
 
-4. **Invoke agent**: Use Task tool with the appropriate agent (`tr` or `tr-hq`)
+4. **Invoke agent**: Dispatch the `Agent` tool with `subagent_type` set to the chosen agent (`tr` or `tr-hq`)
 
 5. **Return result**: The agent returns only the translated text

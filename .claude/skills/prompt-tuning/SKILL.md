@@ -64,7 +64,7 @@ When not to use:
      - Retry count (how many times the subagent redid the same decision. Extract from the subagent's self-report; not measurable from the instruction side)
      - **On failure, add a one-line note to the "unclear points" section of the presentation format stating "which [critical] item dropped"** (for root cause tracing)
    - The requirements checklist must include **at least one** `[critical]`-tagged item (if there are zero, the success judgment becomes vacuous). Do not add or remove [critical] tags after the fact.
-5. **Apply the diff**: Put the minimum fix into the prompt to eliminate the unclear points. One theme per iteration (multiple related fixes are OK, unrelated fixes go to next time).
+5. **Apply the diff**: Make the smallest change that removes the unclear points — a deletion, a generalization of an existing rule, or an addition. Before adding a rule, check whether an existing narrower rule should be generalized or removed instead. One theme per iteration (multiple related fixes are OK, unrelated fixes go to next time).
    - **Before applying the fix, explicitly state "which item in the requirements checklist / judgment wording this fix satisfies"** (fixes inferred from axis names often do not land. See the "Fix propagation patterns" section below.)
    - **Consult the failure pattern ledger first**. If the structured reflection's `General Fix Rule` already matches a known pattern, the first question is "why didn't the existing fix prevent it?" — the fix may need to move closer to the top of the prompt, or be re-worded, before a new ledger entry is added.
 6. **Re-evaluate**: Run 2 → 5 again with a new subagent (do not reuse the same agent: it has learned the previous improvements). Increase parallelism if iterating further does not plateau improvements.
@@ -89,7 +89,7 @@ When not to use:
 Use `tool_uses` as a **relative value across scenarios** to reveal structural defects:
 
 - If one scenario is **3-5x or more** vs the others, that skill is a sign of being **decision-tree-index-leaning with low self-containment**. The executor is being forced into references descent.
-- Countermeasure: adding an "inline minimum complete example" or "guidance on when to read references" at the top of SKILL.md in iter 2 significantly drops `tool_uses`
+- Countermeasure: add guidance on when to read references at the top of SKILL.md in iter 2, or pull the one fact the executor keeps descending for into the body. Add an inline example only for verbatim content the body cannot state (a fixed string, an output slot layout).
 
 Even at 100% accuracy, a skew in `tool_uses` is grounds for triggering iter 2.
 
@@ -242,7 +242,7 @@ Rules:
 When iterations approach a plateau but convergence criteria (2 consecutive clears) are not met, suspect local optimum and run a 2-variant round:
 
 - **Conservative variant**: current prompt + next-best minor fix
-- **Exploratory variant**: current prompt with one structural change — reorder sections, split a dense paragraph, drop a redundant section, or add a missing scaffolding (e.g., a worked example)
+- **Exploratory variant**: current prompt with one structural change — reorder sections, split a dense paragraph, drop a redundant section, or generalize several narrow rules into one
 
 Dispatch fresh subagents on the same scenarios in parallel (one message with multiple Agent tool calls). Keep the variant with higher accuracy; on tie, prefer fewer unclear points; on further tie, prefer lower `tool_uses`.
 
@@ -257,7 +257,7 @@ Use when plateau is suspected, not by default.
 
 **出力言語**: ユーザーへの提示は日本語で行う。ただし以下のトークン / キーは verbatim で残す:
 
-- `Convergence check`、`Iteration N` / `iter-N`、`Max iterations`
+- `Convergence check`、`Iteration N` / `iter-N`
 - `iter-0: PASS` / `iter-0: PASS-with-note` / `iter-0: BLOCK-consistency`
 - `Issue` / `Cause` / `General Fix Rule`（subagent invocation contract のキー）
 - `[critical]` 等のタグ、設定値（`tool_uses` / `duration_ms` 等）、ファイルパス、識別子

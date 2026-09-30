@@ -9,10 +9,6 @@ allowed-tools: Bash(node --test *), Bash(test *)
 Runs the repository's own test suite — the `*.test.mjs` files under `tests/` — and reports a
 structured verdict. Nothing needs installing: the suite uses `node:test` / `node:assert` only.
 
-This is a **project-local** skill (it lives under `.claude/skills/run-node-tests/` and is not
-registered in `.claude-plugin/marketplace.json`), invoked as a `test_commands` entry from
-`.claude/dev-workflow.md`.
-
 ## Sub-skill caller directive
 
 When invoked as a sub-skill (i.e. via `Skill(run-node-tests)` from an orchestrator), the fenced

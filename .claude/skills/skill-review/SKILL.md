@@ -14,7 +14,7 @@ The caller passes these fields in natural language (the skill extracts them from
 
 - `Base ref` *(optional, default `<working-tree-vs-HEAD>`)* — git ref to diff against. When omitted, the skill looks at the working tree's uncommitted + staged changes (the default scope for `dev-workflow` post-implementation review). When specified (e.g. `Base ref: main`), the skill switches to `git diff <Base ref>` semantics — useful for callers like `dev-workflow-triage` that want to review a stack of already-committed changes between a base branch and HEAD.
 - `Max iterations` *(optional, default `1`)* — upper bound on the refinement loop. Default `1` is a single detect-and-apply pass — a caller that wants the applied fixes re-verified raises it explicitly.
-- `Model` *(optional, default `sonnet`)* — model for the reviewer `Agent` dispatch, or `inherit` to use the session model. Accepted values are whichever model ids the current `Agent` tool's `model` parameter allows, plus the sentinel `inherit` — see `rules-review` SKILL.md's `Model:` paragraph (`§ Usage`) for the live-schema validity check this shares; a full `claude-*` id (e.g. `claude-sonnet-5`) is outside that parameter's accepted aliases and is therefore invalid too. An **independent optional field** — adding it does not turn the contract into a fixed-arity mode gate (the other fields keep their own defaults). **Default `sonnet`**, applying to **every** caller. A caller-supplied `Model:` value **wins over** this default (arg-wins); an invalid value falls back to the default. The resolved value is applied to **every** iteration's reviewer dispatch. It applies **only on the Claude Code `Agent`-dispatch path**; the inline fallback path spawns no `Agent`.
+- `Model` *(optional, default `sonnet`)* — model for the reviewer `Agent` dispatch, or `inherit` to use the session model. Accepted values are whichever model ids the current `Agent` tool's `model` parameter allows, plus the sentinel `inherit` — see `rules-review` SKILL.md's `Model:` paragraph (`§ Usage`) for the live-schema validity check this shares; a full `claude-*` id (e.g. `claude-sonnet-5`) is outside that parameter's accepted aliases and is therefore invalid too. **Default `sonnet`**, applying to **every** caller. A caller-supplied `Model:` value **wins over** this default (arg-wins); an invalid value falls back to the default. The resolved value is applied to **every** iteration's reviewer dispatch. It applies **only on the Claude Code `Agent`-dispatch path**; the inline fallback path spawns no `Agent`.
 
 The caller must not stage changes while this skill is running.
 
@@ -26,7 +26,7 @@ The caller must not stage changes while this skill is running.
 2. Compute the changed-file set based on `Base ref`:
    - Default mode (no `Base ref` provided): run `git diff --name-only` and `git diff --name-only --cached` to find uncommitted + staged changes.
    - Explicit mode (e.g. `Base ref: main`): run `git diff --name-only <Base ref>` — captures the cumulative diff from `<Base ref>` to HEAD (committed history, not working-tree).
-3. Filter to files matching `skills/**/SKILL.md`, `skills/**/README.md`, `skills/**/references/**`, `.claude/skills/**/SKILL.md`, `.claude/skills/**/references/**`. The `**` **crosses directory boundaries on purpose** so the `references/**` patterns match reference files nested at any depth (`skills/<name>/references/<sub>/…`); the flat direct-skill layout (`skills/<name>/SKILL.md`) is matched directly. Do **not** narrow the trailing `references/**` to a single-segment `*`: `*` does not cross `/`, so nested reference files would not match and `changed_files` could come back empty — a silent false `no-actionable-findings` with `iterations_used: 0` even though reference files did change. Bundle copies under `plugins/<bundle>/skills/<name>/` are intentionally **out of scope**: they are byte-identical mirrors of the canonical `skills/<name>/` files, and `verify-bundle-sync` owns that identity check.
+3. Filter to files matching `skills/**/SKILL.md`, `skills/**/README.md`, `skills/**/references/**`, `.claude/skills/**/SKILL.md`, `.claude/skills/**/references/**`. (`**` matches any depth, including nested `references/<sub>/…`). Bundle copies under `plugins/<bundle>/skills/<name>/` are out of scope.
 4. Hold the filtered set in main-thread context as `changed_files` (the scope-check baseline for Step 3 (c)).
 5. If `changed_files` is empty, emit the verdict `{"status": "no-actionable-findings", "iterations_used": 0, "applied_edits_count": 0, "notes_remaining_count": 0, "reason": null}` per `§ Return contract` and stop.
 
@@ -40,7 +40,7 @@ For each changed skill, in the main thread:
 
 ### Step 3 — Iteration loop (i = 1 .. Max iterations)
 
-**Pre-register iteration tasks** — before entering the loop, `TaskCreate` one task per iteration named `iteration 1`, `iteration 2`, ..., `iteration <Max iterations>`. Mark `in_progress` (via `TaskUpdate`) before each dispatch, `completed` after parse + apply (a converged iteration marks `completed` immediately after parsing). On early convergence (no `mechanical_edits` returned) or safety-rail-triggered exit, mark remaining iteration tasks `completed` with note appended to the task's `description` field (the `content` field under the `TodoWrite` fallback) as `— skipped: converged` / `— skipped: <reason>`. Where the Task tools are unavailable (e.g. the VSCode extension, or Claude Code before v2.1.142), use the equivalent `TodoWrite` operations instead — the status values and pre-register semantics are identical. Pre-registration is load-bearing when a caller raises `Max iterations` — without it, the executor-driven loop tends to stop at the first iteration that looks acceptable.
+**Pre-register iteration tasks** — before entering the loop, `TaskCreate` one task per iteration named `iteration 1`, `iteration 2`, ..., `iteration <Max iterations>`. Mark `in_progress` (via `TaskUpdate`) before each dispatch, `completed` after parse + apply (a converged iteration marks `completed` immediately after parsing). On early convergence (no `mechanical_edits` returned) or safety-rail-triggered exit, mark remaining iteration tasks `completed` with note appended to the task's `description` field (the `content` field under the `TodoWrite` fallback) as `— skipped: converged` / `— skipped: <reason>`. Where the Task tools are unavailable (e.g. the VSCode extension), use the equivalent `TodoWrite` operations instead — the status values and pre-register semantics are identical. Pre-registration is load-bearing when a caller raises `Max iterations` — without it, the executor-driven loop tends to stop at the first iteration that looks acceptable.
 
 #### (a) Dispatch reviewer Agent
 
@@ -101,7 +101,7 @@ Invoke the `Agent` tool to dispatch a fresh reviewer, passing the model from Ste
 > ```
 > ````
 
-**Agent unavailable fallback**: detect availability and fall back per the canonical write-up in `rules-review` SKILL.md `§ 5. Review` (the "Detecting Agent availability" / "Fallback when Agent is unavailable" paragraphs). The skill-review specialization: when falling back, walk the embedded checklist over each changed file inline-sequentially in the main thread once per iteration and emit the same fenced JSON block defined above so step (b)'s parser handles both paths identically.
+**Agent unavailable fallback**: detect availability and fall back per the **Claude Code path** / **Fallback path** bullets in `rules-review` SKILL.md `§ 5. Review`. The skill-review specialization: when falling back, walk the embedded checklist over each changed file inline-sequentially in the main thread once per iteration and emit the same fenced JSON block defined above so step (b)'s parser handles both paths identically.
 
 #### (b) Parse & apply — evaluate in this order, first match wins
 
@@ -141,19 +141,18 @@ If the loop runs all `Max iterations` without (b) sub-case 3 firing, determine t
 
 ### Step 5 — Emit verdict
 
-End your response with a single fenced JSON block matching the schema in `§ Return contract`. See `§ Sub-skill caller directive` for the caller-side no-stall discipline that applies when this skill is invoked as a sub-skill.
+Emit the verdict per `§ Return contract`. See `§ Sub-skill caller directive` for the caller-side no-stall discipline that applies when this skill is invoked as a sub-skill.
 
 ## Scope
 
 - Only review files that have uncommitted changes — diff-scoped, not a full audit
 - Project conventions (`.claude/rules/`, `CLAUDE.md`) override the checklist where they conflict
-- Don't chase perfection — fix real issues, note minor ones, move on
 
 ## Return contract
 
 Only one fenced JSON block must appear in the response — the verdict block.
 
-End every invocation with a single fenced JSON block matching this schema:
+Emit a single fenced JSON block at the end of the response, matching this schema:
 
 ```json
 {

@@ -96,6 +96,7 @@ Parse URL to extract owner, repo, branch, and path:
 
 **Note on ambiguous refs:** Branch names may contain `/` (e.g., `feature/rules-v2`), and refs can also be tags or SHAs:
 - Try ref candidates from the longest prefix first: `gh api repos/{owner}/{repo}/git/ref/heads/{candidate}`, then `gh api repos/{owner}/{repo}/git/ref/tags/{candidate}`; for a SHA-shaped candidate use `gh api repos/{owner}/{repo}/commits/{candidate}`
+- A successful response is a match: stop there, use the candidate as `{branch}` and the remaining segments as `{path}`. A 404 (`git/ref`) or 422 (`commits`) means no match — try the next shorter prefix. Any other error, or no candidate matching, stops with an error suggesting `source_repo` / `source_ref` / `source_path`
 - Alternatively, the user can specify components separately in the config:
   ```yaml
   source_repo: org/repo

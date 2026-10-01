@@ -15,7 +15,7 @@ Prompt-audit pass for current models, which follow instructions literally: wordi
 - fix(security-scanner): URL and installed-plugin scans look for the manifest at `.claude-plugin/plugin.json` and read hook definitions from its `hooks` field and `hooks/hooks.json`, plus every script a hook or skill invokes. Before, they looked for a root `plugin.json` and `hooks/*.md`, so a plugin's hook scripts were never read.
 - fix(tidy): the `Model` field no longer mentions a mode gate this skill does not have.
 - fix(artifactor): `## Dispatch authorization` moves from the end of the file to just before `## Agent`, so it is read before the dispatch path is chosen. Its text is unchanged.
-- fix(apply-rules): a ref candidate is resolved with `git/ref/heads/…`, then `git/ref/tags/…`, and a SHA-shaped candidate with `commits/…`. The bare `git/ref/{candidate}` form cannot resolve a branch, tag, or SHA.
+- fix(apply-rules): a ref candidate is resolved with `git/ref/heads/…`, then `git/ref/tags/…`, and a SHA-shaped candidate with `commits/…`. The bare `git/ref/{candidate}` form cannot resolve a branch, tag, or SHA. A successful response ends the search and the remaining segments become the path; any error other than a no-match status stops with a pointer to the explicit config fields.
 - fix(translate): `/tr` dispatches its agent with the `Agent` tool, not `Task`.
 - fix(ask-codex, ask-gemini, ask-copilot): examples use a `<model>` placeholder instead of model IDs that go out of date. ask-copilot no longer claims a default model.
 - fix(apply-rules, merge-rules, rules-review, tidy): notes addressed to maintainers ("Source of truth …; keep in sync") are removed from the skill text, which is read on every run. They do not change what the skill does.

@@ -258,6 +258,7 @@ Use when plateau is suspected, not by default.
 **出力言語**: ユーザーへの提示は日本語で行う。ただし以下のトークン / キーは verbatim で残す:
 
 - `Convergence check`、`Iteration N` / `iter-N`
+- 収束チェック行の全文（`(Convergence check: <X> consecutive clears / <Y> rounds remaining to stop condition)` と `iter skipped, does not advance` 版）
 - `iter-0: PASS` / `iter-0: PASS-with-note` / `iter-0: BLOCK-consistency`
 - `Issue` / `Cause` / `General Fix Rule`（subagent invocation contract のキー）
 - `[critical]` 等のタグ、設定値（`tool_uses` / `duration_ms` 等）、ファイルパス、識別子

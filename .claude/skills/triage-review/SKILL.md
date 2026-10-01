@@ -148,7 +148,10 @@ Otherwise, iterate through `prompt_targets` sequentially. For each `<file>`:
 (c) **Parse the return**. Two paths, evaluated in order (first match wins):
 
 1. **Fenced JSON Skip return contract** — `prompt-tuning` § Environment constraints emits this when recursive `Agent` dispatch is blocked by the host. Shape: `{"status": "skipped", "reason": "<reason>", ...}`. Classify as `skipped (agent unavailable)`
-2. **Free-form prose verdict** — pattern-match the prose for known tokens (the last `(Convergence check: <X> consecutive clears / <Y> rounds remaining to stop condition)` line (skip `iter skipped` variants) → `converged` when `<Y>` is 0, else `max-iter`; no such line → `unparsed`, `iter-0: BLOCK-consistency` → `error (iter-0 BLOCK)`, `iter-0: PASS-with-note` / `iter-0: PASS` plus iter-1+ table → continue per the table). If no known token matches: `unparsed`
+2. **Free-form prose verdict** — evaluate these rules in order (first match wins):
+   - `iter-0: BLOCK-consistency` is present and no `(Convergence check: <X> consecutive clears / <Y> rounds remaining to stop condition)` line exists → `error (iter-0 BLOCK)`
+   - Otherwise take the last `(Convergence check: <X> consecutive clears / <Y> rounds remaining to stop condition)` line. Ignore `(Convergence check: <X> consecutive clears / iter skipped, does not advance)` lines. `<Y>` = 0 → `converged`; `<Y>` ≥ 1 → `max-iter`. This also covers `iter-0: PASS` / `iter-0: PASS-with-note` runs followed by an iter-1+ table
+   - No rule matched → `unparsed`
 
 Record the per-file classification in a result list. `unparsed` and `error` are non-fatal — the next file's dispatch proceeds without halting the run.
 

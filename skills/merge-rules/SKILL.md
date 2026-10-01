@@ -47,7 +47,7 @@ language: ja
 ---
 ```
 
-**Examples directories (no configuration key).** Examples live in a sibling of the rules directory: that path with any trailing `/` removed and `-extras` appended — `{path}/{rules_dir}-extras` for each source project, `<output_dir>-extras` for the output. Strip the trailing `/` before appending, or a configured `.claude/rules/` yields `.claude/rules/-extras`. Collection takes each rule file's examples from the derived directory first and from the rule directory itself only when that misses, so a **pre-split layout** — examples still beside the rule files — is still collected; writing always targets the derived directory. merge-rules does not read extract-rules' `examples_output_dir`. Source of truth for the derived name is extract-rules' `examples_output_dir` default; keep in sync when that default changes.
+**Examples directories (no configuration key).** Examples live in a sibling of the rules directory: that path with any trailing `/` removed and `-extras` appended — `{path}/{rules_dir}-extras` for each source project, `<output_dir>-extras` for the output. Strip the trailing `/` before appending, or a configured `.claude/rules/` yields `.claude/rules/-extras`. Collection takes each rule file's examples from the derived directory first and from the rule directory itself only when that misses, so a **pre-split layout** — examples still beside the rule files — is still collected; writing always targets the derived directory. merge-rules does not read extract-rules' `examples_output_dir`.
 
 ## Processing Flow
 

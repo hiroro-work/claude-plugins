@@ -22,7 +22,7 @@ The caller passes these fields in natural language (the skill extracts them from
 
 - `Custom instructions` *(optional)* — free-form text injected into the dispatch payload as additional constraints alongside the cleanup checklist.
 
-- `Model` *(optional)* — model id applied as the `model` parameter on the reviewer `Agent` dispatch in Step 3 (a). An independent optional field (not part of a fixed-arity mode gate); a caller such as `dev-workflow` passes it to run the cleanup reviewer on a specific model. The same value is applied to **every** iteration's reviewer dispatch. Effective **only on the Claude Code `Agent`-dispatch path**; on the reviewer-dispatch-unavailable inline fallback (Step 3 (a)) the executing agent's own model governs. **Validity predicate**: a value is valid only if it is one of the model ids the current `Agent` tool's `model` parameter accepts — check the tool's live schema loaded in the current session; a full `claude-*` id (e.g. `claude-sonnet-5`) is outside that parameter's accepted aliases and is therefore invalid too. An absent field or an invalid value → no override; the reviewer `Agent` inherits the session model.
+- `Model` *(optional)* — model id applied as the `model` parameter on the reviewer `Agent` dispatch in Step 3 (a). A caller such as `dev-workflow` passes it to run the cleanup reviewer on a specific model. The same value is applied to **every** iteration's reviewer dispatch. Effective **only on the Claude Code `Agent`-dispatch path**; on the reviewer-dispatch-unavailable inline fallback (Step 3 (a)) the executing agent's own model governs. **Validity predicate**: a value is valid only if it is one of the model ids the current `Agent` tool's `model` parameter accepts — check the tool's live schema loaded in the current session; a full `claude-*` id (e.g. `claude-sonnet-5`) is outside that parameter's accepted aliases and is therefore invalid too. An absent field or an invalid value → no override; the reviewer `Agent` inherits the session model.
 
 The caller must **not** stage changes while this skill is running. The skill reads the working tree; staged content would mix into the diff and corrupt the verdict. (The `Base ref` mode reads committed history vs the ref, so staging interference applies only to the default working-tree mode.)
 
@@ -147,7 +147,7 @@ Dispatch failures (reviewer-dispatch tool error / timeout / empty response) are 
 
   **Untracked-path specialization**: if the offending file is in `untracked_paths` (i.e. HEAD-absent — the iteration just edited an untracked new file), skip the `git checkout` for HEAD-absent paths; the file is left in its post-edit state, `applied_edits_count` retains all surviving on-disk edits (no revert occurred), and `reverted_paths` still carries the offending path as an informational entry so the caller sees what could not be reverted.
 
-- **Scope** — the per-edit pre-check in (b) step 4 already skips out-of-scope writes, so no global `git diff --name-only` revert is needed. If the `out_of_scope` list accumulated by (b) step 4 is non-empty for this iteration, exit loop with terminal `{"status": "error", "iterations_used": <i>, "applied_edits_count": <cumulative>, "notes_remaining_count": 0, "reverted_paths": <out_of_scope>, "reason": "scope violation"}` (no actual `git checkout` runs — the pre-check prevented the write).
+- **Scope** — if the `out_of_scope` list accumulated by (b) step 4 is non-empty for this iteration, exit loop with terminal `{"status": "error", "iterations_used": <i>, "applied_edits_count": <cumulative>, "notes_remaining_count": 0, "reverted_paths": <out_of_scope>, "reason": "scope violation"}` (the pre-check already skipped those writes; no `git checkout` runs).
 
 ### Step 4 — Max iterations reached without convergence
 
@@ -159,7 +159,7 @@ If the loop runs all `Max iterations` without (b) sub-case 3 firing (i.e. the re
 
 ### Step 5 — Emit verdict
 
-End your response with a single fenced JSON block matching the schema in `§ Return contract`. See `§ Sub-skill caller directive` for the caller-side no-stall discipline that applies when this skill is invoked as a sub-skill.
+Emit the verdict per `§ Return contract`. See `§ Sub-skill caller directive` for the caller-side no-stall discipline that applies when this skill is invoked as a sub-skill.
 
 ## Scope
 
@@ -170,7 +170,7 @@ End your response with a single fenced JSON block matching the schema in `§ Ret
 
 ## Return contract
 
-The skill emits a single fenced JSON block at the very end of the invocation. Only one fenced JSON block must appear **in the user-visible response** — the verdict block. Intermediate structured outputs that the skill constructs internally for its own parser (e.g., the per-iteration reviewer JSON synthesized under the Agent-unavailable fallback path) are held in main-thread context and do not enter the response stream.
+Only one fenced JSON block must appear **in the user-visible response** — the verdict block. Intermediate structured outputs that the skill constructs internally for its own parser (e.g., the per-iteration reviewer JSON synthesized under the Agent-unavailable fallback path) are held in main-thread context and do not enter the response stream.
 
 Emit a single fenced JSON block at the end of the response, matching the schema:
 
@@ -197,7 +197,7 @@ Field semantics:
 - `iterations_used`: number of iterations whose reviewer dispatch returned a verdict, **including the iteration whose verdict triggered convergence**. Step 1 early returns (no changed files after exclusion) count as `0`
 - `applied_edits_count`: non-negative integer count of `Edit` calls whose result is still on disk at the time the verdict is emitted. For `verdict parse failure` / `verdict schema violation` / `dispatch error` / `scope violation`, this is the cumulative count of successful `Edit` calls across earlier iterations of the same invocation (none of these recovery paths revert in-scope edits — `scope violation` only flags the offending out-of-scope paths informationally). The exception is `frontmatter broken`: its recovery reverts the edited file itself (or skips the revert for an untracked HEAD-absent path), so the count drops accordingly
 - `notes_remaining_count`: non-negative integer. Count of structural / still-actionable items flagged in the **terminal iteration** but not applied. Always `0` for `no-actionable-findings` and any `error` status
-- `reverted_paths`: array of `<path>` strings. Empty array `[]` for `no-actionable-findings` / `applied-edits` / `notes-left` / `verdict parse failure` / `verdict schema violation` / `dispatch error` / Step 1 early returns. For `frontmatter broken`: contains the offending file path in both branches (HEAD-present revert: path was reverted; HEAD-absent: path retained as informational entry since the rail skipped `git checkout`). For `scope violation`: contains the `out_of_scope` paths the pre-check rejected (no `git checkout` ran; the entries are informational rejected-write records). (Source of truth: the JSON shapes in Step 1 early return, Step 3 (b) sub-cases 1/2, Step 3 (c) frontmatter/scope rails, and `§ Dispatch failure`; keep this enumeration in sync when status conditions are added.)
+- `reverted_paths`: array of `<path>` strings. Empty array `[]` for `no-actionable-findings` / `applied-edits` / `notes-left` / `verdict parse failure` / `verdict schema violation` / `dispatch error` / Step 1 early returns. For `frontmatter broken`: contains the offending file path in both branches (HEAD-present revert: path was reverted; HEAD-absent: path retained as informational entry since the rail skipped `git checkout`). For `scope violation`: contains the `out_of_scope` paths the pre-check rejected (no `git checkout` ran; the entries are informational rejected-write records).
 - `reason`: enum string only when `status == "error"`, otherwise JSON `null`. Keep `reason` payloads to the listed enum tokens — no free-form text, newlines, or control characters — so the verdict stays mechanically parseable
 
 **When to emit `status: "error"`**:

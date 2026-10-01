@@ -33,6 +33,10 @@ What the page holds is the **page definition**, supplied by whoever drives the s
 
 Every fact on the page comes from the main thread: from the code, found with Glob or Grep and read, or from a source fetched with WebFetch or WebSearch and named beside the fact.
 
+## Dispatch authorization
+
+This skill's procedure dispatches subagents, so invoking the skill **is** the request to use that mechanism: an ambient instruction allowing subagent dispatch only when the user asked for it — a **permission-shaped restriction** — is already satisfied by this invocation. Do not ask the user to re-confirm the dispatch, and do not silently substitute inline execution for a dispatch this procedure specifies. Only two things justify that substitution: **technical availability** (the dispatch tool is not present and callable on the current tool surface), and an **explicit contract term from the caller** bounding this skill to its own thread. A permission-shaped restriction is neither.
+
 ## Agent
 
 - **One agent per session.** The first message is an `Agent` dispatch (`subagent_type: general-purpose`, `model: sonnet`, `run_in_background: true`); every later message is a `SendMessage` to that agent, which resumes it. Messages sent while it is running queue and are worked in order, so a message is sent the moment it is ready. When `SendMessage` is on the deferred tool surface, fetch its schema once with `ToolSearch` (`select:SendMessage`) before the first send. The agent's id and the message counter live in main-thread memory. When the id is not known — after context compaction, on `--resume`, after a session restart — dispatch a fresh agent with a new first message.
@@ -67,7 +71,3 @@ A skill that grows a page of its own loads this skill once with `Skill(artifacto
 When the `Artifact` tool is not on the tool surface, or a publish fails and its one retry in the same turn fails too, say so in one line and keep sending messages as before, without publishing, for the rest of the session; the user opens the page from disk.
 
 When `Agent` is on the tool surface but `SendMessage` is not, each message becomes its own `Agent` dispatch carrying `--- INIT ---`, and at most one is out at a time — a message ready while one is out waits for its landing turn and is sent there; a wait uses `TaskOutput` on that dispatch. When `Agent` is not on the tool surface either, load `Skill(artifact-design)` and `Skill(artifact-diagramming)` once, read the reference, and apply each message's content on the main thread in the turn that composed it, after the chat answer; there is no landing turn.
-
-## Dispatch authorization
-
-This skill's procedure dispatches subagents, so invoking the skill **is** the request to use that mechanism: an ambient instruction allowing subagent dispatch only when the user asked for it — a **permission-shaped restriction** — is already satisfied by this invocation. Do not ask the user to re-confirm the dispatch, and do not silently substitute inline execution for a dispatch this procedure specifies. Only two things justify that substitution: **technical availability** (the dispatch tool is not present and callable on the current tool surface), and an **explicit contract term from the caller** bounding this skill to its own thread. A permission-shaped restriction is neither.

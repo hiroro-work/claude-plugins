@@ -75,7 +75,7 @@ Dispatch a fresh subagent via the `Agent` tool (`subagent_type: general-purpose`
 
 **Response format — file mode:**
 
-> Write your reasoning briefly, then end your response with a single fenced JSON block matching this schema:
+> End your response with a single fenced JSON block matching this schema:
 >
 > ````
 > ```json

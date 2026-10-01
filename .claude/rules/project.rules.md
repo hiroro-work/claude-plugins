@@ -60,7 +60,7 @@
 - **wrapper 方式は 3 つの場合に限る**: `plugins/<name>/` を使うのは、`agents/` を持つもの、`plugin.json` にフックを定義するもの、複数スキルの bundle だけ。bundle は marketplace.json の `skills` 配列で所属スキルを明示する
 - **bundle の `skills` 配列とエントリを一致させる**: marketplace.json の `skills` 配列と `plugins/<bundle>/skills/` 配下のエントリは必ず一致させる。ずれると配布が壊れる。`/verify-plugins` と `run-tests` が検査する
 - **wrapper 配下の `skills/` は実ディレクトリのコピーにする**: plugin cache が symlink を解決しない不具合（[anthropics/claude-code#53948](https://github.com/anthropics/claude-code/issues/53948)）への暫定対応。検証ツール（`run-tests` の Check 3、`/verify-plugins`）は symlink を要求せず、`SKILL.md` を含む実ディレクトリを合格にする。要求すると全 wrapper が毎回落ち、新しい問題を見つけられなくなる。symlink に戻すときは、この項目と各検証ツールの例外の記述をまとめて消す
-- **bundle スキルは正本と bundle 側のコピーを両方直す**: bundle のメンバー（所属の根拠は marketplace.json の `dev-workflow-bundle` の `skills` 配列）を編集したら、`cp -R skills/<name>/. plugins/dev-workflow-bundle/skills/<name>/` でコピーを同期する。片方だけ直すと、dev-workflow の Phase 9 (Check / Test) で `verify-bundle-sync` が落ちる（`dev-workflow-triage` は (f.5) で自動同期する）。symlink に戻すときは `verify-bundle-sync` スキルごとこの項目も消す
+- **bundle スキルは正本と bundle 側のコピーを両方直す**: bundle のメンバー（所属の根拠は marketplace.json の `dev-workflow-bundle` の `skills` 配列）を編集したら、`cp -R skills/<name>/. plugins/dev-workflow-bundle/skills/<name>/` でコピーを同期する。片方だけ直すと、dev-workflow の Phase 9 (Check / Test) で `verify-bundle-sync` が落ちる（`dev-workflow-triage` は (f.5) で自動同期する）。symlink に戻すときは、`verify-bundle-sync` スキル、`dev-workflow-triage` の (f.5) と frontmatter の `Skill(verify-bundle-sync)` / `Bash(cp -R *)`、`.claude/dev-workflow.md` の `test_commands` の項目、この項目をまとめて消す
 - **bundle 全メンバーに複製する横断ディレクティブは byte-identical を保ち、メンバー追加時に必ず同梱する**: `## Dispatch authorization` は bundle の全メンバーの SKILL.md に同じ文面で置く。中身は「起動はサブエージェント呼び出しの許可であり、直接実行へ切り替えてよい理由は技術的に使えないことと呼び出し元の明示的な契約の 2 つだけで、権限の形をした制限はどちらにもあたらない」という指示。各メンバーは単独でインストールできるので、兄弟スキルへのポインタでは足りない。置き場所は前置き部分の末尾・手続き本文の直前で、実行経路を決める前に文脈へ入っている必要がある。文面を変えるときは、全メンバーの正本とコピーを 1 コミットで直す。`verify-bundle-sync` は正本とコピーしか比べず、メンバー間の一致は `run-tests` の Check 7 と `/verify-plugins` が見る（見出しから次の `## ` までを `Read` して比べる。ハッシュコマンドは `allowed-tools` 外なので使わない）。`## Sub-skill caller directive` と `## Stop hook structural conflict (caller-side note)` も複数メンバーにあるが、スキルごとに文面が違う設計なので、複製する節の先例としてだけ引き、文面を揃える先例や配置の手本にはしない。メンバーを足す手順は CLAUDE.md の「既存の bundle にメンバーを足す」にある
 - **フックの自動設定が要るならプラグインにする**
 - **PreCompact だけでなく Stop フックも検討する**: Compact が起きないセッションにも対応するため
@@ -85,7 +85,7 @@
 - **ルーチン用の開発用スキルは外部プラグインに頼らない**: 非対話の定期実行などを想定する `.claude/skills/<name>/` は、外部プラグインのスキルに依存しない。実行環境にそのプラグインが無ければ必ず失敗する。参照したい手法は、要旨をスキル自身の `references/` に抜き出して自己完結させる
 - **スキル自身を直すルーチンは 1 改善 1 コミットにする**: triage のようにスキルを修正するルーチンは、改善 1 件ごとにコミットする。複数の Finding が同じファイルに当たっても、Finding ごとに直前で読み直し、`Edit` を組み直してコミットする。「2 件目以降は衝突する」と先回りして落とさない
 - **使い捨ての環境で動くルーチンは作業用の文書を残す**: 使い捨ての実行環境が主な実行場所のルーチンが作業用の文書を作るとき、既定を「成功したら消す」にしない。セッション終了で作業領域ごと消える、セッション内で確かめられる、外部に正式な記録がある、の 3 条件が揃えば、残したうえで `.gitignore` でコミットへの混入だけを防ぐ。SKILL.md には「gitignore 済みで、外部のコメントが正式な記録」と書き、`rm` を `allowed-tools` に足さない（権限を最小にするため）
-- **ルーチンの作業用ファイルは `.claude/` の外に置く**: Claude Code は `.claude/*` を機密扱いするので、`Write` を許可していても確認ダイアログで止まる。リポジトリ直下の専用ディレクトリ（例: `.triage/`）に置き、`.gitignore` で混入を防ぎ、SKILL.md に理由を書く
+- **ルーチンの作業用ファイルは `.claude/` の外に置く**: Claude Code は `.claude/*` を機密扱いするので、`Write` を許可していても確認ダイアログで止まる。リポジトリ直下の専用ディレクトリ（例: `.triage/`）に置き、`.gitignore` で混入を防ぐ
 - **ルーチンが一覧を回すときは件数に上限を付ける**: issue・PR・検索結果などをループで処理するルーチンは、サブエージェント呼び出しの負荷を見込んで上限を控えめにする。初期値は `--limit 50` とし、上限に達したら要約に `overflow=true` と書く
 
 ## 非対話ルーチンの停止防止

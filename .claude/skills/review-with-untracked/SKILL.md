@@ -46,7 +46,7 @@ The list scope is **review callees that derive their review scope from the git w
 | `skill-review` | `git diff <Base ref>` | blind | **unsafe** — frontmatter rail `git checkout HEAD -- <file>` has no HEAD-absent handling | `Base ref: <ref>` |
 | `publicity-review` | `git diff <Base ref>` | blind | **unsafe** — same frontmatter rail | `Base ref: <ref>` |
 | `verify-diff` | `git diff <Base ref>` | blind | **unsafe** — same frontmatter rail | `Base ref: <ref>` |
-| `tidy` | `git status --untracked-files=all` (default mode) | native — collects untracked itself | safe — HEAD-absent specialization in its rail | default mode (no `Base ref`) |
+| `tidy` | `git status --untracked-files=all` (default mode) | native — collects untracked itself | **unsafe when visualized** — its HEAD-absent specialization keys on `??` entries, which `git add -N` turns into ` A`, so its rail falls through to `git checkout HEAD -- <file>`; safe only when no visualization ran | default mode (no `Base ref`) |
 
 The five rows above are also the **dispatch vocabulary**: a `Callees` name outside this set is an unknown-callee fatal abort (§ No-Stall Principle).
 
@@ -73,7 +73,7 @@ Single invocation, top to bottom:
 (f) **Detect-and-warn** — only when a requested callee is **unsafe** (per § Closed list) and visualization was applied. `Read` each `visualized_paths` entry and collect into `corrupted_paths` any path that is now corrupted:
 
 - **Primary detector (signal #2)**: re-parse the file's YAML frontmatter yourself (orchestrator-side, independent of callee behavior). A path whose `---`-delimited frontmatter no longer parses is corrupted. A file without a frontmatter block is never flagged.
-- **Corroborating (signal #1)**: a callee verdict that reported a rail conflict (`status: "conflict"`, `reason: "frontmatter broken"`) referencing the path.
+- **Corroborating (signal #1)**: a callee verdict with `reason: "frontmatter broken"` referencing the path (`status: "conflict"` from `publicity-review` / `verify-diff`, `status: "error"` from `skill-review` / `tidy`).
 
 This pass **warns only**: it does not restore content (see § Constraints).
 
@@ -84,7 +84,6 @@ This pass **warns only**: it does not restore content (see § Constraints).
 - **Callees must not stash or reset during visualization.** This skill's callees run while `visualized_paths` are in intent-to-add state; a callee that ran `git stash` / `git reset` itself would disturb that state. The current callee set does not.
 - **Non-breaking callee edits persist (intended).** When a callee edits a visualized file's frontmatter *without* breaking it — or edits its body — no rail fires and the edit survives on the file after step (e) returns it to untracked. `corrupted_paths` surfaces only frontmatter *breakage*, not legitimate edits.
 - **Hard-crash leftover window.** A hard tool-level error or session death between step (c) and step (e) can leave a `visualized_paths` entry in intent-to-add (` A`) state with a clean-looking working tree. The skill does **not** auto-reset orphan ` A` entries on a later run (that could clobber a caller's own intentional intent-to-add). Recover manually with `git reset -- <path>` if it occurs.
-- **Permission-matcher fallback.** If a host's permission matcher rejects the scoped `Bash(git reset -- *)` / `Bash(git add -N *)` grants, broaden them to `Bash(git reset *)` / `Bash(git add *)` but keep the scoped invocation forms (`git reset -- <paths>` / `git add -N -- <paths>`) — the path scoping is the safety property; the grant pattern is only how the host authorizes it.
 
 ## Return contract
 

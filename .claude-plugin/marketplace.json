@@ -25,7 +25,7 @@
       "skills": [
         "./"
       ],
-      "version": "1.2.3",
+      "version": "1.2.4",
       "author": {
         "name": "hiropon"
       },
@@ -38,7 +38,7 @@
       "skills": [
         "./"
       ],
-      "version": "1.2.2",
+      "version": "1.2.3",
       "author": {
         "name": "hiropon"
       },
@@ -51,7 +51,7 @@
       "skills": [
         "./"
       ],
-      "version": "1.0.4",
+      "version": "1.0.5",
       "author": {
         "name": "hiropon"
       },
@@ -77,7 +77,7 @@
       "skills": [
         "./"
       ],
-      "version": "1.3.1",
+      "version": "1.3.2",
       "author": {
         "name": "hiropon"
       },
@@ -103,7 +103,7 @@
       "skills": [
         "./"
       ],
-      "version": "2.1.2",
+      "version": "2.1.3",
       "author": {
         "name": "hiropon"
       },
@@ -126,7 +126,7 @@
       "skills": [
         "./"
       ],
-      "version": "2.6.6",
+      "version": "2.6.7",
       "author": {
         "name": "hiropon"
       },
@@ -136,7 +136,7 @@
       "name": "translate",
       "source": "./plugins/translate",
       "description": "AI-powered translation plugin with /tr command (--hq for high-quality)",
-      "version": "1.1.1",
+      "version": "1.1.2",
       "author": {
         "name": "hiropon"
       },
@@ -171,7 +171,7 @@
         "./skills/artifactor",
         "./skills/furikaeri"
       ],
-      "version": "2.18.2",
+      "version": "2.18.3",
       "author": {
         "name": "hiropon"
       },
@@ -197,7 +197,7 @@
       "skills": [
         "./"
       ],
-      "version": "1.1.2",
+      "version": "1.1.3",
       "author": {
         "name": "hiropon"
       },
@@ -223,7 +223,7 @@
       "skills": [
         "./"
       ],
-      "version": "1.0.1",
+      "version": "1.0.2",
       "author": {
         "name": "hiropon"
       },
@@ -236,7 +236,7 @@
       "skills": [
         "./"
       ],
-      "version": "2.1.2",
+      "version": "2.1.3",
       "author": {
         "name": "hiropon"
       },
@@ -249,7 +249,7 @@
       "skills": [
         "./"
       ],
-      "version": "1.8.5",
+      "version": "1.8.6",
       "author": {
         "name": "hiropon"
       },
@@ -262,7 +262,7 @@
       "skills": [
         "./"
       ],
-      "version": "1.6.3",
+      "version": "1.6.4",
       "author": {
         "name": "hiropon"
       },
@@ -275,7 +275,7 @@
       "skills": [
         "./"
       ],
-      "version": "1.8.5",
+      "version": "1.8.6",
       "author": {
         "name": "hiropon"
       },

@@ -1,7 +1,7 @@
 ---
 name: run-tests
 description: Verify plugins marketplace structure, version consistency, and JSON/frontmatter validity via subagent
-allowed-tools: Agent, Bash(git diff *), Bash(jq *), Bash(ls *), Bash(readlink *), Bash(test *), Read, Glob
+allowed-tools: Agent, Bash(jq *), Bash(ls *), Bash(readlink *), Bash(test *), Read, Glob
 ---
 
 # Test Runner
@@ -10,10 +10,7 @@ This project is a Claude Code plugins marketplace. "Tests" here means verifying 
 
 ## Process
 
-1. Determine test scope:
-   - If `$ARGUMENTS` contains `--base-commit <sha>`: run `git diff --name-only <sha>` to get changed files (includes committed, staged, and unstaged changes)
-   - Otherwise: run `git diff --name-only HEAD` to detect changed files (if HEAD is unavailable or no changed files detected, run full verification)
-   - Any change touching `.claude-plugin/marketplace.json`, `plugins/**`, `skills/**`, or `.claude-plugin/plugin.json` should trigger full verification. If only unrelated files (e.g. `README.md`, `CHANGELOG.md`, `docs/**`) changed, still run full verification
+1. Always run full verification. A `--base-commit <sha>` argument is accepted and ignored.
 2. Spawn a subagent (Agent tool, subagent_type: `general-purpose`, `model: sonnet`) to execute verification — pass `sonnet` as the `Agent` tool's `model` parameter.
 3. Return the subagent's structured summary to the caller
 
@@ -54,7 +51,7 @@ This project is a Claude Code plugins marketplace. "Tests" here means verifying 
 > - For each failure:
 >   - The specific check that failed
 >   - File path and what was expected vs actual
->   - Remediation hint (e.g., "recreate symlink", "bump version in plugin.json")
+>   - Remediation hint (e.g., "copy skills/<name>/ into the wrapper with cp -R", "align the version with marketplace.json")
 > - Keep the summary concise but include enough detail to fix without re-running
 >
 > **Status: EXECUTION_ERROR**

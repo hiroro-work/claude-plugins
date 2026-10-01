@@ -6,7 +6,7 @@ allowed-tools: Bash(jq *), Bash(diff *), Bash(test *)
 
 # Verify Bundle Sync
 
-This skill exists solely to work around an upstream Claude Code symlink bug ([anthropics/claude-code#53948](https://github.com/anthropics/claude-code/issues/53948)) that requires `plugins/dev-workflow-bundle/skills/<name>/` to be a real directory copy of `skills/<name>/` rather than a symlink. It is a **project-local** skill (lives under `.claude/skills/verify-bundle-sync/`, not registered in `.claude-plugin/marketplace.json`). When the bug is fixed and the bundle layout returns to symlinks, **delete this skill directory, the `.claude/dev-workflow.md` `test_commands` entry, the `dev-workflow-triage` (f.5) sub-step, and the `.claude/rules/project.rules.md` bullet** that document this workaround.
+This skill exists solely to work around an upstream Claude Code symlink bug ([anthropics/claude-code#53948](https://github.com/anthropics/claude-code/issues/53948)) that requires `plugins/dev-workflow-bundle/skills/<name>/` to be a real directory copy of `skills/<name>/` rather than a symlink.
 
 The skill compares each bundle member's canonical directory against its bundle copy and reports drift. It is detect-only — it never modifies any files.
 
@@ -26,8 +26,6 @@ Run the following directly in the main thread (no subagent dispatch is needed �
    # immediately — see § Return contract.
    ```
 
-   The `// empty` is the array-enumeration null-fallback idiom: when the entry / array is absent, it yields a zero-length stream (no literal `null\n` leaking to stdout). This is a different concern from the canonical scalar `// "unknown"` pattern documented in `.claude/rules/project.rules.local.md` § `jq` の `null` 文字列フォールバック, which targets scalar values. The post-pipeline `[ -z "$output" ]` guard catches array absence, `jq` non-zero exit, and file-not-found uniformly.
-
 2. **For each bundle member entry** `./skills/<name>`:
 
    - Resolve `canonical=skills/<name>/`
@@ -39,11 +37,9 @@ Run the following directly in the main thread (no subagent dispatch is needed �
      - `Only in <bundle-copy-dir>: <file>` → `type: "only_in_copy"`
 
 3. **Aggregate the result**:
-   - All entries drift-free → `SUCCESS` (e.g. `6 bundle skills verified, 0 drift`)
+   - All entries drift-free → `SUCCESS` (e.g. `<n> bundle skills verified, 0 drift`)
    - Any entry has drift → `TEST_FAILED`. Include the per-entry drift list and a remediation hint of the form `cp -R skills/<name>/. plugins/dev-workflow-bundle/skills/<name>/` for each affected member
    - `jq` failed / `diff` missing / `marketplace.json` unreadable / per-entry path missing → `EXECUTION_ERROR`
-
-**EXECUTION_ERROR is deterministic** within a run: `marketplace.json` absence, missing tooling (`jq` / `diff`), and missing path entries do not become resolved during the same run, so retrying the same invocation will not change the outcome. Callers that retry on EXECUTION_ERROR (such as `dev-workflow` Phase 9's retry handler) will simply burn through their retry budget producing the same error each time — that wastes a few extra invocations but is harmless.
 
 ## Return contract
 
@@ -80,6 +76,6 @@ Mapping between the prose status token and the JSON `status` field:
 | `TEST_FAILED` | `drift` |
 | `EXECUTION_ERROR` | `error` |
 
-- `checked_count`: number of bundle member entries actually inspected (9 at the time of writing — `ask-peer`, `dev-workflow`, `extract-rules`, `rules-review`, `tidy`, `prose-polish`, `mobpro`, `kabeuchi`, `artifactor`). If the list could not be loaded (`EXECUTION_ERROR` from Step 1), set this to `0`.
+- `checked_count`: number of bundle member entries actually inspected (the length of Step 1's list). If the list could not be loaded (`EXECUTION_ERROR` from Step 1), set this to `0`.
 - `drift_files[]`: drift / one-sided-presence entries, populated only for `status: "drift"`. Empty array for `ok` and `error`. The `path` value preserves the raw line as it appeared in `diff -rq` output so that downstream rendering does not need to re-derive it.
 - `reason`: required on `status: "error"`. Short, ≤ 80 characters. Examples: `marketplace.json missing`, `dev-workflow-bundle plugin entry absent`, `jq not in PATH`, `canonical missing: skills/ask-peer`.

@@ -6,7 +6,7 @@ allowed-tools: Read, Write
 
 # inbox-add
 
-Append a single task line to an Obsidian Vault's `inbox.md` so the vault-side `inbox-process` skill can later route it to a project. This is a **project-local** skill (lives under `.claude/skills/inbox-add/`, not registered in `.claude-plugin/marketplace.json`) and is exposed globally via a `~/.claude/skills/inbox-add` symlink.
+Append a single task line to an Obsidian Vault's `inbox.md` so the vault-side `inbox-process` skill can later route it to a project.
 
 The companion vault-side skill `inbox-process` reads `#<project>` as a `#project-hint` and dispatches the task into `projects/<project>/tasks/`.
 

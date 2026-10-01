@@ -44,7 +44,7 @@ This skill's procedure dispatches subagents, so invoking the skill **is** the re
 
 4. **Publish.** Call `Artifact` with `file_path` `<out dir>/furikaeri.html`, `icon` `report`, and `description` one sentence naming the session and its span. Do not load the design skills: the page's layout and theming are fixed in the renderer.
 
-5. **Report.** In the resolved language, give the URL, then at most four lines: wall time with the AI and person shares, the longest phase, and the first finding's title, or the aside's heading when there are no findings, or nothing further when there is neither. Nothing else.
+5. **Report.** In the resolved language, give the URL, then one line each for the wall time with the AI and person shares, the longest phase, and the first finding's title (the aside's heading when there are no findings; omit this line when there is neither), then the return contract's JSON block.
 
 ## Return contract
 

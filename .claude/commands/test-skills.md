@@ -1,11 +1,11 @@
 ---
 description: Test all plugin skills and agents to verify they work correctly
-allowed-tools: Bash(which *), Skill(ask-claude), Skill(ask-codex), Skill(ask-gemini), Skill(ask-copilot), Skill(ask-agy), Skill(ask-peer), Skill(tr), Skill(caffeinate), Skill(security-scanner), Task
+allowed-tools: Bash(which *), Skill(ask-claude), Skill(ask-codex), Skill(ask-gemini), Skill(ask-copilot), Skill(ask-agy), Skill(ask-peer), Skill(tr), Skill(caffeinate), Skill(security-scanner), Agent
 ---
 
 # Test Skills and Agents
 
-このリポジトリの全プラグインのスキル・エージェントが正常に動作するかテストします。
+下表のスキル・エージェントが正常に動作するかテストします。
 
 ## テスト対象
 
@@ -85,16 +85,16 @@ allowed-tools: Bash(which *), Skill(ask-claude), Skill(ask-codex), Skill(ask-gem
 
 ### Step 3: エージェント動作テスト
 
-`Task` ツールを使って各エージェントをテストします。
+`Agent` ツールを使って各エージェントをテストします。
 
 #### tr エージェント
 
-- `Task(subagent_type: "tr", prompt: "Translate: Good morning")` を実行
+- `Agent(subagent_type: "tr", prompt: "Translate: Good morning")` を実行
 - 日本語への翻訳結果を確認
 
 #### tr-hq エージェント
 
-- `Task(subagent_type: "tr-hq", prompt: "Translate: The quick brown fox jumps over the lazy dog")` を実行
+- `Agent(subagent_type: "tr-hq", prompt: "Translate: The quick brown fox jumps over the lazy dog")` を実行
 - 日本語への翻訳結果を確認
 
 ### Step 4: 結果サマリー

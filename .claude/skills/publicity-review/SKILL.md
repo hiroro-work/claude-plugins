@@ -18,7 +18,7 @@ The caller passes these fields in natural language (the skill extracts them from
 
 - `Base ref` *(optional, default `HEAD`)* — git ref to diff against
 - `Max iterations` *(optional, default `1`)* — upper bound on the refinement loop. Default `1` is a single detect-and-apply pass — a caller that wants the applied fixes re-verified raises it explicitly
-- `Model` *(optional, default `sonnet`)* — model for the reviewer `Agent` dispatch, or `inherit` to use the session model. Accepted values are whichever model ids the current `Agent` tool's `model` parameter allows — see `rules-review` SKILL.md's `Model:` paragraph (`§ Usage`) for the live-schema validity check this shares. An **independent optional field** — adding it does not turn the contract into a fixed-arity mode gate (the other fields keep their own defaults). **Default `sonnet`** applies to **every** caller. A caller-supplied `Model:` value **wins over** this default (arg-wins). The model applies **only on the Claude Code `Agent`-dispatch path**; on the inline fallback path no `Agent` is spawned, so it is moot (the executing agent's own model governs).
+- `Model` *(optional, default `sonnet`)* — model for the reviewer `Agent` dispatch, or `inherit` to use the session model. Accepted values are whichever model ids the current `Agent` tool's `model` parameter allows — see `rules-review` SKILL.md's `Model:` paragraph (`§ Usage`) for the live-schema validity check this shares. **Default `sonnet`** applies to **every** caller. A caller-supplied `Model:` value **wins over** this default (arg-wins). The model applies **only on the Claude Code `Agent`-dispatch path**; on the inline fallback path no `Agent` is spawned, so it is moot (the executing agent's own model governs).
 
 The caller must **not** stage changes while this skill is running. The skill reads the working tree vs `Base ref`; staged content would mix into the diff and corrupt the verdict.
 
@@ -36,7 +36,7 @@ The caller must **not** stage changes while this skill is running. The skill rea
 
 ### Step 2 — Iteration loop (i = 1 .. Max iterations)
 
-**Pre-register iteration tasks** — before entering the loop, `TaskCreate` one task per iteration named `iteration 1`, ..., `iteration <Max iterations>`. Mark `in_progress` (via `TaskUpdate`) before each dispatch, `completed` after parse + apply (a `converged` verdict marks `completed` immediately after parsing). On early convergence or safety-rail exit, mark remaining tasks `completed` with note appended to the task's `description` field (the `content` field under the `TodoWrite` fallback) as `— skipped: <reason>`. Where the Task tools are unavailable (e.g. the VSCode extension, or Claude Code before v2.1.142), use the equivalent `TodoWrite` operations instead — the status values and pre-register semantics are identical; `allowed-tools` grants both.
+**Pre-register iteration tasks** — before entering the loop, `TaskCreate` one task per iteration named `iteration 1`, ..., `iteration <Max iterations>`. Mark `in_progress` (via `TaskUpdate`) before each dispatch, `completed` after parse + apply (a `converged` verdict marks `completed` immediately after parsing). On early convergence or safety-rail exit, mark remaining tasks `completed` with note appended to the task's `description` field (the `content` field under the `TodoWrite` fallback) as `— skipped: <reason>`. Where the Task tools are unavailable (e.g. the VSCode extension), use the equivalent `TodoWrite` operations instead — the status values and pre-register semantics are identical; `allowed-tools` grants both.
 
 #### (a) Dispatch reviewer Agent
 
@@ -165,7 +165,7 @@ If `remaining_findings` is empty, set `status=converged`. Otherwise set `status=
 
 ### Step 4 — Emit structured summary
 
-End your response with a single fenced JSON block matching this schema:
+Emit a single fenced JSON block at the end of the response, matching this schema:
 
 ```json
 {
@@ -201,11 +201,11 @@ If the `Agent` tool call itself errors, times out, or returns an empty response,
 
 When invoked as a sub-skill (i.e. via `Skill(publicity-review)` from an orchestrator), the fenced JSON verdict block this skill emits is the **structured return value** of the skill's procedure — it is **not** a deliverable to the user, and emitting it does **not** terminate the orchestrator's turn. The same agent that ran this skill must immediately issue the next tool call dictated by the orchestrator's flow (see `dev-workflow-triage` SKILL.md `§ No-Stall Principle`; orchestrators that surface a per-callee guidance bullet — e.g. `dev-workflow-triage`'s `**Pre-invocation reminder**` — name the specific next action there). Do not insert a prose summary, an acknowledgment, or a "shall I proceed?" sentence between the JSON verdict and the next tool call. The JSON verdict block and the next tool call MUST be emitted in the same assistant turn. Closing the turn after emitting the JSON block — even with no prose between them — is the same violation as inserting prose. Only one fenced JSON block — the verdict block — appears in the response, so callers can locate it unambiguously. The skill's own procedure is over; the orchestrator's procedure continues without pause.
 
-When invoked from `dev-workflow`'s `hooks.on_complete` mechanism, `status=unresolved` means the diff still contains content unsuitable for publication; `dev-workflow` does not commit, so no auto-revert runs, but the caller must treat this as a high-stakes signal and surface `remaining_findings` prominently rather than passing the JSON through unremarked.
+When invoked from `dev-workflow`'s `hooks.on_complete` mechanism, `status=unresolved` means the diff still contains content unsuitable for publication. The hook runs before `dev-workflow`'s user-gated Interactive Commits and nothing reverts the content automatically, so the caller must treat this as a high-stakes signal and surface `remaining_findings` prominently rather than passing the JSON through unremarked.
 
 ## Agent unavailable fallback
 
-Detect availability and fall back per the canonical write-up in `rules-review` SKILL.md `§ 5. Review` (the "Detecting Agent availability" / "Fallback when Agent is unavailable" paragraphs). The publicity-review specialization: when falling back, walk the embedded reviewer prompt over each affected file inline-sequentially in the main thread and emit the same fenced JSON return contract defined above so callers' parsers handle both paths identically.
+Detect availability and fall back per the **Claude Code path** / **Fallback path** bullets in `rules-review` SKILL.md `§ 5. Review`. The publicity-review specialization: when falling back, walk the embedded reviewer prompt over each affected file inline-sequentially in the main thread and emit the same fenced JSON return contract defined above so callers' parsers handle both paths identically.
 
 ## Stop hook structural conflict (caller-side note)
 

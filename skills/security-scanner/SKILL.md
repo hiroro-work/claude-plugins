@@ -108,12 +108,13 @@ Parse the GitHub URL to extract owner, repo, branch, path, and determine scan ty
    - If branch is empty, omit `?ref=` parameter (uses default branch)
    - Use WebFetch with prompt: "Extract the JSON array of files. For each item, return: name, type (file/dir), download_url"
 2. Determine content type and fetch accordingly:
-   - **If `.claude-plugin/plugin.json` exists**: Full plugin scan (fetch all plugin files)
+   - **If a `.claude-plugin/` directory exists and its listing contains `plugin.json`**: Full plugin scan (fetch all plugin files)
    - **If `skills/` exists**: Skill scan (fetch skill directories)
    - **If `SKILL.md` exists**: Single skill directory scan (fetch all files in directory)
-   - **If none of the above**: Error "No scannable content found. Expected plugin.json, skills/ directory, or SKILL.md."
-3. Recursively fetch required directories:
-   - `skills/` → fetch subdirectories → fetch `SKILL.md` files
+   - **If none of the above**: Error "No scannable content found. Expected .claude-plugin/plugin.json, skills/ directory, or SKILL.md."
+3. Recursively fetch required directories and files:
+   - `.claude-plugin/` → fetch `plugin.json`
+   - `skills/` → fetch subdirectories → fetch every file under each skill directory
    - `agents/` → fetch all `*.md` files (if exists)
    - `hooks/` → fetch `hooks.json` (if exists)
    - every script a hook or skill invokes (e.g. `skills/*/scripts/**`, `skills/*/*.sh`)
@@ -214,7 +215,7 @@ For each agent in `target_agents` list, collect skills from the corresponding di
 
 For each non-trusted plugin:
 
-1. **Read plugin metadata** (`plugin.json`, `README.md`) to understand its stated purpose
+1. **Read plugin metadata** (`.claude-plugin/plugin.json`, `README.md`) to understand its stated purpose
 2. **Read all executable content:**
    - `skills/*/SKILL.md` - Skill definitions and instructions
    - `agents/*.md` - Agent system prompts (if exists)

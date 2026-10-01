@@ -26,7 +26,6 @@ Run the following directly in the main thread (no subagent dispatch is needed �
    # immediately — see § Return contract.
    ```
 
-
 2. **For each bundle member entry** `./skills/<name>`:
 
    - Resolve `canonical=skills/<name>/`

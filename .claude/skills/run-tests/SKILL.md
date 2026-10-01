@@ -1,7 +1,7 @@
 ---
 name: run-tests
 description: Verify plugins marketplace structure, version consistency, and JSON/frontmatter validity via subagent
-allowed-tools: Agent, Bash(git diff *), Bash(jq *), Bash(ls *), Bash(readlink *), Bash(test *), Read, Glob
+allowed-tools: Agent, Bash(jq *), Bash(ls *), Bash(readlink *), Bash(test *), Read, Glob
 ---
 
 # Test Runner

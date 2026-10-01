@@ -73,7 +73,7 @@ Single invocation, top to bottom:
 (f) **Detect-and-warn** — only when a requested callee is **unsafe** (per § Closed list) and visualization was applied. `Read` each `visualized_paths` entry and collect into `corrupted_paths` any path that is now corrupted:
 
 - **Primary detector (signal #2)**: re-parse the file's YAML frontmatter yourself (orchestrator-side, independent of callee behavior). A path whose `---`-delimited frontmatter no longer parses is corrupted. A file without a frontmatter block is never flagged.
-- **Corroborating (signal #1)**: a callee verdict with `reason: "frontmatter broken"` referencing the path (`status: "conflict"` from `publicity-review` / `verify-diff`, `status: "error"` from `skill-review`).
+- **Corroborating (signal #1)**: a callee verdict with `reason: "frontmatter broken"` referencing the path (`status: "conflict"` from `publicity-review` / `verify-diff`, `status: "error"` from `skill-review` / `tidy`).
 
 This pass **warns only**: it does not restore content (see § Constraints).
 

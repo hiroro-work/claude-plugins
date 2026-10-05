@@ -9,9 +9,7 @@ Turns a web feature built in this session into a demo: a page of numbered steps,
 /demo --init                            # Setup mode only: propose and write the settings
 ```
 
-Run `/demo --init` once per project before using demo from dev-workflow, so the settings are proposed and tried in a session of their own. A run without settings still enters Setup mode by itself and continues into the demo (see § Setup mode).
-
-From a dev-workflow run, the Update Rules gate asks `demo` / `no-demo` when `playwright-cli` is installed, and `demo` runs this skill with the run's plan and base commit.
+From a dev-workflow run, the Update Rules gate asks `demo` / `no-demo` only in a project that has `.claude/demo.md` or `.claude/demo.local.md`, and `demo` runs this skill with the run's plan and base commit. Run `/demo --init` once to set a project up; a project without settings never sees the question. A direct `/demo` run without settings still enters Setup mode by itself and continues into the demo (see § Setup mode).
 
 ## How it works
 

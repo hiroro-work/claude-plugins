@@ -20,7 +20,7 @@ A guided development workflow with fixed phases in a fixed order. What changes b
 | 12 | Verify Fixes | Bash, `Skill(rules-review)` | no review fixes |
 | 13 | Completion Hooks | `hooks.on_complete` | key unset |
 | 14 | Interactive Commits | **user gates**, git; one commit per Build order step with review fixes absorbed; crit browser with `commit_review_gate: crit` | never |
-| 15 | Update Rules | **user gate** (covers phases 15–18), `Skill(extract-rules)`, `Skill(demo)` when playwright-cli is installed | extraction: Trivial, Simple |
+| 15 | Update Rules | **user gate** (covers phases 15–18), `Skill(extract-rules)`, `Skill(demo)` when `.claude/demo.md` or `.claude/demo.local.md` exists | extraction: Trivial, Simple |
 | 16 | PR Rule Extraction | **user gate**, `Skill(extract-rules)` | empty answer |
 | 17 | Self-Retrospective | **user gate**, `gh api` | `self_retrospective.feedback` unset, or skipped at the phase 15 gate |
 | 18 | Workability Retrospective | **user gate**, project tooling candidates | `workability_retrospective.enabled` not `true`, or skipped at the phase 15 gate |

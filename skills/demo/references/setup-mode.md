@@ -1,6 +1,6 @@
 # Setup mode
 
-Read from `SKILL.md` § Settings when neither `.claude/demo.md` nor `.claude/demo.local.md` exists. Unqualified `§` references in this file point into `SKILL.md`.
+Read from `SKILL.md` § Settings when neither `.claude/demo.md` nor `.claude/demo.local.md` exists, or when `--init` was given. With `--init` and a settings file present, stop before reading the project: `status: "skipped"`, `reason: "settings exist"`. Unqualified `§` references in this file point into `SKILL.md`.
 
 ## Read the project
 
@@ -24,4 +24,4 @@ USER GATE. Show the proposed keys as the YAML frontmatter that would be written,
 
 ## Write
 
-On `approve`: `Read` `.claude/demo.md` once more. If it now exists, stop with `status: "error"`, `reason: "setup conflict"`; never overwrite. Otherwise `Write` the file with the frontmatter only. Then run `git check-ignore .demo .playwright-cli`; for each path missing from its output, append the line `.demo/` or `.playwright-cli/` to `.gitignore` (`Edit`, or `Write` when there is no `.gitignore`). `.claude/demo.local.md` is not created. Continue at § Procedure step 2 (Inputs) with the written keys as the settings.
+On `approve`: `Read` `.claude/demo.md` once more. If it now exists, stop with `status: "error"`, `reason: "setup conflict"`; never overwrite. Otherwise `Write` the file with the frontmatter only. Then run `git check-ignore .demo .playwright-cli`; for each path missing from its output, append the line `.demo/` or `.playwright-cli/` to `.gitignore` (`Edit`, or `Write` when there is no `.gitignore`). `.claude/demo.local.md` is not created. With `--init`, report the written file and stop with `status: "ok"` and `steps` / `failed` at `0`. Otherwise continue at § Procedure step 2 (Inputs) with the written keys as the settings.

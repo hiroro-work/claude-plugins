@@ -6,7 +6,10 @@ Turns a web feature built in this session into a demo: a page of numbered steps,
 /demo                                   # steps from the uncommitted diff
 /demo --plan .claude/plans/<slug>.md    # steps from the plan and the diff
 /demo --base main --lang en --model opus
+/demo --init                            # Setup mode only: propose and write the settings
 ```
+
+Run `/demo --init` once per project before using demo from dev-workflow, so the settings are proposed and tried in a session of their own. A run without settings still enters Setup mode by itself and continues into the demo (see § Setup mode).
 
 From a dev-workflow run, the Update Rules gate asks `demo` / `no-demo` when `playwright-cli` is installed, and `demo` runs this skill with the run's plan and base commit.
 
@@ -46,7 +49,7 @@ Without `url`, the first `http(s)://` URL printed by the app is used, then `http
 
 ### Setup mode
 
-When neither settings file exists, the skill reads the project's package scripts, the end-to-end runner's web-server configuration, port scripts, emulator or container configurations and seed tasks, proposes the keys, tries them once, and shows the proposal for `approve` / `edit` / `cancel`. On `approve` it writes `.claude/demo.md` and adds `.demo/` and `.playwright-cli/` to `.gitignore` when they are not ignored yet. Outside Setup mode the skill never edits `.gitignore`; it only reports when those paths are not ignored.
+`/demo --init`, or a run when neither settings file exists, reads the project's package scripts, the end-to-end runner's web-server configuration, port scripts, emulator or container configurations and seed tasks, proposes the keys, tries them once, and shows the proposal for `approve` / `edit` / `cancel`. On `approve` it writes `.claude/demo.md` and adds `.demo/` and `.playwright-cli/` to `.gitignore` when they are not ignored yet. `--init` stops there; a plain run continues into the demo. With `--init` and a settings file already present, nothing is written. Outside Setup mode the skill never edits `.gitignore`; it only reports when those paths are not ignored.
 
 ## Output
 

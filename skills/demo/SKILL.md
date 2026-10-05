@@ -8,7 +8,10 @@ allowed-tools: Read, Write, Edit, Glob, Grep, Agent, Artifact, AskUserQuestion, 
 
 ```text
 /demo [--plan <path>] [--base <ref>] [--lang ja|en] [--model <id>]
+/demo --init
 ```
+
+`--init` runs Setup mode only: it proposes and writes the settings, then stops with the return contract (`status: "ok"`, no capture). When a settings file already exists it stops with `status: "skipped"`, `reason: "settings exist"` and never overwrites. Without `--init`, a run that finds no settings file enters Setup mode by itself and continues into the demo.
 
 Invocation contract, as fields in the invocation text (a field counts as provided when its value is non-empty): `Plan:` (the plan document the feature was built from; optional), `Base ref:` (git ref the diff is taken against; default `HEAD`), `Language:` (optional, see § Language), `Model:` (optional, see § Model). The command-line flags map onto the same fields.
 
@@ -16,7 +19,7 @@ Everything the run produces goes under `.demo/<slug>/` at the repository root: t
 
 ## No-Stall Principle
 
-The only paths that do not reach § Return contract with `status: "ok"`, each ending with the contract's JSON block: `playwright-cli --help video-chapter` exiting non-zero (`playwright-cli not installed`); a settings file that exists but cannot be read (`settings unreadable`); no `start_command` after the merge (`start_command unset`); `cancel` at the Setup gate (`setup declined`); `.claude/demo.md` appearing between the Setup gate and its write (`setup conflict`); neither a readable plan nor a diff (`nothing to demo`); `skip` at the start-failure gate (`dev server not ready`); `skip` at the step-table gate (`declined at step table`); the capture agent's second unparseable reply (`no parseable capture result`); a capture result that fails the schema check (`capture schema violation`); the renderer rejecting `steps.json` (`page rejected`). Once the app has been started, every one of these runs § Procedure step 7 (Stop the app) before emitting the block.
+The only paths that do not reach § Return contract with `status: "ok"`, each ending with the contract's JSON block: `playwright-cli --help video-chapter` exiting non-zero (`playwright-cli not installed`); a settings file that exists but cannot be read (`settings unreadable`); no `start_command` after the merge (`start_command unset`); `cancel` at the Setup gate (`setup declined`); `--init` with a settings file present (`settings exist`); `.claude/demo.md` appearing between the Setup gate and its write (`setup conflict`); neither a readable plan nor a diff (`nothing to demo`); `skip` at the start-failure gate (`dev server not ready`); `skip` at the step-table gate (`declined at step table`); the capture agent's second unparseable reply (`no parseable capture result`); a capture result that fails the schema check (`capture schema violation`); the renderer rejecting `steps.json` (`page rejected`). Once the app has been started, every one of these runs § Procedure step 7 (Stop the app) before emitting the block.
 
 The capture agent's reply is a return value: judge it and issue the next tool call at once. Non-fatal outcomes are recorded and the run continues: a step marked `failed`, a missing recording, a missing or failing `Artifact` tool, `.demo/` or `.playwright-cli/` not gitignored, a process still listening after the stop.
 
@@ -33,7 +36,7 @@ Two files, YAML frontmatter only: `.claude/demo.md` (shared by the team, committ
 | `port` | none | When set, used as `DEMO_PORT` instead of a free port found at run time |
 | `auth_state` | none | Storage state file passed to `playwright-cli state-load` after the browser opens |
 
-When neither file exists, read `references/setup-mode.md` and follow it. When a file exists but `Read` fails for any other reason, or when it cannot be told whether the file is missing or unreadable, stop with `status: "error"`, `reason: "settings unreadable: <path>"` rather than entering Setup mode. When the merge leaves no `start_command`, stop with `status: "error"`, `reason: "start_command unset"`.
+When neither file exists, or `--init` was given, read `references/setup-mode.md` and follow it. When a file exists but `Read` fails for any other reason, or when it cannot be told whether the file is missing or unreadable, stop with `status: "error"`, `reason: "settings unreadable: <path>"` rather than entering Setup mode. When the merge leaves no `start_command`, stop with `status: "error"`, `reason: "start_command unset"`.
 
 ## Language
 

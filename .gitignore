@@ -6,3 +6,5 @@
 .triage/
 
 .vscode/settings.json
+.demo/
+.playwright-cli/

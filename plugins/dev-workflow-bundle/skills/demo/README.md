@@ -14,11 +14,11 @@ From a dev-workflow run, the Update Rules gate asks `demo` / `no-demo` only in a
 ## How it works
 
 1. Reads `.claude/demo.md` and `.claude/demo.local.md` (Setup mode proposes them when neither exists, see below).
-2. Derives 3–10 steps from the plan's After, Scope and Test plan and from the diff, each with the data it needs.
-3. Starts the app: picks a free port (or the configured one), runs `reset_command`, runs `start_command` with `DEMO_PORT` in the environment, resolves the URL, and waits until it answers. A start that times out shows the log and asks `retry` / `skip`.
-4. Shows the URL, the step table and every data script, and asks `approve` / `revise` / `skip`. After `approve` nothing else asks a question.
-5. Opens the browser, starts the recording, and hands the steps to one subagent that takes a snapshot, performs the action, checks the result and takes a screenshot per step.
-6. Stops the recording and the browser, then the app.
+2. Derives 3–10 steps from the plan's After, Scope and Test plan and from the diff, each with the data it needs. Records created on screen get unique values (a timestamp in the email address, for example), so a second capture does not collide with the first.
+3. Starts the app: picks a free port (or the configured one), runs `reset_command`, runs `start_command` with `DEMO_PORT` in the environment, resolves the URL, and waits until it answers. A start that times out shows the log and asks `retry` / `skip`. Once the app answers, it opens each step's page once and adds an insertion script for any data the page shows to be missing.
+4. Shows the URL, the step table, every data script and what the data check found, and asks `approve` / `revise` / `skip`. It also asks whether a step that fails for missing data may get an extra insertion script and the flow be captured once more. After that nothing else asks a question.
+5. Opens the browser, starts the recording, and hands the steps to one subagent that takes a snapshot, performs the action, checks the result and takes a screenshot per step, and marks each failed step as a data or an app problem.
+6. Stops the recording and the browser. When re-capture was allowed and a step failed for missing data, it writes an insertion script for that step and captures the whole flow once more, with the app still running. Then it stops the app.
 7. Renders `index.html` from the steps and publishes it with the screenshots (and the recording when it is 15MB or smaller, the artifact file limit) as an artifact.
 
 ## Settings

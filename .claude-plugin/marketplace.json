@@ -144,12 +144,12 @@
     },
     {
       "name": "dev-workflow",
-      "description": "Guided development workflow: task decomposition, planning, peer plan review, browser plan approval, implementation, tidy, check/test, rules and code review, one commit per build step, rule updates, retrospectives; mob mode for a junior navigator",
+      "description": "Guided development workflow: task decomposition, planning, peer plan review, browser plan approval, implementation, tidy, check/test, rules and code review, one commit per build step, rule updates, retrospectives, an optional demo; mob mode for a junior navigator",
       "source": "./skills/dev-workflow",
       "skills": [
         "./"
       ],
-      "version": "2.5.2",
+      "version": "2.6.0",
       "author": {
         "name": "hiropon"
       },
@@ -157,7 +157,7 @@
     },
     {
       "name": "dev-workflow-bundle",
-      "description": "Development workflow bundle (includes peer + extract-rules + dev-workflow + rules-review + tidy + prose-polish + mobpro + kabeuchi + artifactor + furikaeri)",
+      "description": "Development workflow bundle (includes peer + extract-rules + dev-workflow + rules-review + tidy + prose-polish + mobpro + kabeuchi + artifactor + furikaeri + demo)",
       "source": "./plugins/dev-workflow-bundle",
       "skills": [
         "./skills/ask-peer",
@@ -169,9 +169,10 @@
         "./skills/mobpro",
         "./skills/kabeuchi",
         "./skills/artifactor",
-        "./skills/furikaeri"
+        "./skills/furikaeri",
+        "./skills/demo"
       ],
-      "version": "2.18.3",
+      "version": "2.19.0",
       "author": {
         "name": "hiropon"
       },
@@ -224,6 +225,19 @@
         "./"
       ],
       "version": "1.0.2",
+      "author": {
+        "name": "hiropon"
+      },
+      "category": "workflow"
+    },
+    {
+      "name": "demo",
+      "description": "Demo of a web feature as a numbered step page with screenshots, published as an artifact, plus a screen recording with chapters: starts the app, derives the steps from the plan and the diff, drives the browser with playwright-cli, stops the app. Offered at dev-workflow's Update Rules gate",
+      "source": "./skills/demo",
+      "skills": [
+        "./"
+      ],
+      "version": "1.0.0",
       "author": {
         "name": "hiropon"
       },

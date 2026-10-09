@@ -6,9 +6,15 @@ Read from `SKILL.md` § Procedure step 6 (Capture). The text after the rule belo
 
 You drive a browser through the steps listed under `--- STEPS ---` and take one screenshot per step. The browser is already open at `{{url}}` and signed in when the app needs it: every command is `playwright-cli -s={{session}} <command>`. Recording is already running; `{{t0}}` is the `Date.now()` value taken right after it started. Screenshots go to `{{out_dir}}`.
 
+Settings for this run:
+
+- Chapter cards: `{{chapters}}` (`true` shows the cards below; `false` shows none)
+- Recording scope: `{{video}}` (`full` records through the error cases; `normal` stops before them)
+- Language: `{{language}}`
+
 In `--- STEPS ---`, a step's `feature` is the 1-based position of its feature in `features`; the feature's letter is `A` for position 1, `B` for 2, and so on. Every `normal` step comes before every `error` step.
 
-**Positions.** At each step card and feature card position below, run `eval "() => Math.floor((Date.now() - {{t0}}) / 1000)"` before the card and keep the integer: it is the step's `at` at a step card, the feature's `at` at its normal-case feature card, and the feature's `error_at` at its error-case feature card. Take the position whether or not `{{chapters}}` is `true`; the card itself is shown only when `{{chapters}}` is `true`, chained onto the position read in the same command line with `&&`.
+**Positions.** At each step card and feature card position below, run `eval "() => Math.floor((Date.now() - {{t0}}) / 1000)"` before the card and keep the integer: it is the step's `at` at a step card, the feature's `at` at its normal-case feature card, and the feature's `error_at` at its error-case feature card. Take the position whether or not chapter cards are on; the card itself is shown only when they are on, chained onto the position read in the same command line with `&&`.
 
 **Cards**, each a `video-chapter` command, using the fixed words in the table below (the `en` column for any language other than `ja`):
 
@@ -28,7 +34,7 @@ When several cards fall before the same step, they run in this order: normal cas
 | the end | 以上です | The end |
 | separator | `、` | a comma and a space |
 
-**Stopping early.** When `{{video}}` is `normal` and the steps include an `error` step, the recording ends where the error cases begin: in place of the error-cases card, show the closing card (when `{{chapters}}` is `true`) and run `{{video_stop}}`. After that, show no card and take no position.
+**Stopping early.** When the recording scope is `normal` and the steps include an `error` step, the recording ends where the error cases begin: in place of the error-cases card, show the closing card (when chapter cards are on) and run `{{video_stop}}`. After that, show no card and take no position.
 
 For each step, in the listed order, after its cards:
 
@@ -38,9 +44,9 @@ For each step, in the listed order, after its cards:
 4. Run `snapshot` again. Write `result`: one sentence on what the page showed after the action (a message, a value, a count, an error text), on every step, `ok` or not, in words a reader can set beside `expected`. Then check `expected` against the page. When you cannot confirm it, the step's `status` is `failed` and `note` says what differed; still take the screenshot. On every `failed` step, set `cause`: `data` when the page points to a missing or malformed record (not found, an empty list, a missing field, a validation message about stored data), `app` otherwise.
 5. Run `screenshot --filename {{out_dir}}/step-NN.png`, where `NN` is the step number, two digits, zero-padded.
 
-`result` and `note` are written in `{{language}}`.
+`result` and `note` are written in the language above.
 
-Rules: keep the listed order; add no step and no action the table does not name; do not run `open`, `close` or `video-start`; run `{{video_stop}}` only where the error cases begin and only when `{{video}}` is `normal`; do not dispatch any `Skill()` or `Agent`; do not read files outside `{{out_dir}}` and `.playwright-cli/`.
+Rules: keep the listed order; add no step and no action the table does not name; do not run `open`, `close` or `video-start`; run `{{video_stop}}` only where the error cases begin and only when the recording scope is `normal`; do not dispatch any `Skill()` or `Agent`; do not read files outside `{{out_dir}}` and `.playwright-cli/`.
 
 When every step is done, reply with one fenced JSON block and nothing after it:
 

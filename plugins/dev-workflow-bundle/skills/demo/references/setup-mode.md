@@ -12,7 +12,7 @@ Look for how the project is started and seeded, reading only what exists:
 - emulator or container configurations that expose ports
 - seed or reset tasks
 
-From these, propose `start_command` and, when the project gives them, `url`, `reset_command`, `port` and `ready_timeout`. Prefer a command that already takes its port from the environment; otherwise note in the proposal that the app may ignore `DEMO_PORT`.
+From these, propose `start_command` and, when the project gives them, `url`, `reset_command`, `port` and `ready_timeout`. When a script prints the port, propose it as the `port` command rather than wrapping it in a `url` command; `url` can then stay unset. Prefer a command that already takes its port from the environment; otherwise note in the proposal that the app may ignore `DEMO_PORT`.
 
 ## Trial run
 

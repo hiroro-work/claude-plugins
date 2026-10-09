@@ -31,7 +31,7 @@ From a dev-workflow run, the Update Rules gate asks `demo` / `no-demo` only in a
 | `reset_command` | none | Runs once before the start, with the same `DEMO_PORT`. Resets a throwaway environment |
 | `url` | none | A URL (`http://` / `https://`, `${VAR}` expanded from the environment plus `DEMO_PORT`), or a command whose first stdout line is the URL |
 | `ready_timeout` | `120` | Seconds to wait for the URL to answer, at most 590 (the Bash tool's 600 s limit minus the 10 s the wait call adds) |
-| `port` | none | Use this port as `DEMO_PORT` instead of a free one |
+| `port` | none | Use this port as `DEMO_PORT` instead of a free one: a number (`${VAR}` expanded), or a command whose first stdout line is the port, run before the start as `DEMO_PORT=0 <port>` |
 | `auth_state` | none | Storage state file loaded into the browser (`playwright-cli state-load`) |
 
 ```yaml
@@ -44,6 +44,15 @@ ready_timeout: 180
 ```
 
 Without `url`, the first `http(s)://` URL printed by the app is used, then `http://localhost:<port>`. A wrong URL can be corrected at the step-table gate with `revise`.
+
+When the project has a script that prints its port, a `port` command is usually enough and `url` can stay unset:
+
+```yaml
+---
+start_command: "pnpm dev"
+port: "node scripts/print-port.mjs --web"
+---
+```
 
 ### Setup mode
 

@@ -1,16 +1,16 @@
 # Capture prompt
 
-Read from `SKILL.md` § Procedure step 6 (Capture). The text after the rule below is the `--- TASK ---` section of the capture agent's prompt; `{{session}}`, `{{out_dir}}`, `{{url}}`, `{{chapters}}`, `{{t0}}`, `{{video}}` and `{{language}}` are filled in by the caller. Unqualified `§` references in this file point into `SKILL.md`.
+Read from `SKILL.md` § Procedure step 6 (Capture). The text after the rule below is the `--- TASK ---` section of the capture agent's prompt; `{{session}}`, `{{out_dir}}`, `{{url}}`, `{{chapters}}`, `{{t0}}`, `{{video}}`, `{{video_stop}}` and `{{language}}` are filled in by the caller. That text goes to a subagent that sees nothing else, so it carries no reference to this file or to `SKILL.md`.
 
 ---
 
 You drive a browser through the steps listed under `--- STEPS ---` and take one screenshot per step. The browser is already open at `{{url}}` and signed in when the app needs it: every command is `playwright-cli -s={{session}} <command>`. Recording is already running; `{{t0}}` is the `Date.now()` value taken right after it started. Screenshots go to `{{out_dir}}`.
 
-`--- STEPS ---` holds `features` (each with `name` and `description`) and `steps` (each with `n`, `feature`, `kind`, `path`, `action`, `expected`, `data`, `script`). A step's `feature` is the 1-based position of its feature; the feature's letter is `A` for position 1, `B` for 2, and so on. The steps are listed with every `normal` step first, then every `error` step.
+In `--- STEPS ---`, a step's `feature` is the 1-based position of its feature in `features`; the feature's letter is `A` for position 1, `B` for 2, and so on. Every `normal` step comes before every `error` step.
 
-**Positions.** At each card position below, run `eval "() => Math.floor((Date.now() - {{t0}}) / 1000)"` before the card and keep the integer: it is the step's `at` at a step card, the feature's `at` at its normal-case feature card, and the feature's `error_at` at its error-case feature card. Take the position whether or not `{{chapters}}` is `true`; the card itself is shown only when `{{chapters}}` is `true`.
+**Positions.** At each step card and feature card position below, run `eval "() => Math.floor((Date.now() - {{t0}}) / 1000)"` before the card and keep the integer: it is the step's `at` at a step card, the feature's `at` at its normal-case feature card, and the feature's `error_at` at its error-case feature card. Take the position whether or not `{{chapters}}` is `true`; the card itself is shown only when `{{chapters}}` is `true`, chained onto the position read in the same command line with `&&`.
 
-**Cards**, each a `video-chapter` command, using the fixed words in the table below:
+**Cards**, each a `video-chapter` command, using the fixed words in the table below (the `en` column for any language other than `ja`):
 
 - Opening, before anything else: `video-chapter "<every feature name, joined by the separator>" --duration 3000`.
 - Normal cases, right after the opening: `video-chapter "<normal cases>" --duration 1500`.
@@ -19,6 +19,8 @@ You drive a browser through the steps listed under `--- STEPS ---` and take one 
 - Step, before every step: `video-chapter "<n>. <action>" --duration 1200`.
 - Closing, after the last step: `video-chapter "<the end>" --duration 2000`.
 
+When several cards fall before the same step, they run in this order: normal cases or error cases, then feature, then step.
+
 | Word | `ja` | `en` |
 |---|---|---|
 | normal cases | 正常系 | Normal cases |
@@ -26,7 +28,7 @@ You drive a browser through the steps listed under `--- STEPS ---` and take one 
 | the end | 以上です | The end |
 | separator | `、` | a comma and a space |
 
-**Stopping early.** When `{{video}}` is `normal` and the steps include an `error` step, the recording ends where the error cases begin: in place of the error-cases card, show the closing card and run `video-stop` (`video-stop --filename {{out_dir}}/demo.webm` when `{{chapters}}` is `false`). After that, show no card and take no position: the error steps carry no `at`, and every feature's `error_at` is `null`.
+**Stopping early.** When `{{video}}` is `normal` and the steps include an `error` step, the recording ends where the error cases begin: in place of the error-cases card, show the closing card (when `{{chapters}}` is `true`) and run `{{video_stop}}`. After that, show no card and take no position.
 
 For each step, in the listed order, after its cards:
 
@@ -38,7 +40,7 @@ For each step, in the listed order, after its cards:
 
 `result` and `note` are written in `{{language}}`.
 
-Rules: keep the listed order; add no step and no action the table does not name; do not run `open`, `close` or `video-start`; run `video-stop` only as the **Stopping early** paragraph says; do not dispatch any `Skill()` or `Agent`; do not read files outside `{{out_dir}}` and `.playwright-cli/`.
+Rules: keep the listed order; add no step and no action the table does not name; do not run `open`, `close` or `video-start`; run `{{video_stop}}` only where the error cases begin and only when `{{video}}` is `normal`; do not dispatch any `Skill()` or `Agent`; do not read files outside `{{out_dir}}` and `.playwright-cli/`.
 
 When every step is done, reply with one fenced JSON block and nothing after it:
 

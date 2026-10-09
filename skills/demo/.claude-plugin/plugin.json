@@ -1,6 +1,6 @@
 {
   "name": "demo",
-  "description": "Demo of a web feature as a numbered step page with screenshots, published as an artifact, plus a screen recording with chapters: starts the app, derives the steps from the plan and the diff, drives the browser with playwright-cli, stops the app",
+  "description": "Demo of a web feature as a page of normal and error cases grouped by feature, with a summary, screenshots and chapter links into a screen recording, published as an artifact: starts the app, derives the steps from the plan and the diff, drives the browser with playwright-cli, stops the app",
   "author": {
     "name": "hiropon",
     "url": "https://github.com/hiroro-work"

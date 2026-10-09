@@ -1,6 +1,8 @@
 # demo
 
-Turns a web feature built in this session into a demo: a page of numbered steps, each with the action, the expected result and a screenshot, published as an artifact, plus a screen recording with one chapter per step. The skill starts the app itself, shows the steps for approval, drives the browser with `playwright-cli` in one subagent, and stops the app when it is done.
+Turns a web feature built in this session into a demo: a page of normal and error cases grouped by feature, each step with the action, the expected result, what the page showed and a screenshot, published as an artifact, plus a screen recording with chapter cards. The skill starts the app itself, shows the steps for approval, drives the browser with `playwright-cli` in one subagent, and stops the app when it is done.
+
+The page serves two readers. Someone who wants the gist reads the summary at the top and the normal cases. Someone who wants everything sees, per feature, how many error cases were not confirmed and opens those. A `🎬 m:ss` link beside each feature and step moves the recording on the page to that moment.
 
 ```text
 /demo                                   # steps from the uncommitted diff
@@ -14,12 +16,12 @@ From a dev-workflow run, the Update Rules gate asks `demo` / `no-demo` only in a
 ## How it works
 
 1. Reads `.claude/demo.md` and `.claude/demo.local.md` (Setup mode proposes them when neither exists, see below).
-2. Derives 3–10 steps from the plan's After, Scope and Test plan and from the diff, each with the data it needs. Records created on screen get unique values (a timestamp in the email address, for example), so a second capture does not collide with the first.
-3. Starts the app: picks a free port (or the configured one), runs `reset_command`, runs `start_command` with `DEMO_PORT` in the environment, resolves the URL, and waits until it answers. A start that times out shows the log and asks `retry` / `skip`. Once the app answers, it opens each step's page once and adds an insertion script for any data the page shows to be missing.
-4. Shows the URL, the step table, every data script and what the data check found, and asks `approve` / `revise` / `skip`. It also asks whether a step that fails for missing data may get an extra insertion script and the flow be captured once more. After that nothing else asks a question.
-5. Opens the browser, starts the recording, and hands the steps to one subagent that takes a snapshot, performs the action, checks the result and takes a screenshot per step, and marks each failed step as a data or an app problem.
+2. Groups the change into features, the actions a checker performs in a row for one purpose, and derives from the plan's After, Scope and Test plan and from the diff 3–10 normal-case steps plus one error-case step per branch the diff implements (input validation, permissions, behavior that depends on state). The steps run every normal case first, then every error case. Each step names the data it needs. Records created on screen get unique values (a timestamp in the email address, for example), so a second capture does not collide with the first. Sign-in is a step only when the diff changes sign-in; otherwise it happens before the capture.
+3. Starts the app: picks a free port (or the configured one), runs `reset_command`, runs `start_command` with `DEMO_PORT` in the environment, resolves the URL, and waits until it answers. A start that times out shows the log and asks `retry` / `skip`. Once the app answers, it signs in when the pages need it (keeping the session for the capture), opens each step's page once and adds an insertion script for any data the page shows to be missing.
+4. Shows the URL, the features, the step table with normal and error cases, every data script and what the data check found, and asks `approve` / `revise` / `skip`. `revise` can drop error cases; more than 10 of them come with a count and a time estimate. It also asks whether a step that fails for missing data may get an extra insertion script and the flow be captured once more. After that nothing else asks a question.
+5. Opens the browser, starts the recording, and hands the steps to one subagent. It shows an opening card, a normal-cases card, a card per feature and per step, an error-cases card and a closing card, and records each card's position in seconds. Per step it takes a snapshot, performs the action, writes what the page showed, checks it against the expected result and takes a screenshot, and marks each failed step as a data or an app problem.
 6. Stops the recording and the browser. When re-capture was allowed and a step failed for missing data, it writes an insertion script for that step and captures the whole flow once more, with the app still running. Then it stops the app.
-7. Renders `index.html` from the steps and publishes it with the screenshots (and the recording when it is 15MB or smaller, the artifact file limit) as an artifact.
+7. Renders `index.html`: a summary table with one row per feature, then per feature its normal cases and its error cases folded away (open when one is not confirmed), with open-all / close-all buttons and the chapter links. Publishes it with the screenshots (and the recording when it is 15MB or smaller, the artifact file limit; a larger recording stays out of the page) as an artifact. `confirmed` / `not confirmed` say whether the page matched the expected result; whether that result is right is the reader's call.
 
 ## Settings
 
@@ -33,6 +35,8 @@ From a dev-workflow run, the Update Rules gate asks `demo` / `no-demo` only in a
 | `ready_timeout` | `120` | Seconds to wait for the URL to answer, at most 590 (the Bash tool's 600 s limit minus the 10 s the wait call adds) |
 | `port` | none | Use this port as `DEMO_PORT` instead of a free one: a number (`${VAR}` expanded), or a command whose first stdout line is the port, run before the start as `DEMO_PORT=0 <port>` |
 | `auth_state` | none | Storage state file loaded into the browser (`playwright-cli state-load`) |
+| `error_cases` | `true` | `false` leaves the error-case steps out |
+| `video` | `full` | `normal` stops the recording after the normal cases; the error cases are still captured and shown on the page |
 
 ```yaml
 ---
@@ -60,7 +64,7 @@ port: "node scripts/print-port.mjs --web"
 
 ## Output
 
-Everything goes under `.demo/<slug>/` at the repository root: `step-NN.png`, `demo.webm`, `steps.json`, `server.log`, `index.html`. `<slug>` is the plan file's name, or a timestamp without a plan. The directory is meant to be gitignored; the skill never commits it. `playwright-cli` also writes its snapshots to `.playwright-cli/` in the working directory.
+Everything goes under `.demo/<slug>/` at the repository root: `step-NN.png`, `demo.webm`, `steps.json`, `server.log`, `index.html`. `<slug>` is the plan file's name, or a timestamp without a plan. `steps.json` holds the features (name, description, chapter positions) and, per step, its feature, its kind (`normal` / `error`), what the page showed (`result`) and its position in the recording in seconds (`at`). When the skill signs in itself, `auth.json` keeps that session for the capture; it holds cookies. The directory is meant to be gitignored; the skill never commits it. `playwright-cli` also writes its snapshots to `.playwright-cli/` in the working directory.
 
 ## Requirements
 

@@ -62,10 +62,12 @@ nav.toc { background: var(--card); border: 1px solid var(--line); border-radius:
 nav.toc h2 { font-size: .9rem; color: var(--muted); margin: 0 0 8px; }
 nav.toc h3 { font-size: 1rem; margin: 12px 0 4px; }
 nav.toc ol { list-style: none; margin: 0; padding: 0; }
-nav.toc li { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; padding: 4px 0; border-top: 1px solid var(--line); }
+nav.toc li { border-top: 1px solid var(--line); }
 nav.toc li:first-child { border-top: 0; }
-nav.toc a { text-decoration: none; }
-.letter, .case-id, nav.toc a { color: var(--accent); font-family: "IBM Plex Mono", monospace; }
+nav.toc a { color: inherit; text-decoration: none; }
+nav.toc li a { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; padding: 4px 0; }
+nav.toc a:hover > span:not(.badge):not(.kind) { text-decoration: underline; }
+.letter, .case-id { color: var(--accent); font-family: "IBM Plex Mono", monospace; }
 .kind { font-size: .78rem; color: var(--muted); white-space: nowrap; }
 section.feature { margin: 0 0 40px; }
 section.feature > h2 { font-size: 1.4rem; margin: 0 0 4px; display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
@@ -129,15 +131,15 @@ process.stdout.write(`${args.out}\n`);
 
 function toc() {
   return `<nav class="toc"><h2>${esc(L.toc)}</h2>
-${features.map((f) => `<h3><span class="letter">${esc(f.letter)}.</span> ${esc(f.name)}</h3>
+${features.map((f) => `<h3><a href="#feature-${esc(f.letter)}"><span class="letter">${esc(f.letter)}.</span> <span>${esc(f.name)}</span></a></h3>
 <ol>
-${f.cases.map((c) => `<li><a href="#case-${esc(c.id)}">${esc(c.id)}</a>${caseLine(c)}</li>`).join("\n")}
+${f.cases.map((c) => `<li><a href="#case-${esc(c.id)}"><span class="case-id">${esc(c.id)}</span>${caseLine(c)}</a></li>`).join("\n")}
 </ol>`).join("\n")}
 </nav>`;
 }
 
 function renderFeature(f) {
-  return `<section class="feature">
+  return `<section class="feature" id="feature-${esc(f.letter)}">
 <h2><span class="letter">${esc(f.letter)}.</span><span>${esc(f.name)}</span></h2>
 ${f.description ? `<p class="desc">${esc(f.description)}</p>` : ""}
 ${f.cases.map(renderCase).join("\n")}

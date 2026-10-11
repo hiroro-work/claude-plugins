@@ -61,10 +61,12 @@ function between(html, from, to) {
 test("the contents list has one row per test case with its id and status", () => {
   const toc = between(goodJa, '<nav class="toc">', "</nav>");
   assert.equal(count(toc, /<li>/g), 4);
-  assert.ok(toc.includes('<a href="#case-A-1">A-1</a><span class="kind">正常系</span><span>A visitor signs up</span><span class="badge ok">'));
-  assert.ok(toc.includes('<a href="#case-A-2">A-2</a><span class="kind">異常系</span><span>An empty email is rejected</span>'));
-  assert.ok(toc.includes('<a href="#case-A-3">A-3</a><span class="kind">異常系</span><span>A taken email is rejected</span><span class="badge ng">'));
-  assert.ok(toc.includes('<a href="#case-B-1">B-1</a>'));
+  assert.ok(toc.includes('<a href="#case-A-1"><span class="case-id">A-1</span><span class="kind">正常系</span><span>A visitor signs up</span><span class="badge ok">確認済み</span></a>'));
+  assert.ok(toc.includes('<a href="#case-A-2"><span class="case-id">A-2</span><span class="kind">異常系</span><span>An empty email is rejected</span>'));
+  assert.ok(toc.includes('<a href="#case-A-3"><span class="case-id">A-3</span><span class="kind">異常系</span><span>A taken email is rejected</span><span class="badge ng">'));
+  assert.ok(toc.includes('<a href="#case-B-1">'));
+  assert.ok(toc.includes('<h3><a href="#feature-B"><span class="letter">B.</span> <span>Edit the profile</span></a></h3>'));
+  assert.ok(goodJa.includes('<section class="feature" id="feature-B">'));
 });
 
 test("only the first feature's first normal case starts open", () => {

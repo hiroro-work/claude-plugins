@@ -1,0 +1,18 @@
+{
+  "name": "demo",
+  "description": "Demo of a web feature as a page of test cases grouped by feature, each with its precondition, its own screen recording and its steps with screenshots, published as an artifact: starts the app, derives the test cases from the plan and the diff, drives the browser with playwright-cli, stops the app",
+  "author": {
+    "name": "hiropon",
+    "url": "https://github.com/hiroro-work"
+  },
+  "homepage": "https://github.com/hiroro-work/claude-plugins",
+  "repository": "https://github.com/hiroro-work/claude-plugins",
+  "license": "MIT",
+  "keywords": [
+    "demo",
+    "screenshot",
+    "video",
+    "playwright",
+    "artifact"
+  ]
+}

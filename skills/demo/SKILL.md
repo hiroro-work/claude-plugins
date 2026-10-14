@@ -58,7 +58,7 @@ This skill's procedure dispatches subagents, so invoking the skill **is** the re
 
 `<base dir>` is this skill's directory as the harness reported it when the skill loaded.
 
-1. **Preconditions.** Run `playwright-cli --help video-chapter`. A non-zero exit stops with `status: "error"`, `reason: "playwright-cli not installed"`. When its output starts with `playwright-cli video-chapter`, `<chapters>` = `true`; otherwise `<chapters>` = `false` and say in one line that this version records without title cards, cursor or action callouts. Then resolve the settings per § Settings (Setup mode when neither file exists), the language per § Language and the model per § Model.
+1. **Preconditions.** Run `playwright-cli --help video-chapter`. A non-zero exit stops with `status: "error"`, `reason: "playwright-cli not installed"`. When its output starts with `playwright-cli video-chapter`, `<chapters>` = `true`; otherwise `<chapters>` = `false` and say in one line that this version records without title cards, cursor or action callouts. Then resolve the language per § Language and the model per § Model, then the settings per § Settings (Setup mode when neither file exists).
 
 2. **Inputs.** With `Plan:`, `<slug>` is the file name without `.md`; `Read` the plan. When that `Read` fails, use the plan text when it is already in this conversation; otherwise say in one line that the steps come from the diff alone and continue. Without `Plan:`, `<slug>` is `<YYYYMMDD-HHMMSS>` of now. Read the change set against `Base ref` (default `HEAD`): `git diff <base>` and the content of files `git ls-files --others --exclude-standard` lists. No readable plan and an empty change set → `status: "error"`, `reason: "nothing to demo"`. Run `mkdir -p .demo/<slug>`.
 
@@ -101,17 +101,19 @@ This skill's procedure dispatches subagents, so invoking the skill **is** the re
    `node "<base dir>/scripts/render.mjs" --steps .demo/<slug>/steps.json --out .demo/<slug>/index.html --lang <language>`.
    A non-zero exit stops with `status: "error"`, `reason: "page rejected: <first stderr line>"` (the app is already stopped). Call `Artifact` with `file_path` `.demo/<slug>/index.html`, `files` mapping each `step-NN.png` and each case video named in `steps.json` to its file under `.demo/<slug>/`, `icon` `camera`, and `description` one sentence naming the feature. When the files together exceed 64MB, publish again to the same URL with the remaining videos. Do not load the design skills: the page's layout and theming are fixed in the renderer. A missing or failing `Artifact` leaves `url` null; the page path still reports. Run `git check-ignore .demo .playwright-cli`; when its output lacks either path, keep one line for the report asking to add `.demo/` and `.playwright-cli/` to `.gitignore` (this skill does not edit it outside Setup mode).
 
-9. **Report.** In the resolved language: the artifact URL (or the page path), the test case count and how many test cases are not confirmed, one line per test case with its id, title and confirmed / not confirmed, how many re-captures ran, and for each case they corrected, every script added in full and its `setup` and actions as captured, the publish gate's answer when it was shown, each recording over 15MB left off the page, the stop result, and the gitignore line when there is one. Then the return contract's JSON block.
+9. **Data guide gate.** `<edited>` is `[]` on entry. Build two candidates. `<guide additions>`: for each item § Settings lists for the data guide, what this run used that the guide does not state yet, one or two lines each, in the resolved language, without this run's own values (the timestamps, the records this run created); a line with a credential-like value (a password, a token, a key) carries where the value comes from instead of the value. `<seed candidates>`: the records the scripts of the normal cases' `ok` steps inserted, only when the guide names a seed file (the first, when it names several); draft the addition in that file's own idiom as a diff, from the seed file as read in step 3 (`Read` it when step 3 did not). When both candidates are empty, show no gate and go to step 10 (Report). Otherwise (USER GATE), in one question set, show the lines to append verbatim and ask `yes` / `no`, and show the seed diff and ask `apply` / `decline`, each only when its candidate exists. `yes` appends the lines at the end of the guide's write target with `Edit`. `apply` applies the diff to the seed file with `Edit`. Nothing is committed. A failing `Edit` is noted for the report and the run continues. `<edited>` holds the paths whose `Edit` succeeded.
+
+10. **Report.** In the resolved language: the artifact URL (or the page path), the test case count and how many test cases are not confirmed, one line per test case with its id, title and confirmed / not confirmed, how many re-captures ran, and for each case they corrected, every script added in full and its `setup` and actions as captured, the publish gate's answer when it was shown, each recording over 15MB left off the page, the stop result, the gitignore line when there is one, the guide lines appended or that they were declined, and the seed file edited with a note that its change is uncommitted, or that it was declined. Then the return contract's JSON block.
 
 ## Return contract
 
 Emit a single fenced JSON block at the end of the response, matching:
 
 ```json
-{ "status": "ok" | "skipped" | "error", "reason": null | "<why>", "url": null | "<artifact url>", "page": null | "<path to index.html>", "cases": <n>, "steps": <n>, "failed": <n> }
+{ "status": "ok" | "skipped" | "error", "reason": null | "<why>", "url": null | "<artifact url>", "page": null | "<path to index.html>", "cases": <n>, "steps": <n>, "failed": <n>, "edited": [ "<path>", ... ] }
 ```
 
-`cases`, `steps` and `failed` are `0` when the capture did not run. `failed` counts steps. Only one fenced JSON block appears in the response.
+`cases`, `steps` and `failed` are `0` when the capture did not run. `failed` counts steps. `edited` is always present: the paths § Procedure step 9 (Data guide gate) edited, `[]` on every path that does not reach it (Setup mode's own writes are reported by Setup mode, not here). Only one fenced JSON block appears in the response.
 
 ## Sub-skill caller directive
 

@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-10-14
+
+### demo v1.1.0 / dev-workflow v2.6.1 / dev-workflow-bundle v2.20.0
+
+- **The settings file carries a data guide, so a run no longer searches the project for its seed.** `.claude/demo.md` and `.claude/demo.local.md` now hold a Markdown body after the frontmatter: prose naming where the seed or fixture files are, which accounts and main records they hold, and the shell command line that inserts a record the seed lacks. The bodies read as one guide, shared then local; a credential, or a personal insertion command, goes only in the local body. Deriving the test cases and the data check read the guide first, read the seed files it names, and treat a record those files lack as a gap before any page is opened. A file without a body adds nothing, so settings written by v1.0.0 keep working.
+- **Setup mode drafts the guide.** Besides the keys, `/demo --init` reads the seed or fixture files the seed tasks load and drafts the body from them; the Setup gate shows the whole file, and `edit` covers the body. A project with neither seed nor fixtures gets one line saying a seed would let demo reuse records across runs; the skill neither chooses nor creates a seeding mechanism.
+- **The run ends by offering to grow the guide and the seed.** A new step 9 (Data guide gate), after the page is published, shows what the run used that the guide does not state yet, one or two lines each without this run's values and with a credential-like value replaced by where it comes from, and asks `yes` / `no` to append it to the settings file; when the guide names a seed file, it also shows a diff adding the records the normal cases' scripts inserted and asks `apply` / `decline`. Error cases' records are never promoted: they exist to provoke a branch, not to populate a development environment. Neither edit is committed. A run with nothing new asks nothing. The guide holds the way records are inserted, not this run's scripts.
+- **The return contract gains `edited`.** Always present: the paths step 9 edited, `[]` on every path that does not reach it. dev-workflow's Demo line names those files, because `Skill(demo)` runs after the run's commits and the edits are left uncommitted for the user to review.
+- **Settings and Setup mode in `skills/demo/README.md`** describe the body, the end-of-run gate and the example guide.
+
 ## 2026-10-05
 
 ### demo v1.0.0 / dev-workflow v2.6.0 / dev-workflow-bundle v2.19.0

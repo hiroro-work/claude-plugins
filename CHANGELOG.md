@@ -2,6 +2,11 @@
 
 ## 2026-10-15
 
+### demo v1.3.0 / dev-workflow-bundle v2.22.0
+
+- **`case_reset` decides what runs before each test case's `setup`.** Unset keeps the built-in reset (a fresh browser in web mode; with `attach: cdp`, every window's storage and cookies cleared and the window reloaded). `none` runs nothing, so a case starts where the previous one left the app and its `setup` brings it to the precondition; in web mode `none` counts as unset, since a fresh browser has nothing to skip. Any other value is a shell command line the capture agent runs before the case with `DEMO_PORT` and `DEMO_SESSION` exported; `DEMO_SESSION` names the `playwright-cli` session, so the command can drive the windows itself or reset through the app's own means (an IPC call, an endpoint). A non-zero exit counts as a failed `setup` action, so the case is shown at the publish gate instead of a stale state passing as confirmed; re-capture does not retry it, since the command comes from the settings. The step-table gate states which reset each capture runs.
+- **Apps that cancel the unload.** An app whose `beforeunload` handler cancels the unload or closes the window cannot take the built-in reset; `case_reset: none` with a throwaway user data directory in `start_command` gives such an app a fresh start per run. Setup mode proposes `case_reset: none` when the source the app's windows load handles `beforeunload`, and says why.
+
 ### demo v1.2.0 / dev-workflow-bundle v2.21.0
 
 - **Desktop apps over CDP.** A new settings key `attach: cdp` tells demo that the app is a Chromium-based desktop app (Electron, for one) that exposes a DevTools endpoint on `DEMO_PORT`. The run starts it as before, waits until the endpoint's `/json/list` shows a window instead of waiting for a page, and attaches with `playwright-cli attach --cdp`. The key names the mechanism rather than a framework, so any shell that accepts `--remote-debugging-port` qualifies. `url`, when set, is the endpoint's origin; a value other than `cdp` counts as unset.

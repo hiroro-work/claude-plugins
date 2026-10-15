@@ -1,6 +1,12 @@
 # Capture prompt
 
-Read from `SKILL.md` § Procedure step 6 (Capture). The text after the rule below is the `--- TASK ---` section of the capture agent's prompt; `{{session}}`, `{{out_dir}}`, `{{url}}`, `{{chapters}}`, `{{video}}`, `{{auth_state}}` and `{{language}}` are filled in by the caller. That text goes to a subagent that sees nothing else, so it carries no reference to this file or to `SKILL.md`.
+Read from `SKILL.md` § Procedure step 6 (Capture). The text after the rule below is the `--- TASK ---` section of the capture agent's prompt; `{{session}}`, `{{out_dir}}`, `{{url}}`, `{{chapters}}`, `{{video}}`, `{{auth_state}}`, `{{language}}` and `{{case_reset}}` are filled in by the caller, the last with one paragraph of § Case reset. That text goes to a subagent that sees nothing else, so it carries no reference to this file or to `SKILL.md`.
+
+## Case reset
+
+**default**: When the signed-in state file is not `none`, run `state-load` with it. Run `goto` with the app URL.
+
+**command**: Run `<reset line>` as one shell command line through Bash; a non-zero exit is a failed `setup` action whose `note` names the case reset command. When the signed-in state file is not `none`, run `state-load` with it. Run `goto` with the app URL.
 
 ---
 
@@ -18,7 +24,7 @@ In `--- STEPS ---`, a step's `case` is the `id` of its test case. Run the cases 
 
 For each test case:
 
-1. Run `open`. When the signed-in state file is not `none`, run `state-load` with it. Run `goto` with the app URL.
+1. Run `open`. {{case_reset}}
 2. Perform the case's `setup` actions in order, finding elements in the latest snapshot. When a `setup` action fails, every step of the case is `failed` with `cause: "steps"`, a `note` saying which action failed and a `result` saying what the page showed; take one screenshot per step of the page as it is, then go to item 6.
 3. Bring the browser to where the first step starts: when the first step's action opens a page or a link, `goto about:blank`; otherwise `goto` the origin of the app URL followed by the first step's `path`. Then record the case when the recording scope is `full`, or when it is `normal` and the case's `kind` is `normal`. To record with chapter cards on: `video-start {{out_dir}}/<id>.webm --cursor`, then `video-show-actions`, then `video-chapter "<id> <title>" --description "<precondition>" --duration 2500`. With chapter cards off: `video-start`.
 4. For each step of the case, with chapter cards on and the case recorded, first run `video-chapter "<position of the step within the case>. <action>" --duration 1200`. Then:

@@ -31,14 +31,17 @@ The bodies, the shared one followed by the local one, read as one text: the **da
 
 | Key | Default | Meaning |
 |---|---|---|
-| `start_command` | required | Starts the app. Runs as `DEMO_PORT=<port> <start_command>` in the background; the app is expected to listen on `DEMO_PORT` |
-| `reset_command` | none | Runs once, in the foreground, before `start_command`, as `DEMO_PORT=<port> <reset_command>`. Resets a throwaway environment |
-| `url` | none | Starting with `http://` or `https://`: the URL itself, with `${VAR}` expanded from the environment plus `DEMO_PORT`. Otherwise a command run after the start as `DEMO_PORT=<port> <url>`; the first line of its stdout is the URL |
-| `ready_timeout` | `120` | Seconds to wait for the URL to answer, at most 590 |
-| `port` | none | When set, used as `DEMO_PORT` instead of a free port found at run time. Digits, or `${VAR}` expanding to digits: the port itself. Otherwise a command run before the start as `DEMO_PORT=0 <port>`; the first line of its stdout is the port |
+| `start_command` | required | Starts the app, in the background, with the environment below. A local app listens on `DEMO_PORT`; a remote target names its URL in `url` |
+| `reset_command` | none | Runs once, in the foreground, before `start_command`, with the same environment. Resets a throwaway environment |
+| `stop_command` | none | Runs once, in the foreground, at the start of § Procedure step 7 (Stop the app), with the same environment. Stops or cleans up what `start_command` created; the port kill follows. Bounded by `ready_timeout` seconds |
+| `url` | none | Starting with `http://` or `https://`: the URL itself, with `${VAR}` expanded from the environment plus `DEMO_PORT`. Otherwise a command the wait re-runs, with the same environment, until it exits zero with a non-empty stdout line, within `ready_timeout`; that first non-empty line is the URL |
+| `ready_timeout` | `120` | Seconds to wait for the URL to resolve and answer, at most 590 |
+| `port` | none | When set, used as `DEMO_PORT` instead of a free port found at run time. Digits, or `${VAR}` expanding to digits: the port itself. Otherwise a command run before the start with the same environment and `DEMO_PORT=0`; the first line of its stdout is the port |
 | `auth_state` | none | Storage state file passed to `playwright-cli state-load` after the browser opens |
 | `error_cases` | `true` | `false`: derive no error test cases. Any other value is `true` |
 | `video` | `full` | `normal`: error test cases are not recorded; their screenshots are still taken. Any other value is `full` |
+
+**Environment.** Every command a key names runs as `DEMO_PORT=<port> DEMO_BASE_REF=<base> DEMO_CHANGED_FILES=<changed files> <command>` (the `port` command with `DEMO_PORT=0`). `<base>` is `Base ref` as resolved in § Procedure step 2 (Inputs); `<changed files>` is `.demo/<slug>/changed-files.txt`, one path per line, written at the start of § Procedure step 4 (Start the app). That prefix is `<environment>` in § Procedure.
 
 When neither file exists, or `--init` was given, read `references/setup-mode.md` and follow it. When a file exists but `Read` fails for any other reason, or when it cannot be told whether the file is missing or unreadable, stop with `status: "error"`, `reason: "settings unreadable: <path>"` rather than entering Setup mode. When the merge leaves no `start_command`, stop with `status: "error"`, `reason: "start_command unset"`.
 

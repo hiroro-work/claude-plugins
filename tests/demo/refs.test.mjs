@@ -60,6 +60,22 @@ test("the CDP capture prompt drives the app through attach and tab-select, never
   assert.equal(body.match(/`(open|goto)[` ]/g), null, "open and goto belong to the web prompt only");
 });
 
+// SKILL.md step 6 picks one of these labeled paragraphs for {{case_reset}}; the web prompt has no "none" because a
+// fresh browser has nothing to skip.
+test("each capture prompt's Case reset section holds the paragraphs SKILL.md picks from", () => {
+  const expected = { "references/capture-prompt.md": ["default", "command"], "references/capture-prompt-cdp.md": ["default", "none", "command"] };
+  for (const [f, labels] of Object.entries(expected)) {
+    const { preamble } = split(f);
+    const section = preamble.split("## Case reset\n")[1];
+    assert.ok(section, `${f} has no ## Case reset section before the --- rule`);
+    assert.deepEqual([...section.matchAll(/^\*\*(\w+)\*\*: /gm)].map((m) => m[1]), labels);
+    assert.equal(placeholders(section).size, 0, "a Case reset paragraph goes into the prompt verbatim, so it carries no placeholder");
+    assert.ok(!section.includes("§"), "a Case reset paragraph goes to the subagent, so it carries no § reference");
+    assert.ok(/^\*\*command\*\*: .*`<reset line>`/m.test(section), "the command paragraph names the <reset line> SKILL.md substitutes");
+  }
+  assert.ok(capture[0].includes("`<reset line>`"), "SKILL.md step 6 defines <reset line>");
+});
+
 // The lines the two prompt bodies share by design: a line whose start matches one of these prefixes must be
 // identical in both files, so an edit to the shared capture logic cannot land in only one of them.
 test("the shared lines of the two capture prompts stay identical", () => {

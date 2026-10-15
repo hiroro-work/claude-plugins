@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-10-15
+
+### demo v1.2.0 / dev-workflow-bundle v2.21.0
+
+- **A remote target needs no forwarding server.** An app that does not listen on a local port — a throwaway environment the run creates, a preview deployment — is described by three keys: `start_command` creates it, a `url` command prints its URL once it exists, and the new `stop_command` removes it. `stop_command` runs once, in the foreground, at the start of step 7 (Stop the app), bounded by `ready_timeout`, and the port kill follows; so the cleanup never races the kill, and one key covers both stopping and cleaning up. A non-zero exit or a timeout is one report line, not a stop. A remote `url` without `stop_command` leaves the start process running and says so in the report. **Behavior change from v1.1.0**: a `url` command is now re-run every 2 seconds until it prints a URL, within `ready_timeout`, instead of once right after the start — the URL resolution and the wait moved into `scripts/wait-ready.mjs`, covered by `tests/demo/wait-ready.test.mjs`.
+- **The start side learns what the demo is about.** Every configured command now runs with `DEMO_BASE_REF` (the ref the change is taken against) and `DEMO_CHANGED_FILES` (the path of a file under `.demo/<slug>/` listing the changed and new files, one per line) after `DEMO_PORT`, so a monorepo's start command can pick the package to serve from the diff instead of from a per-run `.claude/demo.local.md`. The list goes through a file because a large diff would not fit in an environment variable. The file is written at the start of step 4 (Start the app), so Setup mode's trial run, which starts the app with `HEAD` as the ref, gets it too. `DEMO_PORT` stays first, so the existing `Bash(DEMO_PORT=* <runner> *)` permissions keep matching.
+- **Paths join the app URL, not its origin.** A step's path is appended to the resolved URL (`/` added when it has none), both in the data check and in the capture prompt, so a URL with a base path — `https://<host>/k/<id>/` — keeps it. For a root URL the result is unchanged.
+- **`skills/demo/README.md`** gains a `### Remote targets` example, the environment paragraph, and the permission note that a `url` command runs through `sh -c` inside the wait script under the `node` permission; it also points browser settings such as HTTP credentials to `.playwright/cli.config.json`, which `playwright-cli open` reads by itself.
+
 ## 2026-10-14
 
 ### demo v1.1.0 / dev-workflow v2.6.1 / dev-workflow-bundle v2.20.0

@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-10-15
+
+### demo v1.2.0 / dev-workflow-bundle v2.21.0
+
+- **Desktop apps over CDP.** A new settings key `attach: cdp` tells demo that the app is a Chromium-based desktop app (Electron, for one) that exposes a DevTools endpoint on `DEMO_PORT`. The run starts it as before, waits until the endpoint's `/json/list` shows a window instead of waiting for a page, and attaches with `playwright-cli attach --cdp`. The key names the mechanism rather than a framework, so any shell that accepts `--remote-debugging-port` qualifies. `url`, when set, is the endpoint's origin; a value other than `cdp` counts as unset.
+- **Windows instead of paths.** With `attach: cdp`, a step's path names the window (a string its title or URL shows in `tab-list`), and the capture agent switches windows with `tab-select`; a window an action opened appears in the list. `video-start` records every window, so the agent keeps the index of the case's window and renames that file to `<id>.webm`; the page and the renderer are unchanged.
+- **Fresh state per test case without a restart.** Each case starts after the capture agent clears every window's localStorage, sessionStorage and cookies and reloads it. State the app keeps outside its windows (a user data directory, a local database) is not cleared and carries over like data an earlier case created, so the first case that needs it brings it about and later cases say so in their precondition. The data guide now also says where that state lives and how a run starts with it fresh. The data check after the start attaches and reads the windows but performs no `setup`, so it never changes the running app's state; data visible only after a `setup` is found at capture and corrected by re-capture.
+- **`${DEMO_PORT}` is expanded in `start_command` and `reset_command`.** The shell does not expand `$DEMO_PORT` inside `DEMO_PORT=<port> <command>`, so a port on the command line (`--remote-debugging-port=${DEMO_PORT}`) needs the replacement. Existing settings that read the port from the environment are unaffected; a command text that spelled `${DEMO_PORT}` literally now receives the port.
+- **Setup mode proposes the key.** A package manifest that depends on a desktop shell gets `attach: cdp` and a `start_command` that passes `--remote-debugging-port=${DEMO_PORT}` through the project's launcher, plus a throwaway user data directory under `.demo/` when the end-to-end tests use one.
+- **`skills/demo/README.md` § Desktop apps over CDP (Electron)** holds the example settings and what differs from a web app: strict Content Security Policies render chapter cards as plain text, and an inherited `ELECTRON_RUN_AS_NODE=1` makes a directly started shell exit at once.
+
 ## 2026-10-14
 
 ### demo v1.1.0 / dev-workflow v2.6.1 / dev-workflow-bundle v2.20.0

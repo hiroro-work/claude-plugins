@@ -1,6 +1,6 @@
 # demo
 
-Turns a web feature built in this session into a demo: a page of test cases grouped by feature, published as an artifact. Each test case says in one sentence what it checks, and carries its precondition, its own screen recording and its steps — the action, the expected result, what the page showed and a screenshot. The skill starts the app itself, shows the test cases for approval, drives the browser with `playwright-cli` in one subagent, and stops the app when it is done.
+Turns a feature built in this session, in a web app or in a Chromium-based desktop app (Electron), into a demo: a page of test cases grouped by feature, published as an artifact. Each test case says in one sentence what it checks, and carries its precondition, its own screen recording and its steps — the action, the expected result, what the page showed and a screenshot. The skill starts the app itself, shows the test cases for approval, drives the browser with `playwright-cli` in one subagent, and stops the app when it is done.
 
 The page opens with a contents list: per feature, its test cases with confirmed / not confirmed. Choosing one opens that test case. Only the first feature's main normal case starts open, so someone who wants the gist reads that one, and someone who wants everything walks the list.
 
@@ -17,9 +17,9 @@ From a dev-workflow run, the Update Rules gate asks `demo` / `no-demo` only in a
 
 1. Reads `.claude/demo.md` and `.claude/demo.local.md` (Setup mode proposes them when neither exists, see below), including their body, the data guide, and the seed or fixture files it names.
 2. Groups the change into features, the actions a checker performs in a row for one purpose, and derives test cases from the plan's After, Scope and Test plan and from the diff: each feature's main normal flow (3–10 normal steps in all), and one error case per branch the diff implements (input validation, permissions, behavior that depends on state). Each test case has a precondition and the setup actions that reach it from a fresh, signed-out browser. Data comes from the seed or fixtures the guide names where it can, from the screen where an earlier step creates it, and from a one-line insertion script written the way the guide says otherwise. A value that can be taken only once, such as a confirmation code, is saved by the step that takes it and reused by later steps. Records created on screen get unique values (a timestamp in the email address, for example), so a second capture does not collide with the first.
-3. Starts the app: picks a free port (or the configured one), runs `reset_command`, runs `start_command` with `DEMO_PORT` in the environment, resolves the URL, and waits until it answers. A start that times out shows the log and asks `retry` / `skip`. Before the app is opened, it checks the records the steps rely on against the seed or fixture files the guide names. Once the app answers, it opens each step's page once, tries each kind of setup once, and adds an insertion script for any data the page shows to be missing.
+3. Starts the app: picks a free port (or the configured one), runs `reset_command`, runs `start_command` with `DEMO_PORT` in the environment, resolves the URL, and waits until it answers. A start that times out shows the log and asks `retry` / `skip`. Before the app is opened, it checks the records the steps rely on against the seed or fixture files the guide names. Once the app answers, it opens each step's page once, tries each kind of setup once (with `attach: cdp`, it attaches and reads the windows the steps name, performing no setup), and adds an insertion script for any data the page shows to be missing.
 4. Shows the URL, the features, the test cases, the step table, every data script and what the data check found, and asks `approve` / `revise` / `skip`. `revise` can drop error cases; more than 10 of them come with a count and a time estimate. It also asks whether a test case that fails for missing data or for how its steps were written may be corrected and captured again.
-5. Hands the test cases to one subagent. For each case it opens a fresh browser, performs the setup, starts that case's recording with a title card, then per step takes a snapshot, performs the action, writes what the page showed, checks it against the expected result and takes a screenshot, and finally stops the recording and closes the browser. A failed step is marked as missing data, a problem with how the steps were written, or the app behaving differently from the expected result.
+5. Hands the test cases to one subagent. For each case it opens a fresh browser (with `attach: cdp`, it attaches to the running app and clears and reloads its windows), performs the setup, starts that case's recording with a title card, then per step takes a snapshot, performs the action, writes what the page showed, checks it against the expected result and takes a screenshot, and finally stops the recording and closes the browser. A failed step is marked as missing data, a problem with how the steps were written, or the app behaving differently from the expected result.
 6. When re-capture was allowed, corrects the test cases that failed for missing data or for how their steps were written and captures only those again, at most twice. If any step still fails, it shows those steps with their screenshots before publishing and asks `publish` (as not confirmed) / `revise` (correct and capture those cases again) / `stop`. Then it stops the app.
 7. Renders `index.html` and publishes it with the screenshots and each case's recording (when it is 15MB or smaller, the artifact file limit; a larger recording stays out of the page) as an artifact. `confirmed` / `not confirmed` say whether the page matched the expected result; whether that result is right is the reader's call.
 8. Offers to grow the data guide: what this run used that the guide does not state yet, as one or two lines each, appended to the settings file on `yes`; and, when the guide names a seed file, a diff adding the records the normal cases' scripts inserted, applied on `apply` (`decline` leaves the seed alone). A credential-like value is replaced by where it comes from. Neither edit is committed; the report and the return value name the files touched. A run with nothing new to offer asks nothing.
@@ -32,12 +32,13 @@ The bodies, shared then local, form the **data guide**: prose saying where the s
 
 | Key | Default | Meaning |
 |---|---|---|
-| `start_command` | required | Starts the app. Runs as `DEMO_PORT=<port> <start_command>`; the app should listen on `DEMO_PORT` |
-| `reset_command` | none | Runs once before the start, with the same `DEMO_PORT`. Resets a throwaway environment |
+| `start_command` | required | Starts the app. Runs as `DEMO_PORT=<port> <start_command>`, with `${DEMO_PORT}` in the command text replaced by the port first; the app should listen on `DEMO_PORT` |
+| `reset_command` | none | Runs once before the start, with the same `DEMO_PORT` and the same replacement. Resets a throwaway environment |
+| `attach` | none | `cdp`: the app is a Chromium-based desktop app that exposes a DevTools endpoint on `DEMO_PORT`; the skill attaches to it instead of opening a browser (see § Desktop apps over CDP (Electron)). Any other value counts as unset |
 | `url` | none | A URL (`http://` / `https://`, `${VAR}` expanded from the environment plus `DEMO_PORT`), or a command whose first stdout line is the URL |
-| `ready_timeout` | `120` | Seconds to wait for the URL to answer, at most 590 (the Bash tool's 600 s limit minus the 10 s the wait call adds) |
+| `ready_timeout` | `120` | Seconds to wait for the app to answer, at most 590 (the Bash tool's 600 s limit minus the 10 s the wait call adds) |
 | `port` | none | Use this port as `DEMO_PORT` instead of a free one: a number (`${VAR}` expanded), or a command whose first stdout line is the port, run before the start as `DEMO_PORT=0 <port>` |
-| `auth_state` | none | Storage state file loaded into the browser (`playwright-cli state-load`) |
+| `auth_state` | none | Storage state file loaded with `playwright-cli state-load` after the browser opens or, with `attach: cdp`, right after attaching, before the windows are cleared and reloaded (over CDP its cookies are loaded, not its localStorage) |
 | `error_cases` | `true` | `false` leaves the error test cases out |
 | `video` | `full` | `normal` records only the normal test cases; the error cases still get their screenshots |
 
@@ -63,9 +64,30 @@ port: "node scripts/print-port.mjs --web"
 ---
 ```
 
+### Desktop apps over CDP (Electron)
+
+A Chromium-based desktop app (Electron, or another shell that accepts `--remote-debugging-port`) is driven through its DevTools endpoint instead of a browser the skill opens. Set `attach: cdp` and start the app with `--remote-debugging-port=${DEMO_PORT}`; the skill waits until the endpoint's `/json/list` shows a window, attaches with `playwright-cli attach --cdp`, and stops the app by killing the process that holds the port. `url`, when set, is the endpoint's origin. One example, for a project started through electron-forge, which passes everything after `--` to the app:
+
+```yaml
+---
+attach: cdp
+start_command: "pnpm start -- --remote-debugging-port=${DEMO_PORT} --user-data-dir=.demo/userdata"
+---
+The app keeps its sign-in and settings under `.demo/userdata`; delete the directory for a signed-out run.
+```
+
+What differs from a web app:
+
+- A step's path names the **window** instead: a string the window's title or URL shows in `playwright-cli tab-list`. The capture agent switches windows with `tab-select`, and a window the previous action opened appears in that list.
+- Each test case starts after the capture agent has cleared every window's localStorage, sessionStorage and cookies and reloaded it. State the app keeps outside its windows (its user data directory, a local database) is not cleared: it carries over between test cases like data an earlier case created, so the first case that needs it brings it about, and later cases say so in their precondition. The data guide says where that state lives and how a run starts with it fresh (a throwaway user data directory, a `reset_command` that deletes it), or that it is kept on purpose.
+- The data check after the start attaches, reads the windows the steps name, and performs no `setup`, so it does not change the running app's state. Data visible only after a `setup` is found at capture, and re-capture corrects it.
+- `video-start` records every window, one file per window. The page shows the recording of the window the test case ran in.
+- Under a strict Content Security Policy (`style-src 'self'`), the chapter cards and action callouts render as plain text; the cursor still shows. Relax the policy in development builds for full recordings.
+- When the app exits at once and `server.log` holds a Node.js stack with `Cannot find module 'electron'`, the environment carries `ELECTRON_RUN_AS_NODE=1` (VS Code's extension host sets it). electron-forge removes it itself; a `start_command` that runs the shell directly needs to unset it, for example through the project's own start script.
+
 ### Setup mode
 
-`/demo --init`, or a run when neither settings file exists, reads the project's package scripts, the end-to-end runner's web-server configuration, port scripts, emulator or container configurations, seed tasks and the seed or fixture files they load, proposes the keys and drafts the data guide, tries the keys once, and shows the proposal for `approve` / `edit` / `cancel`. On `approve` it writes `.claude/demo.md` and adds `.demo/` and `.playwright-cli/` to `.gitignore` when they are not ignored yet. `--init` stops there; a plain run continues into the demo. With `--init` and a settings file already present, nothing is written. Outside Setup mode the skill never edits `.gitignore`; it only reports when those paths are not ignored.
+`/demo --init`, or a run when neither settings file exists, reads the project's package scripts, the end-to-end runner's web-server configuration, port scripts, emulator or container configurations, a desktop shell dependency and its launcher, seed tasks and the seed or fixture files they load, proposes the keys (including `attach: cdp` for a desktop app) and drafts the data guide, tries the keys once, and shows the proposal for `approve` / `edit` / `cancel`. On `approve` it writes `.claude/demo.md` and adds `.demo/` and `.playwright-cli/` to `.gitignore` when they are not ignored yet. `--init` stops there; a plain run continues into the demo. With `--init` and a settings file already present, nothing is written. Outside Setup mode the skill never edits `.gitignore`; it only reports when those paths are not ignored.
 
 ## Output
 

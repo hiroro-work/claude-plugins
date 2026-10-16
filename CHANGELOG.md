@@ -2,6 +2,11 @@
 
 ## 2026-10-16
 
+### demo v1.4.1 / dev-workflow-bundle v2.23.1
+
+- **A step is judged from its screenshot when the snapshot does not show the expected result.** `screenshot` prints no snapshot, so the capture agent judged from a snapshot taken later, after a message shown only briefly (a toast, a "saved" notice) was gone. Both capture prompts now judge from the snapshot the action printed and, when it does not show what the step expects, read the screenshot image instead.
+- **The action and its screenshot run in one command line.** They are joined with `;`, so the screenshot is taken as soon as the action returns, and still taken when the action fails. A message that disappears before a slow click returns can still be missed; `skills/demo/README.md` says so.
+
 ### demo v1.4.0 / dev-workflow-bundle v2.23.0
 
 - **`start_command` runs with its stdin held open.** electron-forge start exits before launching Electron when stdin is at EOF, as it is for a background command. The run now writes the command to `.demo/<slug>/start-command` and starts it through `scripts/run-open-stdin.mjs`, so such an app comes up, in a run and in Setup mode's trial run.

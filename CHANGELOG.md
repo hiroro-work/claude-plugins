@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-10-16
+
+### demo v1.4.0 / dev-workflow-bundle v2.23.0
+
+- **`start_command` runs with its stdin held open.** electron-forge start exits before launching Electron when stdin is at EOF, as it is for a background command. The run now writes the command to `.demo/<slug>/start-command` and starts it through `scripts/run-open-stdin.mjs`, so such an app comes up, in a run and in Setup mode's trial run.
+- **Stopping the app also stops what `start_command` started.** The command runs in its own process group, named in `.demo/<slug>/start-command.pgid` while it runs, and the stop step kills that group before whatever listens on the port. A start that times out without listening, as an Electron app does when the DevTools port never reaches it, no longer leaves its windows and launcher behind.
+- **`start_command` runs under `sh -c`.** It used to run in the shell of the Bash tool (zsh on macOS). A command that relies on zsh-only syntax needs to be rewritten for `sh`.
+- **`start_command` asks for no permission of its own.** It runs through the skill's `node` script whatever it contains. `reset_command` and the `url` and `port` commands still run as `DEMO_PORT=<port> <command>` under the same pre-authorized runners.
+
 ## 2026-10-15
 
 ### demo v1.3.0 / dev-workflow-bundle v2.22.0

@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 // Resolve the app URL and wait until it answers.
 //
-// Usage: node wait-ready.mjs --timeout <seconds> (--url <url> | --url-command <command>)
+// Usage: node wait-ready.mjs --timeout <seconds> (--url <url> | --url-command <command>) [--expect <text>]
 // --url: the URL to poll. --url-command: a command run through `sh -c` every 2 seconds, inheriting
 // this process's environment, until it exits zero with a non-empty first stdout line that parses as a
-// URL. Any HTTP response counts as ready.
+// URL. Any HTTP response counts as ready; with --expect, only a response whose body holds that text.
 //
 // stdout: `ready <url>` (exit 0) or `timeout` (exit 1); exit 2 on a usage error.
 // On timeout, stderr carries the last output of the URL command and the last fetch error, so a
@@ -14,12 +14,12 @@ import { spawnSync } from "node:child_process";
 import { parseArgs } from "node:util";
 
 const usage = () => {
-  process.stderr.write("usage: wait-ready.mjs --timeout <seconds> (--url <url> | --url-command <command>)\n");
+  process.stderr.write("usage: wait-ready.mjs --timeout <seconds> (--url <url> | --url-command <command>) [--expect <text>]\n");
   process.exit(2);
 };
 let args;
 try {
-  ({ values: args } = parseArgs({ options: { timeout: { type: "string" }, url: { type: "string" }, "url-command": { type: "string" } }, strict: true }));
+  ({ values: args } = parseArgs({ options: { timeout: { type: "string" }, url: { type: "string" }, "url-command": { type: "string" }, expect: { type: "string" } }, strict: true }));
 } catch {
   usage();
 }
@@ -64,8 +64,11 @@ function resolveUrl(command, ms) {
 // A connection the app accepts but never answers would otherwise hold the loop past the deadline.
 async function answers(url, ms) {
   try {
-    await fetch(url, { signal: AbortSignal.timeout(ms) });
-    return true;
+    const res = await fetch(url, { signal: AbortSignal.timeout(ms) });
+    if (args.expect === undefined) return true;
+    if ((await res.text()).includes(args.expect)) return true;
+    lastError = `response lacks ${JSON.stringify(args.expect)}`;
+    return false;
   } catch (err) {
     lastError = `${err?.cause?.code ?? err?.name ?? "error"}: ${err?.cause?.message ?? err?.message ?? ""}`.trim();
     return false;

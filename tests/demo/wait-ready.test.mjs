@@ -80,6 +80,21 @@ test("a URL nobody serves times out with the fetch error on stderr", async () =>
   assert.match(r.stderr, /ECONNREFUSED|fetch failed/);
 });
 
+test("with --expect, a response holding the text is ready and one lacking it times out", async () => {
+  const server = createServer((_req, res) => { res.end('[{"type": "page"}]'); });
+  await new Promise((r) => server.listen(0, "127.0.0.1", r));
+  const url = `http://127.0.0.1:${server.address().port}/json/list`;
+  try {
+    const hit = await run(["--timeout", "10", "--url", url, "--expect", '"type": "page"']);
+    assert.equal(hit.status, 0, hit.stderr);
+    assert.equal(hit.stdout, `ready ${url}\n`);
+    const miss = await run(["--timeout", "1", "--url", url, "--expect", '"type": "worker"']);
+    assert.equal(miss.status, 1);
+    assert.equal(miss.stdout, "timeout\n");
+    assert.match(miss.stderr, /response lacks/);
+  } finally { await new Promise((r) => server.close(r)); }
+});
+
 test("usage errors exit 2", async () => {
   for (const args of [["--timeout", "1", "--url", "http://x/", "--url-command", "echo"], ["--timeout", "1"], ["--url", "http://x/"], ["--timeout", "x", "--url", "http://x/"], ["--timeout", "1", "--url", "not a url"]]) {
     const r = await run(args);

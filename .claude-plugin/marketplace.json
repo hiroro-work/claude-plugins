@@ -172,7 +172,7 @@
         "./skills/furikaeri",
         "./skills/demo"
       ],
-      "version": "2.21.1",
+      "version": "2.22.0",
       "author": {
         "name": "hiropon"
       },
@@ -232,12 +232,12 @@
     },
     {
       "name": "demo",
-      "description": "Demo of a web feature as a page of test cases grouped by feature, each with its precondition, its own screen recording and its steps with screenshots, published as an artifact: starts the app, derives the test cases from the plan and the diff, drives the browser with playwright-cli, stops the app. Offered at dev-workflow's Update Rules gate",
+      "description": "Demo of a feature in a web app or a Chromium-based desktop app (Electron) as a page of test cases grouped by feature, each with its precondition, its own screen recording and its steps with screenshots, published as an artifact: starts the app, derives the test cases from the plan and the diff, drives the browser with playwright-cli, stops the app. Offered at dev-workflow's Update Rules gate",
       "source": "./skills/demo",
       "skills": [
         "./"
       ],
-      "version": "1.2.1",
+      "version": "1.3.0",
       "author": {
         "name": "hiropon"
       },

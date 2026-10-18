@@ -13,7 +13,7 @@ Look for how the project is started and seeded, reading only what exists:
 - seed or reset tasks, and the seed or fixture files they load: read the parts that name accounts and records
 - the package manifest's dependency on a Chromium-based desktop shell, and the launcher its scripts start it with
 
-From these, propose `start_command` and, when the project gives them, `url`, `reset_command`, `port` and `ready_timeout`. When a script prints the port, propose it as the `port` command rather than wrapping it in a `url` command; `url` can then stay unset. Prefer a command that already takes its port from the environment; otherwise note in the proposal that the app may ignore `DEMO_PORT`.
+From these, propose `start_command` and, when the project gives them, `url`, `reset_command`, `port`, `ready_timeout` and `stop_command` (only when the project names a stop or teardown command). When a script prints the port, propose it as the `port` command rather than wrapping it in a `url` command; `url` can then stay unset. Prefer a command that already takes its port from the environment; otherwise note in the proposal that the app may ignore `DEMO_PORT`.
 
 A desktop shell gets `attach: cdp`, and a `start_command` that hands the app `--remote-debugging-port=${DEMO_PORT}` the way its launcher passes arguments through (after a `--` when the launcher takes one, directly when the shell is started by itself). When the end-to-end tests start the app with a throwaway user data directory, propose the same argument with a path under `.demo/`. When the source the app's windows load has a `beforeunload` listener that cancels the unload (`Grep` for it and read the hit), propose `case_reset: none` together with the throwaway user data directory, and say in the proposal that a reload would be cancelled or would close the window, so each test case starts where the previous one left the app.
 
@@ -23,7 +23,7 @@ From the seed or fixture files, draft the body of `.claude/demo.md` as `SKILL.md
 
 ## Trial run
 
-`<slug>` is `setup` here: run `mkdir -p .demo/setup`, then run `SKILL.md` § Procedure step 4 (Start the app) once with the proposed keys and check that the resolved URL answers, then run `SKILL.md` § Procedure step 7 (Stop the app). The trial opens no start-failure gate: a timeout is recorded as the outcome. Keep the outcome: whether the URL answered, and the last 20 lines of `server.log` when it did not.
+`<slug>` is `setup` here: run `mkdir -p .demo/setup`, then run `SKILL.md` § Procedure step 4 (Start the app) once with the proposed keys, `Base ref` `HEAD` and the change set read as `SKILL.md` § Procedure step 2 (Inputs) reads it, and check that the resolved URL answers, then run `SKILL.md` § Procedure step 7 (Stop the app), which runs `stop_command` when proposed. The trial opens no start-failure gate: a timeout, or any other wait failure, is recorded as the outcome. Keep the outcome: whether the URL answered, and the last 20 lines of `server.log` when it did not.
 
 ## Setup gate
 

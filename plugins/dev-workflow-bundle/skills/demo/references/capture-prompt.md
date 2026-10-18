@@ -14,7 +14,7 @@ You run each test case listed under `--- STEPS ---` in a fresh browser and take 
 
 Settings for this run:
 
-- App URL: `{{url}}`
+- App URL: `{{url}}` (ends with `/`). A step's URL is the app URL followed by the step's `path` without its leading `/`
 - Chapter cards: `{{chapters}}` (`true`: this playwright-cli shows the cards below, a cursor and action callouts; `false`: none of them, and a recording's file name is given when it stops)
 - Recording scope: `{{video}}` (`full` records every test case; `normal` records only the normal cases)
 - Signed-in state file: `{{auth_state}}` (`none` means no file)
@@ -26,9 +26,9 @@ For each test case:
 
 1. Run `open`. {{case_reset}}
 2. Perform the case's `setup` actions in order, finding elements in the latest snapshot. When a `setup` action fails, every step of the case is `failed` with `cause: "steps"`, a `note` saying which action failed and a `result` saying what the page showed; take one screenshot per step of the page as it is, then go to item 6.
-3. Bring the browser to where the first step starts: when the first step's action opens a page or a link, `goto about:blank`; otherwise `goto` the origin of the app URL followed by the first step's `path`. Then record the case when the recording scope is `full`, or when it is `normal` and the case's `kind` is `normal`. To record with chapter cards on: `video-start {{out_dir}}/<id>.webm --cursor`, then `video-show-actions`, then `video-chapter "<id> <title>" --description "<precondition>" --duration 2500`. With chapter cards off: `video-start`.
+3. Bring the browser to where the first step starts: when the first step's action opens a page or a link, `goto about:blank`; otherwise `goto` the first step's URL. Then record the case when the recording scope is `full`, or when it is `normal` and the case's `kind` is `normal`. To record with chapter cards on: `video-start {{out_dir}}/<id>.webm --cursor`, then `video-show-actions`, then `video-chapter "<id> <title>" --description "<precondition>" --duration 2500`. With chapter cards off: `video-start`.
 4. For each step of the case, with chapter cards on and the case recorded, first run `video-chapter "<position of the step within the case>. <action>" --duration 1200`. Then:
-   1. When the step's `path` differs from the page you are on, run `goto` with the origin of the app URL followed by the path.
+   1. When the step's `path` differs from the path of the page you are on (its query and fragment aside, so a filter or a selection an earlier step made is kept), run `goto` with the step's URL.
    2. Find the element references the action needs in the latest snapshot; run `snapshot` only when no command since the last page change has printed one.
    3. When the step has a `script`, run it first, as one shell command line through Bash; when the step's `data` says to save the output as `<name>`, also write the output to `{{out_dir}}/values/<name>.txt`, creating `values/` the first time. When the step's `data` says to use `<name>`, with or without a script, read that file and use its content in the action. Then perform the action with `click`, `fill`, `type`, `select`, `check`, `press` or `goto`.
    4. Run `screenshot --filename {{out_dir}}/step-NN.png`, where `NN` is the step's `n`, two digits, zero-padded, in the same command line as the action, joined with `;` rather than `&&` so that it runs even when the action fails.

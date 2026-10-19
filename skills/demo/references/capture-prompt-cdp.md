@@ -1,6 +1,6 @@
 # Capture prompt
 
-Read from `SKILL.md` § Procedure step 6 (Capture) when `attach: cdp` is set. The text after the rule below is the `--- TASK ---` section of the capture agent's prompt; `{{session}}`, `{{out_dir}}`, `{{url}}`, `{{chapters}}`, `{{video}}`, `{{auth_state}}`, `{{language}}` and `{{case_reset}}` are filled in by the caller, the last with one paragraph of § Case reset. That text goes to a subagent that sees nothing else, so it carries no reference to this file or to `SKILL.md`.
+Read from `SKILL.md` § Procedure step 6 (Capture) when `<target>` is `cdp`. The text after the rule below is the `--- TASK ---` section of the capture agent's prompt; `{{session}}`, `{{out_dir}}`, `{{url}}`, `{{chapters}}`, `{{video}}`, `{{auth_state}}`, `{{language}}` and `{{case_reset}}` are filled in by the caller, the last with one paragraph of § Case reset. That text goes to a subagent that sees nothing else, so it carries no reference to this file or to `SKILL.md`.
 
 ## Case reset
 

@@ -8,7 +8,14 @@ import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "skills", "demo");
-const prompts = ["references/capture-prompt.md", "references/capture-prompt-cdp.md", "references/capture-prompt-mobile.md"];
+// One descriptor per capture prompt: the Case reset labels SKILL.md picks from, and whether a browser drives it.
+const promptSpecs = {
+  "references/capture-prompt.md": { resets: ["default", "command"], browser: true },
+  "references/capture-prompt-cdp.md": { resets: ["default", "none", "command"], browser: true },
+  "references/capture-prompt-mobile.md": { resets: ["default", "none", "command"], browser: false },
+};
+const prompts = Object.keys(promptSpecs);
+const web = prompts[0];
 const files = ["SKILL.md", "README.md", ...prompts, "references/setup-mode.md"];
 const texts = new Map(files.map((f) => [f, readFileSync(join(root, f), "utf8")]));
 const headings = (f) => [...texts.get(f).matchAll(/^#{1,3} (.+?)\s*$/gm)].map((m) => m[1]).sort((a, b) => b.length - a.length);
@@ -44,17 +51,14 @@ for (const f of prompts) {
     assert.ok(!body.includes("§"), "the text after the --- rule goes to a subagent that sees nothing else");
   });
 
-  test(`${f}: the capture prompt placeholders match the preamble and are filled in by SKILL.md step 6`, () => {
-    assert.ok(capture, "SKILL.md has no step 6 (Capture)");
+  test(`${f}: the capture prompt placeholders match the preamble`, () => {
     const { preamble, body } = split(f);
-    const used = [...placeholders(body)].sort();
-    assert.deepEqual([...placeholders(preamble)].sort(), used);
-    const filled = placeholders(capture[0]);
-    assert.deepEqual(used.filter((p) => !filled.has(p)), [], "step 6 does not fill these placeholders");
+    assert.deepEqual([...placeholders(preamble)].sort(), [...placeholders(body)].sort());
   });
 }
 
 test("SKILL.md step 6 fills exactly the placeholders the capture prompts use", () => {
+  assert.ok(capture, "SKILL.md has no step 6 (Capture)");
   const union = new Set(prompts.flatMap((f) => [...placeholders(split(f).body)]));
   assert.deepEqual([...placeholders(capture[0])].sort(), [...union].sort());
 });
@@ -69,8 +73,8 @@ test("the CDP capture prompt drives the app through attach and tab-select, never
 // SKILL.md step 6 picks one of these labeled paragraphs for {{case_reset}}; the web prompt has no "none" because a
 // fresh browser has nothing to skip.
 test("each capture prompt's Case reset section holds the paragraphs SKILL.md picks from", () => {
-  const expected = { "references/capture-prompt.md": ["default", "command"], "references/capture-prompt-cdp.md": ["default", "none", "command"], "references/capture-prompt-mobile.md": ["default", "none", "command"] };
-  for (const [f, labels] of Object.entries(expected)) {
+  const command = (f) => /^\*\*command\*\*: ([^.]*\.)/m.exec(split(f).preamble.split("## Case reset\n")[1] ?? "")?.[1];
+  for (const [f, { resets: labels }] of Object.entries(promptSpecs)) {
     const { preamble } = split(f);
     const section = preamble.split("## Case reset\n")[1];
     assert.ok(section, `${f} has no ## Case reset section before the --- rule`);
@@ -78,32 +82,31 @@ test("each capture prompt's Case reset section holds the paragraphs SKILL.md pic
     assert.equal(placeholders(section).size, 0, "a Case reset paragraph goes into the prompt verbatim, so it carries no placeholder");
     assert.ok(!section.includes("§"), "a Case reset paragraph goes to the subagent, so it carries no § reference");
     assert.ok(/^\*\*command\*\*: .*`<reset line>`/m.test(section), "the command paragraph names the <reset line> SKILL.md substitutes");
+    assert.equal(command(f), command(web), `${f}: the command paragraph's first sentence differs from the web prompt's`);
   }
   assert.ok(capture[0].includes("`<reset line>`"), "SKILL.md step 6 defines <reset line>");
 });
 
 // The lines the prompt bodies share by design: a line whose start matches one of these prefixes must be
 // identical across the files, so an edit to the shared capture logic cannot land in only one of them. The
-// mobile prompt has no browser, so the browser-only lines are compared between the web and CDP prompts only.
+// browser-shared lines are compared among the browser-driven prompts only.
 test("the shared lines of the capture prompts stay identical", () => {
-  const browserOnly = ["- Chapter cards:", "- Signed-in state file:", "   2. Find the element", "   4. Run `screenshot"];
-  const everywhere = ["- Recording scope:", "- Language:", "   5. From the snapshot", "- `data`:", "- `app`:", "`result` and `note`", "{ \"steps\":", "`screenshot` is the bare file name"];
-  const lines = (f) => split(f).body.split("\n");
-  const [web, cdp, mobile] = prompts.map(lines);
-  const find = (ls, p) => ls.find((l) => l.startsWith(p));
-  for (const p of [...browserOnly, ...everywhere]) {
-    assert.ok(find(web, p), `no line starts with ${JSON.stringify(p)} in the web prompt`);
-    assert.equal(find(cdp, p), find(web, p), `the line starting with ${JSON.stringify(p)} differs between the web and CDP prompts`);
+  const browserShared = ["- Chapter cards:", "- Signed-in state file:", "   2. Find the element", "   4. Run `screenshot", "   5. From the snapshot"];
+  const everywhere = ["- Recording scope:", "- Language:", "- `data`:", "- `app`:", "`result` and `note`", "{ \"steps\":", "`screenshot` is the bare file name"];
+  const find = (f, p) => split(f).body.split("\n").find((l) => l.startsWith(p));
+  for (const p of [...browserShared, ...everywhere]) assert.ok(find(web, p), `no line starts with ${JSON.stringify(p)} in the web prompt`);
+  for (const [f, { browser }] of Object.entries(promptSpecs)) {
+    if (f === web) continue;
+    for (const p of browser ? [...browserShared, ...everywhere] : everywhere) assert.equal(find(f, p), find(web, p), `${f}: the line starting with ${JSON.stringify(p)} differs from the web prompt`);
   }
-  for (const p of everywhere) assert.equal(find(mobile, p), find(web, p), `the line starting with ${JSON.stringify(p)} differs between the web and mobile prompts`);
 });
 
 test("the mobile capture prompt drives the app through agent-device, never playwright-cli", () => {
   const { body } = split("references/capture-prompt-mobile.md");
   assert.ok(body.includes("`agent-device --session {{session}} <command>`"), "every command goes through agent-device with the session");
   assert.ok(body.includes("`record start {{out_dir}}/<id>.mp4 --scope app`"), "the case is recorded with record start");
-  assert.ok(body.includes("the **open line** is `open {{app}} --platform {{target}} {{device}}`"), "the open line names the app, the platform and the device");
-  assert.equal(body.match(/playwright-cli|`goto|video-start/g), null, "playwright-cli, goto and video-start belong to the browser prompts");
+  assert.ok(body.includes("`open {{app}} --platform {{target}} {{device}}`"), "the open line names the app, the platform and the device");
+  assert.equal(body.match(/playwright-cli|`goto|video-start|`close`\./g), null, "playwright-cli, goto, video-start and a close of its own belong to the browser prompts");
 });
 
 // `attach: cdp` became the `target: cdp` alias; the old key survives only where the alias is explained.

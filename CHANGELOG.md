@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-10-19
+
+### demo v1.4.0 / dev-workflow-bundle v2.23.0
+
+- **Native mobile apps.** `target: ios` or `target: android` with `app` (the bundle identifier or package name) tells demo that the feature lives in a native app on a simulator or emulator — Swift, Kotlin, React Native, Expo or Flutter alike. The run drives it with [agent-device](https://github.com/callstack/agent-device): `agent-device open <app> --platform <target> --relaunch` boots the device when needed and counts as the readiness check, the capture agent follows `references/capture-prompt-mobile.md` (`snapshot -i` for the element refs, `press` / `fill` / `type` / `scroll` / `back` with `--settle`, `screenshot` per step, `record start` / `record stop` per case), and the stop closes the agent-device sessions and leaves the simulator or emulator running. A mobile `target` without `app` stops with `status: "error"`, `reason: "incomplete settings: app is required with target ios or android"` before anything is started. `device` names the simulator or emulator as agent-device's own selector (`--udid <id>`, `--device <name>`, `--serial <id>`); without it agent-device takes the booted device and fails when several match.
+- **One key picks the mode.** `target: web | cdp | ios | android` replaces `attach: cdp`; `web` is the default. `attach: cdp` keeps working as an alias of `target: cdp`, so settings written for 1.3.0 need no change.
+- **`start_command` is optional with a mobile target.** When set it runs as before (Metro, a mock server) and `port` expands `${DEMO_PORT}` in it and names what to stop; when unset nothing is started. `url` and `auth_state` have no meaning with a mobile target and are said in one line when set. Every configured command also sees `DEMO_APP` and `DEMO_TARGET`.
+- **A step's path names the screen.** With a mobile target a path is the heading or a label `snapshot -i` shows on the screen; the case's `setup` actions and its earlier steps reach it, nothing is opened by hand, and such a path never carries an on-screen state.
+- **Each case restarts the app, with its data kept.** The built-in case reset is `agent-device open --relaunch`; `none` opens without `--relaunch`. State the app keeps on the device (a signed-in session, local records) carries over like data an earlier case created, and a `case_reset` command (`xcrun simctl`, `adb shell pm clear`) clears it when a case needs a clean start. The data guide says where that state lives, as it does with `target: cdp`.
+- **The data check reads the first screen only.** As with `target: cdp`, it performs no `setup`; data visible only after a `setup` is found at capture and corrected by re-capture.
+- **Recordings are `.mp4` without title cards.** The renderer takes the file name as it is; `<id>.mp4` is used when it exists, else `<id>.webm`, and only when the chosen file is 15MB or smaller. On Android a recording longer than 180 seconds comes back in several files: the first is on the page and the report names the case. `tests/demo/refs.test.mjs` now covers the mobile prompt (its placeholders, its Case reset paragraphs, the lines it shares with the browser prompts) and checks that `attach: cdp` survives only beside its alias.
+- **Requirements.** `agent-device` 0.21.25 or newer on `PATH` (Node.js 22.12 or newer), Xcode for iOS simulators, the Android SDK with `adb` for emulators; `agent-device doctor` checks them. `skills/demo/README.md` § Native mobile apps (iOS simulator / Android emulator) holds the example settings and what differs from a web app.
+
 ## 2026-10-18
 
 ### demo v1.3.0 / dev-workflow-bundle v2.22.0

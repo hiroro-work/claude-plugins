@@ -1,6 +1,6 @@
 {
   "name": "demo",
-  "description": "Demo of a feature in a web app or a Chromium-based desktop app (Electron) as a page of test cases grouped by feature, each with its precondition, its own screen recording and its steps with screenshots, published as an artifact: starts the app, derives the test cases from the plan and the diff, drives the browser with playwright-cli, stops the app",
+  "description": "Demo of a feature in a web app, a Chromium-based desktop app (Electron) or a native mobile app on an iOS simulator or Android emulator as a page of test cases grouped by feature, each with its precondition, its own screen recording and its steps with screenshots, published as an artifact: starts the app, derives the test cases from the plan and the diff, drives the browser with playwright-cli or the app with agent-device, stops the app",
   "author": {
     "name": "hiropon",
     "url": "https://github.com/hiroro-work"

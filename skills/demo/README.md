@@ -1,6 +1,6 @@
 # demo
 
-Turns a feature built in this session, in a web app or in a Chromium-based desktop app (Electron), into a demo: a page of test cases grouped by feature, published as an artifact. Each test case says in one sentence what it checks, and carries its precondition, its own screen recording and its steps — the action, the expected result, what the page showed and a screenshot. The skill starts the app itself, shows the test cases for approval, drives the browser with `playwright-cli` in one subagent, and stops the app when it is done.
+Turns a feature built in this session, in a web app, in a Chromium-based desktop app (Electron), or in a native mobile app on an iOS simulator or Android emulator, into a demo: a page of test cases grouped by feature, published as an artifact. Each test case says in one sentence what it checks, and carries its precondition, its own screen recording and its steps — the action, the expected result, what the page showed and a screenshot. The skill starts the app itself, shows the test cases for approval, drives the browser with `playwright-cli` (or the app with `agent-device`) in one subagent, and stops the app when it is done.
 
 The page opens with a contents list: per feature, its test cases with confirmed / not confirmed. Choosing one opens that test case. Only the first feature's main normal case starts open, so someone who wants the gist reads that one, and someone who wants everything walks the list.
 
@@ -32,22 +32,24 @@ The bodies, shared then local, form the **data guide**: prose saying where the s
 
 | Key | Default | Meaning |
 |---|---|---|
-| `start_command` | required | Starts the app, under `sh -c` with the environment below and its stdin held open, with `${DEMO_PORT}` in the command text replaced by the port first. A local app listens on `DEMO_PORT`; a remote target names its URL in `url` |
+| `start_command` | required | Starts the app, under `sh -c` with the environment below and its stdin held open, with `${DEMO_PORT}` in the command text replaced by the port first. A local app listens on `DEMO_PORT`; a remote target names its URL in `url`. Optional with `ios` / `android` |
 | `reset_command` | none | Runs once before the start, with the same environment and the same replacement. Resets a throwaway environment |
 | `stop_command` | none | Runs once, in the foreground, when the demo is done, before the process group and port kills, with the same environment. Stops or cleans up what `start_command` created, with the same replacement. Bounded by `ready_timeout` |
-| `case_reset` | unset | What runs before each test case's setup. Unset: the built-in reset (web: a fresh browser; `target: cdp`: every window's storage and cookies cleared and reloaded). `none`: nothing (in web mode the same as unset). Anything else: a shell command line run with the environment below and `DEMO_SESSION` (the `playwright-cli` session the command can drive) exported; a non-zero exit fails the case like a failed setup action |
+| `case_reset` | unset | What runs before each test case's setup. Unset: the built-in reset (`web`: a fresh browser; `cdp`: every window's storage and cookies cleared and reloaded; `ios` / `android`: the app restarted with its data kept). `none`: nothing (with `web` the same as unset). Anything else: a shell command line run with the environment below and `DEMO_SESSION` (the `playwright-cli` or `agent-device` session the command can drive) exported; a non-zero exit fails the case like a failed setup action |
 | `target` | `web` | `web`: a browser the skill opens. `cdp`: a Chromium-based desktop app that exposes a DevTools endpoint on `DEMO_PORT`; the skill attaches to it instead of opening a browser (see § Desktop apps over CDP (Electron)). `ios` / `android`: a native app on a simulator or emulator, driven with `agent-device` (see § Native mobile apps (iOS simulator / Android emulator)). Any other value counts as `web` |
 | `attach` | none | `cdp`, with `target` unset: the same as `target: cdp`. Otherwise ignored |
-| `url` | none | A URL (`http://` / `https://`, `${VAR}` expanded from the environment plus `DEMO_PORT`), or a command re-run until it exits zero and prints the URL on its first non-empty stdout line, within `ready_timeout`. With `target: cdp`, only a URL: the endpoint's origin |
-| `ready_timeout` | `120` | Seconds to wait for the URL to resolve and answer, at most 590 (the Bash tool's 600 s limit minus the 10 s the wait call adds) |
-| `port` | none | Use this port as `DEMO_PORT` instead of a free one: a number (`${VAR}` expanded), or a command whose first stdout line is the port, run before the start with `DEMO_PORT=0` |
-| `auth_state` | none | Storage state file loaded with `playwright-cli state-load` after the browser opens or, with `target: cdp`, right after attaching and before the case's setup (over CDP its cookies are loaded, not its localStorage) |
+| `app` | none | With `ios` / `android`: the bundle identifier or package name `agent-device open` takes (required). No meaning with `web` / `cdp` |
+| `device` | none | With `ios` / `android`: the device selector `agent-device` takes, verbatim (`--udid <id>`, `--device <name>` or `--serial <id>`). Unset: the booted device of that platform; several booted ones fail the start |
+| `url` | none | A URL (`http://` / `https://`, `${VAR}` expanded from the environment plus `DEMO_PORT`), or a command re-run until it exits zero and prints the URL on its first non-empty stdout line, within `ready_timeout`. With `target: cdp`, only a URL: the endpoint's origin. No meaning with `ios` / `android` |
+| `ready_timeout` | `120` | Seconds to wait for the URL to resolve and answer, or for `agent-device open` to return, at most 590 (the Bash tool's 600 s limit minus the 10 s the wait call adds) |
+| `port` | none | Use this port as `DEMO_PORT` instead of a free one: a number (`${VAR}` expanded), or a command whose first stdout line is the port, run before the start with `DEMO_PORT=0`. With `ios` / `android` it only expands `${DEMO_PORT}` and names what to stop |
+| `auth_state` | none | Storage state file loaded with `playwright-cli state-load` after the browser opens or, with `target: cdp`, right after attaching and before the case's setup (over CDP its cookies are loaded, not its localStorage). No meaning with `ios` / `android` |
 | `error_cases` | `true` | `false` leaves the error test cases out |
 | `video` | `full` | `normal` records only the normal test cases; the error cases still get their screenshots |
 
 Settings written for 1.3.0 with `attach: cdp` keep working; `target: cdp` is the same thing.
 
-Every configured command sees three variables: `DEMO_PORT` (the port; `0` for the `port` command), `DEMO_BASE_REF` (the git ref the change is taken against, `HEAD` by default and in Setup mode's trial run) and `DEMO_CHANGED_FILES` (the path of a file under `.demo/<slug>/` listing the changed and new files, one per line). A start command in a monorepo can read the list to decide which package to serve.
+Every configured command sees three variables: `DEMO_PORT` (the port; `0` for the `port` command), `DEMO_BASE_REF` (the git ref the change is taken against, `HEAD` by default and in Setup mode's trial run) and `DEMO_CHANGED_FILES` (the path of a file under `.demo/<slug>/` listing the changed and new files, one per line). With `ios` / `android` they also see `DEMO_APP` (the `app` value) and `DEMO_TARGET` (`ios` or `android`). A start command in a monorepo can read the list to decide which package to serve.
 
 ```yaml
 ---
@@ -109,23 +111,48 @@ auth_state: ".demo/auth.json"
 
 The `url` command runs through `sh -c`, so write it in POSIX shell. Without `stop_command`, the stop kills what `start_command` started but leaves the environment it created in place. Browser settings such as HTTP credentials or a locale go in `.playwright/cli.config.json` at the project root, which `playwright-cli open` reads by itself.
 
+### Native mobile apps (iOS simulator / Android emulator)
+
+A native app (Swift, Kotlin, React Native, Expo, Flutter) on an iOS simulator or Android emulator is driven with `agent-device` instead of a browser. Set `target: ios` or `target: android` and `app` to the bundle identifier or package name; `device` picks the simulator or emulator when more than one is booted or bootable. `start_command` is optional: use it for Metro or a mock server the app talks to, or leave it out for an installed app. The skill opens the app with `agent-device open <app> --platform <target> <device> --relaunch` (booting the device when needed), reads the first screen, and hands the test cases to the capture agent. One example, for a React Native project whose debug build is already installed on the simulator:
+
+```yaml
+---
+target: ios
+app: jp.example.app.debug
+device: "--udid DE004DB2-61BD-4E64-B3E6-8FA27C1585DC"
+start_command: "yarn start"
+ready_timeout: 300
+---
+Sign-in state stays in the app's own storage across test cases; a `case_reset` command such as `xcrun simctl` or `adb shell pm clear` clears it. The seed accounts are listed in `e2e/mockServer/`.
+```
+
+What differs from a web app:
+
+- A step's path names the **screen** instead: a heading or a label `agent-device snapshot -i` shows on it. A screen is reached only through the case's setup actions and its earlier steps, never opened by hand; a deep link is an action like any other.
+- Each test case starts after the app is restarted (`agent-device open --relaunch`); its data is kept. State the app keeps on the device (a signed-in session, local records) carries over between test cases like data an earlier case created, so the first case that needs it brings it about, and later cases say so in their precondition. A `case_reset` command can clear the app's storage before each case.
+- The data check after the start reads the first screen only and performs no setup. Data visible only after a setup is found at capture, and re-capture corrects it.
+- Recordings are `.mp4`, without title cards, cursor or action callouts; agent-device burns the taps in. On Android, `adb screenrecord` stops at 180 seconds and the recording comes back in several files; only the first is on the page, and the report says so. agent-device writes a `<id>.gesture-telemetry.json` beside each recording.
+- The stop closes the agent-device sessions but leaves the simulator or emulator running. The first `open` that boots a simulator can take a minute or two; `ready_timeout: 300` leaves room for it.
+- `url` and `auth_state` have no meaning; `port` only expands `${DEMO_PORT}` in the commands and names what to stop.
+
 ### Setup mode
 
 `/demo --init`, or a run when neither settings file exists, reads the project's package scripts, the end-to-end runner's web-server configuration, port scripts, emulator or container configurations, a desktop shell dependency and its launcher, seed tasks and the seed or fixture files they load, proposes the keys (including `target: cdp` for a desktop app, and `case_reset: none` when its windows cancel the unload) and drafts the data guide, tries the keys once, and shows the proposal for `approve` / `edit` / `cancel`. On `approve` it writes `.claude/demo.md` and adds `.demo/` and `.playwright-cli/` to `.gitignore` when they are not ignored yet. `--init` stops there; a plain run continues into the demo. With `--init` and a settings file already present, nothing is written. Outside Setup mode the skill never edits `.gitignore`; it only reports when those paths are not ignored.
 
 ## Output
 
-Everything goes under `.demo/<slug>/` at the repository root: `step-NN.png`, one `<case id>.webm` per recorded test case, values saved by steps under `values/`, `steps.json`, `start-command` (the `start_command` text the run started, with `start-command.pgid` naming its process group while it runs), `server.log`, `index.html`. `<slug>` is the plan file's name, or a timestamp without a plan. `steps.json` holds the features, the test cases (id, feature, kind, title, precondition, video) and the steps (test case, action, expected result, what the page showed, status, screenshot). The directory is meant to be gitignored; the skill never commits it. `playwright-cli` also writes its snapshots to `.playwright-cli/` in the working directory.
+Everything goes under `.demo/<slug>/` at the repository root: `step-NN.png`, one `<case id>.webm` (`.mp4` with `ios` / `android`) per recorded test case, values saved by steps under `values/`, `steps.json`, `start-command` (the `start_command` text the run started, with `start-command.pgid` naming its process group while it runs), `server.log`, `index.html`. `<slug>` is the plan file's name, or a timestamp without a plan. `steps.json` holds the features, the test cases (id, feature, kind, title, precondition, video) and the steps (test case, action, expected result, what the page showed, status, screenshot). The directory is meant to be gitignored; the skill never commits it. `playwright-cli` also writes its snapshots to `.playwright-cli/` in the working directory.
 
 ## Requirements
 
 - `@playwright/cli` 0.1.21 or newer on `PATH` as `playwright-cli` (`npm i -g @playwright/cli@latest`, or the Homebrew formula). Verified with 0.1.21 and 0.1.22. An older version (such as 0.1.1, whose `--version` prints a `1.59.0-alpha…` string) still works, but records without title cards, cursor or action callouts (the file name is given at `video-stop` there). Check with `which -a playwright-cli`: an old global install earlier on `PATH` hides a newer one.
+- `agent-device` 0.21.25 or newer on `PATH` for `ios` / `android` (`npm i -g agent-device@latest`; Node.js 22.12 or newer), with Xcode for iOS simulators and the Android SDK with `adb` for emulators. `agent-device doctor` checks them. Verified with 0.21.25.
 - The `Artifact` tool for publishing. Without it the page stays at `.demo/<slug>/index.html` and its path is reported.
 - The `Agent` tool. Without it the main thread drives the browser itself.
 
 ## Permissions
 
-The configured commands run as `DEMO_PORT=<port> DEMO_BASE_REF=<ref> DEMO_CHANGED_FILES=<path> <command>`. `start_command` runs through the skill's own `node` script in that shape, so it asks for no permission of its own, whatever it contains. For the other commands the skill pre-authorizes that shape for common runners: pnpm, npm, yarn, bun, make, bundle exec, rails, python, uv run, docker compose, go run, cargo run, node. Any other command asks for permission once per run. `lsof` and `kill` are authorized so the skill can stop the server it started; a security scan may flag them for that reason. A `url` command runs inside `scripts/wait-ready.mjs`, under the `node` permission, so it is not asked for. A `case_reset` command runs inside the capture agent and may ask for permission once per run.
+The configured commands run as `DEMO_PORT=<port> DEMO_BASE_REF=<ref> DEMO_CHANGED_FILES=<path> <command>`. `start_command` runs through the skill's own `node` script in that shape, so it asks for no permission of its own, whatever it contains. For the other commands the skill pre-authorizes that shape for common runners: pnpm, npm, yarn, bun, make, bundle exec, rails, python, uv run, docker compose, go run, cargo run, node. Any other command asks for permission once per run. `lsof` and `kill` are authorized so the skill can stop the server it started; a security scan may flag them for that reason. A `url` command runs inside `scripts/wait-ready.mjs`, under the `node` permission, so it is not asked for. A `case_reset` command runs inside the capture agent and may ask for permission once per run. `agent-device` is authorized for the main thread (the start, the data check and the stop); the capture agent runs it inside the subagent.
 
 ## Language
 

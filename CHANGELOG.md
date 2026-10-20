@@ -2,6 +2,11 @@
 
 ## 2026-10-20
 
+### demo v1.10.0 / dev-workflow-bundle v2.29.0
+
+- **Recordings over 15MB are compressed to fit.** Before the page is rendered, a new `scripts/fit-videos.mjs` measures each case's recording and writes one over the artifact file limit again as `<id>.small.<ext>`, compressed (and, for an `.mp4`, scaled down), which the page then carries. The original recording is kept. It tries `ffmpeg` on `PATH` first; a `.webm` falls back to the ffmpeg Playwright downloads for recording, and an `.mp4` to `avconvert` on macOS. None of them is required.
+- **The report says why a recording is missing.** A recording still over 15MB after compression, one no compressor was found for, and one whose compressor failed each get their own line. The no-compressor line says that `ffmpeg` on `PATH` (or `avconvert` for an `.mp4` on macOS) lets the next run compress it; on Linux, an `.mp4` needs an `ffmpeg` with H.264.
+
 ### demo v1.9.0 / dev-workflow-bundle v2.28.0
 
 - **Credentials stay out of the page's text.** A password, token or key the data guide, a seed or a fixture holds is written in the step table, `steps.json` and the published page as its source — the file path and, when it sits under one, the heading — never as its value. The capture agent reads the value from that file when it types it, and may read only the files such a source names beyond its own.

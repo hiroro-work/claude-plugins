@@ -2,6 +2,13 @@
 
 ## 2026-10-20
 
+### demo v1.9.0 / dev-workflow-bundle v2.28.0
+
+- **Credentials stay out of the page's text.** A password, token or key the data guide, a seed or a fixture holds is written in the step table, `steps.json` and the published page as its source — the file path and, when it sits under one, the heading — never as its value. The capture agent reads the value from that file when it types it, and may read only the files such a source names beyond its own.
+- **The capture's results are scrubbed.** Before `steps.json` is written, every occurrence of a value a source points at in a step's result or note is replaced with its source.
+- **Recordings hide the typed value.** With a web or `cdp` target and title cards on, the action callouts are turned off while a credential is typed, because a fill callout shows the typed text.
+- **Behavior change from v1.8.0**: `approve` and `revise` at the step-table gate read the account section's identifier into the setup, but no longer its password. A password given as a value in `revise` is not taken into the tables; the run asks for it to be written into `.claude/demo.local.md` instead.
+
 ### demo v1.8.0 / dev-workflow-bundle v2.27.0
 
 - **A real-server candidate gets a `reset_command` too.** With a mobile target, Setup mode proposes a build-and-install `reset_command` for a real-server candidate when a project script builds its configuration, or when the end-to-end build can be switched to that configuration (the configuration name swapped and the mock's environment assignments dropped). An end-to-end build that also builds a test-only package is not switched; the proposal then says the build has to be installed by hand, as before.

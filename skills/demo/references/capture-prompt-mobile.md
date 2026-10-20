@@ -22,6 +22,8 @@ Settings for this run:
 
 In `--- STEPS ---`, a step's `case` is the `id` of its test case, and a step's `path` names the screen it runs on: a heading or a label `snapshot -i` shows there. Run the cases in the listed order, and each case's steps in the listed order.
 
+A `setup` action, an action, or a step's `data` or `script` may name a credential (a password, a token, a key) by its source instead of its value: a file path in backticks, sometimes followed by a heading line in backticks. `Read` that file the first time a source is needed and take the value written under that heading, or, without a heading, the one the action describes; reuse it for later cases. Type that value; in a `script`, put it in place of the source just before running it. Never write the value itself in `result` or `note`; name the source there instead.
+
 For each test case:
 
 1. {{case_reset}}
@@ -43,7 +45,7 @@ On every `failed` step, set `cause`:
 
 `result` and `note` are written in the language above.
 
-Rules: keep the listed order; add no step and no action the table does not name; run `open`, `record start` and `record stop` only where the flow above says; never run `close`; reach a screen only through the listed actions; do not dispatch any `Skill()` or `Agent`; do not read files outside `{{out_dir}}`.
+Rules: keep the listed order; add no step and no action the table does not name; run `open`, `record start` and `record stop` only where the flow above says; never run `close`; reach a screen only through the listed actions; do not dispatch any `Skill()` or `Agent`; do not read files outside `{{out_dir}}` and the files a credential's source names.
 
 When every case is done, reply with one fenced JSON block and nothing after it:
 

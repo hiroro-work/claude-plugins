@@ -22,6 +22,8 @@ Settings for this run:
 
 In `--- STEPS ---`, a step's `case` is the `id` of its test case. Run the cases in the listed order, and each case's steps in the listed order.
 
+A `setup` action, an action, or a step's `data` or `script` may name a credential (a password, a token, a key) by its source instead of its value: a file path in backticks, sometimes followed by a heading line in backticks. `Read` that file the first time a source is needed and take the value written under that heading, or, without a heading, the one the action describes; reuse it for later cases. Type that value; in a `script`, put it in place of the source just before running it. Never write the value itself in `result` or `note`; name the source there instead. When a step types such a value in a case recorded with chapter cards on, put `video-hide-actions` before its action and `video-show-actions` after its screenshot, in the same command line.
+
 For each test case:
 
 1. Run `open`. {{case_reset}}
@@ -44,7 +46,7 @@ On every `failed` step, set `cause`:
 
 `result` and `note` are written in the language above.
 
-Rules: keep the listed order; add no step and no action the table does not name; run `open`, `close`, `video-start` and `video-stop` only where the flow above says; do not dispatch any `Skill()` or `Agent`; do not read files outside `{{out_dir}}` and `.playwright-cli/`.
+Rules: keep the listed order; add no step and no action the table does not name; run `open`, `close`, `video-start`, `video-stop`, `video-show-actions` and `video-hide-actions` only where the flow above says; do not dispatch any `Skill()` or `Agent`; do not read files outside `{{out_dir}}`, `.playwright-cli/` and the files a credential's source names.
 
 When every case is done, reply with one fenced JSON block and nothing after it:
 

@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-10-20
+
+### demo v1.7.0 / dev-workflow-bundle v2.26.0
+
+- **Mobile pages fit the screen.** With `target: ios` or `android`, the page caps each screenshot and recording at 70% of the window height and puts a step's text to the left of its screenshot, falling back to one column on a phone-width window. Web and `cdp` pages render exactly as before. `steps.json` now carries `target`.
+- **Setup mode offers one candidate per server.** The end-to-end mock server and each non-production server the tracked configuration names (only the server URLs are read from it) become candidates with their own keys, and with a mobile target their own build. A production server is never a candidate. Each remote server gets a reachability check of up to 10 seconds; a reachable real server is recommended, and the mock only when no real server answers.
+- **A candidate gate comes before the trial.** With two or more candidates, Setup mode shows each one's keys, reachability and what it shows well and cannot show, and asks which to use; `cancel` stops with `setup declined`. The trial then runs the chosen candidate.
+- **An account section for a real server.** When the chosen server needs an account the project does not name, Setup mode also writes `.claude/demo.local.md` with a `## Sign-in account` section whose identifier and password are placeholders. Setup mode now also adds `.claude/demo.local.md` to `.gitignore` when it is not ignored.
+
 ## 2026-10-19
 
 ### demo v1.6.0 / dev-workflow-bundle v2.25.0

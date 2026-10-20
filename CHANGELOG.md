@@ -2,6 +2,13 @@
 
 ## 2026-10-20
 
+### demo v1.8.0 / dev-workflow-bundle v2.27.0
+
+- **A real-server candidate gets a `reset_command` too.** With a mobile target, Setup mode proposes a build-and-install `reset_command` for a real-server candidate when a project script builds its configuration, or when the end-to-end build can be switched to that configuration (the configuration name swapped and the mock's environment assignments dropped). An end-to-end build that also builds a test-only package is not switched; the proposal then says the build has to be installed by hand, as before.
+- **The proposed build runs in parentheses.** `reset_command` is now `(<build>) && agent-device install "$PWD/<binaryPath>" …`, so a build command that starts with `cd` no longer moves `$PWD` away from the binary path.
+- **Leftover account placeholders reach the step table.** The data check notes each line of the data guide's sign-in account section that still holds Setup mode's placeholder, and the step-table gate names it with its file and line. Write the value into the file before answering: `approve` and `revise` read the section again and put the value into the test cases' setup.
+- **An `app` placeholder stops the run before the start.** A mobile `app` still set to Setup mode's `<write the bundle identifier>` counts as unset and stops with `incomplete settings`, right after Setup mode writes it too, instead of failing at `agent-device open`.
+
 ### demo v1.7.0 / dev-workflow-bundle v2.26.0
 
 - **Mobile pages fit the screen.** With `target: ios` or `android`, the page caps each screenshot and recording at 70% of the window height and puts a step's text to the left of its screenshot, falling back to one column on a phone-width window. Web and `cdp` pages render exactly as before. `steps.json` now carries `target`.

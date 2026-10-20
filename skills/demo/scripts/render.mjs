@@ -5,7 +5,7 @@
 // On a validation failure nothing is written, violations go to stderr one per line, exit 3.
 //
 // steps.json shape:
-// { title, dek?, url?,
+// { title, dek?, url?, target?,
 //   features: [{ letter, name, description? }],
 //   cases: [{ id, feature, kind: "normal"|"error", title, precondition?, video? }],
 //   steps: [{ n, case, path?, action, expected, result, data?, script?, status: "ok"|"failed", note?, screenshot }] }
@@ -35,6 +35,11 @@ const cases = doc.cases.map((c) => {
 });
 const features = doc.features.map((f, i) => ({ ...f, cases: cases.filter((c) => c.feature === i + 1) }));
 const initiallyOpen = features[0].cases.find((c) => c.kind === "normal");
+const portrait = doc.target === "ios" || doc.target === "android";
+const portraitCss = `.case-body video { width: auto; max-width: 100%; max-height: 70vh; display: block; margin: 0 auto 16px; }
+figure img { width: auto; max-width: 100%; max-height: 70vh; margin: 0 auto; }
+@media (min-width: 601px) { li.step { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 0 24px; align-items: start; } li.step figure { margin: 0; } }
+`;
 const notConfirmed = cases.filter((c) => !c.ok).length;
 
 const html = `<!doctype html>
@@ -94,7 +99,7 @@ li.step h4 { font-size: 1.05rem; margin: 0 0 8px; display: flex; gap: 12px; alig
 pre { background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; overflow-x: auto; font-family: "IBM Plex Mono", monospace; font-size: .85rem; }
 figure { margin: 12px 0 0; }
 figure img { width: 100%; height: auto; border: 1px solid var(--line); border-radius: 8px; display: block; }
-</style>
+${portrait ? portraitCss : ""}</style>
 </head>
 <body>
 <main>
@@ -162,14 +167,14 @@ ${c.steps.map(renderStep).join("\n")}
 function renderStep(s, i) {
   const ok = s.status === "ok";
   return `<li class="step" id="step-${s.n}">
-<h4><span class="n">${i + 1}</span><span>${esc(s.action)}</span>${badge(ok)}</h4>
+${portrait ? '<div class="step-text">\n' : ""}<h4><span class="n">${i + 1}</span><span>${esc(s.action)}</span>${badge(ok)}</h4>
 ${s.path ? `<p class="path">${esc(s.path)}</p>` : ""}
 <div class="row"><span class="k">${esc(L.expected)}</span><span>${esc(s.expected)}</span></div>
 <div class="row"><span class="k">${esc(L.result)}</span><span>${esc(s.result)}</span></div>
 ${s.data ? `<div class="row"><span class="k">${esc(L.data)}</span><span>${esc(s.data)}</span></div>` : ""}
 ${s.script ? `<div class="row"><span class="k">${esc(L.script)}</span></div><pre>${esc(s.script)}</pre>` : ""}
 ${!ok && s.note ? `<p class="note">${esc(L.note)}: ${esc(s.note)}</p>` : ""}
-<figure><img src="${esc(s.screenshot)}" alt="${esc(s.action)}" loading="lazy"></figure>
+${portrait ? "</div>\n" : ""}<figure><img src="${esc(s.screenshot)}" alt="${esc(s.action)}" loading="lazy"></figure>
 </li>`;
 }
 
@@ -187,7 +192,7 @@ function validate(d) {
   const nonEmpty = (v) => typeof v === "string" && v.trim();
   const optString = (o, keys, at) => { for (const k of keys) if (o?.[k] != null && typeof o[k] !== "string") e.push(`${at}${k} must be a string when present`); };
   if (!nonEmpty(d.title)) e.push("title must be a non-empty string");
-  optString(d, ["dek", "url"], "");
+  optString(d, ["dek", "url", "target"], "");
   if (!Array.isArray(d.features) || d.features.length === 0) { e.push("features must be a non-empty array"); return e; }
   d.features.forEach((f, i) => {
     for (const k of ["letter", "name"]) if (!nonEmpty(f?.[k])) e.push(`features[${i}].${k} must be a non-empty string`);

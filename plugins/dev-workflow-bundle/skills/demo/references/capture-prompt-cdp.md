@@ -1,6 +1,6 @@
 # Capture prompt
 
-Read from `SKILL.md` § Procedure step 6 (Capture) when `attach: cdp` is set. The text after the rule below is the `--- TASK ---` section of the capture agent's prompt; `{{session}}`, `{{out_dir}}`, `{{url}}`, `{{chapters}}`, `{{video}}`, `{{auth_state}}`, `{{language}}` and `{{case_reset}}` are filled in by the caller, the last with one paragraph of § Case reset. That text goes to a subagent that sees nothing else, so it carries no reference to this file or to `SKILL.md`.
+Read from `SKILL.md` § Procedure step 6 (Capture) when `<target>` is `cdp`. The text after the rule below is the `--- TASK ---` section of the capture agent's prompt; `{{session}}`, `{{out_dir}}`, `{{url}}`, `{{chapters}}`, `{{video}}`, `{{auth_state}}`, `{{language}}` and `{{case_reset}}` are filled in by the caller, the last with one paragraph of § Case reset. That text goes to a subagent that sees nothing else, so it carries no reference to this file or to `SKILL.md`.
 
 ## Case reset
 
@@ -24,6 +24,8 @@ Settings for this run:
 
 In `--- STEPS ---`, a step's `case` is the `id` of its test case, and a step's `path` names the app window it runs in: a string the window's title or URL shows in `tab-list`. To **select** a window: find its index in the latest `tab-list` output (run `tab-list` again when the window is not in it; a window an action opened appears there) and run `tab-select <index>`. To load the signed-in state file when it is not `none`: run `state-load` with it as a command line of its own; over CDP the app may answer with `Protocol error (Target.createTarget): Not supported` and a non-zero exit when the file holds localStorage, while its cookies are loaded all the same; go on. Run the cases in the listed order, and each case's steps in the listed order.
 
+A `setup` action, an action, or a step's `data` or `script` may name a credential (a password, a token, a key) by its source instead of its value: a file path in backticks, sometimes followed by a heading line in backticks. `Read` that file the first time a source is needed and take the value written under that heading, or, without a heading, the one the action describes; reuse it for later cases. Type that value; in a `script`, put it in place of the source just before running it. Never write the value itself in `result` or `note`; name the source there instead. When a step types such a value in a case recorded with chapter cards on, put `video-hide-actions` before its action and `video-show-actions` after its screenshot, in the same command line.
+
 For each test case:
 
 1. Run `attach --cdp={{url}}`. {{case_reset}}
@@ -46,7 +48,7 @@ On every `failed` step, set `cause`:
 
 `result` and `note` are written in the language above.
 
-Rules: keep the listed order; add no step and no action the table does not name; run `attach`, `close`, `video-start` and `video-stop` only where the flow above says; reach a window through `tab-select` only; do not dispatch any `Skill()` or `Agent`; do not read files outside `{{out_dir}}` and `.playwright-cli/`.
+Rules: keep the listed order; add no step and no action the table does not name; run `attach`, `close`, `video-start`, `video-stop`, `video-show-actions` and `video-hide-actions` only where the flow above says; reach a window through `tab-select` only; do not dispatch any `Skill()` or `Agent`; do not read files outside `{{out_dir}}`, `.playwright-cli/` and the files a credential's source names.
 
 When every case is done, reply with one fenced JSON block and nothing after it:
 

@@ -138,7 +138,7 @@ What differs from a web app:
 
 ## Output
 
-Everything goes under `.demo/<slug>/` at the repository root: `step-NN.png`, one `<case id>.webm` (`.mp4` with `ios` / `android`) per recorded test case, values saved by steps under `values/`, `steps.json`, `start-command` (the `start_command` text the run started, with `start-command.pgid` naming its process group while it runs), `server.log`, `index.html`. `<slug>` is the plan file's name, or a timestamp without a plan. `steps.json` holds the features, the test cases (id, feature, kind, title, precondition, video) and the steps (test case, action, expected result, what the page showed, status, screenshot). The directory is meant to be gitignored; the skill never commits it. `playwright-cli` also writes its snapshots to `.playwright-cli/` in the working directory.
+Everything goes under `.demo/<slug>/` at the repository root: `step-NN.png`, one `<case id>.webm` (`.mp4` with `ios` / `android`) per recorded test case, values saved by steps under `values/`, `steps.json`, `start-command` (the `start_command` text the run started, with `start-command.pgid` naming its process group while it runs), `server.log`, `index.html`. `<slug>` is the plan file's name, or a timestamp without a plan. `steps.json` holds the target, the features, the test cases (id, feature, kind, title, precondition, video) and the steps (test case, action, expected result, what the page showed, status, screenshot). With `ios` / `android` the page caps each screenshot and recording at 70% of the window height and puts a step's text beside its screenshot. The directory is meant to be gitignored; the skill never commits it. `playwright-cli` also writes its snapshots to `.playwright-cli/` in the working directory.
 
 ## Requirements
 

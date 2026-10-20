@@ -148,10 +148,29 @@ test("unreadable JSON and non-string optional fields exit 3", () => {
     try { execFileSync("node", [script, "--steps", join(dir, "s.json"), "--out", join(dir, "p.html")], { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }); throw new Error("expected a failure"); }
     catch (err) { assert.equal(err.status, 3); assert.ok(String(err.stderr).includes("steps.json cannot be read")); }
   } finally { rmSync(dir, { recursive: true, force: true }); }
-  const bad = renderFails({ ...good, url: 1, steps: [{ ...good.steps[0], note: {} }, ...good.steps.slice(1)] });
+  const bad = renderFails({ ...good, url: 1, target: 1, steps: [{ ...good.steps[0], note: {} }, ...good.steps.slice(1)] });
   assert.equal(bad.status, 3);
   assert.ok(bad.stderr.includes("url must be a string when present"));
+  assert.ok(bad.stderr.includes("target must be a string when present"));
   assert.ok(bad.stderr.includes("steps[0].note must be a string when present"));
+});
+
+test("ios and android lay out each step's text beside its screenshot", () => {
+  for (const target of ["ios", "android"]) {
+    const html = render({ ...good, target });
+    const step = between(html, 'id="step-1"', "</li>");
+    assert.ok(step.startsWith('id="step-1">\n<div class="step-text">\n<h4>'));
+    assert.ok(step.indexOf("</div>\n<figure>") > step.indexOf('<div class="row">'));
+    assert.equal(count(html, /max-height: 70vh/g), 2);
+    assert.ok(html.includes("@media (min-width: 601px) { li.step { display: grid;"));
+  }
+});
+
+test("web, cdp and no target render the same page, without the portrait layout", () => {
+  assert.ok(!goodJa.includes("step-text"));
+  assert.ok(!goodJa.includes("70vh"));
+  assert.equal(render({ ...good, target: "web" }), goodJa);
+  assert.equal(render({ ...good, target: "cdp" }), goodJa);
 });
 
 test("missing arguments exit 1", () => {

@@ -359,7 +359,6 @@ details.step > .step-body { padding: 2px 0 2px 18px; }
 }
 .decision-card > .dc-q,
 .decision-card > .dc-toggle,
-.decision-card > .dc-note,
 .decision-card > .comment-btn,
 .decision-card > .comment-input,
 .decision-card > .thread { grid-column: 1 / -1; }
@@ -373,9 +372,9 @@ details.step > .step-body { padding: 2px 0 2px 18px; }
 }
 .decision-card.switched { border-left-color: var(--revise); background: var(--switched-bg); }
 .dc-q { font-weight: 600; margin-bottom: 8px; }
-.dc-note { font-size: 12px; color: var(--muted); }
-.branch-card .dc-rec.unchosen { background: var(--bg-soft); border-color: var(--border); color: var(--muted); }
-.branch-card .dc-alt.chosen { background: var(--approve-bg); border-color: var(--approve-border); color: var(--fg); }
+.decision-card > .branch-choices { grid-column: 1 / -1; list-style: none; margin: 4px 0 8px; padding: 0; }
+.branch-choices > li { margin: 4px 0; }
+.branch-choices label { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; }
 .dc-q .dc-tag {
   display: inline-block; font-size: 11px; font-weight: 700; color: var(--on-accent);
   background: var(--accent); border-radius: 4px; padding: 1px 7px; margin-right: 6px; vertical-align: 1px;

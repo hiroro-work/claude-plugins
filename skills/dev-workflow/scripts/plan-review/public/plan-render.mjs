@@ -13,12 +13,14 @@ import {
 export const LABELS = {
   en: {
     foldLabel: "Read the text",
+    branchChoices: { stay: "Stay on the current branch", new: "Create a new branch from here", stack: "Stack a new branch on this one (gh stack)" },
     atAGlanceTitle: "Decisions at a glance",
     diffBanner: (n, removed) => `🔍 ${n} section${n === 1 ? "" : "s"} changed or added since your last review${removed ? `, ${removed} removed` : ""} — changes highlighted below`,
     diffBannerNone: "🔍 No section changes since your last review",
   },
   ja: {
     foldLabel: "文章を読む",
+    branchChoices: { stay: "このまま今のブランチで作業する", new: "ここから新しいブランチを作る", stack: "今のブランチの上に新しいブランチを積む（gh stack）" },
     atAGlanceTitle: "決定事項の一覧",
     diffBanner: (n, removed) => `🔍 前回レビューから ${n} 個のセクションが変更・追加されました${removed ? `（削除 ${removed} 件）` : ""} — 変更箇所を以下にハイライト`,
     diffBannerNone: "🔍 前回レビューからセクションの変更はありません",
@@ -111,7 +113,7 @@ function chip(label, value, cls) {
 
 /**
  * @param {object} [env]
- * @param {{foldLabel?: string, atAGlanceTitle?: string, diffBanner?: (n: number, removed: number) => string, diffBannerNone?: string}} [env.labels] merged over `LABELS.en`
+ * @param {{foldLabel?: string, atAGlanceTitle?: string, diffBanner?: (n: number, removed: number) => string, diffBannerNone?: string, branchChoices?: object}} [env.labels] merged over `LABELS.en`
  * @param {object} [env.diff] plan-parse.mjs' diff state
  * @param {boolean} [env.atAGlance]
  * @param {{decorateSection?: Function, decorateDecisionCard?: Function, decorateBranchCard?: Function, renderDiagrams?: Function}} [env.hooks]
@@ -119,7 +121,7 @@ function chip(label, value, cls) {
  */
 export function createRenderer(env = {}) {
   const labels = { ...LABELS.en, ...(env.labels || {}) };
-  const { foldLabel, atAGlanceTitle, diffBanner, diffBannerNone } = labels;
+  const { foldLabel, atAGlanceTitle, diffBanner, diffBannerNone, branchChoices } = labels;
   const diff = env.diff || emptyDiff();
   const atAGlance = Boolean(env.atAGlance);
   const hooks = env.hooks || {};
@@ -266,20 +268,21 @@ export function createRenderer(env = {}) {
 
     const q = document.createElement("div");
     q.className = "dc-q";
-    q.innerHTML = `<span class="dc-tag">Branch</span>${mdInline(branch.current)}`;
+    q.innerHTML = `<span class="dc-tag">Current</span>${mdInline(branch.current)}`;
     card.appendChild(q);
 
-    const rec = document.createElement("div");
-    rec.className = "dc-rec";
-    rec.innerHTML = `<span class="dc-label">Recommendation</span>${md(branch.recommendation.text)}`;
-    card.appendChild(rec);
-    for (const o of branch.options) {
-      const alt = document.createElement("div");
-      alt.className = "dc-alt";
-      alt.dataset.choice = o.value;
-      alt.innerHTML = `<span class="dc-label">Option</span>${md(o.text)}`;
-      card.appendChild(alt);
+    // The plan keeps each choice's command for the Branch action; the page shows only what it does.
+    const list = document.createElement("ul");
+    list.className = "branch-choices";
+    for (const c of [branch.recommendation, ...branch.options]) {
+      const li = document.createElement("li");
+      li.dataset.choice = c.value;
+      const text = document.createElement("span");
+      text.textContent = branchChoices[c.value] || c.value;
+      li.appendChild(text);
+      list.appendChild(li);
     }
+    card.appendChild(list);
 
     if (hooks.decorateBranchCard) {
       hooks.decorateBranchCard({ card, id, excerpt, recommendation: branch.recommendation, options: branch.options });

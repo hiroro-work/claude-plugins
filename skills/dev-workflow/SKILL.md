@@ -110,7 +110,7 @@ This skill's procedure dispatches subagents, so invoking the skill **is** the re
 
    A non-zero exit anywhere records no `<start-tree>`: say so in one line and continue.
 4. Load and merge the settings; resolve the run mode, the `--artifact` override, and `mode`; emit `Output language: <value>`, `Run mode: <value>`, and `Mode: <value>`. In mob mode, read `references/mob-mode.md` now; in solo mode never open it.
-5. Register the nineteen phases with `TaskCreate`, subjects = the `## Phase N:` headings below minus the prefix. Mark each `in_progress` on entry and `completed` on exit in the same tool-call burst as the phase's first or last action. Mark the phases skipped by settings or run mode `completed` here; tier-derived skips are marked at Task Decomposition.
+5. Register the nineteen phases with `TaskCreate`, subjects = the `## Phase N:` headings below minus the prefix. Mark each `in_progress` on entry and `completed` on exit in the same tool-call burst as the phase's first or last action. Mark the phases skipped by settings or run mode `completed` here; tier-derived skips are marked at Task Decomposition. No `TaskCreate` → skip every row step; emit `Phase: <name>` on each entry.
 
 ## Phase 2: Task Decomposition
 

@@ -5,7 +5,7 @@
 import {
   OPEN_TYPES, STEP_COLLAPSE_TYPES,
   anchorNorm, buildDecisionDigest, decisionBlockId, decisionSig, emptyDiff, escapeHtml,
-  excerptOf, parseDecisions,
+  excerptOf, parseBranch, parseDecisions,
   sectionGist, splitPreamble, stripMd,
 } from "./plan-parse.mjs";
 
@@ -114,7 +114,7 @@ function chip(label, value, cls) {
  * @param {{foldLabel?: string, atAGlanceTitle?: string, diffBanner?: (n: number, removed: number) => string, diffBannerNone?: string}} [env.labels] merged over `LABELS.en`
  * @param {object} [env.diff] plan-parse.mjs' diff state
  * @param {boolean} [env.atAGlance]
- * @param {{decorateSection?: Function, decorateDecisionCard?: Function, renderDiagrams?: Function}} [env.hooks]
+ * @param {{decorateSection?: Function, decorateDecisionCard?: Function, decorateBranchCard?: Function, renderDiagrams?: Function}} [env.hooks]
  *   `renderDiagrams` also selects the mermaid holder (`div` with a library, `<pre class="mermaid">` without).
  */
 export function createRenderer(env = {}) {
@@ -256,6 +256,37 @@ export function createRenderer(env = {}) {
     return card;
   }
 
+  function renderBranchCard(branch, sectionId) {
+    const id = `${sectionId}::card`;
+    const excerpt = excerptOf(branch.current);
+    const card = document.createElement("div");
+    card.className = "decision-card branch-card";
+    card.dataset.blockId = id;
+    card.dataset.anchorKey = anchorNorm(branch.current);
+
+    const q = document.createElement("div");
+    q.className = "dc-q";
+    q.innerHTML = `<span class="dc-tag">Branch</span>${mdInline(branch.current)}`;
+    card.appendChild(q);
+
+    const rec = document.createElement("div");
+    rec.className = "dc-rec";
+    rec.innerHTML = `<span class="dc-label">Recommendation</span>${md(branch.recommendation.text)}`;
+    card.appendChild(rec);
+    for (const o of branch.options) {
+      const alt = document.createElement("div");
+      alt.className = "dc-alt";
+      alt.dataset.choice = o.value;
+      alt.innerHTML = `<span class="dc-label">Option</span>${md(o.text)}`;
+      card.appendChild(alt);
+    }
+
+    if (hooks.decorateBranchCard) {
+      hooks.decorateBranchCard({ card, id, excerpt, recommendation: branch.recommendation, options: branch.options });
+    }
+    return card;
+  }
+
   function renderAtAGlance(sections) {
     if (!atAGlance) return;
     const el = document.getElementById("at-a-glance");
@@ -318,6 +349,13 @@ export function createRenderer(env = {}) {
           if (prevSigs && !prevSigs.has(decisionSig(it))) card.classList.add("card-changed");
           body.appendChild(card);
         });
+      }
+    }
+    if (section.type === "branch") {
+      const branch = parseBranch(section.body);
+      if (branch) {
+        isCards = true;
+        body.appendChild(renderBranchCard(branch, section.id));
       }
     }
     if (section.type === "overview" && overviewModel && isStructuredOverview(overviewModel)) {

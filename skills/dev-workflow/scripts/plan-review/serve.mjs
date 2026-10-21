@@ -221,8 +221,9 @@ function handleSubmit(req, res) {
           }))
       : [];
 
+    const branch = ["stay", "new", "stack"].includes(body.branch) ? body.branch : null;
     const submitted_at = new Date().toISOString();
-    const payload = { plan: planId, decision, submitted_at, comments };
+    const payload = { plan: planId, decision, branch, submitted_at, comments };
     try {
       writeFileSync(commentsPath, JSON.stringify(payload, null, 2) + "\n");
     } catch (err) {

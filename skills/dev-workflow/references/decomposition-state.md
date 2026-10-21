@@ -1,6 +1,6 @@
 # Decomposition state file
 
-Read from `SKILL.md` Phase 2 (Task Decomposition) and Phase 19 (Completion), and from `decomposition.md` § Propose a split. Unqualified `§` references point into this file.
+Read from `SKILL.md` Phase 2 (Task Decomposition) and Phase 19 (Completion), from `decomposition.md` § Propose a split, and from `plan-approval.md` § Branch action. Unqualified `§` references point into this file.
 
 ## State file
 
@@ -46,9 +46,9 @@ Validate on every read: the four top-level keys present, ids unique integers, `d
 
 ## Stacked PRs
 
-Used when the user answered `stack` at the split proposal. A `git switch` or `gh stack` command that fails is retried once after 1–2 seconds; `<reason>` is its last non-empty stderr line cut to 80 chars, or `(no stderr)`. Do not auto-recover (no force push, no rebase, no branch rename). When the retry fails too: at **Start**, say `stack-init-failed (<reason>)` in one line and write the state file without `pr_stack`; at **Resume**, stop with `<reason>`, leaving the state file as last written; at **Finish**, say `submit-failed (<reason>)` in one line and continue. A subtask's branch is `<slug>-<id>`, with `-2`, `-3` appended while `git rev-parse --verify -q refs/heads/<name>` finds one.
+Used when a decomposed run's Branch choice is `stack` (`plan-approval.md` § Branch action). A `git switch` or `gh stack` command that fails is retried once after 1–2 seconds; `<reason>` is its last non-empty stderr line cut to 80 chars, or `(no stderr)`. Do not auto-recover (no force push, no rebase, no branch rename). When the retry fails too: at **Start**, say `stack-record-failed (<reason>)` in one line and leave `pr_stack` unwritten; at **Resume**, stop with `<reason>`, leaving the state file as last written; at **Finish**, say `submit-failed (<reason>)` in one line and continue. A subtask's branch is `<slug>-<id>`, with `-2`, `-3` appended while `git rev-parse --verify -q refs/heads/<name>` finds one.
 
-**Start** (just before the state file is written): `trunk` = `git symbolic-ref -q --short HEAD`. Run `gh stack init --base <trunk> <branch>` for the first runnable subtask; it creates the branch at HEAD and switches to it. On success, write `pr_stack` (`top` = that branch) and the subtask's `branch`.
+**Start** (after the Branch action's `gh stack` command created this run's branch): run `gh stack view --json`, write `pr_stack` with `trunk` = its `trunk` and `top` = the current branch, and set the current subtask's `branch` to the current branch.
 
 **Resume**:
 

@@ -22,6 +22,7 @@ import {
   escapeHtml,
   excerptOf,
   fieldValue,
+  parseBranch,
   parseDecisions,
   parseOverview,
   parseSections,
@@ -307,7 +308,7 @@ test("emptyDiff is the pre-revise shape index.html holds until buildDiff replace
 
 // Both READMEs' rename sweep lists name SECTION_TYPES; these Sets are what a missed rename breaks.
 test("OPEN_TYPES and STEP_COLLAPSE_TYPES follow the SECTION_TYPES flags", () => {
-  assert.deepEqual([...OPEN_TYPES].sort(), ["buildorder", "context", "decisions", "overview", "whyorder"]);
+  assert.deepEqual([...OPEN_TYPES].sort(), ["branch", "buildorder", "context", "decisions", "overview", "whyorder"]);
   assert.deepEqual([...STEP_COLLAPSE_TYPES], ["buildorder"]);
 });
 
@@ -447,4 +448,35 @@ test("a leading thematic break is not mistaken for frontmatter", () => {
   const md = "---\n\n### Overview\n- **Goal**: g\n\n---\n\n### Test plan\n- t\n";
   const { sections } = parseSections(md);
   assert.deepEqual(sections.map((s) => s.title), ["Overview", "Test plan"]);
+});
+
+test("classify recognizes the Branch section", () => {
+  assert.equal(classify("Branch"), "branch");
+});
+
+test("parseBranch reads the current branch, the recommendation, and each option by its backticked choice", () => {
+  const b = parseBranch([
+    "- **Current**: `feat-x`, 3 commits ahead of `main`, not pushed",
+    "- **Recommendation**: `stack` — `gh stack init --base main feat-x card`",
+    "- **Option**: `stay` — commit onto `feat-x`",
+    "- **Option**: `new` — `git switch -c card`",
+  ].join("\n"));
+  assert.equal(b.current, "`feat-x`, 3 commits ahead of `main`, not pushed");
+  assert.equal(b.recommendation.value, "stack");
+  assert.deepEqual(b.options.map((o) => o.value), ["stay", "new"]);
+});
+
+test("parseBranch with no Option lines is a fixed choice", () => {
+  const b = parseBranch("- **Current**: `x-2`\n- **Recommendation**: `stack` — on the branch `--resume` created");
+  assert.equal(b.recommendation.value, "stack");
+  assert.deepEqual(b.options, []);
+});
+
+test("parseBranch returns null without a Recommendation, so the section renders as plain markdown", () => {
+  assert.equal(parseBranch("- **Current**: `main`\n- **Option**: `new` — `git switch -c y`"), null);
+  assert.equal(parseBranch("Free text about branches."), null);
+});
+
+test("a Branch card's block id maps to the Branch section", () => {
+  assert.equal(sectionOfBlockId("branch::card", "decisions"), "branch");
 });

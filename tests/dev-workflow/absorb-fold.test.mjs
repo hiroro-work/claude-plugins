@@ -61,7 +61,6 @@ test("absorb folds review fixes into their steps and lands a clean chain", () =>
 
     const wt = join(dir, ".git", "dev-workflow-wt");
     git(dir, ["worktree", "add", "--detach", wt, c2]);
-    git(wt, ["switch", "-c", "dev-workflow/t"]);
     for (const t of json.targets) {
       git(wt, ["apply", "--unidiff-zero", t.patch]);
       git(wt, ["add", "-A"]);
@@ -74,7 +73,7 @@ test("absorb folds review fixes into their steps and lands a clean chain", () =>
     const newTip = git(wt, ["rev-parse", "HEAD"]);
     git(dir, ["update-ref", "refs/dev-workflow/t", newTip]);
     git(dir, ["worktree", "remove", "--force", wt]);
-    git(dir, ["branch", "-D", "dev-workflow/t"]);
+    assert.equal(git(dir, ["branch", "--format=%(refname:short)"]), "main");
 
     // the chain: step 1 carries its fix, step 2 its fix, trailing the new file
     const chain = git(dir, ["rev-list", "--reverse", `${base}..${newTip}`]).split("\n");

@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-10-22
+
+### dev-workflow v2.7.4 / dev-workflow-bundle v2.30.4
+
+- **Less prose on the read path, same behavior.** Rationale clauses and restated directives are gone from `SKILL.md` and the references, so each run loads fewer characters: `SKILL.md` 30276 → 29174, the counted reference tree 76464 → 74944, `mob-mode.md` 13088 → 12513. Phase summaries that only repeated the reference they point to now just name the reference and its user gate. The size budgets in the test suite ratchet down to the new sizes.
+
 ## 2026-10-21
 
 ### dev-workflow v2.7.3 / dev-workflow-bundle v2.30.3

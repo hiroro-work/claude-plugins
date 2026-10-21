@@ -171,11 +171,13 @@ Express lane skips; `polish_prose: false` and `fast` mode skip. Collect changed 
 
 ## Phase 9: Check / Test
 
-1. Initialize `review_fix_files = ∅`. Launch the reviews this run will perform in the background per `references/review-launch.md` § Launch, then continue without waiting.
-2. Run `check_commands` in order, then `test_commands` in order. A `Skill(<name>)` entry is called with `--base-commit <base-commit>`; it returns SUCCESS / TEST_FAILED / EXECUTION_ERROR. The first failure stops the pass. EXECUTION_ERROR consumes no fix round: report the callee's reason and wait (USER GATE) for `retry`, or `stop`, which ends the run as step 4 does.
-3. Classify each failure. A failure whose failing test and failing code both lie outside the files changed since `<base-commit>` is pre-existing: record it, do not fix it, do not count it. If the workflow's own fix (Tidy, a review fix) broke a test that passed before, correct that fix rather than the implementation.
-4. Fix and rerun. At most 3 fix rounds per entry into this phase. After the third, stop: report the command, its last output, and that nothing was committed.
-5. When a check command rewrites files outside the task's changed set beyond trivial formatting (whitespace-only at any size, or ≤ 5 comment lines), warn and stop; never revert its output silently.
+1. Initialize `review_fix_files = ∅`.
+2. Run `check_commands` in order. The first failure in step 2 or 4 stops the pass.
+3. The first time in this run they all pass (pre-existing failures aside), launch the reviews per `references/review-launch.md` § Launch, without waiting.
+4. Run `test_commands` in order. A `Skill(<name>)` entry is called with `--base-commit <base-commit>`; it returns SUCCESS / TEST_FAILED / EXECUTION_ERROR. EXECUTION_ERROR consumes no fix round: report the callee's reason and wait (USER GATE) for `retry`, or `stop`, which ends the run as step 6 does.
+5. Classify each failure. A failure whose failing test and failing code both lie outside the files changed since `<base-commit>` is pre-existing: record it, do not fix it, do not count it. If the workflow's own fix (Tidy, a review fix) broke a test that passed before, correct that fix rather than the implementation.
+6. Fix and rerun. At most 3 fix rounds per entry into this phase. After the third, stop: report the command, its last output, and that nothing was committed.
+7. When a check command rewrites files outside the task's changed set beyond trivial formatting (whitespace-only at any size, or ≤ 5 comment lines), warn and stop; never revert its output silently.
 
 In mob mode, narrate every failure per `references/mob-mode.md` § Check / Test before fixing it.
 

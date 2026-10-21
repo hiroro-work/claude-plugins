@@ -103,3 +103,5 @@ Commands in `check_commands` must match the Bash patterns the skill allows (pnpm
 ## Decomposed tasks
 
 Moderate and Complex tasks may be split into subtasks, each shipped as its own PR. The state file is `.claude/plans/dev-workflow.<slug>.md`, resumed with `--resume <slug>`.
+
+With the [`gh stack`](https://github.com/github/gh-stack) extension installed, the split proposal also offers `stack`: the subtasks become stacked PRs. The first subtask's branch is created with `gh stack init`, and each `--resume` (from `/dev-workflow` or `/mobpro`) switches to the top of the stack and adds the next subtask's branch with `gh stack add`, without being told again. At the end of each subtask the workflow asks `submit` (run `gh stack submit --auto`: push the stack and open draft PRs) or `later`. Pushing yourself works too: the next `--resume` stacks on the local branch whether or not it was pushed. When the stack needs a rebase (for example after a lower PR was merged), the resume stops and asks you to run `gh stack sync`; it never rebases or pushes on its own.

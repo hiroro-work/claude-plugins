@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-10-21
+
+### dev-workflow v2.7.0 / dev-workflow-bundle v2.30.0
+
+- **Decomposed tasks can ship as stacked PRs.** When the `gh stack` extension is installed, the split proposal also offers `stack`. The state file then records the stack, and every `--resume` (from `/dev-workflow` or `/mobpro`) switches to the top of the stack and adds the next subtask's branch with `gh stack add`, without being asked again.
+- **Push stays the user's choice.** At the end of each stacked subtask the workflow asks `submit` (run `gh stack submit --auto`, which pushes the stack and opens draft PRs) or `later`. The next `--resume` stacks on the local branch whether or not it was pushed. A stack that needs a rebase stops the resume with a pointer to `gh stack sync`; the workflow never rebases or force-pushes.
+
 ## 2026-10-20
 
 ### demo v1.10.0 / dev-workflow-bundle v2.29.0

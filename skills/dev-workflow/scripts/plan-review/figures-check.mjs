@@ -8,7 +8,7 @@
 // read from the "Figure-safe tokens" comment at the top of plan-view.css (default: public/plan-view.css next
 // to this script), so adding a token there is the only edit needed.
 
-import { readFileSync } from "node:fs";
+import { readFileSync, realpathSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -169,4 +169,9 @@ function main(argv) {
   return problems.length ? 1 : 0;
 }
 
-if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) process.exit(main(process.argv.slice(2)));
+// Compared as real paths: the skill may be reached through a symlink, and the ESM loader resolves the module's own path.
+function isMain() {
+  try { return realpathSync(process.argv[1]) === realpathSync(fileURLToPath(import.meta.url)); } catch { return false; }
+}
+
+if (isMain()) process.exit(main(process.argv.slice(2)));

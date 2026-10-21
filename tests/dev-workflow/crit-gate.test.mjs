@@ -32,6 +32,7 @@ case "$1" in
       true) echo "approved: true" >&2; exit 0 ;;
       false) printf 'approved: false\\n2 unresolved comments\\n[{"scope":"line","path":"a.js","start_line":1,"end_line":2,"body":"x"},{"scope":"review","body":"y"}]\\n' >&2; exit 0 ;;
       garbage) printf 'approved: false\\nnot json at all\\n' >&2; exit 0 ;;
+      split) echo "approved: false" >&2; printf '[{"scope":"review","body":"z"}]\\n'; exit 0 ;;
       *) echo "boom" >&2; exit 2 ;;
     esac ;;
 esac
@@ -133,6 +134,13 @@ test("review passes --no-open through and parses the comments after approved: fa
   assert.equal(out.comments[1].body, "y");
   assert.match(r.log, /^--range a\.\.b --no-open$/m);
   assert.match(r.stderr, /approved: false/, "crit's stderr is echoed");
+});
+
+test("review finds the comments on the other stream", async (t) => {
+  const r = await gate(["review", "--range", "a..b"], makeBin(t), { FAKE_CRIT_VERDICT: "split" });
+  const out = result(r);
+  assert.equal(out.status, "changes");
+  assert.deepEqual(out.comments, [{ scope: "review", body: "z" }]);
 });
 
 test("review keeps the raw tail when the comments do not parse", async (t) => {

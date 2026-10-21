@@ -69,7 +69,7 @@ async function unavailable() {
 }
 
 async function prep(opts) {
-  const guide = await run(["story", "--guide"]);
+  const guide = await run(["story", "--guide", "--range", opts.range]);
   const hunks = await run(["story", "--range", opts.range, "--prep", "/dev/stdout"]);
   if (hunks.code !== 0) {
     emit({ status: "broken", reason: lastLine(hunks.stderr) });
@@ -102,22 +102,28 @@ async function story(opts) {
   });
 }
 
-// The verdict line may sit on either stream; the comment array, when present, follows it on the same stream.
+function parseArray(text) {
+  const start = text.indexOf("[");
+  const end = text.lastIndexOf("]");
+  if (start === -1 || end <= start) return null;
+  try {
+    const parsed = JSON.parse(text.slice(start, end + 1));
+    return Array.isArray(parsed) ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+// The verdict line may sit on either stream; the comment array is looked for after it, then on the other stream.
 function readVerdict(stdout, stderr) {
-  for (const text of [stderr, stdout]) {
+  for (const [text, other] of [[stderr, stdout], [stdout, stderr]]) {
     const m = /^approved: (true|false)\s*$/m.exec(text);
     if (!m) continue;
     if (m[1] === "true") return { status: "approved", comments: [] };
     const after = text.slice(m.index + m[0].length);
-    const start = after.indexOf("[");
-    const end = after.lastIndexOf("]");
-    if (start !== -1 && end > start) {
-      try {
-        const parsed = JSON.parse(after.slice(start, end + 1));
-        if (Array.isArray(parsed)) return { status: "changes", comments: parsed };
-      } catch { /* fall through to the raw tail */ }
-    }
-    return { status: "changes", comments: [], comments_raw: after.trim().slice(0, 2000) };
+    const comments = parseArray(after) ?? parseArray(other);
+    if (comments) return { status: "changes", comments };
+    return { status: "changes", comments: [], comments_raw: (after.trim() || other.trim()).slice(0, 2000) };
   }
   return null;
 }

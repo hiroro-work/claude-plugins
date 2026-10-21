@@ -2,6 +2,10 @@
 
 ## 2026-10-21
 
+### dev-workflow v2.7.1 / dev-workflow-bundle v2.30.1
+
+- **Background reviews start after `check_commands` pass.** Check / Test used to launch Rules Compliance Review and Code Review before running `check_commands`, so a formatter that rewrote even whitespace changed the diff and the reviews were discarded as stale and re-run inline. The reviews now launch the first time `check_commands` all pass, before `test_commands`, and a review stays fresh when no fix landed after its launch.
+
 ### dev-workflow v2.7.0 / dev-workflow-bundle v2.30.0
 
 - **Every plan chooses its branch before implementation.** The plan gains a Branch section showing the current branch, how far it is ahead of the default branch, and whether it was pushed. The plan review page shows the current branch with the choices listed below it as radio buttons: `stay`, `new` (branch off here), or `stack` (stack a branch on top with the `gh stack` extension, offered only when it is installed). The default is `new` on the default branch (`stack` there for a decomposed task's first subtask, when offered), `stay` on a branch with no commits of its own, and otherwise `stack` when offered or `new`. Changing the choice does not send the plan back for revision. Approving runs the chosen command before Implement, and the chat gate accepts the choice in the reply. Interactive Commits no longer creates a branch on its own.

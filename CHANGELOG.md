@@ -2,6 +2,14 @@
 
 ## 2026-10-21
 
+### dev-workflow v2.7.2 / dev-workflow-bundle v2.30.2
+
+- **Runs without `TaskCreate` still show progress.** When the task tool is missing, the workflow registers no phase rows and instead prints `Phase: <name>` as it enters each phase.
+- **A moved plan is still the plan.** When a completion hook such as an archiver moves the plan file elsewhere under `.claude/plans/`, it stays out of commits and the demo call at Update Rules passes its current path.
+- **The plan review page survives the host's background time limit.** When the viewer is killed (a non-zero exit) before you submit, it is relaunched once on the same port. If the relaunch is killed too, or the viewer exits normally without a submit, the run falls back to chat approval.
+- **Stale background reviews are not waited for.** Rules Compliance Review and Code Review now judge staleness before waiting for their background agent, so a review made stale by a fix is re-run inline right away.
+- **Review fixes are tracked across re-entries into Check / Test.** The set of files edited by review fixes is cleared only on the first entry, so returning to Check / Test from Verify Fixes keeps it.
+
 ### dev-workflow v2.7.1 / dev-workflow-bundle v2.30.1
 
 - **Background reviews start after `check_commands` pass.** Check / Test used to launch Rules Compliance Review and Code Review before running `check_commands`, so a formatter that rewrote even whitespace changed the diff and the reviews were discarded as stale and re-run inline. The reviews now launch the first time `check_commands` all pass, before `test_commands`, and a review stays fresh when no fix landed after its launch.

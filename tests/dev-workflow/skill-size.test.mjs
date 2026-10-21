@@ -18,19 +18,19 @@ test("SKILL.md stays under the character budget", () => {
 // Budgets are ratchets: raise deliberately, in a commit that changes the number here.
 test("SKILL.md plus the reference tree stays under the tree budget", () => {
   const dir = join(repoRoot, "skills", "dev-workflow", "references");
-  // mob-mode.md has its own budget below; crit-gate.md, plan-artifact.md and decomposition-state.md are
-  // outside the default read path and counted separately.
-  const excluded = new Set(["mob-mode.md", "crit-gate.md", "plan-artifact.md", "decomposition-state.md"]);
+  // mob-mode.md has its own budget below; crit-gate.md, plan-artifact.md, decomposition-state.md and
+  // browser-gate.md are outside the default read path and counted separately.
+  const excluded = new Set(["mob-mode.md", "crit-gate.md", "plan-artifact.md", "decomposition-state.md", "browser-gate.md"]);
   const refs = readdirSync(dir).filter((f) => f.endsWith(".md") && !excluded.has(f));
   const total = [...skill].length + refs.reduce((n, f) => n + [...readFileSync(join(dir, f), "utf8")].length, 0);
-  assert.ok(total <= 75000, `SKILL.md + counted references total ${total} chars; budget is 75000`);
+  assert.ok(total <= 71200, `SKILL.md + counted references total ${total} chars; budget is 71200`);
 });
 
 test("the conditionally-read references stay under their own budget", () => {
   const dir = join(repoRoot, "skills", "dev-workflow", "references");
-  const total = ["crit-gate.md", "plan-artifact.md", "decomposition-state.md"]
+  const total = ["crit-gate.md", "plan-artifact.md", "decomposition-state.md", "browser-gate.md"]
     .reduce((n, f) => n + [...readFileSync(join(dir, f), "utf8")].length, 0);
-  assert.ok(total <= 14300, `the conditionally-read references total ${total} chars; budget is 14300`);
+  assert.ok(total <= 18600, `the conditionally-read references total ${total} chars; budget is 18600`);
 });
 
 test("mob-mode.md stays under its own budget", () => {

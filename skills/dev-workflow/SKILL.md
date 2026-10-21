@@ -46,7 +46,7 @@ When a `Skill(...)` call fails, retry once. If it fails again: for the `reviewer
 
 ## Difficulty and the skip table
 
-The tier is assessed once, at Task Decomposition, from the effective task and cheap probes, per `references/tiers.md` § Tier criteria, and re-checked once at the end of Create Plan per its § Re-check after planning, where it can only rise. Trivial and Simple are the **express lane**; Moderate and Complex are the **full lane**.
+The tier is assessed at Task Decomposition (`references/tiers.md` § Tier criteria) and re-checked at the end of Create Plan (its § Re-check after planning), where it can only rise. Trivial and Simple are the **express lane**; Moderate and Complex are the **full lane**.
 
 | Phase | Trivial | Simple | Moderate / Complex |
 |---|---|---|---|
@@ -60,14 +60,14 @@ The tier is assessed once, at Task Decomposition, from the effective task and ch
 
 **Run mode** comes from the flags: `--fast`, `--deep`, or neither (`normal`). Both flags together is a fatal error. `normal`: Plan Review runs in **rules-only** scope. `deep`: Plan Review runs in **full** scope. `fast`: Plan Review and Polish Prose are skipped. Nothing else reads the run mode.
 
-No tier skips a phase absent from the table. A skipped phase is marked `completed` with the description `skipped: <tier> tier`, `skipped: <key>: false`, or `skipped: fast mode` — settings- and run-mode-derived skips at Load Settings, tier-derived skips at Task Decomposition.
+No tier skips a phase absent from the table. A skipped phase is marked `completed` with the description `skipped: <tier> tier`, `skipped: <key>: false`, or `skipped: fast mode`.
 
 ## User gates
 
 The only places the workflow waits for the user:
 
 - Task Decomposition: the split proposal (`yes` / `adjust` / `no`) and, on resume, the subtask picker when more than one is runnable.
-- Plan Approval: the browser review (`approve` / `revise` with comments, and the branch choice) on every tier but Trivial when a local browser is reachable; otherwise chat approval `approve` (optionally with a branch choice) / `swap` (swap a Decision's Recommendation and Alternative) / `rewrite` / `wrong branch` / `withdraw`, plus the one-line read-back confirmation before a swap or rewrite is applied. A wrong-branch request waits for uncommitted changes to be committed or stashed. With `plan_artifact: review`, the wait for the team's review of the published plan.
+- Plan Approval: the browser review (`approve` / `revise` with comments, and the branch choice) on every tier but Trivial when a local browser is reachable; otherwise the chat replies Phase 5 (Plan Approval) lists, with the one-line read-back before a swap or rewrite is applied. A wrong-branch request waits for uncommitted changes to be committed or stashed. With `plan_artifact: review`, the wait for the team's review.
 - Check / Test: after 3 failed fix rounds the workflow stops and reports; a check command that rewrote files outside the task beyond trivial formatting, or a test skill's EXECUTION_ERROR, stops for the user.
 - Code Review: findings still unresolved after the passes, asked once.
 - Verify Fixes: rule violations still present after the second scoped pass, asked once.
@@ -156,8 +156,8 @@ In mob mode, `references/mob-mode.md` § Plan Approval overrides step 2's tier c
 2. Follow Build order in sequence, and `custom_instructions` when set. Read each file immediately before editing it. Content the user deleted earlier in the session never comes back.
 3. A write to a path not in `git ls-files` must resolve inside the repository, under the directory the plan names for that kind of file; otherwise skip the edit with a one-line note.
 4. If a file outside the plan must change, add it to Build order first, then edit, and say so in one line.
-5. After the last edit of each Build order step, take that step's snapshot per `references/snapshots.md` § Snapshot at a Build order step boundary (before step 1's snapshot, delete a leftover `refs/dev-workflow/<slug>` from an earlier run). The chain is what Interactive Commits turns into one commit per step.
-6. After the last edit, `git add -N -- <path>` for each new file outside § Workflow artifacts, so diff-based reviews and the snapshot residue see them.
+5. After the last edit of each Build order step, take that step's snapshot per `references/snapshots.md` § Snapshot at a Build order step boundary (before step 1's snapshot, delete a leftover `refs/dev-workflow/<slug>` from an earlier run).
+6. After the last edit, `git add -N -- <path>` for each new file outside § Workflow artifacts.
 
 In mob mode, each Build order step runs as a unit per `references/mob-mode.md` § Per-unit review, with its diff review after the snapshot.
 
@@ -206,7 +206,7 @@ Skipped when `hooks.on_complete` is unset, or with a one-line note when the tree
 
 ## Phase 14: Interactive Commits
 
-USER GATE. When the snapshot chain exists, first absorb the review layers' edits into it per `references/snapshots.md` § Absorb review fixes. Then read `references/commits.md` and follow § Procedure: one commit per Build order step from the chain, or cohesion grouping of the final diff when no chain exists, each committed through the accept gate, in the crit browser when `commit_review_gate` is `crit`. Initialize `landed_count = 0` on entry; the reference increments it. Never `git push`.
+USER GATE. When the snapshot chain exists, first absorb the review layers' edits into it per `references/snapshots.md` § Absorb review fixes. Then read `references/commits.md` and follow § Procedure. Initialize `landed_count = 0` on entry; the reference increments it. Never `git push`.
 
 In mob mode, add the per-commit note and the already-reviewed accept variant per `references/mob-mode.md` § Commits.
 
@@ -224,15 +224,15 @@ Skipped when the Update Rules gate skipped it. USER GATE. Ask which reviewed PR 
 
 ## Phase 17: Self-Retrospective
 
-Skipped when `self_retrospective.feedback` is unset or the Update Rules gate skipped it. Read `references/self-retrospective.md` and follow it: at most three Findings from this run's friction, each naming a behavior change and its character cost, previewed (USER GATE) and posted to the destination. Nothing here edits a skill.
+Skipped when `self_retrospective.feedback` is unset or the Update Rules gate skipped it. Read `references/self-retrospective.md` and follow it; its preview is a USER GATE. Nothing here edits a skill.
 
 ## Phase 18: Workability Retrospective
 
-Skipped unless `workability_retrospective.enabled` is `true` and the Update Rules gate kept it. Read `references/workability.md` and follow it: at most three candidates from this run's friction with the project's tooling (a skill, a linter rule, or a check command), deduped against what exists; the user disposes of each (USER GATE); applied edits and backlog files go through the rule commit gate.
+Skipped unless `workability_retrospective.enabled` is `true` and the Update Rules gate kept it. Read `references/workability.md` and follow it; its dispositions are a USER GATE.
 
 ## Phase 19: Completion
 
 1. Summary in the resolved language: what was done, files changed, check/test result, review outcomes, rules updated, commits made, the Demo line when one exists, the Self-Retrospective and Workability lines, the timing table per `references/timing.md` § Report, and one line per phase skipped or stopped early. List skipped callees and any uncommitted rule files.
-2. Decomposed runs: read `references/decomposition-state.md` and follow its § Finish a subtask. It marks the subtask done, asks about its PR (USER GATE), and prints the `--resume` command or deletes the state file when all subtasks are done.
+2. Decomposed runs: read `references/decomposition-state.md` and follow its § Finish a subtask; its PR question is a USER GATE.
 3. In mob mode, add the learning summary and the paired resume commands per `references/mob-mode.md` § Completion.
 4. Delete this run's staging state: `rm -f` each existing staging file listed in § Workflow artifacts (named paths, no globs), `rm -rf .claude/plans/<slug>.absorb`, and `git update-ref -d` on each `refs/dev-workflow/<slug>*` ref. Never delete the plan file (`hooks.on_complete` owns archiving) or the decomposition state file (step 2 owns it).

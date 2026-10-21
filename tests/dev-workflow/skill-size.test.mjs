@@ -12,7 +12,7 @@ const skill = readFileSync(join(repoRoot, "skills", "dev-workflow", "SKILL.md"),
 
 test("SKILL.md stays under the character budget", () => {
   const chars = [...skill].length;
-  assert.ok(chars <= 30300, `SKILL.md is ${chars} chars; budget is 30300 — cut, do not move to references`);
+  assert.ok(chars <= 29200, `SKILL.md is ${chars} chars; budget is 29200 — cut, do not move to references`);
 });
 
 // Budgets are ratchets: raise deliberately, in a commit that changes the number here.
@@ -23,19 +23,19 @@ test("SKILL.md plus the reference tree stays under the tree budget", () => {
   const excluded = new Set(["mob-mode.md", "crit-gate.md", "plan-artifact.md", "decomposition-state.md"]);
   const refs = readdirSync(dir).filter((f) => f.endsWith(".md") && !excluded.has(f));
   const total = [...skill].length + refs.reduce((n, f) => n + [...readFileSync(join(dir, f), "utf8")].length, 0);
-  assert.ok(total <= 76500, `SKILL.md + counted references total ${total} chars; budget is 76500`);
+  assert.ok(total <= 75000, `SKILL.md + counted references total ${total} chars; budget is 75000`);
 });
 
 test("the conditionally-read references stay under their own budget", () => {
   const dir = join(repoRoot, "skills", "dev-workflow", "references");
   const total = ["crit-gate.md", "plan-artifact.md", "decomposition-state.md"]
     .reduce((n, f) => n + [...readFileSync(join(dir, f), "utf8")].length, 0);
-  assert.ok(total <= 14500, `the conditionally-read references total ${total} chars; budget is 14500`);
+  assert.ok(total <= 14300, `the conditionally-read references total ${total} chars; budget is 14300`);
 });
 
 test("mob-mode.md stays under its own budget", () => {
   const chars = [...readFileSync(join(repoRoot, "skills", "dev-workflow", "references", "mob-mode.md"), "utf8")].length;
-  assert.ok(chars <= 13200, `mob-mode.md is ${chars} chars; budget is 13200 (read only in mob mode)`);
+  assert.ok(chars <= 12600, `mob-mode.md is ${chars} chars; budget is 12600 (read only in mob mode)`);
 });
 
 test("mobpro stays a thin entry point", () => {

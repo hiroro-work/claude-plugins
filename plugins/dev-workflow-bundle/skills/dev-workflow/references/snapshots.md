@@ -6,7 +6,6 @@ Read from `SKILL.md` Phase 6 (Implement) and Phase 14 (Interactive Commits). Unq
 
 - Ref `refs/dev-workflow/<slug>` points at the newest snapshot. Snapshots are ordinary commit objects whose first parent chain ends at `<base-commit>`.
 - Temp index `.git/dev-workflow.index` (literal path). Snapshots are built there.
-- Both are workflow artifacts. When `.git` is not a directory (a linked worktree, checked at Load Settings) the chain is not built and Interactive Commits takes its chain-absent path. A ref left by an earlier run of the same slug is deleted right before step 1's snapshot (`SKILL.md` Phase 6).
 
 ## Snapshot at a Build order step boundary
 
@@ -24,12 +23,11 @@ If `<tree>` equals `<prev>^{tree}`, the step changed nothing: take no snapshot. 
 
 Runs at the start of Interactive Commits when the ref exists. `<tip>` = the ref's target.
 
-1. **Residue**: first `git add -N -- <path>` for every untracked file outside `SKILL.md` § Workflow artifacts (files the review layers created since Implement's own `add -N`; an untracked file would otherwise be invisible to the diff). Then `git diff <tip> --stat`. Empty → the chain is final; `<excluded>` is empty; skip to step 6.
-2. **Attribute**: `node "<base dir>/scripts/absorb/attribute.mjs" --base <base-commit> --tip <tip> --out .claude/plans/<slug>.absorb`, adding `--start-tree <start-tree>` when `SKILL.md` Phase 1 (Load Settings) recorded one. It blames each zero-context residue hunk against `<tip>` and writes one patch per owning chain commit, plus `trailing.patch` for hunks no chain commit owns; every patch applies with `--unidiff-zero`. Read its JSON. `<excluded>` = its `excluded` paths, which still hold the content they had when the run began: they enter no patch and no commit. When `targets` is empty and `trailing` is `null`, `<excluded>` holds every residue path and the chain is final: `rm -rf .claude/plans/<slug>.absorb` and skip to step 6. A non-zero exit → step 5's fallback.
+1. **Residue**: first `git add -N -- <path>` for every untracked file outside `SKILL.md` § Workflow artifacts (files the review layers created since Implement's own `add -N`). Then `git diff <tip> --stat`. Empty → the chain is final; `<excluded>` is empty; skip to step 6.
+2. **Attribute**: `node "<base dir>/scripts/absorb/attribute.mjs" --base <base-commit> --tip <tip> --out .claude/plans/<slug>.absorb`, adding `--start-tree <start-tree>` when `SKILL.md` Phase 1 (Load Settings) recorded one. It writes one patch per owning chain commit, plus `trailing.patch` for hunks no chain commit owns. Read its JSON. `<excluded>` = its `excluded` paths, which still hold the content they had when the run began: they enter no patch and no commit. When `targets` is empty and `trailing` is `null`, `<excluded>` holds every residue path and the chain is final: `rm -rf .claude/plans/<slug>.absorb` and skip to step 6. A non-zero exit → step 5's fallback.
 3. **Fold** in a throwaway worktree. Outside `SKILL.md` Phase 1 (Load Settings)'s throwaway start index, this section's steps 3 and 4 are the only place `git add -A` is allowed, because the worktree holds nothing but the tip plus the patches being applied:
    ```bash
    git worktree add --detach .git/dev-workflow-wt <tip>
-   git -C .git/dev-workflow-wt switch -c dev-workflow/<slug>
    ```
    For each target in order: `git -C .git/dev-workflow-wt apply --unidiff-zero "<patch>"`, `git -C .git/dev-workflow-wt add -A`, `git -C .git/dev-workflow-wt commit --no-verify --no-gpg-sign --fixup=<commit>`. If an apply fails, append that patch to the trailing set and continue. Then:
    ```bash
@@ -37,7 +35,15 @@ Runs at the start of Interactive Commits when the ref exists. `<tip>` = the ref'
    ```
    If the rebase exits non-zero: `git -C .git/dev-workflow-wt rebase --abort` and go to step 5's fallback.
 4. **Trailing commit**: if `trailing.patch` exists or any apply failed, apply those patches in the worktree with `--unidiff-zero`, `add -A`, and `commit --no-verify --no-gpg-sign -m "<subject in the deduced style naming the review fixes>"`. If the trailing apply fails, go to step 5's fallback.
-5. **Publish** the result. First keep the pre-absorb chain: `git update-ref refs/dev-workflow/<slug>-reviewed <tip>` (mob mode's commit gates compare each rebuilt commit with the snapshot the junior reviewed, matched by position). Then `git update-ref refs/dev-workflow/<slug> $(git -C .git/dev-workflow-wt rev-parse HEAD)`. **Fallback** (attribution, rebase, or trailing apply failed): keep the original chain and append one commit holding the residue — build it with the temp index as in § Snapshot at a Build order step boundary, with `<tip>` as `<prev>` and the residue paths as `<paths>`, message `review fixes` — then say in one line that review fixes could not be attributed to steps. `<paths>` drops `<excluded>`; when attribution produced no JSON, `<excluded>` is instead every residue path whose `git diff --quiet <start-tree> -- <path>` and `git diff --quiet <base-commit> <tip> -- <path>` both exit zero, or empty when `SKILL.md` Phase 1 (Load Settings) recorded no `<start-tree>`. Nothing left after the drop → append no commit. Either way, finish with `git worktree remove --force .git/dev-workflow-wt` and `git branch -D dev-workflow/<slug>` when they exist, and `rm -rf .claude/plans/<slug>.absorb`. The worktree never outlives this procedure.
+5. **Publish** the result. First keep the pre-absorb chain: `git update-ref refs/dev-workflow/<slug>-reviewed <tip>`. Then `git update-ref refs/dev-workflow/<slug> $(git -C .git/dev-workflow-wt rev-parse HEAD)`. **Fallback** (attribution, rebase, or trailing apply failed): keep the original chain and append one commit holding the residue — build it with the temp index as in § Snapshot at a Build order step boundary, with `<tip>` as `<prev>` and the residue paths as `<paths>`, message `review fixes` — then say in one line that review fixes could not be attributed to steps. `<paths>` drops `<excluded>`; when attribution produced no JSON, `<excluded>` is instead every residue path whose `git diff --quiet <start-tree> -- <path>` and `git diff --quiet <base-commit> <tip> -- <path>` both exit zero, or empty when `SKILL.md` Phase 1 (Load Settings) recorded no `<start-tree>`. Nothing left after the drop → append no commit. Either way, finish with `git worktree remove --force .git/dev-workflow-wt` when it exists and `rm -rf .claude/plans/<slug>.absorb`. The worktree never outlives this procedure.
 6. **Consistency check**: `<new tip>` = the ref's target, which the shortcuts of steps 1 and 2 leave at `<tip>`. `git diff <new tip>` against the working tree must be empty apart from `SKILL.md` § Workflow artifacts and `<excluded>`. If it is not, take the fallback of step 5 over the remaining difference.
 
 The chain's commits are then the commit plan (`commits.md` § Procedure, chain path).
+
+## Fold the trailing commit
+
+When the user asks at the commit plan to fold the trailing commit `<t>` (the ref's target) into chain commit `<k>`:
+
+1. `git commit-tree "<t>^{tree}" -p "<t>^" -m "fixup! <k's full sha>"` → `<f>`, then § Absorb review fixes step 3's worktree and rebase commands with `<f>` as `<tip>`.
+2. Both the rebase and `git diff --quiet <t> <worktree HEAD>` exit zero and the chain lost one commit → `git update-ref refs/dev-workflow/<slug> <worktree HEAD>`. Otherwise abort a failed rebase, keep the ref, and say the fold did not apply.
+3. Remove the worktree; re-present the plan.

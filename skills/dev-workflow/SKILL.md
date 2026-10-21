@@ -12,7 +12,7 @@ allowed-tools: Agent, Read, Write, Edit, Glob, Grep, TaskCreate, TaskUpdate, Tas
 /dev-workflow --resume <state-file> [--fast|--deep] [--artifact off|share|review] [--mob]  # Run the next subtask of a decomposed task
 ```
 
-Nineteen phases, always in this order, always all registered. § Difficulty and the skip table decides what is skipped and how Plan Review runs. User gates are listed in § User gates; nothing else asks the user a question.
+Nineteen phases, always in this order. § Difficulty and the skip table decides what is skipped and how Plan Review runs. User gates are listed in § User gates; nothing else asks the user a question.
 
 ## Settings
 
@@ -86,11 +86,11 @@ Phase starts, ends, and waits are marked per `references/timing.md`; Completion 
 
 ## Workflow artifacts
 
-Files this workflow writes as its own state are excluded from every diff, review payload, and commit: `.claude/plans/<slug>.md` (the plan), `.claude/plans/dev-workflow.<slug>.md` (decomposition state), `.claude/plans/rules-candidates-<date>.md`, `.claude/plans/timing-*.jsonl`, every other `.claude/plans/<slug>.*` staging file or directory (`.plan-review.*`, `.figures.md`, `.artifact.html`, `.dialogue.md`, `.absorb/`, `.retrospective.md`), and the git-side state `refs/dev-workflow/<slug>*`, `.git/dev-workflow.index`, `.git/dev-workflow.start.index`, `.git/dev-workflow-wt`. Everything else under the working tree is the task's.
+Files this workflow writes as its own state are excluded from every diff, review payload, and commit: `.claude/plans/**/<slug>.md` (the plan), `.claude/plans/dev-workflow.<slug>.md` (decomposition state), `.claude/plans/rules-candidates-<date>.md`, `.claude/plans/timing-*.jsonl`, every other `.claude/plans/<slug>.*` staging file or directory (`.plan-review.*`, `.figures.md`, `.artifact.html`, `.dialogue.md`, `.absorb/`, `.retrospective.md`), and the git-side state `refs/dev-workflow/<slug>*`, `.git/dev-workflow.index`, `.git/dev-workflow.start.index`, `.git/dev-workflow-wt`. Everything else under the working tree is the task's.
 
 ## Mode detection
 
-`--init` → read `references/init-mode.md` and follow it; the session ends there. `--resume <state-file>` → Resume sub-mode. Otherwise Normal sub-mode. The other flags combine with either sub-mode and are ignored under `--init`.
+`--init` → read `references/init-mode.md` and follow it; the session ends there. `--resume <state-file>` → Resume sub-mode. Otherwise Normal sub-mode. Other flags combine with either sub-mode; `--init` ignores them.
 
 ## Dispatch authorization
 
@@ -127,13 +127,13 @@ No code changes until Plan Approval passes.
 2. Draft the plan per `references/plan-format.md`: the body under `## Plan`, sections as `###`, in the order `references/plan-format.md` defines. Express-lane plans use the compact shape defined there.
 3. Follow `custom_instructions` when set. Simplicity self-audit: every element traces to an explicit requirement, a known bug or constraint, a rule under `.claude/rules/`, or `custom_instructions`. Drop what does not, or add a one-line rationale. Verify every "already exists / reuses X" premise from the source. If the work splits into independently verifiable units and was not decomposed, say so in Risks.
 4. Re-check the tier against the drafted plan (`references/tiers.md` § Re-check after planning): if it rises, say so in one line, reopen the rows the new tier runs, and re-resolve `<model>`.
-5. Do not show the plan yet. Proceed to Plan Review. In mob mode, this phase runs as `references/mob-mode.md` § Design dialogue and writes its § Plan shape.
+5. Do not show the plan yet. In mob mode, this phase runs as `references/mob-mode.md` § Design dialogue and writes its § Plan shape.
 
 ## Phase 4: Plan Review
 
 Skipped on Trivial and in `fast` mode. One pass, no loop.
 
-1. **Full scope** (`deep`): call `Skill(<reviewer>)` with `Model: <model>`, the full plan body, `custom_instructions` when set, the Decisions field shape (Question / Recommendation / optional Alternative), and three review units: scope, feasibility, dependencies, `.claude/rules/` compliance (the reviewer lists and reads `.claude/rules/**/*.md`); the simplicity self-audit's conclusions; approach and alternatives, completeness, cross-section consistency. Ask the reviewer to report every finding it has, including uncertain or low-severity ones, each with a confidence level and a severity, and not to filter for importance itself (step 2 does that); when it has none, the words "No actionable findings".
+1. **Full scope** (`deep`): call `Skill(<reviewer>)` with `Model: <model>`, the full plan body, `custom_instructions` when set, the Decisions shape (Question / Recommendation / optional Alternative), and three review units: scope, feasibility, dependencies, `.claude/rules/` compliance (the reviewer lists and reads `.claude/rules/**/*.md`); the simplicity self-audit's conclusions; approach and alternatives, completeness, cross-section consistency. Ask the reviewer to report every finding it has, including uncertain or low-severity ones, each with a confidence level and a severity, and not to filter for importance itself; when it has none, the words "No actionable findings".
    **Rules-only scope** (`normal`): resolve the reading list yourself — every `*.md` directly under `.claude/rules/` plus subdirectory files whose domain the plan touches — and call `Skill(<reviewer>)` with `Model: <model>`, the plan body, that numbered list, and one unit: `.claude/rules/` compliance only, reading exactly the listed files and no other tool; anything it cannot confirm goes under an "unverified items" heading. If the glob finds no rule files, do not dispatch: say the review found no project rules to check and continue.
 2. Apply findings you agree with; reject the rest with one line each. Do not ask the user about individual findings. Do not re-dispatch, with one exception: when Critical ≥ 3 or Critical + Major ≥ 10 and a finding proposes an approach-level alternative, rewrite the plan around it and dispatch one more pass.
 3. Unresolved points are carried to Plan Approval as a short list. In mob mode, review through `references/mob-mode.md` § Plan shape's lenses and explain applied findings.
@@ -198,7 +198,7 @@ In mob mode, predict and cross-check per `references/mob-mode.md` § Code Review
 
 ## Phase 12: Verify Fixes
 
-If `review_fix_files` is empty, mark completed and continue. Otherwise run Check / Test once (3 fix rounds apply). Then, if Rules Compliance Review ran, call `Skill(rules-review)` with `--base-commit <base-commit>`, `Files: <review_fix_files>`, and `Model: <model>`. Fix violations once; a second scoped pass over the newly fixed files is the last; violations still present go to the user (USER GATE).
+If `review_fix_files` is empty, skip this phase. Otherwise run Check / Test once (3 fix rounds apply). Then, if Rules Compliance Review ran, call `Skill(rules-review)` with `--base-commit <base-commit>`, `Files: <review_fix_files>`, and `Model: <model>`. Fix violations once; a second scoped pass over the newly fixed files is the last; violations still present go to the user (USER GATE).
 
 ## Phase 13: Completion Hooks
 
@@ -214,21 +214,21 @@ Post-commit verification: when gate adjustments edited any file, run Check / Tes
 
 ## Phase 15: Update Rules
 
-1. USER GATE, on every tier. List the remaining enabled phases — this extraction (full lane only), Self-Retrospective, Workability Retrospective, PR Rule Extraction (always) — and ask `proceed` / `session-only` / `pr-only` / `skip` (`proceed` / `skip` when only one side — session-derived or PR-derived — is listed). `skip` marks all listed completed unrun; `session-only` marks PR Rule Extraction so; `pr-only` marks the session-derived ones so. If `.claude/demo.md` or `.claude/demo.local.md` exists, the gate also asks `demo` / `no-demo`. `demo`, whatever the first answer, calls `Skill(demo)` with `Plan: .claude/plans/<slug>.md`, `Base ref: <base-commit>`, `Language:` the resolved language, `Model: <model>`. Its Demo line for Completion: `ok` → the URL or page path with the step and failed counts and any files it edited; `skipped` / `error` → the `reason`; no parseable JSON block → `no parseable result`, without retry. Express lane: steps 2–3 do not run.
+1. USER GATE, on every tier. List the remaining enabled phases — this extraction (full lane only), Self-Retrospective, Workability Retrospective, PR Rule Extraction (always) — and ask `proceed` / `session-only` / `pr-only` / `skip` (`proceed` / `skip` when only one side — session-derived or PR-derived — is listed). `skip` marks all listed completed unrun; `session-only` marks PR Rule Extraction so; `pr-only` marks the session-derived ones so. If `.claude/demo.md` or `.claude/demo.local.md` exists, the gate also asks `demo` / `no-demo`. `demo`, whatever the first answer, calls `Skill(demo)` with `Plan:` the plan's current path (`.claude/plans/**/<slug>.md`), `Base ref: <base-commit>`, `Language:` the resolved language, `Model: <model>`. Its Demo line for Completion: `ok` → the URL or page path with the step and failed counts and any files it edited; `skipped` / `error` → the `reason`; no parseable JSON block → `no parseable result`, without retry. Express lane: steps 2–3 do not run.
 2. Call `Skill(extract-rules)` with `--from-conversation`, unless a `hooks.on_complete` entry contains `extract-rules` (it already extracted). If the diff introduced a new framework, library, pattern, or API convention and no conversation extraction ran, use `--update` instead. If extract-rules is unavailable, write the session's reusable patterns to `.claude/plans/rules-candidates-<YYYY-MM-DD>.md` and tell the user.
 3. Rule commit (USER GATE): run the § Rule commit gate procedure of `references/commits.md` over uncommitted paths under `.claude/rules/`, `.claude/rules-extras/`, `.claude/rules-staging/` (or the dirs `.claude/extract-rules.local.md` sets). Skip when there are none.
 
 ## Phase 16: PR Rule Extraction
 
-Skipped when Phase 15's gate marked it completed. USER GATE. Ask which reviewed PR to extract rules from, naming the accepted forms (a number, `owner/repo#N`, a `100..110` range, a URL, several separated by spaces); an empty answer declines. On an answer, call `Skill(extract-rules)` with `--from-pr <answer verbatim>`. "Nothing qualified" and "no human comments" are success; a pre-flight error is noted and skipped. Then run the § Rule commit gate procedure again over what it wrote.
+Skipped when the Update Rules gate skipped it. USER GATE. Ask which reviewed PR to extract rules from, naming the accepted forms (a number, `owner/repo#N`, a `100..110` range, a URL, several separated by spaces); an empty answer declines. On an answer, call `Skill(extract-rules)` with `--from-pr <answer verbatim>`. "Nothing qualified" and "no human comments" are success; a pre-flight error is noted and skipped. Then run the § Rule commit gate procedure again over what it wrote.
 
 ## Phase 17: Self-Retrospective
 
-Skipped when `self_retrospective.feedback` is unset or Phase 15's gate skipped it. Read `references/self-retrospective.md` and follow it: at most three Findings from this run's friction, each naming a behavior change and its character cost, previewed (USER GATE) and posted to the destination. Nothing here edits a skill.
+Skipped when `self_retrospective.feedback` is unset or the Update Rules gate skipped it. Read `references/self-retrospective.md` and follow it: at most three Findings from this run's friction, each naming a behavior change and its character cost, previewed (USER GATE) and posted to the destination. Nothing here edits a skill.
 
 ## Phase 18: Workability Retrospective
 
-Skipped unless `workability_retrospective.enabled` is `true` and Phase 15's gate kept it. Read `references/workability.md` and follow it: at most three candidates from this run's friction with the project's tooling (a skill, a linter rule, or a check command), deduped against what exists; the user disposes of each (USER GATE); applied edits and backlog files go through the rule commit gate.
+Skipped unless `workability_retrospective.enabled` is `true` and the Update Rules gate kept it. Read `references/workability.md` and follow it: at most three candidates from this run's friction with the project's tooling (a skill, a linter rule, or a check command), deduped against what exists; the user disposes of each (USER GATE); applied edits and backlog files go through the rule commit gate.
 
 ## Phase 19: Completion
 

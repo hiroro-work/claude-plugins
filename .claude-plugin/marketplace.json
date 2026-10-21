@@ -149,7 +149,7 @@
       "skills": [
         "./"
       ],
-      "version": "2.7.2",
+      "version": "2.7.3",
       "author": {
         "name": "hiropon"
       },
@@ -172,7 +172,7 @@
         "./skills/furikaeri",
         "./skills/demo"
       ],
-      "version": "2.30.2",
+      "version": "2.30.3",
       "author": {
         "name": "hiropon"
       },

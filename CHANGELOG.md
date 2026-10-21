@@ -2,6 +2,11 @@
 
 ## 2026-10-21
 
+### dev-workflow v2.7.3 / dev-workflow-bundle v2.30.3
+
+- **The trailing review-fixes commit can be folded into an earlier step.** Review fixes that no Build order step owns, such as deleting a helper a step stopped using, still land in a trailing commit. At the commit plan, `adjust` can now fold that commit into a named earlier commit. When the fold conflicts with a later step, the plan stays as it was.
+- **Absorbing review fixes no longer creates a branch.** The rebase runs on a detached HEAD in the throwaway worktree, so no `dev-workflow/<slug>` branch collides with the snapshot ref `refs/dev-workflow/<slug>`.
+
 ### dev-workflow v2.7.2 / dev-workflow-bundle v2.30.2
 
 - **Runs without `TaskCreate` still show progress.** When the task tool is missing, the workflow registers no phase rows and instead prints `Phase: <name>` as it enters each phase.

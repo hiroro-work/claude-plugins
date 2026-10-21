@@ -10,7 +10,7 @@ A guided development workflow with fixed phases in a fixed order. What changes b
 | 2 | Task Decomposition | Write | proposal only on Moderate / Complex |
 | 3 | Create Plan | Read, Write | never |
 | 4 | Plan Review | `Skill(<reviewer>)`; rules-only in `normal`, full in `--deep` | Trivial, `--fast` |
-| 5 | Plan Approval | **user gate**: browser viewer (`serve.mjs`), chat fallback; plan artifact | never |
+| 5 | Plan Approval | **user gate**: browser viewer (`serve.mjs`), chat fallback, the branch choice; plan artifact; then the branch command (`git switch -c` / `gh stack`) | never |
 | 6 | Implement | Edit; a snapshot per Build order step | never |
 | 7 | Tidy | `Skill(simplify)`, fallback `Skill(tidy)` | Trivial, Simple |
 | 8 | Polish Prose | `Skill(prose-polish)` | Trivial, Simple, `polish_prose: false`, `--fast` |
@@ -104,4 +104,6 @@ Commands in `check_commands` must match the Bash patterns the skill allows (pnpm
 
 Moderate and Complex tasks may be split into subtasks, each shipped as its own PR. The state file is `.claude/plans/dev-workflow.<slug>.md`, resumed with `--resume <slug>`.
 
-With the [`gh stack`](https://github.com/github/gh-stack) extension installed, the split proposal also offers `stack`: the subtasks become stacked PRs. The first subtask's branch is created with `gh stack init`, and each `--resume` (from `/dev-workflow` or `/mobpro`) switches to the top of the stack and adds the next subtask's branch with `gh stack add`, without being told again. At the end of each subtask the workflow asks `submit` (run `gh stack submit --auto`: push the stack and open draft PRs) or `later`. Pushing yourself works too: the next `--resume` stacks on the local branch whether or not it was pushed. When the stack needs a rebase (for example after a lower PR was merged), the resume stops and asks you to run `gh stack sync`; it never rebases or pushes on its own.
+Every plan has a Branch section, chosen on the plan review page with radio buttons (or in the chat reply): `stay` on the current branch, `new` to branch off here, or `stack` to stack a branch on top of this one with the [`gh stack`](https://github.com/github/gh-stack) extension, offered only when it is installed. Each option shows the command it runs. Changing the choice does not send the plan back for revision; approving runs the command before implementation starts, and a comment on the Branch card asking for a different branch sends the run back to planning on that branch.
+
+On a decomposed task's first subtask, choosing `stack` records the stack in the state file, and each later `--resume` (from `/dev-workflow` or `/mobpro`) switches to the top of the stack and adds the next subtask's branch with `gh stack add`, without being asked again. At the end of each stacked subtask the workflow asks `submit` (run `gh stack submit --auto`: push the stack and open draft PRs) or `later`. Pushing yourself works too: the next `--resume` stacks on the local branch whether or not it was pushed. When the stack needs a rebase (for example after a lower PR was merged), the resume stops and asks you to run `gh stack sync`; it never rebases or pushes on its own.

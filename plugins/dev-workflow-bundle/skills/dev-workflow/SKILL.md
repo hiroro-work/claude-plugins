@@ -66,8 +66,8 @@ No tier skips a phase absent from the table. A skipped phase is marked `complete
 
 The only places the workflow waits for the user:
 
-- Task Decomposition: the split proposal (`yes` / `adjust` / `no`, plus `stack` when `gh stack` is installed) and, on resume, the subtask picker when more than one is runnable.
-- Plan Approval: the browser review (`approve` / `revise` with comments) on every tier but Trivial when a local browser is reachable; otherwise chat approval `approve` / `swap` (swap a Decision's Recommendation and Alternative) / `rewrite` / `withdraw`, plus the one-line read-back confirmation before a swap or rewrite is applied. With `plan_artifact: review`, the wait for the team's review of the published plan.
+- Task Decomposition: the split proposal (`yes` / `adjust` / `no`) and, on resume, the subtask picker when more than one is runnable.
+- Plan Approval: the browser review (`approve` / `revise` with comments, and the branch choice) on every tier but Trivial when a local browser is reachable; otherwise chat approval `approve` (optionally with a branch choice) / `swap` (swap a Decision's Recommendation and Alternative) / `rewrite` / `wrong branch` / `withdraw`, plus the one-line read-back confirmation before a swap or rewrite is applied. A wrong-branch request waits for uncommitted changes to be committed or stashed. With `plan_artifact: review`, the wait for the team's review of the published plan.
 - Check / Test: after 3 failed fix rounds the workflow stops and reports; a check command that rewrote files outside the task beyond trivial formatting, or a test skill's EXECUTION_ERROR, stops for the user.
 - Code Review: findings still unresolved after the passes, asked once.
 - Verify Fixes: rule violations still present after the second scoped pass, asked once.
@@ -115,7 +115,7 @@ This skill's procedure dispatches subagents, so invoking the skill **is** the re
 ## Phase 2: Task Decomposition
 
 - **Resume sub-mode**: read `references/decomposition-state.md` and follow its § Resume. The selected subtask becomes the effective task; read `references/tiers.md` and assess the tier from it.
-- **Normal sub-mode**: read `references/tiers.md` and assess the tier. On the full lane, read `references/decomposition.md` and follow § Propose a split; on `yes` or `stack`, take the first subtask as the effective task. On the express lane, or on `no`, the effective task is the request itself.
+- **Normal sub-mode**: read `references/tiers.md` and assess the tier. On the full lane, read `references/decomposition.md` and follow § Propose a split; on `yes`, take the first subtask as the effective task. On the express lane, or on `no`, the effective task is the request itself.
 
 Emit one line: the tier and the phases it skips. Mark the skipped rows. Resolve `<model>` = `subagent_model[tier]` (unset → inherit). In mob mode, apply `references/mob-mode.md` § Other differences to the split proposal.
 
@@ -124,7 +124,7 @@ Emit one line: the tier and the phases it skips. Mark the skipped rows. Resolve 
 No code changes until Plan Approval passes.
 
 1. Read the files the task touches. Use Glob / Grep / Read directly.
-2. Draft the plan per `references/plan-format.md`: the body under `## Plan`, sections as `###`, in the order Review guide, Overview, Decisions, Build order, Test plan, Risks. Express-lane plans use the compact shape defined there.
+2. Draft the plan per `references/plan-format.md`: the body under `## Plan`, sections as `###`, in the order `references/plan-format.md` defines. Express-lane plans use the compact shape defined there.
 3. Follow `custom_instructions` when set. Simplicity self-audit: every element traces to an explicit requirement, a known bug or constraint, a rule under `.claude/rules/`, or `custom_instructions`. Drop what does not, or add a one-line rationale. Verify every "already exists / reuses X" premise from the source. If the work splits into independently verifiable units and was not decomposed, say so in Risks.
 4. Re-check the tier against the drafted plan (`references/tiers.md` § Re-check after planning): if it rises, say so in one line, reopen the rows the new tier runs, and re-resolve `<model>`.
 5. Do not show the plan yet. Proceed to Plan Review. In mob mode, this phase runs as `references/mob-mode.md` § Design dialogue and writes its § Plan shape.
@@ -143,9 +143,10 @@ Skipped on Trivial and in `fast` mode. One pass, no loop.
 USER GATE. Read `references/plan-approval.md`.
 
 1. Write the plan to `.claude/plans/<slug>.md` (`mkdir -p .claude/plans`). Slug: ASCII kebab-case of the effective task, `-2`, `-3` on collision with a prior run's file; resolved once per run.
-2. **Browser gate** on every tier but Trivial when `printenv CLAUDE_CODE_REMOTE` is not `true`: follow § Browser gate. Its `approve` → step 4; `rewrite-approach` → rewrite the plan, re-run Plan Review once unless skipped this run, re-enter this phase; `fallback` → step 3.
-3. **Chat gate** (Trivial, remote sessions, or fallback): present the plan per § Chat gate. Classify the reply: **approve** → step 4. **swap** (named Decisions items) → read back in one line, wait, swap Recommendation and Alternative on those items, re-present. **rewrite** (Approach, Build order, or Scope changed) → read back, wait, rewrite the plan, re-run Plan Review once unless skipped this run, re-present. **withdraw** → stop; leave the plan file. **Anything else** → ask; never advance.
-4. **Plan artifact**: when the resolved `plan_artifact` is `share` or `review`, read `references/plan-artifact.md` and follow it. `review` holds at its team-review gate (USER GATE) until the user says the team is done. Then Implement.
+2. **Browser gate** on every tier but Trivial when `printenv CLAUDE_CODE_REMOTE` is not `true`: follow § Browser gate. Its `approve` → step 4; `rewrite-approach` → rewrite the plan, re-run Plan Review once unless skipped this run, re-enter this phase; `wrong-branch` → § Branch action's "Wrong branch" paragraph; `fallback` → step 3.
+3. **Chat gate** (Trivial, remote sessions, or fallback): present the plan per § Chat gate. Classify the reply: **approve** → step 4. **swap** (named Decisions items) → read back in one line, wait, swap Recommendation and Alternative on those items, re-present. **rewrite** (Approach, Build order, or Scope changed) → read back, wait, rewrite the plan, re-run Plan Review once unless skipped this run, re-present. **wrong branch** (another branch to work on) → § Branch action's "Wrong branch" paragraph. **withdraw** → stop; leave the plan file. **Anything else** → ask; never advance.
+4. **Plan artifact**: when the resolved `plan_artifact` is `share` or `review`, read `references/plan-artifact.md` and follow it. `review` holds at its team-review gate (USER GATE) until the user says the team is done.
+5. Run § Branch action, then Implement.
 
 In mob mode, `references/mob-mode.md` § Plan Approval overrides step 2's tier condition and adds the plan narration.
 

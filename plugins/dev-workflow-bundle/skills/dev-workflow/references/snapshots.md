@@ -25,7 +25,7 @@ Runs at the start of Interactive Commits when the ref exists. `<tip>` = the ref'
 
 1. **Residue**: first `git add -N -- <path>` for every untracked file outside `SKILL.md` § Workflow artifacts (files the review layers created since Implement's own `add -N`). Then `git diff <tip> --stat`. Empty → the chain is final; `<excluded>` is empty; skip to step 6.
 2. **Attribute**: `node "<base dir>/scripts/absorb/attribute.mjs" --base <base-commit> --tip <tip> --out .claude/plans/<slug>.absorb`, adding `--start-tree <start-tree>` when `SKILL.md` Phase 1 (Load Settings) recorded one. It writes one patch per owning chain commit, plus `trailing.patch` for hunks no chain commit owns. Read its JSON. `<excluded>` = its `excluded` paths, which still hold the content they had when the run began: they enter no patch and no commit. When `targets` is empty and `trailing` is `null`, `<excluded>` holds every residue path and the chain is final: `rm -rf .claude/plans/<slug>.absorb` and skip to step 6. A non-zero exit → step 5's fallback.
-3. **Fold** in a throwaway worktree. Outside `SKILL.md` Phase 1 (Load Settings)'s throwaway start index, this section's steps 3 and 4 are the only place `git add -A` is allowed, because the worktree holds nothing but the tip plus the patches being applied:
+3. **Fold** in a throwaway worktree. Steps 3 and 4 are the only place `git add -A` is allowed outside `SKILL.md` Phase 1 (Load Settings)'s start index:
    ```bash
    git worktree add --detach .git/dev-workflow-wt <tip>
    ```

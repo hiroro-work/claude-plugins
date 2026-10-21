@@ -8,7 +8,7 @@ Reference loaded by `dev-workflow-triage` during the "Judge each Finding" step (
 
 - [ ] The problem the Finding describes **reproduces in the current file state** — read `<Edit root>/SKILL.md` and `<Edit root>/references/*.md` (per SKILL.md `§ Fixed configuration`'s target table; the `references/` half is vacuous for a target without that directory) and confirm the ambiguity / missing-branch / wrong-default / rules-conflict is still present.
 - [ ] The `Suggested fix direction` translates to a **local edit** — a paragraph rewrite, a new clause inside an existing section, an explicit step addition, a rules-reference insertion. It should be expressible as one `Edit` tool call (one `old_string` → `new_string`). Sole exception: on a test-gated target (Size gate column names a test file) whose size test fails after the Edit, SKILL.md § 3.4 sub-step (a.5) applies the deletion the Finding's `Size delta` names after `pays for it:` as a second `Edit` — for that pair only.
-- [ ] The edit target sits inside the target's canonical directory — the Edit root in SKILL.md `§ Fixed configuration`'s target table (SKILL.md or `references/*.md` under it). Never a rules file, never a different skill, never outside those directories.
+- [ ] The edit target sits inside the target's canonical directory — the Edit root in SKILL.md `§ Fixed configuration`'s target table (SKILL.md or `references/*.md` under it). Never a rules file, never a different skill, never a script under `scripts/`, never outside those directories. A Finding with `Fix kind: mechanism` therefore lands as `conflict` (see the dispatch table), not as an Edit.
 - [ ] The fix doesn't trigger a cascade — i.e. doesn't require simultaneous edits to sibling files or cross-skill coordination to remain consistent.
 
 ### Reject when **any** is true
@@ -39,6 +39,7 @@ Quick reference for per-case dispositions. SKILL.md's procedural prose is author
 | Any of the 4 required fields missing in any Finding | Whole issue → `parse-error`; post comment; leave open |
 | `Fix kind` / `Size delta` present or absent, any value | Not a parse-error — optional-recognized fields (v2 producer); captured when present, otherwise ignored |
 | `Fix kind: wording` with a positive `Size delta` | Per-Finding `reject` (Reject #8 — violates the producer's own size rule) |
+| `Fix kind: mechanism` | Per-Finding `conflict` before § 3.4; no Edit; warning `mechanism finding — needs a script change, not applied by triage`; the issue stays open for a `dev-workflow` run that adds or changes the script |
 | `Target skill` outside the triage scope (the targets in SKILL.md `§ Fixed configuration`'s target table) | Whole issue → `parse-error`; post comment; leave open |
 | `Category` outside the 5-value set (`ambiguity`/`missing-branch`/`wrong-default`/`rules-conflict`/`other`) | Whole issue → `parse-error`; post comment; leave open |
 | Description text names a skill other than the declared `Target skill` | Per-Finding `reject` (out-of-scope target in description) |

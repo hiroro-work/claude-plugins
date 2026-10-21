@@ -144,6 +144,30 @@ test("/api/submit drops blank comments and narrows kind to two values", async (t
   assert.equal(written.decision, "approve");
 });
 
+for (const branch of ["stay", "new", "stack"]) {
+  test(`/api/submit passes the branch choice ${branch} through to comments.json`, async (t) => {
+    const ws = await makeWorkspace(t);
+    const server = await startViewer(t, ws);
+
+    await submit(server.base, { decision: "approve", branch, comments: [] });
+    await server.closed;
+
+    assert.equal((await ws.readJson(`${PLAN_ID}.comments.json`)).branch, branch);
+  });
+}
+
+for (const [name, body] of [["an unknown", { branch: "rebase" }], ["a missing", {}]]) {
+  test(`/api/submit records ${name} branch as null`, async (t) => {
+    const ws = await makeWorkspace(t);
+    const server = await startViewer(t, ws);
+
+    await submit(server.base, { decision: "approve", comments: [], ...body });
+    await server.closed;
+
+    assert.equal((await ws.readJson(`${PLAN_ID}.comments.json`)).branch, null);
+  });
+}
+
 test("a revise with comments opens a thread round", async (t) => {
   const ws = await makeWorkspace(t);
   const server = await startViewer(t, ws);

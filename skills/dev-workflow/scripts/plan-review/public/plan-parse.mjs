@@ -35,6 +35,7 @@ export const DIALOGUE_TITLE = "Conversation history";
 // upstream silently all-collapses that plan. Each prefix stops short of an apostrophe.
 const SECTION_TYPES = [
   { type: "overview", match: ["overview", "what we"], open: true },
+  { type: "branch", match: ["branch"], open: true },
   { type: "decisions", match: ["decision", "choices i made"], open: true },
   { type: "buildorder", match: ["build order"], open: true, collapseSteps: true },
   { type: "whyorder", match: ["why this"], open: true },
@@ -250,6 +251,24 @@ export function parseDecisions(body) {
     }
   }
   return { items, preamble: preamble.join("\n").trim() };
+}
+
+// plan-format.md § Branch: the choice is the first backticked word; null keeps the section as plain markdown.
+export function parseBranch(body) {
+  const choice = (text) => {
+    const m = /`([^`]+)`/.exec(text);
+    return m ? { value: m[1].trim(), text } : null;
+  };
+  const text = String(body || "");
+  const recommendation = choice(fieldValue(text, "Recommendation"));
+  if (!recommendation) return null;
+  const options = [];
+  for (const line of text.split("\n")) {
+    const m = FIELD_LINE_RE.exec(line);
+    const c = m && m[1].trim() === "Option" ? choice(line.slice(m[0].length).trim()) : null;
+    if (c) options.push(c);
+  }
+  return { current: fieldValue(text, "Current"), recommendation, options };
 }
 
 // Under a numbered item the rationale bullets sit 4+ columns in, which markdown reads as paragraph text.

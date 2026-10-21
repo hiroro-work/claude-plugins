@@ -5,7 +5,7 @@
 import {
   OPEN_TYPES, STEP_COLLAPSE_TYPES,
   anchorNorm, buildDecisionDigest, decisionBlockId, decisionSig, emptyDiff, escapeHtml,
-  excerptOf, parseDecisions,
+  excerptOf, parseBranch, parseDecisions,
   sectionGist, splitPreamble, stripMd,
 } from "./plan-parse.mjs";
 
@@ -13,12 +13,14 @@ import {
 export const LABELS = {
   en: {
     foldLabel: "Read the text",
+    branchChoices: { stay: "Stay on the current branch", new: "Create a new branch from here", stack: "Stack a new branch on this one (gh stack)" },
     atAGlanceTitle: "Decisions at a glance",
     diffBanner: (n, removed) => `🔍 ${n} section${n === 1 ? "" : "s"} changed or added since your last review${removed ? `, ${removed} removed` : ""} — changes highlighted below`,
     diffBannerNone: "🔍 No section changes since your last review",
   },
   ja: {
     foldLabel: "文章を読む",
+    branchChoices: { stay: "このまま今のブランチで作業する", new: "ここから新しいブランチを作る", stack: "今のブランチの上に新しいブランチを積む（gh stack）" },
     atAGlanceTitle: "決定事項の一覧",
     diffBanner: (n, removed) => `🔍 前回レビューから ${n} 個のセクションが変更・追加されました${removed ? `（削除 ${removed} 件）` : ""} — 変更箇所を以下にハイライト`,
     diffBannerNone: "🔍 前回レビューからセクションの変更はありません",
@@ -111,15 +113,15 @@ function chip(label, value, cls) {
 
 /**
  * @param {object} [env]
- * @param {{foldLabel?: string, atAGlanceTitle?: string, diffBanner?: (n: number, removed: number) => string, diffBannerNone?: string}} [env.labels] merged over `LABELS.en`
+ * @param {{foldLabel?: string, atAGlanceTitle?: string, diffBanner?: (n: number, removed: number) => string, diffBannerNone?: string, branchChoices?: object}} [env.labels] merged over `LABELS.en`
  * @param {object} [env.diff] plan-parse.mjs' diff state
  * @param {boolean} [env.atAGlance]
- * @param {{decorateSection?: Function, decorateDecisionCard?: Function, renderDiagrams?: Function}} [env.hooks]
+ * @param {{decorateSection?: Function, decorateDecisionCard?: Function, decorateBranchCard?: Function, renderDiagrams?: Function}} [env.hooks]
  *   `renderDiagrams` also selects the mermaid holder (`div` with a library, `<pre class="mermaid">` without).
  */
 export function createRenderer(env = {}) {
   const labels = { ...LABELS.en, ...(env.labels || {}) };
-  const { foldLabel, atAGlanceTitle, diffBanner, diffBannerNone } = labels;
+  const { foldLabel, atAGlanceTitle, diffBanner, diffBannerNone, branchChoices } = labels;
   const diff = env.diff || emptyDiff();
   const atAGlance = Boolean(env.atAGlance);
   const hooks = env.hooks || {};
@@ -256,6 +258,38 @@ export function createRenderer(env = {}) {
     return card;
   }
 
+  function renderBranchCard(branch, sectionId) {
+    const id = `${sectionId}::card`;
+    const excerpt = excerptOf(branch.current);
+    const card = document.createElement("div");
+    card.className = "decision-card branch-card";
+    card.dataset.blockId = id;
+    card.dataset.anchorKey = anchorNorm(branch.current);
+
+    const q = document.createElement("div");
+    q.className = "dc-q";
+    q.innerHTML = `<span class="dc-tag">Current</span>${mdInline(branch.current)}`;
+    card.appendChild(q);
+
+    // The plan keeps each choice's command for the Branch action; the page shows only what it does.
+    const list = document.createElement("ul");
+    list.className = "branch-choices";
+    for (const c of [branch.recommendation, ...branch.options]) {
+      const li = document.createElement("li");
+      li.dataset.choice = c.value;
+      const text = document.createElement("span");
+      text.textContent = branchChoices[c.value] || c.value;
+      li.appendChild(text);
+      list.appendChild(li);
+    }
+    card.appendChild(list);
+
+    if (hooks.decorateBranchCard) {
+      hooks.decorateBranchCard({ card, id, excerpt, recommendation: branch.recommendation, options: branch.options });
+    }
+    return card;
+  }
+
   function renderAtAGlance(sections) {
     if (!atAGlance) return;
     const el = document.getElementById("at-a-glance");
@@ -318,6 +352,13 @@ export function createRenderer(env = {}) {
           if (prevSigs && !prevSigs.has(decisionSig(it))) card.classList.add("card-changed");
           body.appendChild(card);
         });
+      }
+    }
+    if (section.type === "branch") {
+      const branch = parseBranch(section.body);
+      if (branch) {
+        isCards = true;
+        body.appendChild(renderBranchCard(branch, section.id));
       }
     }
     if (section.type === "overview" && overviewModel && isStructuredOverview(overviewModel)) {

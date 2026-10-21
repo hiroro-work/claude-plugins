@@ -53,7 +53,8 @@
     document.getElementById("app").insertAdjacentHTML("afterbegin", PLAN_SHELL_HTML);
 
     // comments: id -> { text, excerpt, kind } ; switches: id -> excerpt
-    const state = { decision: null, comments: new Map(), switches: new Map() };
+    // A branch choice never turns the review into a revise.
+    const state = { decision: null, comments: new Map(), switches: new Map(), branch: null };
     let SWITCH_MSG = "Switch this decision to its Alternative";
     // Assigned via innerHTML in init: developer-controlled markup, never user data.
     let KBD_HINT = "<kbd>a</kbd> approve · <kbd>r</kbd> request changes · <kbd>⌘/Ctrl+↵</kbd> send";
@@ -182,6 +183,27 @@
         card.appendChild(toggle);
       }
       const { btn, area } = makeFreeComment(id, excerpt, "Comment on this decision");
+      card.appendChild(btn);
+      card.appendChild(area);
+      affordanceHead.set(card, btn);
+    }
+
+    function decorateBranchCard({ card, id, excerpt, recommendation, options }) {
+      state.branch = recommendation.value;
+      if (options.length) {
+        card.querySelectorAll(".branch-choices > li").forEach((li) => {
+          const label = document.createElement("label");
+          const radio = document.createElement("input");
+          radio.type = "radio";
+          radio.name = "branch-choice";
+          radio.value = li.dataset.choice;
+          radio.checked = li.dataset.choice === recommendation.value;
+          radio.addEventListener("change", () => { state.branch = radio.value; });
+          label.append(radio, ...li.childNodes);
+          li.appendChild(label);
+        });
+      }
+      const { btn, area } = makeFreeComment(id, excerpt, "Comment on the branch");
       card.appendChild(btn);
       card.appendChild(area);
       affordanceHead.set(card, btn);
@@ -394,6 +416,7 @@
         diff,
         hooks: {
           decorateDecisionCard,
+          decorateBranchCard,
           decorateSection: ({ bodyEl, section }) => attachElementComments(bodyEl, section.id),
           renderDiagrams: renderMermaidDiagrams,
         },
@@ -467,7 +490,7 @@
         const res = await fetch("/api/submit", {
           method: "POST",
           headers: { "content-type": "application/json" },
-          body: JSON.stringify({ decision: state.decision, comments }),
+          body: JSON.stringify({ decision: state.decision, branch: state.branch, comments }),
         });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         // `submitting` stays true on success; the "submitted" class is the keydown guard's early return.

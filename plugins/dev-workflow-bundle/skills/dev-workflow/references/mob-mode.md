@@ -27,13 +27,14 @@ One extra user gate: the plan-building checkpoints — the orientation checkpoin
 Replaces `plan-format.md`'s sections at every tier (no compact shape). Headings verbatim English; body in the resolved language. Under `## Plan`, in order:
 
 - `### What we're building` — field bullets **Now** (what the code does today, one plain sentence), **After** (what the junior will have at the end, one plain sentence), **Scope** (`N files`, then one nested line per file in the Scope line shape `plan-format.md` defines, the change described in the junior's terms).
+- `### Branch` — as `plan-format.md` defines it.
 - `### Build order` — numbered `N. **<verb-first heading naming the files>** — <detail>`, typically 3–10 steps; one step = one change that can be followed in a single diff review. Implement segments on this and nothing else.
 - `### Why this order` — the dependencies and what breaks in another order.
 - `### Choices I made` — one item per fork the build actually faced, no filtering by consequence, in the Decisions item shape `plan-format.md` defines, the Recommendation a two-line conclusion plus at most three nested reason bullets; omit `Alternative` when there was no real second option. When no fork qualifies, say so in one sentence.
 - `### How we'll check it works` — one line per check, each naming the Build order step it verifies.
 - `### Watch-outs` — optional; open points and risks. Omit when empty.
 
-In Plan Review the reviewer dispatch keeps the run mode's scope; step 3 then reads this shape on the main thread through five lenses instead of `plan-format.md`'s criteria: structure (the five required headings, step and item forms); hidden choices (a step or ordering that depends on a fork the choices never name); coverage (every step reached by a check); plain enough to follow (could someone new predict each unit's diff?); cross-file consistency. The absence of Overview / Decisions / Test plan is never a finding. After applying findings, explain each briefly as "which lens this is". Never re-dispatch the reviewer, including Phase 4's approach-rewrite exception.
+In Plan Review the reviewer dispatch keeps the run mode's scope; step 3 then reads this shape on the main thread through five lenses instead of `plan-format.md`'s criteria: structure (the six required headings, step and item forms); hidden choices (a step or ordering that depends on a fork the choices never name); coverage (every step reached by a check); plain enough to follow (could someone new predict each unit's diff?); cross-file consistency. The absence of Overview / Decisions / Test plan is never a finding. After applying findings, explain each briefly as "which lens this is". Never re-dispatch the reviewer, including Phase 4's approach-rewrite exception.
 
 The browser gate composes the served copy from this plan; the figures layer always writes a `## Hero` block.
 

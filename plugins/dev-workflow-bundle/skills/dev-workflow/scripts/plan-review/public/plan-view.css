@@ -1,10 +1,11 @@
 /* Figure-safe tokens — the only palette a plan figure may use, either side of a pair as a
-   fill. Add one here when it gives a figure a distinction it cannot already draw; chrome,
-   aliases (--rec, --risk*) and refinements (--*-border) stay out.
+   fill. figures-check.mjs reads the indented lines below as the allowed list. Add one here
+   when it gives a figure a distinction it cannot already draw; chrome, aliases (--rec,
+   --risk*) and refinements (--*-border) stay out.
      --fg, --muted        over --bg or --bg-soft
      --accent-ink         over --accent-soft
      --on-accent          over --accent
-     --approve, --revise, --changed   over their own -bg
+     --approve, --revise, --changed   over --approve-bg, --revise-bg, --changed-bg
      --border             for rules and outlines */
 :root {
   /* Palette: warm, low-glare ground with a green accent (mirrors the eli5 artifact) */

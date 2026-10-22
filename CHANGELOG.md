@@ -2,6 +2,11 @@
 
 ## 2026-10-22
 
+### rules-review v1.8.7 / dev-workflow v2.10.0 / dev-workflow-bundle v2.33.0
+
+- **Small rule families share a reviewer.** When a category is split, each family of more than 3 matched files still gets its own group, and the other families are packed in filename order until a group holds 3 or more files. A category of six two-file families now takes three reviewers instead of six.
+- **The plan review page keeps unsent comments across a reload.** Comments typed into the page are saved in the browser and come back when the page reloads on the same plan, for example after the viewer is relaunched on the same port. A changed plan does not restore them, and a successful submit clears them.
+
 ### prose-polish v1.9.0 / dev-workflow v2.9.0 / dev-workflow-bundle v2.32.0
 
 - **prose-polish can be held to the changed lines.** File mode takes an optional `Changed lines:` input: excerpts headed `@@ <path> <a>-<b> @@`. A file with excerpts is rewritten only where its prose overlaps them, and an edit sharing no non-blank line with them is dropped before it is applied. A file without excerpts is rewritten whole, as before.

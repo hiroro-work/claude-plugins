@@ -55,6 +55,10 @@
     // comments: id -> { text, excerpt, kind } ; switches: id -> excerpt
     // A branch choice never turns the review into a revise.
     const state = { decision: null, comments: new Map(), switches: new Map(), branch: null };
+    // Unsent comments survive a reload of the same plan; block ids are positional, so another plan drops them.
+    const DRAFT_KEY = "plan-review-draft";
+    let PLAN_MD = "";
+    const commentAreas = new Map(); // id -> textarea
     let SWITCH_MSG = "Switch this decision to its Alternative";
     // Assigned via innerHTML in init: developer-controlled markup, never user data.
     let KBD_HINT = "<kbd>a</kbd> approve · <kbd>r</kbd> request changes · <kbd>⌘/Ctrl+↵</kbd> send";
@@ -127,6 +131,31 @@
       if (v) state.comments.set(id, { text, excerpt, kind: kind || "prose" }); else state.comments.delete(id);
       if (btn) btn.classList.toggle("has-comment", Boolean(v));
       onCommentsChanged();
+      saveDraft();
+    }
+
+    function saveDraft() {
+      try {
+        const comments = [...state.comments].map(([id, c]) => [id, c.text]);
+        localStorage.setItem(DRAFT_KEY, JSON.stringify({ plan: PLAN_MD, comments }));
+      } catch {
+        /* storage unavailable — the draft just won't survive a reload */
+      }
+    }
+
+    function restoreDraft() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(DRAFT_KEY));
+        if (!saved || saved.plan !== PLAN_MD) return;
+        for (const [id, text] of saved.comments) {
+          const area = commentAreas.get(id);
+          if (!area || typeof text !== "string") continue;
+          area.value = text;
+          area.hidden = false;
+          for (let d = area.closest("details"); d; d = d.parentElement && d.parentElement.closest("details")) d.open = true;
+          area.dispatchEvent(new Event("input"));
+        }
+      } catch {}
     }
 
     function setSwitch(id, on, excerpt) {
@@ -152,6 +181,7 @@
     }
 
     function wireCommentToggle(btn, area, id, excerpt, kind) {
+      commentAreas.set(id, area);
       area.addEventListener("input", () => setComment(id, area.value, btn, excerpt, kind));
       btn.addEventListener("click", (e) => { e.preventDefault(); area.hidden = !area.hidden; if (!area.hidden) area.focus(); });
     }
@@ -383,6 +413,7 @@
       const { id, markdown, lang, prevMarkdown, thread, instance } = await res.json();
       THREAD = Array.isArray(thread) ? thread : [];
       INSTANCE = instance || null;
+      PLAN_MD = markdown;
       // plan-view.css reads this for --measure (a ch measure is half a line in Japanese).
       document.documentElement.lang = lang === "ja" ? "ja" : "en";
       if (lang === "ja") {
@@ -431,6 +462,7 @@
         const fold = box.closest("details.fold");
         if (fold) fold.open = true;
       }
+      restoreDraft();
     }
 
     document.querySelectorAll(".decision-radio").forEach((radio) => {
@@ -493,6 +525,7 @@
           body: JSON.stringify({ decision: state.decision, branch: state.branch, comments }),
         });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        try { localStorage.removeItem(DRAFT_KEY); } catch { /* nothing to clear */ }
         // `submitting` stays true on success; the "submitted" class is the keydown guard's early return.
         document.getElementById("app").classList.add("submitted");
         const done = document.getElementById("done");

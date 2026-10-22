@@ -12,7 +12,7 @@ const skill = readFileSync(join(repoRoot, "skills", "dev-workflow", "SKILL.md"),
 
 test("SKILL.md stays under the character budget", () => {
   const chars = [...skill].length;
-  assert.ok(chars <= 29200, `SKILL.md is ${chars} chars; budget is 29200 — cut, do not move to references`);
+  assert.ok(chars <= 29195, `SKILL.md is ${chars} chars; budget is 29195 — cut, do not move to references`);
 });
 
 // Budgets are ratchets: raise deliberately, in a commit that changes the number here.

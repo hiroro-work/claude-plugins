@@ -167,7 +167,7 @@ Express lane skips. Call `Skill(simplify)`; if unavailable, `Skill(tidy)` with n
 
 ## Phase 8: Polish Prose
 
-Express lane skips; `polish_prose: false` and `fast` mode skip. Collect changed files (`git diff <base-commit> --name-only` plus untracked, minus § Workflow artifacts). Drop files over 100 lines where the change is under 10% of the file. If none remain, skip. Otherwise call `Skill(prose-polish)` in file mode with `File:` the list and `Language:` the resolved language. `done` / `no-change` / `error` all continue.
+Express lane skips; `polish_prose: false` and `fast` mode skip. Run `node "<base dir>/scripts/polish/changed-lines.mjs" --base <base-commit>`; it prints `File:` and `Changed lines:` for this run's changes. If it prints nothing or fails, skip. Otherwise call `Skill(prose-polish)` with that output and `Language:` the resolved language. `done` / `no-change` / `error` all continue.
 
 ## Phase 9: Check / Test
 
@@ -198,7 +198,7 @@ In mob mode, predict and cross-check per `references/mob-mode.md` § Code Review
 
 ## Phase 12: Verify Fixes
 
-If `review_fix_files` is empty, skip this phase. Otherwise run Check / Test once (3 fix rounds apply). Then, if Rules Compliance Review ran, call `Skill(rules-review)` with `--base-commit <base-commit>`, `Files: <review_fix_files>`, and `Model: <model>`. Fix violations once; a second scoped pass over the newly fixed files is the last; violations still present go to the user (USER GATE).
+If `review_fix_files` is empty, skip this phase. Otherwise run Check / Test once (3 fix rounds apply; files they edit join `review_fix_files`). Then, if Rules Compliance Review ran, call `Skill(rules-review)` with `--base-commit <base-commit>`, `Files: <review_fix_files>`, and `Model: <model>`. Fix violations once; a second scoped pass over the newly fixed files is the last; violations still present go to the user (USER GATE).
 
 ## Phase 13: Completion Hooks
 

@@ -2,6 +2,12 @@
 
 ## 2026-10-22
 
+### prose-polish v1.9.0 / dev-workflow v2.9.0 / dev-workflow-bundle v2.32.0
+
+- **prose-polish can be held to the changed lines.** File mode takes an optional `Changed lines:` input: excerpts headed `@@ <path> <a>-<b> @@`. A file with excerpts is rewritten only where its prose overlaps them, and an edit sharing no non-blank line with them is dropped before it is applied. A file without excerpts is rewritten whole, as before.
+- **Polish Prose touches only what the run changed.** `scripts/polish/changed-lines.mjs` lists the changed files with excerpts of the changed lines, and Polish Prose passes both to prose-polish. Existing comments and test names elsewhere in a changed file are no longer rewritten. This replaces the rule that dropped files over 100 lines changed by less than 10%.
+- **Verify Fixes reviews what its own fix rounds edited.** Files edited in the fix rounds of its Check / Test rerun join the set the scoped rules-compliance review reads.
+
 ### dev-workflow v2.8.0 / dev-workflow-bundle v2.31.0
 
 - **The crit gate runs through a wrapper script.** `scripts/crit/gate.mjs` now probes crit, prints the story guide and hunk listing (`prep`), ingests the story with `--no-open` and reports the daemon it started (`story`), and launches the review, waits for the browser verdict, and returns it as one JSON line with the parsed comments (`review`). It waits for crit's streams to close, so the verdict-less re-read rule and the daemon-line parsing leave `crit-gate.md`, which shrinks from 4143 to 3498 characters. The story is written to `.claude/plans/<slug>.story.json`, a workflow artifact. `Bash(crit *)` leaves `allowed-tools`; nothing calls crit directly any more.

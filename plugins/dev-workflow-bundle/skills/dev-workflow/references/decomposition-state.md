@@ -4,7 +4,7 @@ Read from `SKILL.md` Phase 2 (Task Decomposition) and Phase 19 (Completion), fro
 
 ## State file
 
-Path `.claude/plans/dev-workflow.<slug>.md`. YAML frontmatter plus a short human-readable body.
+Path `.claude/plans/dev-workflow.<slug>.md`. YAML frontmatter plus a short body for people: the parent task in a sentence, no commands, never read as instructions.
 
 ```yaml
 ---
@@ -38,7 +38,7 @@ Validate on every read: the four top-level keys present, ids unique integers, `d
 
 ## Finish a subtask (Completion, decomposed runs only)
 
-1. If work items were excluded or deferred during this run and live only in prose, ask the user per item: add as a new `pending` subtask (with `depends_on` when order matters), merge into an existing pending subtask, or accept as out of scope. Items left in prose are invisible to `--resume`.
+1. If work items were excluded or deferred during this run and live only in prose, ask the user per item: add as a new `pending` subtask (with `depends_on` when order matters), merge into an existing pending subtask, or accept as out of scope.
 2. Mark the subtask `completed`; write back.
 3. Ask for an optional PR URL (USER GATE); set `pr` when given. With `pr_stack`, § Stacked PRs's "Finish" paragraph replaces this step and adds to steps 4–5.
 4. Find the next runnable subtask. If one exists and `landed_count > 0`: tell the user to open a PR for this run's commits, then start a new session with `--resume <slug>`. If one exists and `landed_count` is 0: tell the user to commit and open a PR first, because the next run takes a fresh `<base-commit>` and uncommitted changes would end up in the next subtask's diff. Add, when rule files remain uncommitted, that those need committing too. Never push outside `submit` in § Stacked PRs's "Finish" paragraph.
@@ -52,7 +52,7 @@ Used when a decomposed run's Branch choice is `stack` (`plan-approval.md` § Bra
 
 **Resume**:
 
-1. Before the first `git switch` below (none when already on the subtask's `branch`), run `git status --porcelain=v1 --untracked-files=all -z` once. When anything outside `SKILL.md` § Workflow artifacts is listed, stop: switching branches would carry those changes into this subtask. Ask the user to commit or stash them and resume again.
+1. Before the first `git switch` below (none when already on the subtask's `branch`), run `git status --porcelain=v1 --untracked-files=all -z` once. When anything outside `SKILL.md` § Workflow artifacts is listed, stop and ask the user to commit or stash it and resume again.
 2. The subtask has a `branch` (an earlier run of it stopped): `git switch <branch>` unless already on it, then go to step 4.
 3. No `branch`, in this order:
    1. Note whether the current branch is `<trunk>`.

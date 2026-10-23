@@ -2,7 +2,7 @@
 
 Read from `commits.md` § Procedure at Interactive Commits, and from `mob-mode.md` § Per-unit review at Implement. The wrapper, the launch, and the reading of its result apply to both. So does the split between a `scope: "line"` comment, applied as an edit, and a `scope: "review"` body, answered as a reply. The candidate derivation, the story, the commit step, and the routing of a reply through `commits.md` § Approval tokens are for the commit gate only: a unit review's range is `<prev>..<snapshot>`, it attaches no story, and `mob-mode.md` § Per-unit review governs what its verdict means.
 
-crit is a locally installed browser diff reviewer, driven through `node "<base dir>/scripts/crit/gate.mjs"`, which prints one JSON line on stdout. The first call of a run that answers `status: "unavailable"` puts the whole run on the chat presentation, with its `reason` in one note.
+crit is driven through `node "<base dir>/scripts/crit/gate.mjs"`, which prints one JSON line on stdout. The first call of a run that answers `status: "unavailable"` puts the whole run on the chat presentation, with its `reason` in one note.
 
 Per commit: on the chain path the candidate is the chain commit itself and `<parent>` = `<commit>^` (not HEAD), or `<S_k>` when mob mode presents the post-review delta. On the cohesion path `<parent>` = `git rev-parse HEAD`; build the candidate without moving HEAD: `git write-tree` on the staged group, then `git commit-tree <tree> -p <parent>` with the subject and body on stdin. Then attach the **story**, which carries the body the browser never shows:
 

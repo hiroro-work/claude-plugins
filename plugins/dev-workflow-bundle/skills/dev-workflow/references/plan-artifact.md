@@ -7,9 +7,9 @@ Read from `SKILL.md` Phase 5 (Plan Approval). Unqualified `§` references point 
 Runs once per approval, right after it resolves to approve, on every route.
 
 1. `Skill(artifact-design)` once per session (retry once; on failure skip the artifact with a one-line note).
-2. Write the exchange that shaped this plan to `.claude/plans/<slug>.dialogue.md`, from what was said rather than from memory. Two sources together:
+2. Write the exchange that shaped this plan to `.claude/plans/<slug>.dialogue.md`. Two sources together:
    - Chat turns: run `node "<base dir>/scripts/retro/session-text.mjs" --since <the time on the first line of this run's timing log>`. On a non-zero exit, on empty output, or on output carrying no `user:` line, say in one line which of those happened and use what is in context instead.
-   - Gate comments, which never reach that log: `<slug>.plan-review.thread.json` for the browser gate, and this file's § Team-review gate for the team's. Both hold the person's wording as submitted.
+   - Gate comments: `<slug>.plan-review.thread.json` for the browser gate, and this file's § Team-review gate for the team's.
 
    Cover every exchange between the person running the workflow and the assistant while the plan was being made, a question that changed nothing included. Leave out credentials, talk unrelated to this task, and remarks that are not about the work. One item per exchange, in the resolved language, each naming which of the two raised it. Settle the wording of those labels in that language rather than taking it from here. Quote the person's own words, one or two sentences, cutting a longer turn with an ellipsis. Summarize the assistant's side. Call each item by what it was about, never by a number the reader cannot resolve. No headings — bold labels or list items only.
 3. Source = the served copy when it exists, else the canonical plan. Export: `node "<base dir>/scripts/plan-review/export-plan-html.mjs" --plan <source> --dialogue ".claude/plans/<slug>.dialogue.md" --out ".claude/plans/<slug>.artifact.html" --lang <language>`.

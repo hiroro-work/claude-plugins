@@ -2,6 +2,10 @@
 
 ## 2026-10-23
 
+### dev-workflow v2.10.2 / dev-workflow-bundle v2.33.2
+
+- **The plan review viewer stops through `serve.mjs --stop`.** When a chat reply ends the browser review, the workflow reruns the viewer's launch command with `--stop`, which asks the waiting viewer to exit with code 130. It needs only the `node` permission the skill already has, so stopping the viewer no longer waits on a permission prompt.
+
 ### rules-review v1.8.8 / dev-workflow v2.10.1 / dev-workflow-bundle v2.33.1
 
 - **Naming a Branch choice is no longer read as approval.** At the chat gate, a reply approves only when it says so; a Branch choice it names is then swapped in as before.

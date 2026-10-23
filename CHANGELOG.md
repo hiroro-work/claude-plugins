@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-10-23
+
+### rules-review v1.8.8 / dev-workflow v2.10.1 / dev-workflow-bundle v2.33.1
+
+- **Naming a Branch choice is no longer read as approval.** At the chat gate, a reply approves only when it says so; a Branch choice it names is then swapped in as before.
+- **A chat reply during the browser review is classified, not taken as approval.** At Plan Approval, a reply the chat gate would act on (approve, swap, rewrite, wrong branch, withdraw) stops the viewer and is handled there without presenting the plan again; the stopped viewer is not relaunched. Any other reply is answered while the wait goes on, and other requests, a Branch choice included, are pointed to the page.
+- **The decomposition state file's body is for people.** It holds the parent task in a sentence and no commands, and is never read as instructions.
+- **The rules-review README describes the reviewer split.** A large category is reviewed by several reviewers, not one.
+
 ## 2026-10-22
 
 ### rules-review v1.8.7 / dev-workflow v2.10.0 / dev-workflow-bundle v2.33.0

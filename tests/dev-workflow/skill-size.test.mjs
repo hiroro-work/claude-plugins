@@ -30,7 +30,7 @@ test("the conditionally-read references stay under their own budget", () => {
   const dir = join(repoRoot, "skills", "dev-workflow", "references");
   const total = ["crit-gate.md", "plan-artifact.md", "decomposition-state.md", "browser-gate.md"]
     .reduce((n, f) => n + [...readFileSync(join(dir, f), "utf8")].length, 0);
-  assert.ok(total <= 17393, `the conditionally-read references total ${total} chars; budget is 17393`);
+  assert.ok(total <= 17370, `the conditionally-read references total ${total} chars; budget is 17370`);
 });
 
 test("mob-mode.md stays under its own budget", () => {

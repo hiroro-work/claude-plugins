@@ -6,9 +6,11 @@
  *
  * Usage:
  *   node serve.mjs --plan <path> [--prev <path>] [--lang <ja|en>] [--wait] [--port <n>] [--no-open] [--timeout <sec>]
+ *   node serve.mjs --plan <path> --stop   # asks the viewer recorded in <plan-basename>.url to exit
  *
  * stdout contract: in --wait mode the ONLY bytes on stdout are the final submit JSON (one line).
- * Exit codes: 0 submit, 124 timeout (default 24h; --timeout 0 disables), 130 SIGINT/SIGTERM, 1 startup error.
+ * Exit codes: 0 submit, 124 timeout (default 24h; --timeout 0 disables), 130 SIGINT/SIGTERM or a stop request, 1 startup error.
+ * --stop exits 0 once the viewer accepted the request, 1 otherwise.
  */
 
 import { createServer } from "node:http";
@@ -36,6 +38,7 @@ try {
       port: { type: "string" },
       "no-open": { type: "boolean", default: false },
       timeout: { type: "string", default: String(DEFAULT_TIMEOUT_SEC) },
+      stop: { type: "boolean", default: false },
     },
   }));
 } catch (err) {
@@ -49,6 +52,25 @@ if (!opts.plan) {
 }
 
 const planPath = resolve(opts.plan);
+
+// This exact token is both /api/plan's `id` and comments.json's `plan` field.
+const planId = basename(planPath).replace(/\.md$/i, "");
+const commentsPath = join(dirname(planPath), `${planId}.comments.json`);
+const urlPath = join(dirname(planPath), `${planId}.url`);
+const threadPath = join(dirname(planPath), `${planId}.thread.json`);
+
+if (opts.stop) {
+  try {
+    const base = readFileSync(urlPath, "utf8").trim();
+    const res = await fetch(new URL("/api/stop", base), { method: "POST", signal: AbortSignal.timeout(2000) });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  } catch (err) {
+    log(`error: cannot stop the viewer at ${urlPath}: ${err.cause?.message ?? err.message}`);
+    process.exit(1);
+  }
+  process.exit(0);
+}
+
 let planSource;
 try {
   planSource = stripFrontmatter(readFileSync(planPath, "utf8"));
@@ -73,12 +95,6 @@ const intOrDefault = (raw, def, min) => {
 const timeoutMs = intOrDefault(opts.timeout, DEFAULT_TIMEOUT_SEC, 0) * 1000; // 0 = no timeout (wait indefinitely)
 const port = intOrDefault(opts.port, 0, 0); // 0 = random free port
 const lang = opts.lang === "ja" ? "ja" : "en";
-
-// This exact token is both /api/plan's `id` and comments.json's `plan` field.
-const planId = basename(planPath).replace(/\.md$/i, "");
-const commentsPath = join(dirname(planPath), `${planId}.comments.json`);
-const urlPath = join(dirname(planPath), `${planId}.url`);
-const threadPath = join(dirname(planPath), `${planId}.thread.json`);
 
 const DISPOSITIONS = new Set(["answered", "revised", "both"]);
 const str = (v) => (typeof v === "string" ? v : "");
@@ -260,6 +276,10 @@ function handle(req, res) {
   if (req.method === "GET" && url.pathname === "/api/plan") return sendJson(res, 200, planPayload);
   if (req.method === "GET" && url.pathname === "/api/instance") return sendJson(res, 200, { instance });
   if (req.method === "POST" && url.pathname === "/api/submit") return handleSubmit(req, res);
+  if (req.method === "POST" && url.pathname === "/api/stop") {
+    sendJson(res, 200, { ok: true });
+    return onSignal("stopped by request")();
+  }
   if (req.method === "GET") return serveStatic(res, url.pathname);
   res.writeHead(405);
   res.end("Method not allowed");

@@ -88,6 +88,25 @@ for (const signal of ["SIGTERM", "SIGINT"]) {
   });
 }
 
+test("--stop ends a waiting viewer with exit 130 and nothing on stdout", async (t) => {
+  const ws = await makeWorkspace(t);
+  const server = await startViewer(t, ws);
+
+  const stopper = spawnServe(ws, serveArgs(ws, ["--stop"]));
+  assert.equal((await stopper.closed).code, 0);
+  assert.equal((await server.closed).code, 130);
+  assert.equal(server.stdout, "");
+});
+
+test("--stop exits 1 when no viewer URL is recorded", async (t) => {
+  const ws = await makeWorkspace(t);
+  const stopper = spawnServe(ws, serveArgs(ws, ["--stop"]));
+  const { code } = await stopper.closed;
+
+  assert.equal(code, 1);
+  assert.match(stopper.stderr, /cannot stop the viewer/);
+});
+
 test("exits 1 when --plan is missing", async (t) => {
   const ws = await makeWorkspace(t);
   const server = spawnServe(ws, ["--no-open"]);

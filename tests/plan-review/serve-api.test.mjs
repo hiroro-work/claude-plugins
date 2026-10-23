@@ -273,7 +273,7 @@ test("the static handler serves the viewer page, and nothing outside public/", a
   }
 });
 
-test("only GET, plus POST to /api/submit, is served", async (t) => {
+test("only GET, plus POST to /api/submit and /api/stop, is served", async (t) => {
   const ws = await makeWorkspace(t);
   const server = await startViewer(t, ws);
 
@@ -281,11 +281,13 @@ test("only GET, plus POST to /api/submit, is served", async (t) => {
   assert.equal(
     (await fetch(`${server.base}/api/plan`, { method: "POST" })).status,
     405,
-    "POST is routed only for /api/submit",
+    "POST is routed only for /api/submit and /api/stop",
   );
   assert.equal(
     (await fetch(`${server.base}/api/submit`)).status,
     404,
     "a GET on the submit path falls through to the static handler",
   );
+  assert.equal((await fetch(`${server.base}/api/stop`, { method: "POST" })).status, 200);
+  assert.equal((await server.closed).code, 130);
 });

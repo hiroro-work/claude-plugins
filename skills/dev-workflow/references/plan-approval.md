@@ -14,7 +14,7 @@ Read `browser-gate.md` and follow its § Browser gate; it returns `approve`, `re
 
 ## Chat gate
 
-Add one line saying that approving runs the chosen branch command. A reply that approves and names a choice the Branch section offers chooses it, swapping it with the Recommendation; a choice it does not offer is asked about again.
+Add one line saying that approving runs the chosen branch command. Naming a Branch choice is not approval; a reply that also approves chooses it, swapping it with the Recommendation, and an unoffered choice is asked about again.
 
 Render the plan per `plan-format.md`'s "Presentation at Plan Approval" paragraph. The review-status sentence is one of: `reviewed in Plan Review (full scope)`; `Plan Review ran in rules-only scope — only .claude/rules/ compliance was reviewed, so the design and completeness of this plan reach you unreviewed.`; `Plan Review found no project rules to check and did not run — this approval is the sole review.`; `not reviewed (Trivial tier)`; `not reviewed (fast mode)`. If a served copy exists when a chat-path revision is applied, `rm -f` it.
 

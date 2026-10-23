@@ -144,7 +144,7 @@ USER GATE. Read `references/plan-approval.md`.
 
 1. Write the plan to `.claude/plans/<slug>.md` (`mkdir -p .claude/plans`). Slug: ASCII kebab-case of the effective task, `-2`, `-3` on collision with a prior run's file; resolved once per run.
 2. **Browser gate** on every tier but Trivial when `printenv CLAUDE_CODE_REMOTE` is not `true`: follow `references/browser-gate.md`. Its `approve` → step 4; `rewrite-approach` → rewrite the plan, re-run Plan Review once unless skipped this run, re-enter this phase; `wrong-branch` → § Branch action's "Wrong branch" paragraph; `fallback` → step 3.
-3. **Chat gate** (Trivial, remote sessions, or fallback): present the plan per § Chat gate. Classify the reply: **approve** → step 4. **swap** (named Decisions items) → read back in one line, wait, swap Recommendation and Alternative on those items, re-present. **rewrite** (Approach, Build order, or Scope changed) → read back, wait, rewrite the plan, re-run Plan Review once unless skipped this run, re-present. **wrong branch** (another branch to work on) → § Branch action's "Wrong branch" paragraph. **withdraw** → stop; leave the plan file. **Anything else** → ask; never advance.
+3. **Chat gate** (Trivial, remote sessions, or fallback): present the plan per § Chat gate unless fallback brought a reply. Classify the reply: **approve** → step 4. **swap** (named Decisions items) → read back in one line, wait, swap Recommendation and Alternative on those items, re-present. **rewrite** (Approach, Build order, or Scope changed) → read back, wait, rewrite the plan, re-run Plan Review once unless skipped this run, re-present. **wrong branch** (another branch to work on) → § Branch action's "Wrong branch" paragraph. **withdraw** → stop; leave the plan file. **Anything else** → ask; never advance.
 4. **Plan artifact**: when the resolved `plan_artifact` is `share` or `review`, read `references/plan-artifact.md` and follow it. `review` holds at its team-review gate (USER GATE) until the user says the team is done.
 5. Run § Branch action, then Implement.
 
@@ -206,7 +206,7 @@ Skipped when `hooks.on_complete` is unset, or with a one-line note when the tree
 
 ## Phase 14: Interactive Commits
 
-USER GATE. When the snapshot chain exists, first absorb the review layers' edits into it per `references/snapshots.md` § Absorb review fixes. Then read `references/commits.md` and follow § Procedure. Initialize `landed_count = 0` on entry; the reference increments it. Never `git push`.
+USER GATE. When the snapshot chain exists, first absorb the review layers' edits into it per `references/snapshots.md` § Absorb review fixes. Then read `references/commits.md` and follow § Procedure. Set `landed_count = 0` on entry. Never `git push`.
 
 In mob mode, add the per-commit note and the already-reviewed accept variant per `references/mob-mode.md` § Commits.
 

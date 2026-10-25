@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-10-25
+
+### dev-workflow v2.10.3 / dev-workflow-bundle v2.33.3
+
+- **The plan review viewer accepts posts only from its own page.** `/api/submit` and `/api/stop` refuse with 403 a request whose Host is not `127.0.0.1:<port>` or whose Origin is another site, so another page open in the same browser can no longer approve the plan or stop the viewer. Submits from the viewer page and `serve.mjs --stop` still pass.
+
 ## 2026-10-23
 
 ### dev-workflow v2.10.2 / dev-workflow-bundle v2.33.2

@@ -2,6 +2,11 @@
 
 ## 2026-10-25
 
+### dev-workflow v2.11.0 / dev-workflow-bundle v2.34.0
+
+- **The Branch section follows the project's own branch rules.** When the loaded `CLAUDE.md` or `.claude/rules/` state a branch-naming convention, a base branch, or that stacked PRs are not used, the plan's `new` / `stack` command names the branch per the convention, the Current line and `stack --base` use the stated base, and `stack` is left out. Without such a statement the derivation is unchanged. A stacked subtask's branch follows the naming convention the same way.
+- **A stacked subtask's branch says what the subtask is.** It is now `<slug>-<id>-<title>`, the subtask's title in ASCII kebab-case after the parent slug and id, instead of `<slug>-<id>`. The parent slug keeps the stack's branches grouped and ordered; the id keeps similar titles apart. Branches created by earlier runs keep their names, since the state file records them.
+
 ### dev-workflow v2.10.4 / dev-workflow-bundle v2.33.4
 
 - **A browser submit that races a chat reply is no longer lost.** `serve.mjs --stop` prints the submit JSON and exits 0 when the viewer already received a submit, and the browser gate reads that result instead of returning to the chat. A submit that reaches the viewer after it accepted a stop is refused with 409, so the page shows it was not sent.

@@ -8,6 +8,8 @@
  *   node serve.mjs --plan <path> [--prev <path>] [--lang <ja|en>] [--wait] [--port <n>] [--no-open] [--timeout <sec>]
  *   node serve.mjs --plan <path> --stop   # asks the viewer recorded in <plan-basename>.url to exit
  *
+ * POSTs are accepted only from the viewer itself: Host must be 127.0.0.1:<port>, and Origin, when sent, its own origin.
+ *
  * stdout contract: in --wait mode the ONLY bytes on stdout are the final submit JSON (one line).
  * Exit codes: 0 submit, 124 timeout (default 24h; --timeout 0 disables), 130 SIGINT/SIGTERM or a stop request, 1 startup error.
  * --stop exits 0 once the viewer accepted the request, 1 otherwise.
@@ -160,6 +162,7 @@ const MIME = {
 
 let server;
 let timer;
+let ownHost;
 
 function shutdown(code) {
   if (timer) clearTimeout(timer);
@@ -271,10 +274,19 @@ function handleSubmit(req, res) {
   });
 }
 
+// Other pages in the same browser can POST here too (a cross-site form, DNS rebinding); only the viewer page may.
+function fromViewer(req) {
+  const { host, origin } = req.headers;
+  return host === ownHost && (origin === undefined || origin === `http://${ownHost}`);
+}
+
 function handle(req, res) {
   const url = new URL(req.url, "http://127.0.0.1");
   if (req.method === "GET" && url.pathname === "/api/plan") return sendJson(res, 200, planPayload);
   if (req.method === "GET" && url.pathname === "/api/instance") return sendJson(res, 200, { instance });
+  if (req.method === "POST" && (url.pathname === "/api/submit" || url.pathname === "/api/stop") && !fromViewer(req)) {
+    return sendJson(res, 403, { error: "forbidden origin or host" });
+  }
   if (req.method === "POST" && url.pathname === "/api/submit") return handleSubmit(req, res);
   if (req.method === "POST" && url.pathname === "/api/stop") {
     sendJson(res, 200, { ok: true });
@@ -323,7 +335,8 @@ server.on("error", (err) => {
 });
 
 server.on("listening", () => {
-  const urlStr = `http://127.0.0.1:${server.address().port}/`;
+  ownHost = `127.0.0.1:${server.address().port}`;
+  const urlStr = `http://${ownHost}/`;
   log(`plan-review viewer listening on ${urlStr} (plan: ${planId})`);
   try {
     writeFileSync(urlPath, `${urlStr}\n`, "utf8");

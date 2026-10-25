@@ -2,8 +2,21 @@
 
 import test from "node:test";
 import assert from "node:assert/strict";
+import { request } from "node:http";
 
 import { PLAN_ID, SAMPLE_PLAN, getPlan, makeWorkspace, startViewer, submit } from "./helpers.mjs";
+
+// fetch cannot set Host, so the sender headers go through node:http.
+function postAs(base, path, headers) {
+  return new Promise((resolve, reject) => {
+    const req = request(new URL(path, base), { method: "POST", headers }, (res) => {
+      res.resume();
+      res.on("end", () => resolve(res.statusCode));
+    });
+    req.on("error", reject);
+    req.end(JSON.stringify({ decision: "approve", comments: [] }));
+  });
+}
 
 test("/api/plan ships the raw plan markdown untouched", async (t) => {
   const ws = await makeWorkspace(t);
@@ -290,4 +303,31 @@ test("only GET, plus POST to /api/submit and /api/stop, is served", async (t) =>
   );
   assert.equal((await fetch(`${server.base}/api/stop`, { method: "POST" })).status, 200);
   assert.equal((await server.closed).code, 130);
+});
+
+for (const [name, headers] of [
+  ["another origin", (host) => ({ host, origin: "http://evil.example" })],
+  ["an opaque origin", (host) => ({ host, origin: "null" })],
+  ["a Host other than 127.0.0.1:<port>", (host) => ({ host: host.replace("127.0.0.1", "localhost") })],
+]) {
+  test(`/api/submit and /api/stop refuse a POST from ${name}`, async (t) => {
+    const ws = await makeWorkspace(t);
+    const server = await startViewer(t, ws);
+    const host = new URL(server.base).host;
+
+    assert.equal(await postAs(server.base, "/api/submit", headers(host)), 403);
+    assert.equal(await postAs(server.base, "/api/stop", headers(host)), 403);
+
+    await assert.rejects(ws.read(`${PLAN_ID}.comments.json`), "a refused submit records nothing");
+    assert.equal((await fetch(`${server.base}/api/plan`)).status, 200, "a refused stop leaves the viewer running");
+  });
+}
+
+test("/api/submit accepts a POST carrying the viewer's own origin", async (t) => {
+  const ws = await makeWorkspace(t);
+  const server = await startViewer(t, ws);
+  const host = new URL(server.base).host;
+
+  assert.equal(await postAs(server.base, "/api/submit", { host, origin: server.base }), 200);
+  assert.equal((await server.closed).code, 0);
 });

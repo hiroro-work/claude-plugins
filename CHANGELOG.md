@@ -2,6 +2,11 @@
 
 ## 2026-10-25
 
+### dev-workflow v2.10.4 / dev-workflow-bundle v2.33.4
+
+- **A browser submit that races a chat reply is no longer lost.** `serve.mjs --stop` prints the submit JSON and exits 0 when the viewer already received a submit, and the browser gate reads that result instead of returning to the chat. A submit that reaches the viewer after it accepted a stop is refused with 409, so the page shows it was not sent.
+- **The plan review viewer answers only requests addressed to it.** Every request, `GET /api/plan` and the page itself included, is refused with 403 unless its Host is `127.0.0.1:<port>`, so a DNS-rebound name can no longer read the plan.
+
 ### dev-workflow v2.10.3 / dev-workflow-bundle v2.33.3
 
 - **The plan review viewer accepts posts only from its own page.** `/api/submit` and `/api/stop` refuse with 403 a request whose Host is not `127.0.0.1:<port>` or whose Origin is another site, so another page open in the same browser can no longer approve the plan or stop the viewer. Submits from the viewer page and `serve.mjs --stop` still pass.

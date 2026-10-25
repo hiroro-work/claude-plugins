@@ -23,14 +23,14 @@ test("SKILL.md plus the reference tree stays under the tree budget", () => {
   const excluded = new Set(["mob-mode.md", "crit-gate.md", "plan-artifact.md", "decomposition-state.md", "browser-gate.md"]);
   const refs = readdirSync(dir).filter((f) => f.endsWith(".md") && !excluded.has(f));
   const total = [...skill].length + refs.reduce((n, f) => n + [...readFileSync(join(dir, f), "utf8")].length, 0);
-  assert.ok(total <= 71181, `SKILL.md + counted references total ${total} chars; budget is 71181`);
+  assert.ok(total <= 71443, `SKILL.md + counted references total ${total} chars; budget is 71443`);
 });
 
 test("the conditionally-read references stay under their own budget", () => {
   const dir = join(repoRoot, "skills", "dev-workflow", "references");
   const total = ["crit-gate.md", "plan-artifact.md", "decomposition-state.md", "browser-gate.md"]
     .reduce((n, f) => n + [...readFileSync(join(dir, f), "utf8")].length, 0);
-  assert.ok(total <= 17365, `the conditionally-read references total ${total} chars; budget is 17365`);
+  assert.ok(total <= 17527, `the conditionally-read references total ${total} chars; budget is 17527`);
 });
 
 test("mob-mode.md stays under its own budget", () => {

@@ -1,6 +1,6 @@
 # rules-review
 
-Checks a code diff against the rules documented under `.claude/rules/`, one reviewer per rule category, and reports each violation with the rule line it breaks. With no argument the diff is taken from `HEAD~1`; `--base-commit <sha>` takes it from a given commit instead.
+Checks a code diff against the rules documented under `.claude/rules/`, one reviewer per rule category (several for a large category), and reports each violation with the rule line it breaks. With no argument the diff is taken from `HEAD~1`; `--base-commit <sha>` takes it from a given commit instead.
 
 ## What the check covers
 

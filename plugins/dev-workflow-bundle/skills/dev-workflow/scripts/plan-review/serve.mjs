@@ -6,13 +6,18 @@
  *
  * Usage:
  *   node serve.mjs --plan <path> [--prev <path>] [--lang <ja|en>] [--wait] [--port <n>] [--no-open] [--timeout <sec>]
+ *   node serve.mjs --plan <path> --stop   # asks the viewer recorded in <plan-basename>.url to exit
+ *
+ * Every request must carry Host 127.0.0.1:<port>; a POST's Origin, when sent, must be the viewer's own origin.
  *
  * stdout contract: in --wait mode the ONLY bytes on stdout are the final submit JSON (one line).
- * Exit codes: 0 submit, 124 timeout (default 24h; --timeout 0 disables), 130 SIGINT/SIGTERM, 1 startup error.
+ * Exit codes: 0 submit, 124 timeout (default 24h; --timeout 0 disables), 130 SIGINT/SIGTERM or a stop request, 1 startup error.
+ * --stop prints the submit JSON and exits 0 when the viewer already received one; otherwise it exits 0 once
+ * the viewer accepted the request, 1 if not.
  */
 
 import { createServer } from "node:http";
-import { readFileSync, existsSync, writeFileSync } from "node:fs";
+import { readFileSync, existsSync, statSync, writeFileSync } from "node:fs";
 import { basename, dirname, extname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
@@ -36,6 +41,7 @@ try {
       port: { type: "string" },
       "no-open": { type: "boolean", default: false },
       timeout: { type: "string", default: String(DEFAULT_TIMEOUT_SEC) },
+      stop: { type: "boolean", default: false },
     },
   }));
 } catch (err) {
@@ -49,6 +55,45 @@ if (!opts.plan) {
 }
 
 const planPath = resolve(opts.plan);
+
+// This exact token is both /api/plan's `id` and comments.json's `plan` field.
+const planId = basename(planPath).replace(/\.md$/i, "");
+const commentsPath = join(dirname(planPath), `${planId}.comments.json`);
+const urlPath = join(dirname(planPath), `${planId}.url`);
+const threadPath = join(dirname(planPath), `${planId}.thread.json`);
+
+// The URL file is rewritten at every listen, so a newer comments file is this viewer's submit.
+function readSubmit() {
+  try {
+    if (statSync(commentsPath).mtimeMs < statSync(urlPath).mtimeMs) return null;
+    return JSON.stringify(JSON.parse(readFileSync(commentsPath, "utf8")));
+  } catch {
+    return null;
+  }
+}
+
+if (opts.stop) {
+  let failure;
+  try {
+    const base = readFileSync(urlPath, "utf8").trim();
+    const res = await fetch(new URL("/api/stop", base), { method: "POST", signal: AbortSignal.timeout(2000) });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  } catch (err) {
+    failure = err;
+  }
+  // Read even after an accepted stop: a submit may have begun the shutdown first.
+  const submitted = readSubmit();
+  if (submitted) {
+    process.stdout.write(submitted + "\n");
+    process.exit(0);
+  }
+  if (failure) {
+    log(`error: cannot stop the viewer at ${urlPath}: ${failure.cause?.message ?? failure.message}`);
+    process.exit(1);
+  }
+  process.exit(0);
+}
+
 let planSource;
 try {
   planSource = stripFrontmatter(readFileSync(planPath, "utf8"));
@@ -73,12 +118,6 @@ const intOrDefault = (raw, def, min) => {
 const timeoutMs = intOrDefault(opts.timeout, DEFAULT_TIMEOUT_SEC, 0) * 1000; // 0 = no timeout (wait indefinitely)
 const port = intOrDefault(opts.port, 0, 0); // 0 = random free port
 const lang = opts.lang === "ja" ? "ja" : "en";
-
-// This exact token is both /api/plan's `id` and comments.json's `plan` field.
-const planId = basename(planPath).replace(/\.md$/i, "");
-const commentsPath = join(dirname(planPath), `${planId}.comments.json`);
-const urlPath = join(dirname(planPath), `${planId}.url`);
-const threadPath = join(dirname(planPath), `${planId}.thread.json`);
 
 const DISPOSITIONS = new Set(["answered", "revised", "both"]);
 const str = (v) => (typeof v === "string" ? v : "");
@@ -144,8 +183,12 @@ const MIME = {
 
 let server;
 let timer;
+let ownHost;
+let stopping = false;
 
 function shutdown(code) {
+  if (stopping) return;
+  stopping = true;
   if (timer) clearTimeout(timer);
   if (server) {
     server.close(() => process.exit(code));
@@ -190,6 +233,7 @@ function handleSubmit(req, res) {
   });
   req.on("end", () => {
     if (aborted) return;
+    if (stopping) return sendJson(res, 409, { error: "viewer is stopping" });
     let body;
     try {
       body = JSON.parse(raw);
@@ -256,10 +300,21 @@ function handleSubmit(req, res) {
 }
 
 function handle(req, res) {
+  // A DNS-rebound name reaches 127.0.0.1 with its own Host, and would otherwise read the plan.
+  if (req.headers.host !== ownHost) return sendJson(res, 403, { error: "forbidden host" });
   const url = new URL(req.url, "http://127.0.0.1");
   if (req.method === "GET" && url.pathname === "/api/plan") return sendJson(res, 200, planPayload);
   if (req.method === "GET" && url.pathname === "/api/instance") return sendJson(res, 200, { instance });
+  // Other pages in the same browser can POST here too (a cross-site form); only the viewer page may.
+  const { origin } = req.headers;
+  if (req.method === "POST" && origin !== undefined && origin !== `http://${ownHost}`) {
+    return sendJson(res, 403, { error: "forbidden origin" });
+  }
   if (req.method === "POST" && url.pathname === "/api/submit") return handleSubmit(req, res);
+  if (req.method === "POST" && url.pathname === "/api/stop") {
+    sendJson(res, 200, { ok: true });
+    return onSignal("stopped by request")();
+  }
   if (req.method === "GET") return serveStatic(res, url.pathname);
   res.writeHead(405);
   res.end("Method not allowed");
@@ -303,7 +358,8 @@ server.on("error", (err) => {
 });
 
 server.on("listening", () => {
-  const urlStr = `http://127.0.0.1:${server.address().port}/`;
+  ownHost = `127.0.0.1:${server.address().port}`;
+  const urlStr = `http://${ownHost}/`;
   log(`plan-review viewer listening on ${urlStr} (plan: ${planId})`);
   try {
     writeFileSync(urlPath, `${urlStr}\n`, "utf8");

@@ -1,7 +1,7 @@
 ---
 name: dev-workflow
 description: Guided development workflow — task decomposition, planning, peer plan review, approval, implementation, tidy, prose polish, check/test, rules compliance review, code review, completion hooks, interactive commits, rule updates — with a fixed difficulty-skip table, browser plan review, plan artifacts, an optional mob mode for a junior navigator, and a growth-controlled self-retrospective; no executors. Use when the user wants a feature built, a bug fixed, or code refactored.
-allowed-tools: Agent, Read, Write, Edit, Glob, Grep, TaskCreate, TaskUpdate, TaskList, AskUserQuestion, Artifact, Skill(artifact-design), Skill(ask-peer), Skill(ask-claude), Skill(ask-codex), Skill(ask-gemini), Skill(ask-copilot), Skill(ask-agy), Skill(simplify), Skill(tidy), Skill(prose-polish), Skill(rules-review), Skill(extract-rules), Skill(run-tests), Skill(demo), Bash(pwd), Bash(mkdir -p .claude/*), Bash(cp .claude/plans/*), Bash(rm -f .claude/plans/*), Bash(node *), Bash(printenv CLAUDE_CODE_REMOTE), Bash(crit *), Bash(test -f *), Bash(pnpm run *), Bash(pnpm exec *), Bash(npm run *), Bash(yarn run *), Bash(bun run *), Bash(bundle exec *), Bash(make lint *), Bash(make format *), Bash(make test *), Bash(make typecheck *), Bash(make check *), Bash(python -m pytest *), Bash(poetry run *), Bash(uv run *), Bash(cargo test *), Bash(cargo clippy *), Bash(cargo fmt *), Bash(go test *), Bash(go vet *), Bash(git status *), Bash(git symbolic-ref -q *), Bash(git rev-parse *), Bash(git merge-base *), Bash(git remote show *), Bash(git switch *), Bash(git diff *), Bash(git add *), Bash(git reset -- *), Bash(git commit *), Bash(LEFTHOOK=0 git commit *), Bash(git write-tree), Bash(git commit-tree *), Bash(git read-tree *), Bash(git update-ref *), Bash(git rev-list *), Bash(git worktree *), Bash(git branch -D *), Bash(GIT_INDEX_FILE=* git read-tree *), Bash(GIT_INDEX_FILE=* git add *), Bash(GIT_INDEX_FILE=* git write-tree), Bash(git -C .git/dev-workflow-wt *), Bash(GIT_SEQUENCE_EDITOR=true GIT_EDITOR=true git -c commit.gpgsign=false -C .git/dev-workflow-wt rebase *), Bash(rm -rf .claude/plans/*.absorb), Bash(rm -f .claude/plans/*.retrospective.md), Bash(test -d .git), Bash(gh auth status), Bash(gh stack --version), Bash(gh stack init *), Bash(gh stack add *), Bash(gh stack view *), Bash(gh stack submit *), Bash(gh api --method POST /repos/*/issues *), Bash(git log *), Bash(git ls-files *)
+allowed-tools: Agent, Read, Write, Edit, Glob, Grep, TaskCreate, TaskUpdate, TaskList, AskUserQuestion, Artifact, Skill(artifact-design), Skill(ask-peer), Skill(ask-claude), Skill(ask-codex), Skill(ask-gemini), Skill(ask-copilot), Skill(ask-agy), Skill(simplify), Skill(tidy), Skill(prose-polish), Skill(rules-review), Skill(extract-rules), Skill(run-tests), Skill(demo), Bash(pwd), Bash(mkdir -p .claude/*), Bash(cp .claude/plans/*), Bash(rm -f .claude/plans/*), Bash(node *), Bash(printenv CLAUDE_CODE_REMOTE), Bash(test -f *), Bash(pnpm run *), Bash(pnpm exec *), Bash(npm run *), Bash(yarn run *), Bash(bun run *), Bash(bundle exec *), Bash(make lint *), Bash(make format *), Bash(make test *), Bash(make typecheck *), Bash(make check *), Bash(python -m pytest *), Bash(poetry run *), Bash(uv run *), Bash(cargo test *), Bash(cargo clippy *), Bash(cargo fmt *), Bash(go test *), Bash(go vet *), Bash(git status *), Bash(git symbolic-ref -q *), Bash(git rev-parse *), Bash(git merge-base *), Bash(git remote show *), Bash(git switch *), Bash(git diff *), Bash(git add *), Bash(git reset -- *), Bash(git commit *), Bash(LEFTHOOK=0 git commit *), Bash(git write-tree), Bash(git commit-tree *), Bash(git read-tree *), Bash(git update-ref *), Bash(git rev-list *), Bash(git worktree *), Bash(GIT_INDEX_FILE=* git read-tree *), Bash(GIT_INDEX_FILE=* git add *), Bash(GIT_INDEX_FILE=* git write-tree), Bash(git -C .git/dev-workflow-wt *), Bash(GIT_SEQUENCE_EDITOR=true GIT_EDITOR=true git -c commit.gpgsign=false -C .git/dev-workflow-wt rebase *), Bash(rm -rf .claude/plans/*.absorb), Bash(rm -f .claude/plans/*.retrospective.md), Bash(test -d .git), Bash(gh auth status), Bash(gh stack --version), Bash(gh stack init *), Bash(gh stack add *), Bash(gh stack view *), Bash(gh stack submit *), Bash(gh api --method POST /repos/*/issues *), Bash(git log *), Bash(git ls-files *)
 ---
 
 # Dev Workflow Lite
@@ -12,7 +12,7 @@ allowed-tools: Agent, Read, Write, Edit, Glob, Grep, TaskCreate, TaskUpdate, Tas
 /dev-workflow --resume <state-file> [--fast|--deep] [--artifact off|share|review] [--mob]  # Run the next subtask of a decomposed task
 ```
 
-Nineteen phases, always in this order, always all registered. § Difficulty and the skip table decides what is skipped and how Plan Review runs. User gates are listed in § User gates; nothing else asks the user a question.
+Nineteen phases, always in this order. § Difficulty and the skip table decides what is skipped and how Plan Review runs. User gates are listed in § User gates; nothing else asks the user a question.
 
 ## Settings
 
@@ -46,7 +46,7 @@ When a `Skill(...)` call fails, retry once. If it fails again: for the `reviewer
 
 ## Difficulty and the skip table
 
-The tier is assessed once, at Task Decomposition, from the effective task and cheap probes, per `references/tiers.md` § Tier criteria, and re-checked once at the end of Create Plan per its § Re-check after planning, where it can only rise. Trivial and Simple are the **express lane**; Moderate and Complex are the **full lane**.
+The tier is assessed at Task Decomposition (`references/tiers.md` § Tier criteria) and re-checked at the end of Create Plan (its § Re-check after planning), where it can only rise. Trivial and Simple are the **express lane**; Moderate and Complex are the **full lane**.
 
 | Phase | Trivial | Simple | Moderate / Complex |
 |---|---|---|---|
@@ -60,14 +60,14 @@ The tier is assessed once, at Task Decomposition, from the effective task and ch
 
 **Run mode** comes from the flags: `--fast`, `--deep`, or neither (`normal`). Both flags together is a fatal error. `normal`: Plan Review runs in **rules-only** scope. `deep`: Plan Review runs in **full** scope. `fast`: Plan Review and Polish Prose are skipped. Nothing else reads the run mode.
 
-No tier skips a phase absent from the table. A skipped phase is marked `completed` with the description `skipped: <tier> tier`, `skipped: <key>: false`, or `skipped: fast mode` — settings- and run-mode-derived skips at Load Settings, tier-derived skips at Task Decomposition.
+No tier skips a phase absent from the table. A skipped phase is marked `completed` with the description `skipped: <tier> tier`, `skipped: <key>: false`, or `skipped: fast mode`.
 
 ## User gates
 
 The only places the workflow waits for the user:
 
 - Task Decomposition: the split proposal (`yes` / `adjust` / `no`) and, on resume, the subtask picker when more than one is runnable.
-- Plan Approval: the browser review (`approve` / `revise` with comments, and the branch choice) on every tier but Trivial when a local browser is reachable; otherwise chat approval `approve` (optionally with a branch choice) / `swap` (swap a Decision's Recommendation and Alternative) / `rewrite` / `wrong branch` / `withdraw`, plus the one-line read-back confirmation before a swap or rewrite is applied. A wrong-branch request waits for uncommitted changes to be committed or stashed. With `plan_artifact: review`, the wait for the team's review of the published plan.
+- Plan Approval: the browser review (`approve` / `revise` with comments, and the branch choice) on every tier but Trivial when a local browser is reachable; otherwise the chat replies Phase 5 (Plan Approval) lists, with the one-line read-back before a swap or rewrite is applied. A wrong-branch request waits for uncommitted changes to be committed or stashed. With `plan_artifact: review`, the wait for the team's review.
 - Check / Test: after 3 failed fix rounds the workflow stops and reports; a check command that rewrote files outside the task beyond trivial formatting, or a test skill's EXECUTION_ERROR, stops for the user.
 - Code Review: findings still unresolved after the passes, asked once.
 - Verify Fixes: rule violations still present after the second scoped pass, asked once.
@@ -86,11 +86,11 @@ Phase starts, ends, and waits are marked per `references/timing.md`; Completion 
 
 ## Workflow artifacts
 
-Files this workflow writes as its own state are excluded from every diff, review payload, and commit: `.claude/plans/<slug>.md` (the plan), `.claude/plans/dev-workflow.<slug>.md` (decomposition state), `.claude/plans/rules-candidates-<date>.md`, `.claude/plans/timing-*.jsonl`, every other `.claude/plans/<slug>.*` staging file or directory (`.plan-review.*`, `.figures.md`, `.artifact.html`, `.dialogue.md`, `.absorb/`, `.retrospective.md`), and the git-side state `refs/dev-workflow/<slug>*`, `.git/dev-workflow.index`, `.git/dev-workflow.start.index`, `.git/dev-workflow-wt`. Everything else under the working tree is the task's.
+Files this workflow writes as its own state are excluded from every diff, review payload, and commit: `.claude/plans/**/<slug>.md` (the plan), `.claude/plans/dev-workflow.<slug>.md` (decomposition state), `.claude/plans/rules-candidates-<date>.md`, `.claude/plans/timing-*.jsonl`, every other `.claude/plans/<slug>.*` staging file or directory (`.plan-review.*`, `.figures.md`, `.story.json`, `.artifact.html`, `.dialogue.md`, `.absorb/`, `.retrospective.md`), and the git-side state `refs/dev-workflow/<slug>*`, `.git/dev-workflow.index`, `.git/dev-workflow.start.index`, `.git/dev-workflow-wt`. Everything else under the working tree is the task's.
 
 ## Mode detection
 
-`--init` → read `references/init-mode.md` and follow it; the session ends there. `--resume <state-file>` → Resume sub-mode. Otherwise Normal sub-mode. The other flags combine with either sub-mode and are ignored under `--init`.
+`--init` → read `references/init-mode.md` and follow it; the session ends there. `--resume <state-file>` → Resume sub-mode. Otherwise Normal sub-mode. Other flags combine with either sub-mode; `--init` ignores them.
 
 ## Dispatch authorization
 
@@ -110,7 +110,7 @@ This skill's procedure dispatches subagents, so invoking the skill **is** the re
 
    A non-zero exit anywhere records no `<start-tree>`: say so in one line and continue.
 4. Load and merge the settings; resolve the run mode, the `--artifact` override, and `mode`; emit `Output language: <value>`, `Run mode: <value>`, and `Mode: <value>`. In mob mode, read `references/mob-mode.md` now; in solo mode never open it.
-5. Register the nineteen phases with `TaskCreate`, subjects = the `## Phase N:` headings below minus the prefix. Mark each `in_progress` on entry and `completed` on exit in the same tool-call burst as the phase's first or last action. Mark the phases skipped by settings or run mode `completed` here; tier-derived skips are marked at Task Decomposition.
+5. Register the nineteen phases with `TaskCreate`, subjects = the `## Phase N:` headings below minus the prefix. Mark each `in_progress` on entry and `completed` on exit in the same tool-call burst as the phase's first or last action. Mark the phases skipped by settings or run mode `completed` here; tier-derived skips are marked at Task Decomposition. No `TaskCreate` → skip every row step; emit `Phase: <name>` on each entry.
 
 ## Phase 2: Task Decomposition
 
@@ -127,13 +127,13 @@ No code changes until Plan Approval passes.
 2. Draft the plan per `references/plan-format.md`: the body under `## Plan`, sections as `###`, in the order `references/plan-format.md` defines. Express-lane plans use the compact shape defined there.
 3. Follow `custom_instructions` when set. Simplicity self-audit: every element traces to an explicit requirement, a known bug or constraint, a rule under `.claude/rules/`, or `custom_instructions`. Drop what does not, or add a one-line rationale. Verify every "already exists / reuses X" premise from the source. If the work splits into independently verifiable units and was not decomposed, say so in Risks.
 4. Re-check the tier against the drafted plan (`references/tiers.md` § Re-check after planning): if it rises, say so in one line, reopen the rows the new tier runs, and re-resolve `<model>`.
-5. Do not show the plan yet. Proceed to Plan Review. In mob mode, this phase runs as `references/mob-mode.md` § Design dialogue and writes its § Plan shape.
+5. Do not show the plan yet. In mob mode, this phase runs as `references/mob-mode.md` § Design dialogue and writes its § Plan shape.
 
 ## Phase 4: Plan Review
 
 Skipped on Trivial and in `fast` mode. One pass, no loop.
 
-1. **Full scope** (`deep`): call `Skill(<reviewer>)` with `Model: <model>`, the full plan body, `custom_instructions` when set, the Decisions field shape (Question / Recommendation / optional Alternative), and three review units: scope, feasibility, dependencies, `.claude/rules/` compliance (the reviewer lists and reads `.claude/rules/**/*.md`); the simplicity self-audit's conclusions; approach and alternatives, completeness, cross-section consistency. Ask the reviewer to report every finding it has, including uncertain or low-severity ones, each with a confidence level and a severity, and not to filter for importance itself (step 2 does that); when it has none, the words "No actionable findings".
+1. **Full scope** (`deep`): call `Skill(<reviewer>)` with `Model: <model>`, the full plan body, `custom_instructions` when set, the Decisions shape (Question / Recommendation / optional Alternative), and three review units: scope, feasibility, dependencies, `.claude/rules/` compliance (the reviewer lists and reads `.claude/rules/**/*.md`); the simplicity self-audit's conclusions; approach and alternatives, completeness, cross-section consistency. Ask the reviewer to report every finding it has, including uncertain or low-severity ones, each with a confidence level and a severity, and not to filter for importance itself; when it has none, the words "No actionable findings".
    **Rules-only scope** (`normal`): resolve the reading list yourself — every `*.md` directly under `.claude/rules/` plus subdirectory files whose domain the plan touches — and call `Skill(<reviewer>)` with `Model: <model>`, the plan body, that numbered list, and one unit: `.claude/rules/` compliance only, reading exactly the listed files and no other tool; anything it cannot confirm goes under an "unverified items" heading. If the glob finds no rule files, do not dispatch: say the review found no project rules to check and continue.
 2. Apply findings you agree with; reject the rest with one line each. Do not ask the user about individual findings. Do not re-dispatch, with one exception: when Critical ≥ 3 or Critical + Major ≥ 10 and a finding proposes an approach-level alternative, rewrite the plan around it and dispatch one more pass.
 3. Unresolved points are carried to Plan Approval as a short list. In mob mode, review through `references/mob-mode.md` § Plan shape's lenses and explain applied findings.
@@ -143,8 +143,8 @@ Skipped on Trivial and in `fast` mode. One pass, no loop.
 USER GATE. Read `references/plan-approval.md`.
 
 1. Write the plan to `.claude/plans/<slug>.md` (`mkdir -p .claude/plans`). Slug: ASCII kebab-case of the effective task, `-2`, `-3` on collision with a prior run's file; resolved once per run.
-2. **Browser gate** on every tier but Trivial when `printenv CLAUDE_CODE_REMOTE` is not `true`: follow § Browser gate. Its `approve` → step 4; `rewrite-approach` → rewrite the plan, re-run Plan Review once unless skipped this run, re-enter this phase; `wrong-branch` → § Branch action's "Wrong branch" paragraph; `fallback` → step 3.
-3. **Chat gate** (Trivial, remote sessions, or fallback): present the plan per § Chat gate. Classify the reply: **approve** → step 4. **swap** (named Decisions items) → read back in one line, wait, swap Recommendation and Alternative on those items, re-present. **rewrite** (Approach, Build order, or Scope changed) → read back, wait, rewrite the plan, re-run Plan Review once unless skipped this run, re-present. **wrong branch** (another branch to work on) → § Branch action's "Wrong branch" paragraph. **withdraw** → stop; leave the plan file. **Anything else** → ask; never advance.
+2. **Browser gate** on every tier but Trivial when `printenv CLAUDE_CODE_REMOTE` is not `true`: follow `references/browser-gate.md`. Its `approve` → step 4; `rewrite-approach` → rewrite the plan, re-run Plan Review once unless skipped this run, re-enter this phase; `wrong-branch` → § Branch action's "Wrong branch" paragraph; `fallback` → step 3.
+3. **Chat gate** (Trivial, remote sessions, or fallback): present the plan per § Chat gate unless fallback brought a reply. Classify the reply: **approve** → step 4. **swap** (named Decisions items) → read back in one line, wait, swap Recommendation and Alternative on those items, re-present. **rewrite** (Approach, Build order, or Scope changed) → read back, wait, rewrite the plan, re-run Plan Review once unless skipped this run, re-present. **wrong branch** (another branch to work on) → § Branch action's "Wrong branch" paragraph. **withdraw** → stop; leave the plan file. **Anything else** → ask; never advance.
 4. **Plan artifact**: when the resolved `plan_artifact` is `share` or `review`, read `references/plan-artifact.md` and follow it. `review` holds at its team-review gate (USER GATE) until the user says the team is done.
 5. Run § Branch action, then Implement.
 
@@ -156,8 +156,8 @@ In mob mode, `references/mob-mode.md` § Plan Approval overrides step 2's tier c
 2. Follow Build order in sequence, and `custom_instructions` when set. Read each file immediately before editing it. Content the user deleted earlier in the session never comes back.
 3. A write to a path not in `git ls-files` must resolve inside the repository, under the directory the plan names for that kind of file; otherwise skip the edit with a one-line note.
 4. If a file outside the plan must change, add it to Build order first, then edit, and say so in one line.
-5. After the last edit of each Build order step, take that step's snapshot per `references/snapshots.md` § Snapshot at a Build order step boundary (before step 1's snapshot, delete a leftover `refs/dev-workflow/<slug>` from an earlier run). The chain is what Interactive Commits turns into one commit per step.
-6. After the last edit, `git add -N -- <path>` for each new file outside § Workflow artifacts, so diff-based reviews and the snapshot residue see them.
+5. After the last edit of each Build order step, take that step's snapshot per `references/snapshots.md` § Snapshot at a Build order step boundary (before step 1's snapshot, delete a leftover `refs/dev-workflow/<slug>` from an earlier run).
+6. After the last edit, `git add -N -- <path>` for each new file outside § Workflow artifacts.
 
 In mob mode, each Build order step runs as a unit per `references/mob-mode.md` § Per-unit review, with its diff review after the snapshot.
 
@@ -167,15 +167,17 @@ Express lane skips. Call `Skill(simplify)`; if unavailable, `Skill(tidy)` with n
 
 ## Phase 8: Polish Prose
 
-Express lane skips; `polish_prose: false` and `fast` mode skip. Collect changed files (`git diff <base-commit> --name-only` plus untracked, minus § Workflow artifacts). Drop files over 100 lines where the change is under 10% of the file. If none remain, skip. Otherwise call `Skill(prose-polish)` in file mode with `File:` the list and `Language:` the resolved language. `done` / `no-change` / `error` all continue.
+Express lane skips; `polish_prose: false` and `fast` mode skip. Run `node "<base dir>/scripts/polish/changed-lines.mjs" --base <base-commit>`; it prints `File:` and `Changed lines:` for this run's changes. If it prints nothing or fails, skip. Otherwise call `Skill(prose-polish)` with that output and `Language:` the resolved language. `done` / `no-change` / `error` all continue.
 
 ## Phase 9: Check / Test
 
-1. Initialize `review_fix_files = ∅`. Launch the reviews this run will perform in the background per `references/review-launch.md` § Launch, then continue without waiting.
-2. Run `check_commands` in order, then `test_commands` in order. A `Skill(<name>)` entry is called with `--base-commit <base-commit>`; it returns SUCCESS / TEST_FAILED / EXECUTION_ERROR. The first failure stops the pass. EXECUTION_ERROR consumes no fix round: report the callee's reason and wait (USER GATE) for `retry`, or `stop`, which ends the run as step 4 does.
-3. Classify each failure. A failure whose failing test and failing code both lie outside the files changed since `<base-commit>` is pre-existing: record it, do not fix it, do not count it. If the workflow's own fix (Tidy, a review fix) broke a test that passed before, correct that fix rather than the implementation.
-4. Fix and rerun. At most 3 fix rounds per entry into this phase. After the third, stop: report the command, its last output, and that nothing was committed.
-5. When a check command rewrites files outside the task's changed set beyond trivial formatting (whitespace-only at any size, or ≤ 5 comment lines), warn and stop; never revert its output silently.
+1. The first time in this run, set `review_fix_files = ∅`.
+2. Run `check_commands` in order. The first failure in step 2 or 4 stops the pass.
+3. The first time in this run they all pass (pre-existing failures aside), launch the reviews per `references/review-launch.md` § Launch, without waiting.
+4. Run `test_commands` in order. A `Skill(<name>)` entry is called with `--base-commit <base-commit>`; it returns SUCCESS / TEST_FAILED / EXECUTION_ERROR. EXECUTION_ERROR uses no fix round: report its reason and wait (USER GATE) for `retry` or `stop` (ends the run as step 6 does).
+5. Classify each failure. A failure whose failing test and failing code both lie outside the files changed since `<base-commit>` is pre-existing: record it, do not fix it, do not count it. If the workflow's own fix (Tidy, a review fix) broke a test that passed before, correct that fix rather than the implementation.
+6. Fix and rerun. At most 3 fix rounds per entry into this phase. After the third, stop: report the command, its last output, and that nothing was committed.
+7. When a check command rewrites files outside the task's changed set beyond trivial formatting (whitespace-only at any size, or ≤ 5 comment lines), warn and stop; never revert its output silently.
 
 In mob mode, narrate every failure per `references/mob-mode.md` § Check / Test before fixing it.
 
@@ -196,7 +198,7 @@ In mob mode, predict and cross-check per `references/mob-mode.md` § Code Review
 
 ## Phase 12: Verify Fixes
 
-If `review_fix_files` is empty, mark completed and continue. Otherwise run Check / Test once (3 fix rounds apply). Then, if Rules Compliance Review ran, call `Skill(rules-review)` with `--base-commit <base-commit>`, `Files: <review_fix_files>`, and `Model: <model>`. Fix violations once; a second scoped pass over the newly fixed files is the last; violations still present go to the user (USER GATE).
+If `review_fix_files` is empty, skip this phase. Otherwise run Check / Test once (3 fix rounds apply; files they edit join `review_fix_files`). Then, if Rules Compliance Review ran, call `Skill(rules-review)` with `--base-commit <base-commit>`, `Files: <review_fix_files>`, and `Model: <model>`. Fix violations once; a second scoped pass over the newly fixed files is the last; violations still present go to the user (USER GATE).
 
 ## Phase 13: Completion Hooks
 
@@ -204,7 +206,7 @@ Skipped when `hooks.on_complete` is unset, or with a one-line note when the tree
 
 ## Phase 14: Interactive Commits
 
-USER GATE. When the snapshot chain exists, first absorb the review layers' edits into it per `references/snapshots.md` § Absorb review fixes. Then read `references/commits.md` and follow § Procedure: one commit per Build order step from the chain, or cohesion grouping of the final diff when no chain exists, each committed through the accept gate, in the crit browser when `commit_review_gate` is `crit`. Initialize `landed_count = 0` on entry; the reference increments it. Never `git push`.
+USER GATE. When the snapshot chain exists, first absorb the review layers' edits into it per `references/snapshots.md` § Absorb review fixes. Then read `references/commits.md` and follow § Procedure. Set `landed_count = 0` on entry. Never `git push`.
 
 In mob mode, add the per-commit note and the already-reviewed accept variant per `references/mob-mode.md` § Commits.
 
@@ -212,25 +214,25 @@ Post-commit verification: when gate adjustments edited any file, run Check / Tes
 
 ## Phase 15: Update Rules
 
-1. USER GATE, on every tier. List the remaining enabled phases — this extraction (full lane only), Self-Retrospective, Workability Retrospective, PR Rule Extraction (always) — and ask `proceed` / `session-only` / `pr-only` / `skip` (`proceed` / `skip` when only one side — session-derived or PR-derived — is listed). `skip` marks all listed completed unrun; `session-only` marks PR Rule Extraction so; `pr-only` marks the session-derived ones so. If `.claude/demo.md` or `.claude/demo.local.md` exists, the gate also asks `demo` / `no-demo`. `demo`, whatever the first answer, calls `Skill(demo)` with `Plan: .claude/plans/<slug>.md`, `Base ref: <base-commit>`, `Language:` the resolved language, `Model: <model>`. Its Demo line for Completion: `ok` → the URL or page path with the step and failed counts and any files it edited; `skipped` / `error` → the `reason`; no parseable JSON block → `no parseable result`, without retry. Express lane: steps 2–3 do not run.
+1. USER GATE, on every tier. List the remaining enabled phases — this extraction (full lane only), Self-Retrospective, Workability Retrospective, PR Rule Extraction (always) — and ask `proceed` / `session-only` / `pr-only` / `skip` (`proceed` / `skip` when only one side — session-derived or PR-derived — is listed). `skip` marks all listed completed unrun; `session-only` marks PR Rule Extraction so; `pr-only` marks the session-derived ones so. If `.claude/demo.md` or `.claude/demo.local.md` exists, the gate also asks `demo` / `no-demo`. `demo`, whatever the first answer, calls `Skill(demo)` with `Plan:` the plan's current path (`.claude/plans/**/<slug>.md`), `Base ref: <base-commit>`, `Language:` the resolved language, `Model: <model>`. Its Demo line for Completion: `ok` → the URL or page path with the step and failed counts and any files it edited; `skipped` / `error` → the `reason`; no parseable JSON block → `no parseable result`, without retry. Express lane: steps 2–3 do not run.
 2. Call `Skill(extract-rules)` with `--from-conversation`, unless a `hooks.on_complete` entry contains `extract-rules` (it already extracted). If the diff introduced a new framework, library, pattern, or API convention and no conversation extraction ran, use `--update` instead. If extract-rules is unavailable, write the session's reusable patterns to `.claude/plans/rules-candidates-<YYYY-MM-DD>.md` and tell the user.
 3. Rule commit (USER GATE): run the § Rule commit gate procedure of `references/commits.md` over uncommitted paths under `.claude/rules/`, `.claude/rules-extras/`, `.claude/rules-staging/` (or the dirs `.claude/extract-rules.local.md` sets). Skip when there are none.
 
 ## Phase 16: PR Rule Extraction
 
-Skipped when Phase 15's gate marked it completed. USER GATE. Ask which reviewed PR to extract rules from, naming the accepted forms (a number, `owner/repo#N`, a `100..110` range, a URL, several separated by spaces); an empty answer declines. On an answer, call `Skill(extract-rules)` with `--from-pr <answer verbatim>`. "Nothing qualified" and "no human comments" are success; a pre-flight error is noted and skipped. Then run the § Rule commit gate procedure again over what it wrote.
+Skipped when the Update Rules gate skipped it. USER GATE. Ask which reviewed PR to extract rules from, naming the accepted forms (a number, `owner/repo#N`, a `100..110` range, a URL, several separated by spaces); an empty answer declines. On an answer, call `Skill(extract-rules)` with `--from-pr <answer verbatim>`. "Nothing qualified" and "no human comments" are success; a pre-flight error is noted and skipped. Then run the § Rule commit gate procedure again over what it wrote.
 
 ## Phase 17: Self-Retrospective
 
-Skipped when `self_retrospective.feedback` is unset or Phase 15's gate skipped it. Read `references/self-retrospective.md` and follow it: at most three Findings from this run's friction, each naming a behavior change and its character cost, previewed (USER GATE) and posted to the destination. Nothing here edits a skill.
+Skipped when `self_retrospective.feedback` is unset or the Update Rules gate skipped it. Read `references/self-retrospective.md` and follow it; its preview is a USER GATE. Nothing here edits a skill.
 
 ## Phase 18: Workability Retrospective
 
-Skipped unless `workability_retrospective.enabled` is `true` and Phase 15's gate kept it. Read `references/workability.md` and follow it: at most three candidates from this run's friction with the project's tooling (a skill, a linter rule, or a check command), deduped against what exists; the user disposes of each (USER GATE); applied edits and backlog files go through the rule commit gate.
+Skipped unless `workability_retrospective.enabled` is `true` and the Update Rules gate kept it. Read `references/workability.md` and follow it; its dispositions are a USER GATE.
 
 ## Phase 19: Completion
 
 1. Summary in the resolved language: what was done, files changed, check/test result, review outcomes, rules updated, commits made, the Demo line when one exists, the Self-Retrospective and Workability lines, the timing table per `references/timing.md` § Report, and one line per phase skipped or stopped early. List skipped callees and any uncommitted rule files.
-2. Decomposed runs: read `references/decomposition-state.md` and follow its § Finish a subtask. It marks the subtask done, asks about its PR (USER GATE), and prints the `--resume` command or deletes the state file when all subtasks are done.
+2. Decomposed runs: read `references/decomposition-state.md` and follow its § Finish a subtask; its PR question is a USER GATE.
 3. In mob mode, add the learning summary and the paired resume commands per `references/mob-mode.md` § Completion.
 4. Delete this run's staging state: `rm -f` each existing staging file listed in § Workflow artifacts (named paths, no globs), `rm -rf .claude/plans/<slug>.absorb`, and `git update-ref -d` on each `refs/dev-workflow/<slug>*` ref. Never delete the plan file (`hooks.on_complete` owns archiving) or the decomposition state file (step 2 owns it).

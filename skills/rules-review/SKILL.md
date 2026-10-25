@@ -57,7 +57,7 @@ Within a category, group related rules by filename prefix into families (`rails.
 
 Grouping policy (deterministic):
 - Default: 1 group per category (one Agent per category).
-- Split a category by family only when it contains more than 3 **matched** rule files, so each sub-group stays ≤ 3 files. Never split a family across groups.
+- Split a category by family only when it contains more than 3 **matched** rule files. A family of more than 3 matched files is its own group. Pack the other families in filename order, starting a new group once the current one holds 3 or more files. Never split a family across groups.
 - Never merge across categories, even if each category has only 1 rule file.
 - Discard empty groups.
 

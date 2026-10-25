@@ -25,18 +25,28 @@ function snapshot(cwd, prev, paths, message) {
   return git(cwd, ["commit-tree", tree, "-p", prev], message);
 }
 
-test("absorb folds review fixes into their steps and lands a clean chain", () => {
-  const dir = mkdtempSync(join(tmpdir(), "absorb-fold-"));
-  try {
-    git(dir, ["init", "-q", "-b", "main"]);
-    git(dir, ["config", "user.email", "t@t"]);
-    git(dir, ["config", "user.name", "t"]);
-    git(dir, ["config", "commit.gpgsign", "false"]);
-    writeFileSync(join(dir, "a.txt"), "a1\na2\na3\na4\na5\na6\na7\na8\n");
-    git(dir, ["add", "-A"]);
-    git(dir, ["commit", "-qm", "base"]);
-    const base = git(dir, ["rev-parse", "HEAD"]);
+function initRepo(prefix, content) {
+  const dir = mkdtempSync(join(tmpdir(), prefix));
+  git(dir, ["init", "-q", "-b", "main"]);
+  git(dir, ["config", "user.email", "t@t"]);
+  git(dir, ["config", "user.name", "t"]);
+  git(dir, ["config", "commit.gpgsign", "false"]);
+  writeFileSync(join(dir, "a.txt"), content);
+  git(dir, ["add", "-A"]);
+  git(dir, ["commit", "-qm", "base"]);
+  return { dir, base: git(dir, ["rev-parse", "HEAD"]) };
+}
 
+// a pre-commit hook that would fail: fixups and the rebase must never run it
+function installFailingHook(dir) {
+  mkdirSync(join(dir, ".git", "hooks"), { recursive: true });
+  writeFileSync(join(dir, ".git", "hooks", "pre-commit"), "#!/bin/sh\necho HOOK >&2; exit 1\n");
+  chmodSync(join(dir, ".git", "hooks", "pre-commit"), 0o755);
+}
+
+test("absorb folds review fixes into their steps and lands a clean chain", () => {
+  const { dir, base } = initRepo("absorb-fold-", "a1\na2\na3\na4\na5\na6\na7\na8\n");
+  try {
     // two Build order steps
     writeFileSync(join(dir, "a.txt"), "A1\na2\na3\na4\na5\na6\na7\na8\n");
     const c1 = snapshot(dir, base, ["a.txt"], "step 1");
@@ -46,10 +56,7 @@ test("absorb folds review fixes into their steps and lands a clean chain", () =>
     const c2 = snapshot(dir, c1, ["a.txt", "b.txt"], "step 2");
     git(dir, ["update-ref", "refs/dev-workflow/t", c2]);
 
-    // a pre-commit hook that would fail: fixups and the rebase must never run it
-    mkdirSync(join(dir, ".git", "hooks"), { recursive: true });
-    writeFileSync(join(dir, ".git", "hooks", "pre-commit"), "#!/bin/sh\necho HOOK >&2; exit 1\n");
-    chmodSync(join(dir, ".git", "hooks", "pre-commit"), 0o755);
+    installFailingHook(dir);
 
     // review fixes: one owned by step 1, one by step 2, one new unowned file
     writeFileSync(join(dir, "a.txt"), "A1-fixed\na2\na3\na4\na5\na6\na7\nA8-fixed\n");
@@ -61,7 +68,6 @@ test("absorb folds review fixes into their steps and lands a clean chain", () =>
 
     const wt = join(dir, ".git", "dev-workflow-wt");
     git(dir, ["worktree", "add", "--detach", wt, c2]);
-    git(wt, ["switch", "-c", "dev-workflow/t"]);
     for (const t of json.targets) {
       git(wt, ["apply", "--unidiff-zero", t.patch]);
       git(wt, ["add", "-A"]);
@@ -74,7 +80,7 @@ test("absorb folds review fixes into their steps and lands a clean chain", () =>
     const newTip = git(wt, ["rev-parse", "HEAD"]);
     git(dir, ["update-ref", "refs/dev-workflow/t", newTip]);
     git(dir, ["worktree", "remove", "--force", wt]);
-    git(dir, ["branch", "-D", "dev-workflow/t"]);
+    assert.equal(git(dir, ["branch", "--format=%(refname:short)"]), "main");
 
     // the chain: step 1 carries its fix, step 2 its fix, trailing the new file
     const chain = git(dir, ["rev-list", "--reverse", `${base}..${newTip}`]).split("\n");
@@ -94,6 +100,87 @@ test("absorb folds review fixes into their steps and lands a clean chain", () =>
     }
     assert.equal(git(dir, ["status", "--porcelain"]), "");
     assert.equal(git(dir, ["log", "--format=%s"]), "review fixes\nstep 2\nstep 1\nbase");
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+// references/snapshots.md § Fold the trailing commit, on a chain of two steps plus a trailing commit
+function foldFixture() {
+  const { dir, base } = initRepo("absorb-trailing-", "a1\na2\na3\na4\na5\na6\n");
+  writeFileSync(join(dir, "a.txt"), "A1\na2\na3\na4\na5\na6\n");
+  const c1 = snapshot(dir, base, ["a.txt"], "step 1");
+  writeFileSync(join(dir, "a.txt"), "A1\na2\na3\nA4\na5\na6\n");
+  const c2 = snapshot(dir, c1, ["a.txt"], "step 2");
+  installFailingHook(dir);
+  return { dir, base, c1, c2 };
+}
+
+function fold(dir, base, t, k) {
+  const f = git(dir, ["commit-tree", `${t}^{tree}`, "-p", `${t}^`], `fixup! ${k}`);
+  const wt = join(dir, ".git", "dev-workflow-wt");
+  git(dir, ["worktree", "add", "--detach", wt, f]);
+  try {
+    git(wt, ["-c", "commit.gpgsign=false", "rebase", "-i", "--autosquash", base]);
+    const head = git(wt, ["rev-parse", "HEAD"]);
+    git(dir, ["diff", "--quiet", t, head]);
+    assert.equal(git(dir, ["rev-list", "--count", `${base}..${head}`]), String(Number(git(dir, ["rev-list", "--count", `${base}..${t}`])) - 1));
+    git(dir, ["update-ref", "refs/dev-workflow/t", head]);
+    return true;
+  } catch {
+    try { git(wt, ["rebase", "--abort"]); } catch {}
+    return false;
+  } finally {
+    git(dir, ["worktree", "remove", "--force", wt]);
+  }
+}
+
+test("the trailing commit folds into a named earlier step", () => {
+  const { dir, base, c1, c2 } = foldFixture();
+  try {
+    writeFileSync(join(dir, "helper.txt"), "h\n");
+    git(dir, ["add", "-N", "--", "helper.txt"]);
+    const t = snapshot(dir, c2, ["helper.txt"], "review fixes");
+
+    assert.equal(fold(dir, base, t, c1), true);
+    const tip = git(dir, ["rev-parse", "refs/dev-workflow/t"]);
+    const chain = git(dir, ["rev-list", "--reverse", `${base}..${tip}`]).split("\n");
+    assert.equal(chain.length, 2);
+    assert.equal(git(dir, ["log", "-1", "--format=%s", chain[0]]), "step 1");
+    assert.equal(git(dir, ["show", `${chain[0]}:helper.txt`]), "h");
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("a trailing commit that conflicts with a later step leaves the chain as it was", () => {
+  const { dir, base, c1, c2 } = foldFixture();
+  try {
+    // the trailing edit sits next to step 2's line, so replaying it onto step 1 conflicts
+    writeFileSync(join(dir, "a.txt"), "A1\na2\na3\nA4\nA5\na6\n");
+    const t = snapshot(dir, c2, ["a.txt"], "review fixes");
+    git(dir, ["update-ref", "refs/dev-workflow/t", t]);
+
+    assert.equal(fold(dir, base, t, c1), false);
+    assert.equal(git(dir, ["rev-parse", "refs/dev-workflow/t"]), t);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("a fold that rebases cleanly but changes the tree leaves the chain as it was", () => {
+  const { dir, base, c1, c2 } = foldFixture();
+  try {
+    // step 2 adds h.txt and the trailing commit deletes it; replayed after step 1, step 2 brings it back
+    writeFileSync(join(dir, "h.txt"), "h\n");
+    git(dir, ["add", "-N", "--", "h.txt"]);
+    const c3 = snapshot(dir, c2, ["h.txt"], "step 3");
+    rmSync(join(dir, "h.txt"));
+    const t = snapshot(dir, c3, ["h.txt"], "review fixes");
+    git(dir, ["update-ref", "refs/dev-workflow/t", t]);
+
+    assert.equal(fold(dir, base, t, c1), false);
+    assert.equal(git(dir, ["rev-parse", "refs/dev-workflow/t"]), t);
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }

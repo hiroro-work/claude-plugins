@@ -2,8 +2,21 @@
 
 import test from "node:test";
 import assert from "node:assert/strict";
+import { request } from "node:http";
 
 import { PLAN_ID, SAMPLE_PLAN, getPlan, makeWorkspace, startViewer, submit } from "./helpers.mjs";
+
+// fetch cannot set Host, so the sender headers go through node:http.
+function requestAs(method, base, path, headers) {
+  return new Promise((resolve, reject) => {
+    const req = request(new URL(path, base), { method, headers }, (res) => {
+      res.resume();
+      res.on("end", () => resolve(res.statusCode));
+    });
+    req.on("error", reject);
+    req.end(method === "POST" ? JSON.stringify({ decision: "approve", comments: [] }) : undefined);
+  });
+}
 
 test("/api/plan ships the raw plan markdown untouched", async (t) => {
   const ws = await makeWorkspace(t);
@@ -273,7 +286,7 @@ test("the static handler serves the viewer page, and nothing outside public/", a
   }
 });
 
-test("only GET, plus POST to /api/submit, is served", async (t) => {
+test("only GET, plus POST to /api/submit and /api/stop, is served", async (t) => {
   const ws = await makeWorkspace(t);
   const server = await startViewer(t, ws);
 
@@ -281,11 +294,51 @@ test("only GET, plus POST to /api/submit, is served", async (t) => {
   assert.equal(
     (await fetch(`${server.base}/api/plan`, { method: "POST" })).status,
     405,
-    "POST is routed only for /api/submit",
+    "POST is routed only for /api/submit and /api/stop",
   );
   assert.equal(
     (await fetch(`${server.base}/api/submit`)).status,
     404,
     "a GET on the submit path falls through to the static handler",
   );
+  assert.equal((await fetch(`${server.base}/api/stop`, { method: "POST" })).status, 200);
+  assert.equal((await server.closed).code, 130);
+});
+
+for (const [name, headers] of [
+  ["another origin", (host) => ({ host, origin: "http://evil.example" })],
+  ["an opaque origin", (host) => ({ host, origin: "null" })],
+]) {
+  test(`/api/submit and /api/stop refuse a POST from ${name}`, async (t) => {
+    const ws = await makeWorkspace(t);
+    const server = await startViewer(t, ws);
+    const host = new URL(server.base).host;
+
+    assert.equal(await requestAs("POST", server.base, "/api/submit", headers(host)), 403);
+    assert.equal(await requestAs("POST", server.base, "/api/stop", headers(host)), 403);
+
+    await assert.rejects(ws.read(`${PLAN_ID}.comments.json`), "a refused submit records nothing");
+    assert.equal((await fetch(`${server.base}/api/plan`)).status, 200, "a refused stop leaves the viewer running");
+  });
+}
+
+test("any request with a Host other than 127.0.0.1:<port> is refused", async (t) => {
+  const ws = await makeWorkspace(t);
+  const server = await startViewer(t, ws);
+  const host = new URL(server.base).host.replace("127.0.0.1", "localhost");
+
+  for (const [method, path] of [["GET", "/api/plan"], ["GET", "/api/instance"], ["GET", "/"], ["POST", "/api/submit"], ["POST", "/api/stop"]]) {
+    assert.equal(await requestAs(method, server.base, path, { host }), 403, `${method} ${path}`);
+  }
+  await assert.rejects(ws.read(`${PLAN_ID}.comments.json`), "a refused submit records nothing");
+  assert.equal((await fetch(`${server.base}/api/plan`)).status, 200, "a refused stop leaves the viewer running");
+});
+
+test("/api/submit accepts a POST carrying the viewer's own origin", async (t) => {
+  const ws = await makeWorkspace(t);
+  const server = await startViewer(t, ws);
+  const host = new URL(server.base).host;
+
+  assert.equal(await requestAs("POST", server.base, "/api/submit", { host, origin: server.base }), 200);
+  assert.equal((await server.closed).code, 0);
 });

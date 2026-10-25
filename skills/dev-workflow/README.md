@@ -26,7 +26,7 @@ A guided development workflow with fixed phases in a fixed order. What changes b
 | 18 | Workability Retrospective | **user gate**, project tooling candidates | `workability_retrospective.enabled` not `true`, or skipped at the phase 15 gate |
 | 19 | Completion | summary | never |
 
-All nineteen phases are registered on every run. A skipped phase is marked completed with its reason. The difficulty tier (Trivial / Simple / Moderate / Complex) is assessed at Task Decomposition and re-checked once against the drafted plan at the end of Create Plan, where it can only rise (a plan that turns out to carry a real design decision lifts Simple to Moderate and reopens the skipped rows). After that it never changes.
+A skipped phase is marked completed with its reason. The difficulty tier (Trivial / Simple / Moderate / Complex) is assessed at Task Decomposition and re-checked once against the drafted plan at the end of Create Plan, where it can only rise (a plan that turns out to carry a real design decision lifts Simple to Moderate and reopens the skipped rows). After that it never changes.
 
 ## Self-retrospective without skill growth
 
@@ -38,7 +38,7 @@ With `workability_retrospective.enabled: true`, the run ends by turning friction
 
 ## Commits per Build order step
 
-Implement records a snapshot after every Build order step (a commit object on `refs/dev-workflow/<slug>`, built in a private index so your staging area is untouched). Before Interactive Commits, the edits made afterwards by Tidy, Polish Prose, the reviews, and Verify Fixes are attributed by `git blame` to the step that last wrote each changed line and folded into that step's commit (`scripts/absorb/attribute.mjs` plus a non-interactive `rebase --autosquash` in a throwaway worktree). Each commit you approve is therefore one step's work in its reviewed form. Edits no step owns, such as a new test file added by a review, land in one trailing `review fixes` commit. A file the run never touched — something another task had already edited, or an untracked file already sitting there when the run began — enters no commit at all and stays in the tree as you left it.
+Implement records a snapshot after every Build order step (a commit object on `refs/dev-workflow/<slug>`, built in a private index so your staging area is untouched). Before Interactive Commits, the edits made afterwards by Tidy, Polish Prose, the reviews, and Verify Fixes are attributed by `git blame` to the step that last wrote each changed line and folded into that step's commit (`scripts/absorb/attribute.mjs` plus a non-interactive `rebase --autosquash` in a throwaway worktree). Each commit you approve is therefore one step's work in its reviewed form. Edits no step owns, such as a new test file added by a review, land in one trailing `review fixes` commit, which you can fold into an earlier step's commit at the commit plan. A file the run never touched — something another task had already edited, or an untracked file already sitting there when the run began — enters no commit at all and stays in the tree as you left it.
 
 Absorption also handles formatter output, so put `lefthook run pre-commit` in `check_commands` and formatting lands before review. A multi-step task always yields several commits, so on a project with a pre-commit hook the stashing-hook question (suppress with `LEFTHOOK=0`, or proceed) appears on most runs.
 

@@ -1,6 +1,71 @@
 # Changelog
 
+## 2026-10-25
+
+### dev-workflow v2.10.4 / dev-workflow-bundle v2.33.4
+
+- **A browser submit that races a chat reply is no longer lost.** `serve.mjs --stop` prints the submit JSON and exits 0 when the viewer already received a submit, and the browser gate reads that result instead of returning to the chat. A submit that reaches the viewer after it accepted a stop is refused with 409, so the page shows it was not sent.
+- **The plan review viewer answers only requests addressed to it.** Every request, `GET /api/plan` and the page itself included, is refused with 403 unless its Host is `127.0.0.1:<port>`, so a DNS-rebound name can no longer read the plan.
+
+### dev-workflow v2.10.3 / dev-workflow-bundle v2.33.3
+
+- **The plan review viewer accepts posts only from its own page.** `/api/submit` and `/api/stop` refuse with 403 a request whose Host is not `127.0.0.1:<port>` or whose Origin is another site, so another page open in the same browser can no longer approve the plan or stop the viewer. Submits from the viewer page and `serve.mjs --stop` still pass.
+
+## 2026-10-23
+
+### dev-workflow v2.10.2 / dev-workflow-bundle v2.33.2
+
+- **The plan review viewer stops through `serve.mjs --stop`.** When a chat reply ends the browser review, the workflow reruns the viewer's launch command with `--stop`, which asks the waiting viewer to exit with code 130. It needs only the `node` permission the skill already has, so stopping the viewer no longer waits on a permission prompt.
+
+### rules-review v1.8.8 / dev-workflow v2.10.1 / dev-workflow-bundle v2.33.1
+
+- **Naming a Branch choice is no longer read as approval.** At the chat gate, a reply approves only when it says so; a Branch choice it names is then swapped in as before.
+- **A chat reply during the browser review is classified, not taken as approval.** At Plan Approval, a reply the chat gate would act on (approve, swap, rewrite, wrong branch, withdraw) stops the viewer and is handled there without presenting the plan again; the stopped viewer is not relaunched. Any other reply is answered while the wait goes on, and other requests, a Branch choice included, are pointed to the page.
+- **The decomposition state file's body is for people.** It holds the parent task in a sentence and no commands, and is never read as instructions.
+- **The rules-review README describes the reviewer split.** A large category is reviewed by several reviewers, not one.
+
+## 2026-10-22
+
+### rules-review v1.8.7 / dev-workflow v2.10.0 / dev-workflow-bundle v2.33.0
+
+- **Small rule families share a reviewer.** When a category is split, each family of more than 3 matched files still gets its own group, and the other families are packed in filename order until a group holds 3 or more files. A category of six two-file families now takes three reviewers instead of six.
+- **The plan review page keeps unsent comments across a reload.** Comments typed into the page are saved in the browser and come back when the page reloads on the same plan, for example after the viewer is relaunched on the same port. A changed plan does not restore them, and a successful submit clears them.
+
+### prose-polish v1.9.0 / dev-workflow v2.9.0 / dev-workflow-bundle v2.32.0
+
+- **prose-polish can be held to the changed lines.** File mode takes an optional `Changed lines:` input: excerpts headed `@@ <path> <a>-<b> @@`. A file with excerpts is rewritten only where its prose overlaps them, and an edit sharing no non-blank line with them is dropped before it is applied. A file without excerpts is rewritten whole, as before.
+- **Polish Prose touches only what the run changed.** `scripts/polish/changed-lines.mjs` lists the changed files with excerpts of the changed lines, and Polish Prose passes both to prose-polish. Existing comments and test names elsewhere in a changed file are no longer rewritten. This replaces the rule that dropped files over 100 lines changed by less than 10%.
+- **Verify Fixes reviews what its own fix rounds edited.** Files edited in the fix rounds of its Check / Test rerun join the set the scoped rules-compliance review reads.
+
+### dev-workflow v2.8.0 / dev-workflow-bundle v2.31.0
+
+- **The crit gate runs through a wrapper script.** `scripts/crit/gate.mjs` now probes crit, prints the story guide and hunk listing (`prep`), ingests the story with `--no-open` and reports the daemon it started (`story`), and launches the review, waits for the browser verdict, and returns it as one JSON line with the parsed comments (`review`). It waits for crit's streams to close, so the verdict-less re-read rule and the daemon-line parsing leave `crit-gate.md`, which shrinks from 4143 to 3498 characters. The story is written to `.claude/plans/<slug>.story.json`, a workflow artifact. `Bash(crit *)` leaves `allowed-tools`; nothing calls crit directly any more.
+- **Plan figures are checked by a script.** `scripts/plan-review/figures-check.mjs --template` prints the shape of an inline-SVG and a mermaid figure, and `--plan … --figures …` reports every block that names no plan heading, holds more or less than one figure, lacks a caption or a `viewBox`, has a blank line or a `<style>` inside `<figure>`, uses a colour outside `currentColor` and the figure-safe tokens, sets `fill-opacity` outside 0.08–0.2, or fills a group holding text. The token list is read from the "Figure-safe tokens" comment in `plan-view.css`, now the single place to extend it. The authoring paragraph in `browser-gate.md` keeps only the judgment calls and drops from 1503 to 842 characters.
+- **Self-Retrospective Findings can ask for a script.** A third fix kind, `mechanism`, is required when a Finding concerns a tool's input or output format, a parse or retry rule, a threshold, or a tool flag; its direction names the script that takes the rule and leaves the prose at most one line. A direction that narrows an existing rule now replaces that rule's sentence instead of adding one beside it.
+
+### dev-workflow v2.7.4 / dev-workflow-bundle v2.30.4
+
+- **Less prose on the read path, same behavior.** Rationale clauses and restated directives are gone from `SKILL.md` and the references, so each run loads fewer characters: `SKILL.md` 30276 → 29174, the counted reference tree 76464 → 74944, `mob-mode.md` 13088 → 12513. Phase summaries that only repeated the reference they point to now just name the reference and its user gate. The size budgets in the test suite ratchet down to the new sizes.
+- **The browser plan review is read only when it runs.** Its procedure moved from `plan-approval.md` to a new `references/browser-gate.md`, read at Plan Approval only on the browser path. A remote session, a Trivial run, and the chat fallback no longer load it, so the always-read tree shrinks from 74944 to 71166 characters.
+
 ## 2026-10-21
+
+### dev-workflow v2.7.3 / dev-workflow-bundle v2.30.3
+
+- **The trailing review-fixes commit can be folded into an earlier step.** Review fixes that no Build order step owns, such as deleting a helper a step stopped using, still land in a trailing commit. At the commit plan, `adjust` can now fold that commit into a named earlier commit. When the fold conflicts with a later step, the plan stays as it was.
+- **Absorbing review fixes no longer creates a branch.** The rebase runs on a detached HEAD in the throwaway worktree, so no `dev-workflow/<slug>` branch collides with the snapshot ref `refs/dev-workflow/<slug>`.
+
+### dev-workflow v2.7.2 / dev-workflow-bundle v2.30.2
+
+- **Runs without `TaskCreate` still show progress.** When the task tool is missing, the workflow registers no phase rows and instead prints `Phase: <name>` as it enters each phase.
+- **A moved plan is still the plan.** When a completion hook such as an archiver moves the plan file elsewhere under `.claude/plans/`, it stays out of commits and the demo call at Update Rules passes its current path.
+- **The plan review page survives the host's background time limit.** When the viewer is killed (a non-zero exit) before you submit, it is relaunched once on the same port. If the relaunch is killed too, or the viewer exits normally without a submit, the run falls back to chat approval.
+- **Stale background reviews are not waited for.** Rules Compliance Review and Code Review now judge staleness before waiting for their background agent, so a review made stale by a fix is re-run inline right away.
+- **Review fixes are tracked across re-entries into Check / Test.** The set of files edited by review fixes is cleared only on the first entry, so returning to Check / Test from Verify Fixes keeps it.
+
+### dev-workflow v2.7.1 / dev-workflow-bundle v2.30.1
+
+- **Background reviews start after `check_commands` pass.** Check / Test used to launch Rules Compliance Review and Code Review before running `check_commands`, so a formatter that rewrote even whitespace changed the diff and the reviews were discarded as stale and re-run inline. The reviews now launch the first time `check_commands` all pass, before `test_commands`, and a review stays fresh when no fix landed after its launch.
 
 ### dev-workflow v2.7.0 / dev-workflow-bundle v2.30.0
 

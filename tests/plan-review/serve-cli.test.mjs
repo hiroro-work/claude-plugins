@@ -2,6 +2,8 @@
 
 import test from "node:test";
 import assert from "node:assert/strict";
+import { utimes } from "node:fs/promises";
+import { request } from "node:http";
 
 import {
   PLAN_ID,
@@ -87,6 +89,82 @@ for (const signal of ["SIGTERM", "SIGINT"]) {
     assert.equal(server.stdout, "");
   });
 }
+
+test("--stop ends a waiting viewer with exit 130 and nothing on stdout", async (t) => {
+  const ws = await makeWorkspace(t);
+  const server = await startViewer(t, ws);
+
+  const stopper = spawnServe(ws, serveArgs(ws, ["--stop"]));
+  assert.equal((await stopper.closed).code, 0);
+  assert.equal(stopper.stdout, "");
+  assert.equal((await server.closed).code, 130);
+  assert.equal(server.stdout, "");
+});
+
+test("--stop after a submit prints that submit's JSON instead of failing", async (t) => {
+  const ws = await makeWorkspace(t);
+  const server = await startViewer(t, ws);
+
+  await submit(server.base, { decision: "revise", branch: "new", comments: [] });
+  assert.equal((await server.closed).code, 0);
+
+  const stopper = spawnServe(ws, serveArgs(ws, ["--stop"]));
+  assert.equal((await stopper.closed).code, 0);
+  assert.deepEqual(JSON.parse(stopper.stdout), JSON.parse(server.stdout));
+});
+
+for (const [state, alive, code] of [["a waiting", true, 0], ["an exited", false, 1]]) {
+  test(`--stop on ${state} viewer ignores a comments file older than its URL file`, async (t) => {
+    const ws = await makeWorkspace(t, { [`${PLAN_ID}.comments.json`]: JSON.stringify({ decision: "approve" }) });
+    await utimes(ws.path(`${PLAN_ID}.comments.json`), new Date(0), new Date(0));
+    const server = await startViewer(t, ws);
+    if (!alive) {
+      server.child.kill("SIGTERM");
+      await server.closed;
+    }
+
+    const stopper = spawnServe(ws, serveArgs(ws, ["--stop"]));
+    assert.equal((await stopper.closed).code, code);
+    assert.equal(stopper.stdout, "");
+  });
+}
+
+test("a submit whose body arrives after a stop is refused and recorded nowhere", async (t) => {
+  const ws = await makeWorkspace(t);
+  const server = await startViewer(t, ws);
+  const body = JSON.stringify({ decision: "approve", comments: [] });
+
+  const pending = new Promise((resolve, reject) => {
+    const req = request(`${server.base}/api/submit`, {
+      method: "POST",
+      headers: { "content-type": "application/json", "content-length": Buffer.byteLength(body) },
+    }, (res) => {
+      res.resume();
+      res.on("end", () => resolve(res.statusCode));
+    });
+    req.on("error", reject);
+    req.flushHeaders();
+    t.after(() => req.destroy());
+    setImmediate(async () => {
+      await fetch(`${server.base}/api/stop`, { method: "POST" });
+      req.end(body);
+    });
+  });
+
+  assert.equal(await pending, 409);
+  assert.equal((await server.closed).code, 130);
+  assert.equal(server.stdout, "");
+  await assert.rejects(ws.read(`${PLAN_ID}.comments.json`));
+});
+
+test("--stop exits 1 when no viewer URL is recorded", async (t) => {
+  const ws = await makeWorkspace(t);
+  const stopper = spawnServe(ws, serveArgs(ws, ["--stop"]));
+  const { code } = await stopper.closed;
+
+  assert.equal(code, 1);
+  assert.match(stopper.stderr, /cannot stop the viewer/);
+});
 
 test("exits 1 when --plan is missing", async (t) => {
   const ws = await makeWorkspace(t);

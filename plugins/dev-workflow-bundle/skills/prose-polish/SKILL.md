@@ -1,6 +1,6 @@
 ---
 name: prose-polish
-description: Refactor verbose or unnatural natural-language prose — code comments, test descriptions, docstrings, user-facing text — into concise, native-sounding prose in a configured target language, using a sonnet subagent by default. Two modes: file mode rewrites a file's target-language prose in place; text mode returns the refactored text. Preserves code, identifiers, and proper-noun terms while translating ordinary technical vocabulary into the target language. Non-interactive — no user prompts. Use after generating prose with a model prone to verbosity, or to polish text before presenting it.
+description: Refactor verbose or unnatural natural-language prose — code comments, test descriptions, docstrings, user-facing text — into concise, native-sounding prose in a configured target language, using a sonnet subagent by default. Two modes: file mode rewrites a file's target-language prose in place, optionally only within given changed-line excerpts; text mode returns the refactored text. Preserves code, identifiers, and proper-noun terms while translating ordinary technical vocabulary into the target language. Non-interactive — no user prompts. Use after generating prose with a model prone to verbosity, or to polish text before presenting it.
 effort: low
 allowed-tools: Read, Edit, Agent
 ---
@@ -16,6 +16,7 @@ The refactoring runs in a fresh `Agent` dispatch; the main thread applies the re
 The caller passes these fields in natural language (the skill extracts them from the invocation text). A field counts as **provided** iff the caller supplied a non-empty, non-whitespace value.
 
 - `File:` / `Files:` *(file mode — one or more paths, repo-relative or absolute)* — the files whose target-language prose is rewritten in place. Multiple paths may be listed (one per line or comma-separated), and the two forms may be mixed in one invocation; each entry is carried verbatim into `target_files`.
+- `Changed lines:` *(optional, file mode only)* — excerpts of the lines to polish: per range, a `@@ <path> <a>-<b> @@` line followed by lines `<a>`–`<b>` of that file verbatim. The range is the last word before the closing `@@`; everything before it is the path, spelled as in `File:` / `Files:`. A file with excerpts is rewritten only where its prose overlaps them; a file without any is rewritten whole. Ignored in text mode.
 - `Text:` *(text mode — the prose to refactor)* — the block of text to polish and return.
 - `Language:` *(optional, default `ja`, e.g. `ja` / `en`)* — the target language whose prose is refactored. In file mode, only prose in this language is rewritten.
 - `Model:` *(optional, default `sonnet`)* — the model id applied as the `model` parameter on the refactor `Agent` dispatch (Step 3 (a)). **Validity predicate**: valid only if it is one of the model ids the current `Agent` tool's `model` parameter accepts. Check the tool's live schema in this session. A full `claude-*` id (e.g. `claude-sonnet-5`) is not among its accepted aliases, so it is invalid. An absent or invalid value is treated as `sonnet`.
@@ -59,15 +60,18 @@ Dispatch a fresh subagent via the `Agent` tool (`subagent_type: general-purpose`
 - `--- PROSE STYLE GUIDE ---`: the full content of `references/prose-style-guide.md`
 - `--- TARGET LANGUAGE ---`: the `<resolved-language>` code
 - **File mode** — `--- TARGET FILES ---`: each entry in `target_files` as a `### <path>` sub-heading followed by the file's full current contents
+- **File mode with `Changed lines:`** — `--- CHANGED LINES ---`: the `Changed lines:` value verbatim
 - **Text mode** — `--- INPUT TEXT ---`: the `input_text` verbatim
 - `--- REFACTOR PROMPT ---`: the mode-appropriate prompt below (verbatim)
 - `--- RESPONSE FORMAT ---`: the mode-appropriate response format below (verbatim)
 
 **Refactor prompt — file mode:**
 
-> You are a fresh prose editor. You have **not** seen prior conversation context — only the PROSE STYLE GUIDE, TARGET LANGUAGE, and TARGET FILES below. For each TARGET FILE, find natural-language prose written **in the target language** — code comments, test / example descriptions, docstrings, and user-facing string literals — and rewrite each one to be concise and natural for a native reader of that language, following the PROSE STYLE GUIDE.
+> You are a fresh prose editor. You have **not** seen prior conversation context — only the PROSE STYLE GUIDE, TARGET LANGUAGE, TARGET FILES, and (when present) CHANGED LINES below. For each TARGET FILE, find natural-language prose written **in the target language** — code comments, test / example descriptions, docstrings, and user-facing string literals — and rewrite each one to be concise and natural for a native reader of that language, following the PROSE STYLE GUIDE.
 >
 > **Preserve everything that is not target-language prose (hard constraint)**: keep unchanged every token preserved by the PROSE STYLE GUIDE's `Preserve` section and its `Preserve-vs-translate litmus test`. Leave a **whole** passage written entirely in another language untouched.
+>
+> **Changed lines only (hard constraint, when CHANGED LINES is present)**: in a TARGET FILE that has `@@ <path> …` excerpts there, rewrite only prose that overlaps those excerpts and leave the rest of the file untouched. A TARGET FILE with no excerpt is in scope whole. `recommendations` are not limited to the excerpts.
 >
 > Return each rewrite as a `{file, old_string, new_string, rationale}` Edit. `old_string` must match exactly one location in the current file — include **1–3 lines of surrounding context** so the snippet is unique. A rewrite may change the number of prose lines in either direction — merge, split, or delete a line by omitting it from `new_string`. When `old_string` carries a non-target line purely for uniqueness (an adjacent line in another language, or a code line), reproduce that line **byte-identically** in `new_string`. If a file needs no prose changes, emit no edits for it. If nothing needs changing across all files, return `edits: []`.
 >
@@ -123,6 +127,7 @@ Dispatch a fresh subagent via the `Agent` tool (`subagent_type: general-purpose`
 3. **Otherwise — apply (file mode) or accept (text mode)**:
    - **File mode** — apply `edits` in order:
      - Verify `file ∈ target_files`; if not, skip the entry without calling `Edit`.
+     - When CHANGED LINES holds excerpts for `file` and `old_string` shares no non-blank line with them, skip the entry without calling `Edit`. An `old_string` line is shared when, trimmed, it is contained in a trimmed excerpt line.
      - Call `Edit` for each in-scope entry; re-`Read` the file first only if an earlier edit in this pass already modified it.
      - If `old_string` is not found, skip that entry and continue — a no-op skip, not an error.
      - Increment `applied_edits_count` only for entries whose `Edit` call succeeded.

@@ -131,6 +131,14 @@ A version read uses the canonical `// "unknown"` + post-pipeline `-z` guard: `v=
 4. **Record** `release_integrity_result`: `ok` when no changed bundle skill is a violation; otherwise the list of violating skills with their per-skill {member bumped / bundle bumped / CHANGELOG touched} flags.
 5. **Non-fatal**: a violation is recorded and the run continues — never a fatal abort. When a violation's cause is an **unverifiable** read (a `main:`/`HEAD:` version that resolved to `unknown` — git/jq error or an absent `marketplace.json` entry) rather than a confirmed missing bump, record reason `could not verify` and emit the could-not-verify warning variant — so an unverifiable read surfaces rather than silently passing as `ok`. `release_integrity_result` is computed and rendered **only on the form-3 path**.
 
+## Size-drift check (deterministic line delta)
+
+Runs right after § Release-integrity check, before § Step 3. Read-only git check; proceed to § Step 3 when done. Computes `size_drift_result`, rendered by § Step 6 (see § Form 3 content).
+
+1. `git diff --numstat main HEAD -- skills/dev-workflow/SKILL.md 'skills/dev-workflow/references/*.md' 'skills/mobpro/SKILL.md'` — the read-path prose files the size budgets cover. Sum the added and the removed columns directly from the output (no `wc`, no `awk`).
+2. `size_drift_result` = `+<added>/-<removed> lines`; it is a **drift** when added exceeds removed.
+3. Non-fatal: a drift is a warning line, never an abort. The remedy it names is `/skill-shrink` (`.claude/skills/skill-shrink/SKILL.md`), the collapse pass that removes rationale and restatement and ratchets the budgets back down.
+
 ## Step 3 — Run `Skill(prompt-tuning)` per file
 
 If `prompt_targets` is empty, emit summary line `prompt-tuning: skipped (no prompt-eligible files in diff)` and proceed to § Step 4.
@@ -252,8 +260,11 @@ When form 3 fires, render in Japanese:
 - rules-review: § Run `Skill(rules-review)` (rules-compliance detection layer) で算出した `rules_review_result` を描画。`no-issues`（違反なし）/ `violations (<N>)`（`<N>` 件検出）/ `error (<reason>)` / `skipped (unavailable)`。`error` / `skipped` の詳細は下の warning 行
 - release-integrity: `<ok | VIOLATION (<N> skills)>` — § Release-integrity check (deterministic bump-presence) で算出した `release_integrity_result` を描画。bundle skill 変更が無いか全て bump/CHANGELOG 揃いなら `ok`、欠落があれば `VIOLATION (<N> skills)`（`<N>` = 違反 skill 数、詳細は下の warning 行）
 - auto-stash: `restored` / `not needed (clean tree)` / `restore failed` — `auto_stashed` が true で pop 成功なら `restored`、`auto_stashed` が false なら `not needed (clean tree)`、pop 失敗なら `restore failed`（詳細は下の warning 行）
+- size-drift: `+<added>/-<removed> lines` — § Size-drift check で算出した `size_drift_result` を描画（読み込み経路の散文ファイルの main..HEAD の行数差）
 
 Warning lines (one per non-fatal incident) follow the main fields:
+
+- `size-drift: +<net> lines of prose landed on the read path — run /skill-shrink` — single line, when added exceeds removed in § Size-drift check
 
 - `prompt-tuning: <file>: unparsed verdict (verdict prose did not match known tokens)` — per file
 - `prompt-tuning: <file>: skipped (agent unavailable)` — per file

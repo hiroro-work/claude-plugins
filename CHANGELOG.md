@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-10-26
+
+### dev-workflow v2.12.0 / dev-workflow-bundle v2.35.0
+
+- **Resuming a stacked task no longer adds a branch before the plan is approved.** `--resume` now only switches to the top of the stack. The plan's Branch section recommends `stack`, which runs `gh stack add` for the subtask's branch once you approve, and offers `stay` to keep committing on the previous subtask's branch, so both subtasks share that branch and its PR. When the top branch is missing or merged, the resume still starts a new stack from the trunk as before.
+
 ## 2026-10-25
 
 ### dev-workflow v2.11.0 / dev-workflow-bundle v2.34.0

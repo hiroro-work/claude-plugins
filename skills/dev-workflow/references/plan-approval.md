@@ -20,10 +20,10 @@ Render the plan per `plan-format.md`'s "Presentation at Plan Approval" paragraph
 
 ## Branch action
 
-Runs the Branch section's Recommendation, the approved choice, just before Implement. A plan without a parseable Branch section counts as `stay` off the default branch and as `new` on it, with the `new` command `plan-format.md`'s Branch item defines; say so in one line.
+Runs the Branch section's Recommendation, the approved choice, just before Implement, then, with a decomposition state file, `decomposition-state.md` § Stacked PRs's "Record" paragraph. A plan without a parseable Branch section counts as `stay` off the default branch and as `new` on it, with the `new` command `plan-format.md`'s Branch item defines; say so in one line.
 
 - `stay`, or a `new` / `stack` whose branch is already checked out: nothing.
-- `new` / `stack`: run the command the Branch section gives. With a decomposition state file and no `pr_stack`, `stack` continues with `decomposition-state.md` § Stacked PRs's "Start" paragraph. Both branch from HEAD, so `<base-commit>` stays.
+- `new` / `stack`: run the command the Branch section gives. Both branch from HEAD, so `<base-commit>` stays.
 
 A failing command here or in the "Wrong branch" paragraph is retried once after 1–2 seconds; `<reason>` is its last non-empty stderr line cut to 80 chars, or `(no stderr)`. When the retry fails too, stop with its `<reason>`. Do not auto-recover (no force push, no rebase, no branch rename).
 

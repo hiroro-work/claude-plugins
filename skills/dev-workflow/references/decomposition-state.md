@@ -22,7 +22,7 @@ subtasks:
     depends_on: []
     status: pending        # pending | in_progress | completed
     pr: null               # URL string once known
-    branch: null           # stacked PRs only: the subtask's branch once created
+    branch: null           # stacked PRs only: the subtask's branch
 ---
 ```
 
@@ -46,9 +46,9 @@ Validate on every read: the four top-level keys present, ids unique integers, `d
 
 ## Stacked PRs
 
-Used when a decomposed run's Branch choice is `stack` (`plan-approval.md` § Branch action). A `git switch` or `gh stack` command that fails is retried once after 1–2 seconds; `<reason>` is its last non-empty stderr line cut to 80 chars, or `(no stderr)`. Do not auto-recover (no force push, no rebase, no branch rename). When the retry fails too: at **Start**, say `stack-record-failed (<reason>)` in one line and leave `pr_stack` unwritten; at **Resume**, stop with `<reason>`, leaving the state file as last written; at **Finish**, say `submit-failed (<reason>)` in one line and continue. A subtask's branch is `<slug>-<id>-<title>`, `<title>` the subtask's `title` in ASCII kebab-case, or the form a branch-naming convention in the project instructions gives with that as its free part, with `-2`, `-3` appended while `git rev-parse --verify -q refs/heads/<name>` finds one.
+Used in decomposed runs with stacked PRs. A `git switch` or `gh stack` command that fails is retried once after 1–2 seconds; `<reason>` is its last non-empty stderr line cut to 80 chars, or `(no stderr)`. Do not auto-recover (no force push, no rebase, no branch rename). When the retry fails too: at **Record**, say `stack-record-failed (<reason>)` in one line and leave `pr_stack` unwritten; at **Resume**, stop with `<reason>`, leaving the state file as last written; at **Finish**, say `submit-failed (<reason>)` in one line and continue. A subtask's branch is `<slug>-<id>-<title>`, `<title>` the subtask's `title` in ASCII kebab-case, or the form a branch-naming convention in the project instructions gives with that as its free part, with `-2`, `-3` appended while `git rev-parse --verify -q refs/heads/<name>` finds one.
 
-**Start** (after the Branch action's `gh stack` command created this run's branch): run `gh stack view --json`, write `pr_stack` with `trunk` = its `trunk` and `top` = the current branch, and set the current subtask's `branch` to the current branch.
+**Record** (after the Branch action, when the current subtask has no `branch` and the choice was `stack` or the current branch is `pr_stack.top`): without `pr_stack`, set `pr_stack.trunk` = the `trunk` of `gh stack view --json`. Set `pr_stack.top` and the subtask's `branch` to the current branch; write back.
 
 **Resume**:
 
@@ -57,10 +57,8 @@ Used when a decomposed run's Branch choice is `stack` (`plan-approval.md` § Bra
 3. No `branch`, in this order:
    1. Note whether the current branch is `<trunk>`.
    2. `<top>` exists locally → `git switch <top>` unless already on it, then `gh stack view --json`.
-   3. `<top>` missing locally, or `isMerged` on it → when the noted branch was `<trunk>`, `git switch <trunk>` and `gh stack init --base <trunk> <branch>`, then go to step 6; otherwise stop and tell the user to switch to `<trunk>`, pull it, and resume again.
+   3. `<top>` missing locally, or `isMerged` on it → when the noted branch was `<trunk>`, `git switch <trunk>`, `gh stack init --base <trunk> <branch>`, set the subtask's `branch` and `pr_stack.top` to it, write back, go to the `<base-commit>` step; otherwise stop and tell the user to switch to `<trunk>`, pull it, and resume again.
    4. Any branch has `needsRebase` → stop. Tell the user to run `gh stack sync` (it rebases the stack and pushes it) and resume again. Never run sync or rebase here.
-   5. Otherwise `gh stack add <branch>`.
-   6. Set the subtask's `branch` and `pr_stack.top` to the new branch and write back.
 4. When `git rev-parse HEAD` now differs from `<base-commit>`, re-record `<base-commit>` and `<start-tree>` per `SKILL.md` Phase 1 (Load Settings) step 3.
 
 **Finish**: when `landed_count` is 0, skip the gate. Otherwise ask `submit` / `later` (USER GATE). Say that `submit` runs `gh stack submit --auto`, which pushes every branch of the stack and opens a draft PR for each branch without one.

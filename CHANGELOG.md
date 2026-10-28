@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-10-28
+
+### demo v1.11.0 / dev-workflow-bundle v2.36.0
+
+- **The step table can approve a screenshots-only run.** Besides `approve` / `revise` / `skip`, the step-table gate offers `approve without video`, which records no test case for that run. It skips the title cards, the cursor pacing and the compression of recordings, so the capture finishes sooner. The page shows each step's screenshot as before, without a recording per test case. `approve` still records as `video` says.
+
 ## 2026-10-26
 
 ### dev-workflow v2.12.0 / dev-workflow-bundle v2.35.0

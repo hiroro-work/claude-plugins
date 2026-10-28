@@ -16,7 +16,7 @@ Settings for this run:
 
 - App URL: `{{url}}` (ends with `/`). A step's URL is the app URL followed by the step's `path` without its leading `/`
 - Chapter cards: `{{chapters}}` (`true`: this playwright-cli shows the cards below, a cursor and action callouts; `false`: none of them, and a recording's file name is given when it stops)
-- Recording scope: `{{video}}` (`full` records every test case; `normal` records only the normal cases)
+- Recording scope: `{{video}}` (`full` records every test case; `normal` records only the normal cases; `none` records none)
 - Signed-in state file: `{{auth_state}}` (`none` means no file)
 - Language: `{{language}}`
 

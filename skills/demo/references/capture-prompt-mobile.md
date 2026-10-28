@@ -17,7 +17,7 @@ You run each test case listed under `--- STEPS ---` against a native app on a si
 Settings for this run:
 
 - App: `{{app}}` on `{{target}}`; the **open line** is `open {{app}} --platform {{target}} {{device}}` (the device selector is empty when the booted device is meant)
-- Recording scope: `{{video}}` (`full` records every test case; `normal` records only the normal cases)
+- Recording scope: `{{video}}` (`full` records every test case; `normal` records only the normal cases; `none` records none)
 - Language: `{{language}}`
 
 In `--- STEPS ---`, a step's `case` is the `id` of its test case, and a step's `path` names the screen it runs on: a heading or a label `snapshot -i` shows there. Run the cases in the listed order, and each case's steps in the listed order.

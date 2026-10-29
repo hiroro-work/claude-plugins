@@ -23,7 +23,7 @@ A guided development workflow with fixed phases in a fixed order. What changes b
 | 15 | Update Rules | **user gate** (covers phases 15–18), `Skill(extract-rules)`, `Skill(demo)` when `.claude/demo.md` or `.claude/demo.local.md` exists | extraction: Trivial, Simple |
 | 16 | PR Rule Extraction | **user gate**, `Skill(extract-rules)` | empty answer |
 | 17 | Self-Retrospective | **user gate**, `gh api` | `self_retrospective.feedback` unset, or skipped at the phase 15 gate |
-| 18 | Workability Retrospective | **user gate**, project tooling candidates | `workability_retrospective.enabled` not `true`, or skipped at the phase 15 gate |
+| 18 | Workability Retrospective | **user gate**, project tooling candidates | `workability_retrospective.enabled: false`, or skipped at the phase 15 gate |
 | 19 | Completion | summary | never |
 
 A skipped phase is marked completed with its reason. The difficulty tier (Trivial / Simple / Moderate / Complex) is assessed at Task Decomposition and re-checked once against the drafted plan at the end of Create Plan, where it can only rise (a plan that turns out to carry a real design decision lifts Simple to Moderate and reopens the skipped rows). After that it never changes.
@@ -34,7 +34,7 @@ With `self_retrospective.feedback` set, the run ends by turning its own friction
 
 ## Workability retrospective
 
-With `workability_retrospective.enabled: true`, the run ends by turning friction with the project's own tooling into at most three candidates: a project skill for a manual procedure that recurred, a linter rule for a convention review had to catch by hand, or a check command for a failure that surfaced late. Each cites what happened (with the timing table row) and proposes something concrete; duplicates of what the project already has are dropped. You choose per candidate: `apply` (single configuration edits only, checked once), `backlog` (a file under `.claude/improvements/`), or `skip`. Prose conventions still go to Update Rules and workflow defects to Self-Retrospective; this phase covers tooling only.
+Unless `workability_retrospective.enabled` is `false`, the run ends by turning friction with the project's own tooling into at most three candidates: a linter rule from the lint candidates extract-rules recorded at Update Rules (conventions a check the project already runs could enforce), or a check command for a failure that surfaced late. Each cites what happened and proposes something concrete; duplicates of what the project already has are dropped, and each lint candidate you decide on is removed from extract-rules' `lint-candidates.md`. You choose per candidate: `apply` (single configuration edits only, checked once), `backlog` (a file under `.claude/improvements/`), or `skip`. Prose conventions still go to Update Rules and workflow defects to Self-Retrospective; this phase covers tooling only.
 
 ## Commits per Build order step
 
@@ -87,7 +87,7 @@ self_retrospective:
 timing:
   report_dir: "docs/timing"  # optional; the table is always shown at Completion
 workability_retrospective:
-  enabled: false             # opt-in; backlog_dir defaults to .claude/improvements
+  enabled: true              # set false to skip; backlog_dir defaults to .claude/improvements
 hooks:
   on_complete:
     - "Skill(work-complete)"

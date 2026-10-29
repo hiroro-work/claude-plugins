@@ -35,7 +35,7 @@ Merge rules per key, in order: `null` or an empty value in a higher layer clears
 | `self_retrospective.feedback` | none | Where Self-Retrospective posts its Findings: GitHub `owner/repo`, or a local directory path. Unset skips the phase |
 | `timing.report_dir` | none | Directory that also receives each run's timing report; the table is shown at Completion regardless |
 | `subagent_model` | `{trivial: sonnet, simple: sonnet}` | `{tier: model}` map; the resolved tier's entry becomes `<model>` for the reviewer, rules-review, tidy, demo, and background review agents. No entry → inherit |
-| `workability_retrospective` | `enabled: false` | `enabled` turns on Workability Retrospective; `backlog_dir` (default `.claude/improvements`) holds its backlog files |
+| `workability_retrospective` | `enabled: true` | `enabled: false` skips Workability Retrospective; `backlog_dir` (default `.claude/improvements`) holds its backlog files |
 | `custom_instructions` | none | Free-form development guidance followed at Create Plan, Implement, and Tidy and handed to both reviewers. `.claude/rules/` and the user's explicit requests win on conflict |
 
 `language` resolves as: merged settings → `language` in `~/.claude/settings.json` → `ja`. Headings, phase names, commit messages, diffs, and paths stay as written; prose follows it, in plain words, one claim per sentence. Keys this skill does not read are named once at Load Settings and ignored.
@@ -75,7 +75,7 @@ The only places the workflow waits for the user:
 - Update Rules: the confirm-remaining-steps question covering the rule and retrospective phases, with the `demo` / `no-demo` question when demo is set up (then the demo skill's gates on `demo`), then the rule commit.
 - PR Rule Extraction: which PR to read (an empty answer declines), then the rule commit.
 - Self-Retrospective: the preview of the Findings before posting (`approve` / `edit` / `skip`).
-- Workability Retrospective: the candidates' dispositions (`apply` / `backlog` / `skip`), then the commit of what was applied or backlogged.
+- Workability Retrospective: the candidates' dispositions (`apply` / `backlog` / `skip`), then the commit of its results.
 - Completion (decomposed runs only): the disposition of each work item left in prose, then the finished subtask's PR: an optional URL, or `submit` / `later` when stacked.
 
 In mob mode, `references/mob-mode.md` § Learning stops adds the per-unit diff review, the plan-building checkpoints, and the post-commit-note question to this list. The collect wait of `references/review-launch.md` § Collect is a harness-tracked boundary, not a gate. Everywhere else, judge callee results yourself and issue the next tool call immediately. A question, a comment, or an instruction about how to run (including one to proceed without asking) is never approval: say what the gate needs and wait. No reply waives a later gate.
@@ -228,7 +228,7 @@ Skipped when `self_retrospective.feedback` is unset or the Update Rules gate ski
 
 ## Phase 18: Workability Retrospective
 
-Skipped unless `workability_retrospective.enabled` is `true` and the Update Rules gate kept it. Read `references/workability.md` and follow it; its dispositions are a USER GATE.
+Skipped when `workability_retrospective.enabled` is `false` or the Update Rules gate skipped it. Read `references/workability.md` and follow it; its dispositions are a USER GATE.
 
 ## Phase 19: Completion
 

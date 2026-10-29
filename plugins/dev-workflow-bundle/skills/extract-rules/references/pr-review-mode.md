@@ -76,7 +76,7 @@ Analyze the collected human review comments to identify coding rules.
   (e.g., "Use our `useAuth()` hook", "Wrap API calls with `fetchWithRetry()`")
 - **Ignore non-rule comments**: LGTM, approvals, questions, bug reports, merge/CI discussions
 
-Apply the same criteria as Full Extraction Mode (see `extraction-criteria.md`).
+Apply the same criteria as Full Extraction Mode (see `extraction-criteria.md`). Set each item's `Lint` per `references/conversation-mode.md` § Rule-candidate contract.
 
 ### Cross-PR frequency analysis (multiple PRs only)
 

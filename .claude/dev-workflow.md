@@ -15,8 +15,6 @@ hooks:
     - "Skill(work-complete)"
 # self_retrospective:
 #   feedback: "SonicGarden/dev-workflow-issues"
-workability_retrospective:
-  enabled: true
 polish_prose: true
 commit_review_gate: "crit"
 custom_instructions: |

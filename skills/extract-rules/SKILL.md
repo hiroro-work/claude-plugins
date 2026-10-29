@@ -45,7 +45,7 @@ Settings file: `extract-rules.local.md` (YAML frontmatter only, no markdown body
 | `exclude_patterns` | `[]` | Exclude file patterns (e.g., `*.generated.ts`, `*.d.ts`) |
 | `output_dir` | `.claude/rules` | Output directory for rule files (`.md` and `.local.md`) |
 | `examples_output_dir` | `.claude/rules-extras` | Output directory for `.examples.md` files. Defaults to a sibling directory **outside** `.claude/rules/**` so examples are not auto-loaded into context on session start. Set to `output_dir` (or any path under `output_dir`) to opt examples back into auto-load |
-| `staging_output_dir` | `.claude/rules-staging` | Output directory for 1st-observation project-level patterns staged by incremental modes. Defaults to a sibling directory **outside** `.claude/rules/**` so staged candidates are not auto-loaded into context on session start. Set to `output_dir` (or any path under `output_dir`) to opt staging back into auto-load. Staging gating and the promote path: `references/conversation-mode.md` § Step C5 and § Mode interaction summary |
+| `staging_output_dir` | `.claude/rules-staging` | Output directory for 1st-observation project-level patterns staged by incremental modes. Defaults to a sibling directory **outside** `.claude/rules/**` so staged candidates are not auto-loaded into context on session start. Set to `output_dir` (or any path under `output_dir`) to opt staging back into auto-load. Staging gating and the promote path: `references/conversation-mode.md` § Step C5 and § Mode interaction summary. Also holds `lint-candidates.md` (`references/audit-pass.md` § Lint candidate writes) |
 | `language` | `ja` | Report language (e.g., `ja`) |
 | `split_output` | `true` | Separate Principles (.md) and patterns (.local.md) |
 | `resolve_references` | `true` | Resolve file references during restructure |
@@ -74,7 +74,7 @@ min_cluster_size: 3
 
 ## Output Structure
 
-Three output directories are involved: `output_dir` for rule files (`.md` / `.local.md`), `examples_output_dir` for `.examples.md` files, and `staging_output_dir` for staged 1st-observation project-level patterns from incremental modes. The `paths:` frontmatter on rule files is a human-facing category-scope hint; the auto-load boundary is determined by directory placement only.
+Three output directories are involved: `output_dir` for rule files (`.md` / `.local.md`), `examples_output_dir` for `.examples.md` files, and `staging_output_dir` for staged 1st-observation project-level patterns and lint candidates from incremental modes. The `paths:` frontmatter on rule files is a human-facing category-scope hint; the auto-load boundary is determined by directory placement only.
 
 **Default** (`split_output: true`):
 ```text
@@ -95,7 +95,8 @@ Three output directories are involved: `output_dir` for rule files (`.md` / `.lo
 └── project.examples.md            # Examples
 
 .claude/rules-staging/             # staging_output_dir (outside auto-load scope)
-└── project.staging.local.md       # 1st-observation project-level candidates (incremental modes only)
+├── project.staging.local.md       # 1st-observation project-level candidates (incremental modes only)
+└── lint-candidates.md             # rules a check this project runs could enforce (incremental modes only)
 ```
 
 Principles (portable across projects) and Project-specific patterns (local) are separated by default.
@@ -465,8 +466,9 @@ Read `references/audit-pass.md` for the full procedure. Key flow:
 1. Take the target entries from the write record the calling mode's write step kept; an empty record reports one line and returns
 2. Dispatch one analysis subagent and parse its fenced JSON verdict
 3. Apply the accepted `mechanical_edits` and follow through on the affected `.examples.md` entries
-4. Security Self-Check on every file the pass wrote
-5. Append the verdict section to the calling mode's report per `references/audit-pass.md` § Report format
+4. Append lint candidates for the entries no applied `drop` removed
+5. Security Self-Check on every file the pass wrote
+6. Append the verdict section to the calling mode's report per `references/audit-pass.md` § Report format
 
 The four modes named above are the complete list. Full Extraction, Restructure, Compaction, and Realign do not run it; `--realign` is the way to put their output through the same criteria, over whatever an operator names. A parse failure or a schema violation leaves the run's writes as the extraction made them and is named in the report.
 

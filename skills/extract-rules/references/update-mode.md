@@ -47,7 +47,7 @@ For each extracted principle/pattern:
    - Similar but different → Keep both (let user review)
    - **Cross-format duplicate check**: A project-specific pattern may have been promoted to a Principle by merge-rules. Check if the pattern's description semantically matches an existing principle name in the corresponding `.md` file (use AI judgment: case-insensitive, synonyms). For example, `` `useAuth() → { user, login, logout }` - auth hook interface `` is a duplicate of `Auth hook interface (useAuth)` in `## Principles`. Skip patterns that already exist as Principles.
    - **Staging match (project-level patterns only)**: per `references/conversation-mode.md` § Step C5's "staging-match criterion" paragraph, schedule a **promote** in Step U5. Update Mode does not write new staging entries; un-matched project-level patterns go directly into canonical.
-   - New → Add
+   - New → Add. Set each item's `Lint` per `references/conversation-mode.md` § Rule-candidate contract.
 
 2. **Preserve manual edits**: Do not modify existing rules
 

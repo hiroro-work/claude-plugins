@@ -76,6 +76,7 @@ This section defines the **serializable contract** between Step C4 (which produc
 - Signature: `clean_bracket_params(:keyword)`
 - Context: WAF-added bracket stripping
 - Rule: <normalized rule text>
+- Lint:
 
 ### Candidate 2
 - Type: principle
@@ -84,6 +85,7 @@ This section defines the **serializable contract** between Step C4 (which produc
 - Signature:
 - Context: nullable handling
 - Rule: <normalized rule text>
+- Lint:
 
 Candidates: 2
 ```
@@ -96,6 +98,7 @@ Candidates: 2
 - **`Signature`** — inline code signature, used for the staging-match (a) signature test (Step C5 item 3 (ii)) and as the `.examples.md` title. Required-non-empty when `Type == pattern`; empty when `Type == principle`.
 - **`Context`** — the **brief** context phrase (2-5 words, per the Step 6 Project-specific-patterns format). Used for the staging-match (b) context test, and — for `pattern` items — it is the **trailing context written into the rule bullet** (`` `Signature` - Context ``). Required-non-empty when `Type == pattern`; optional / informational for `principle` items.
 - **`Rule`** — the normalized rule text (already abstraction-normalized per Step C4 item 6). Always required-non-empty. **Written-bullet mapping**: for `principle` items the `Rule` text **supplies** the written bullet, reshaped into the Step 6 Principles format `Principle name (hints)` (lead noun phrase as the name, 2-4 implementation keywords as hints — reshaped, not written verbatim); for `pattern` items the `Rule` is the long-form retained for the semantic-dedup comparison (Step C5 item 3 (i) canonical match) and is **not** written into the bullet — the pattern bullet is `` `Signature` - Context ``.
+- **`Lint`** — empty, or `<tool> <rule id or option> — <configuration edit>` when `references/extraction-criteria.md` § Reach's "already enforced elsewhere" paragraph gives the candidate a lint candidate. A candidate file that omits the line reads as empty.
 
 **Staging-gating in contract terms**: the staging 3-branch (defined by Step C5 item 3's "Check for duplicates and route per category") fires exactly when **`Type == pattern` AND `Category == project`**; every other combination — including a `project`-scope `principle`, which goes into `project.md`'s Principles section — bypasses staging and writes canonical directly.
 
@@ -128,7 +131,7 @@ Candidates: 2
    - **Canonical writes** (existing items + items promoted from staging in 3 (ii)): use the same format as Step 6 in the main SKILL.md (see Format guidelines).
    - **Staging writes** (new project-level items per 3 (iii)): append to `<staging_output_dir>/project.staging.local.md`'s `## Project-specific patterns` section. Create the file (and any missing parent directories under `staging_output_dir`) when absent — the file body uses the template under § Staging file body template below.
 
-   **Write record**: for every bullet appended or promoted here, record the file's absolute path, the bullet line verbatim, and which § Report format (Step C5 item 8) section will list it. Item 6's `.examples.md` writes are not recorded. This record is the Audit Pass's target set (`references/audit-pass.md` § What the pass judges).
+   **Write record**: for every bullet appended or promoted here, record the file's absolute path, the bullet line verbatim, which § Report format (Step C5 item 8) section will list it, and its `Lint` as § Rule-candidate contract defines it, set for every mode that keeps this record. Item 6's `.examples.md` writes are not recorded. This record is the Audit Pass's target set (`references/audit-pass.md` § What the pass judges).
 
    **Move atomicity** (for promoted items): the order is (a) canonical append, (b) verify canonical write succeeded, (c) staging delete in item 5. Failures past (a) leave the canonical entry intact and either retry or leave a duplicate (next session's canonical-match skip resolves it).
 

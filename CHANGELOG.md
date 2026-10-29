@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-10-29
+
+### extract-rules v1.31.0 / dev-workflow v2.13.0 / dev-workflow-bundle v2.37.0
+
+- **Default: enabled** — set `workability_retrospective.enabled: false` in `.claude/dev-workflow.md` to skip the phase. **Behavior change from v2.12.0**: the phase was opt-in.
+- **extract-rules records lint candidates.** When an incremental run (`--from-conversation`, `--from-pr`, `--update`, `--apply-conversation-candidates`) writes a rule (not a staged first observation) that a check the project already runs could enforce with a rule or option it does not yet set, it still writes the rule and also appends a bullet to `lint-candidates.md` under `staging_output_dir`: the tool, the rule id or option, the configuration edit, and the rule. The bullets are written after the run's audit, so a rule the audit drops gets none. The report lists them under `### Lint candidates`.
+- **Workability Retrospective proposes lint rules from those candidates, and no longer proposes project skills.** Its two kinds are `lint-rule`, one per bullet of `lint-candidates.md` instead of a guess from the conversation, and `check-command` as before. A lint candidate is removed from the file once a reply gives it a disposition or it turns out to be a duplicate, and the file joins the phase's commit. Bullets beyond the three-candidate cap stay for the next run.
+
 ## 2026-10-28
 
 ### demo v1.11.0 / dev-workflow-bundle v2.36.0

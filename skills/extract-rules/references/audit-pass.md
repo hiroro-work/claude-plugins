@@ -10,7 +10,7 @@ Deep reference for `SKILL.md` **Audit Pass**. The pass re-judges the entries an 
 
 ## What the pass judges
 
-The target set is the **write record** the calling mode's write step kept — `references/conversation-mode.md` § Step C5 item 4 for Conversation, Conversation Candidate Apply, and PR Review, `references/update-mode.md` § Step U5 for Update. One target per bullet the run appended or promoted, carrying the file's absolute path, the bullet line verbatim, and the report section that will list it. Nothing else is a target: entries written before this run are out of scope, and `--realign` judges those. The run's report renders the same writes but is not the source, and a `.examples.md` write never enters the record.
+The target set is the **write record** the calling mode's write step kept — `references/conversation-mode.md` § Step C5 item 4 for Conversation, Conversation Candidate Apply, and PR Review, `references/update-mode.md` § Step U5 for Update. One target per record entry. Nothing else is a target: entries written before this run are out of scope, and `--realign` judges those. The run's report renders the same writes but is not the source, and a `.examples.md` write never enters the record.
 
 The main thread derives each target's **label** from its bullet — the leading label or signature, in the sense `references/realign-mode.md` § Response schema gives the term — and sends it with the bullet. The verbatim bullet is what disambiguates a label that repeats elsewhere in the file.
 
@@ -86,7 +86,7 @@ Evaluate in order, first match wins:
    - **Correspondence, both directions**, matched on the `(file, label)` pair, never on `label` alone: every `mechanical_edits` pair matches some `rules` pair, and every non-`keep` entry has exactly one edit.
 3. **Otherwise** → apply.
 
-On either failure the run's writes stand as the extraction left them, and § Report format carries a line naming the failure. A failed audit never reverts the extraction and never stops the calling mode.
+On either failure the run's writes stand as the extraction left them, § Lint candidate writes still runs, and § Report format carries a line naming the failure. A failed audit never reverts the extraction and never stops the calling mode.
 
 ## Apply (main thread)
 
@@ -99,6 +99,10 @@ An entry whose `Edit` did not apply is recorded and reported under § Report for
 ## `.examples.md` follow-through
 
 `references/realign-mode.md` § `.examples.md` follow-through governs: the disposition of an applied `drop` and `split`, and the path derivation. A staging file has no `.examples.md`, so a target entry there needs no follow-through.
+
+## Lint candidate writes
+
+Runs whether or not the pass ran. For every write-record entry outside the staging file with a non-empty `Lint` that no applied `drop` removed, append one bullet to `<staging_output_dir>/lint-candidates.md`, creating the file with the single heading `# Lint candidates` when absent. Bullet: `- **<tool> <rule id or option>**: <configuration edit> — rule: <the recorded bullet>`. Skip one whose bold head and configuration edit already appear there. `lint_candidate_count` counts the bullets appended.
 
 ## Security Self-Check
 
@@ -122,7 +126,7 @@ Append one section to the report the calling mode returns:
 - **Retry-budget accounting** (drop) - `old_string` no longer matched after an earlier edit rewrote the region
 ```
 
-Every non-`keep` entry appears in exactly one verdict subsection. Omit a subsection whose count is 0. When every entry was kept, give the heading line alone. When the pass did not run, replace the whole section with one line saying so and why — nothing to judge, no write record returned, a parse failure, or a schema violation.
+Every non-`keep` entry appears in exactly one verdict subsection. Omit a subsection whose count is 0. When every entry was kept, give the heading line alone. When the pass did not run, replace the whole section with one line saying so and why — nothing to judge, no write record returned, a parse failure, or a schema violation. When `lint_candidate_count` is non-zero, follow it with `### Lint candidates (→ <file path>)` listing the bullets appended.
 
 Subtract every applied `drop` from the calling mode's own report before returning it, so no entry is claimed as written and reported as dropped in the same report. Each target's record names the section that listed it: remove the entry from that section, and take one off the count that included it — `promoted_count`, `staged_count`, or the column of a `### New files:` row. `### Added to <file>:` carries no count. An applied `split` or `reshape` changes no count. Where § `.examples.md` follow-through removed an entry, drop the line that claimed it from the report's examples subsection for that file, so the report does not claim an example it just took back.
 

@@ -34,7 +34,7 @@ test("every referenced reference file and script exists", () => {
     for (const m of t.matchAll(/`(?:references\/)?([a-z0-9-]+\.md)`/g)) {
       const name = m[1];
       if (!["SKILL.md", "README.md", "CHANGELOG.md", "CLAUDE.md"].includes(name) && !/^project\.|^settings|^dev-workflow|^marketplace|^plugin/.test(name) && !existsSync(join(root, "references", name)) && !/^\.?claude|\.local\.md$|^[a-z-]+\.(jsonl|json)$/.test(name)) {
-        if (!/^(rubocop|eslint|tsconfig|lefthook|package)/.test(name) && !name.includes("<")) bad.push(`${f.replace(repoRoot + "/", "")}: ${name}`);
+        if (!/^(rubocop|eslint|tsconfig|lefthook|package|lint-candidates)/.test(name) && !name.includes("<")) bad.push(`${f.replace(repoRoot + "/", "")}: ${name}`);
       }
     }
     for (const m of t.matchAll(/scripts\/([a-z0-9/-]+\.mjs)/g)) {

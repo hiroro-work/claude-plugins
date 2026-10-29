@@ -59,7 +59,7 @@ Apply this third test to every candidate that survives the two above. It has two
 
 Keep the candidate when its reach is wide, **or** when a narrow reach pairs with a consequence that is silent, destructive, or expensive to recover from. Skip it when a narrow reach pairs with a consequence an ordinary rerun or review would put right.
 
-One further signal to skip: **already enforced elsewhere**. When a mechanical check this project actually runs — a linter, a type checker, a test, an automated verification step whose failure shows up in the normal workflow — catches the violation on its own, skip the candidate. A convention a linter *could* enforce but this project does not is still a rule.
+One further signal to skip: **already enforced elsewhere**. When a mechanical check this project actually runs — a linter, a type checker, a test, an automated verification step whose failure shows up in the normal workflow — catches the violation on its own, skip the candidate. A convention that a check this project already runs *could* catch with a rule or option it does not yet set is still a rule, and it also carries a **lint candidate**: the tool, the rule id or option, and the one-line configuration edit.
 
 Expect this test to reject more candidates than the other two combined, and expect it to reject some that are genuinely true — being correct is not the bar.
 

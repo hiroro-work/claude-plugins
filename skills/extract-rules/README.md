@@ -35,6 +35,10 @@ Two consequences:
 - A staged candidate you already believe in can be moved into `.local.md` by hand rather than waiting for a re-observation.
 - Deleting `output_dir` and re-running a full extraction leaves the staging file untouched, because it lives outside `output_dir`. The next incremental run will promote those candidates against the rebuilt canonical. Delete the staging directory by hand first when the staged candidates no longer apply.
 
+## Lint candidates
+
+When an incremental run writes a rule (not a staged first observation) that a check the project already runs could enforce with a rule or option it does not yet set, it still writes the rule and also appends a bullet to `lint-candidates.md` under `staging_output_dir`: the tool, the rule id or option, the configuration edit, and the rule it would enforce. dev-workflow's Workability Retrospective reads this file and offers each bullet as an `apply` / `backlog` / `skip` choice, removing it once decided. Used on its own, the file is a to-do list: make the configuration edit, then delete the bullet. Once the check enforces the convention, `--realign` drops the rule as already enforced elsewhere.
+
 ## Audit after an incremental run
 
 Every incremental run (`--from-conversation`, `--from-pr`, `--update`) ends by reading back what it just wrote and judging it again against the extraction criteria. The judgement is made by a separate analysis pass that never sees the conversation, the PR comments, or the code the run scanned — only the written rule text. That is the one reading under which the criteria's exit test works: a rule that only makes sense to someone who remembers the session it came from fails it.

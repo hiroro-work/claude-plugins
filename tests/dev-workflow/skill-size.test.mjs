@@ -12,7 +12,7 @@ const skill = readFileSync(join(repoRoot, "skills", "dev-workflow", "SKILL.md"),
 
 test("SKILL.md stays under the character budget", () => {
   const chars = [...skill].length;
-  assert.ok(chars <= 29176, `SKILL.md is ${chars} chars; budget is 29176 — cut, do not move to references`);
+  assert.ok(chars <= 29077, `SKILL.md is ${chars} chars; budget is 29077 — cut, do not move to references`);
 });
 
 // Budgets are ratchets: raise deliberately, in a commit that changes the number here.
@@ -23,7 +23,7 @@ test("SKILL.md plus the reference tree stays under the tree budget", () => {
   const excluded = new Set(["mob-mode.md", "crit-gate.md", "plan-artifact.md", "decomposition-state.md", "browser-gate.md"]);
   const refs = readdirSync(dir).filter((f) => f.endsWith(".md") && !excluded.has(f));
   const total = [...skill].length + refs.reduce((n, f) => n + [...readFileSync(join(dir, f), "utf8")].length, 0);
-  assert.ok(total <= 70895, `SKILL.md + counted references total ${total} chars; budget is 70895`);
+  assert.ok(total <= 70796, `SKILL.md + counted references total ${total} chars; budget is 70796`);
 });
 
 test("the conditionally-read references stay under their own budget", () => {
@@ -35,7 +35,7 @@ test("the conditionally-read references stay under their own budget", () => {
 
 test("mob-mode.md stays under its own budget", () => {
   const chars = [...readFileSync(join(repoRoot, "skills", "dev-workflow", "references", "mob-mode.md"), "utf8")].length;
-  assert.ok(chars <= 12600, `mob-mode.md is ${chars} chars; budget is 12600 (read only in mob mode)`);
+  assert.ok(chars <= 12330, `mob-mode.md is ${chars} chars; budget is 12330 (read only in mob mode)`);
 });
 
 test("mobpro stays a thin entry point", () => {

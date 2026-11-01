@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-11-02
+
+### dev-workflow v2.14.0 / dev-workflow-bundle v2.38.0
+
+- **Trivial plans are approved in the browser too.** In a local session, every tier's plan now opens in the browser plan review, so the branch choice shows as its own card with a radio button per choice. The chat approval remains for remote sessions and as the fallback when the browser review cannot run. **Behavior change from v2.13.0**: outside mob mode, a Trivial plan was approved in chat.
+
 ## 2026-10-29
 
 ### extract-rules v1.31.0 / dev-workflow v2.13.0 / dev-workflow-bundle v2.37.0

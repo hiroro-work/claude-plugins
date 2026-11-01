@@ -67,7 +67,7 @@ No tier skips a phase absent from the table. A skipped phase is marked `complete
 The only places the workflow waits for the user:
 
 - Task Decomposition: the split proposal (`yes` / `adjust` / `no`) and, on resume, the subtask picker when more than one is runnable.
-- Plan Approval: the browser review (`approve` / `revise` with comments, and the branch choice) on every tier but Trivial when a local browser is reachable; otherwise the chat replies Phase 5 (Plan Approval) lists, with the one-line read-back before a swap or rewrite is applied. A wrong-branch request waits for uncommitted changes to be committed or stashed. With `plan_artifact: review`, the wait for the team's review.
+- Plan Approval: the browser review (`approve` / `revise` with comments, and the branch choice) when a local browser is reachable; otherwise the chat replies Phase 5 (Plan Approval) lists, with the one-line read-back before a swap or rewrite is applied. A wrong-branch request waits for uncommitted changes to be committed or stashed. With `plan_artifact: review`, the wait for the team's review.
 - Check / Test: after 3 failed fix rounds the workflow stops and reports; a check command that rewrote files outside the task beyond trivial formatting, or a test skill's EXECUTION_ERROR, stops for the user.
 - Code Review: findings still unresolved after the passes, asked once.
 - Verify Fixes: rule violations still present after the second scoped pass, asked once.
@@ -143,12 +143,12 @@ Skipped on Trivial and in `fast` mode. One pass, no loop.
 USER GATE. Read `references/plan-approval.md`.
 
 1. Write the plan to `.claude/plans/<slug>.md` (`mkdir -p .claude/plans`). Slug: ASCII kebab-case of the effective task, `-2`, `-3` on collision with a prior run's file; resolved once per run.
-2. **Browser gate** on every tier but Trivial when `printenv CLAUDE_CODE_REMOTE` is not `true`: follow `references/browser-gate.md`. Its `approve` → step 4; `rewrite-approach` → rewrite the plan, re-run Plan Review once unless skipped this run, re-enter this phase; `wrong-branch` → § Branch action's "Wrong branch" paragraph; `fallback` → step 3.
-3. **Chat gate** (Trivial, remote sessions, or fallback): present the plan per § Chat gate unless fallback brought a reply. Classify the reply: **approve** → step 4. **swap** (named Decisions items) → read back in one line, wait, swap Recommendation and Alternative on those items, re-present. **rewrite** (Approach, Build order, or Scope changed) → read back, wait, rewrite the plan, re-run Plan Review once unless skipped this run, re-present. **wrong branch** (another branch to work on) → § Branch action's "Wrong branch" paragraph. **withdraw** → stop; leave the plan file. **Anything else** → ask; never advance.
+2. **Browser gate** when `printenv CLAUDE_CODE_REMOTE` is not `true`: follow `references/browser-gate.md`. Its `approve` → step 4; `rewrite-approach` → rewrite the plan, re-run Plan Review once unless skipped this run, re-enter this phase; `wrong-branch` → § Branch action's "Wrong branch" paragraph; `fallback` → step 3.
+3. **Chat gate** (remote sessions, or fallback): present the plan per § Chat gate unless fallback brought a reply. Classify the reply: **approve** → step 4. **swap** (named Decisions items) → read back in one line, wait, swap Recommendation and Alternative on those items, re-present. **rewrite** (Approach, Build order, or Scope changed) → read back, wait, rewrite the plan, re-run Plan Review once unless skipped this run, re-present. **wrong branch** (another branch to work on) → § Branch action's "Wrong branch" paragraph. **withdraw** → stop; leave the plan file. **Anything else** → ask; never advance.
 4. **Plan artifact**: when the resolved `plan_artifact` is `share` or `review`, read `references/plan-artifact.md` and follow it. `review` holds at its team-review gate (USER GATE) until the user says the team is done.
 5. Run § Branch action, then Implement.
 
-In mob mode, `references/mob-mode.md` § Plan Approval overrides step 2's tier condition and adds the plan narration.
+In mob mode, `references/mob-mode.md` § Plan Approval adds the plan narration.
 
 ## Phase 6: Implement
 

@@ -40,7 +40,7 @@ The browser gate composes the served copy from this plan; the figures layer alwa
 
 ## Plan Approval
 
-The browser gate runs at every tier, Trivial included; only a remote session (`CLAUDE_CODE_REMOTE=true`) uses chat instead. Before launching (in the launch turn, since the gate renders nothing afterwards) narrate briefly what the plan builds and in what order; when Plan Review did not run or ran rules-only, say so and name the cause. The chat path keeps its read-back; the browser path has none.
+In the turn that presents the plan (the browser launch or the chat gate), first narrate briefly what the plan builds and in what order; when Plan Review did not run or ran rules-only, say so and name the cause.
 
 ## Per-unit review (Implement)
 

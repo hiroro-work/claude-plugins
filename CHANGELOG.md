@@ -2,6 +2,10 @@
 
 ## 2026-11-02
 
+### dev-workflow v2.15.0 / dev-workflow-bundle v2.39.0
+
+- **Comments in the crit browser get their answers in the browser again.** With `commit_review_gate: crit`, the answer to each comment on a commit review or a mob-mode unit review is posted to crit as a reply and shows on the open review page. It says what was done: the edit, the refusal and why, or how a review-level comment was handled. Answers go to chat only when posting fails. `scripts/crit/gate.mjs` gains a `reply` subcommand that takes the answers as JSON on stdin.
+
 ### dev-workflow v2.14.0 / dev-workflow-bundle v2.38.0
 
 - **Trivial plans are approved in the browser too.** In a local session, every tier's plan now opens in the browser plan review, so the branch choice shows as its own card with a radio button per choice. The chat approval remains for remote sessions and as the fallback when the browser review cannot run. **Behavior change from v2.13.0**: outside mob mode, a Trivial plan was approved in chat.

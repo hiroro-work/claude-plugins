@@ -1,4 +1,4 @@
-// scripts/crit/gate.mjs against a fake `crit` on PATH: the probe, the story ingest, and the verdict reading.
+// scripts/crit/gate.mjs against a fake `crit` on PATH: the probe, the story ingest, the verdict reading, and the replies.
 
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -32,9 +32,16 @@ case "$1" in
       true) echo "approved: true" >&2; exit 0 ;;
       false) printf 'approved: false\\n2 unresolved comments\\n[{"scope":"line","path":"a.js","start_line":1,"end_line":2,"body":"x"},{"scope":"review","body":"y"}]\\n' >&2; exit 0 ;;
       garbage) printf 'approved: false\\nnot json at all\\n' >&2; exit 0 ;;
+      answered) printf 'approved: false\\n[{"id":"c_1","body":"x","replies":[{"author":"Claude Code","body":"done"}]},{"id":"c_2","body":"y","replies":[{"author":"Claude Code","body":"done"},{"author":"me","body":"why?"}]},{"id":"c_3","body":"z"}]\\n' >&2; exit 0 ;;
       split) echo "approved: false" >&2; printf '[{"scope":"review","body":"z"}]\\n'; exit 0 ;;
       *) echo "boom" >&2; exit 2 ;;
     esac ;;
+  comment)
+    cat >> "$FAKE_CRIT_LOG"; echo >> "$FAKE_CRIT_LOG"
+    if [ -n "$FAKE_CRIT_REPLY_FAIL" ]; then
+      echo "reply target c_x: comment not found" >&2; exit 1
+    fi
+    exit 0 ;;
 esac
 exit 1
 `;
@@ -49,11 +56,12 @@ function makeBin(t, { missing = false } = {}) {
   return dir;
 }
 
-function gate(args, bin, env = {}) {
+function gate(args, bin, env = {}, stdin = "") {
   return new Promise((resolve) => {
     const child = spawn(process.execPath, [GATE, ...args], {
       env: { ...process.env, PATH: `${bin}:${process.env.PATH}`, FAKE_CRIT_LOG: join(bin, "log"), CLAUDE_CODE_REMOTE: "", ...env },
     });
+    child.stdin.end(stdin);
     let stdout = "";
     let stderr = "";
     child.stdout.on("data", (d) => { stdout += d; });
@@ -136,6 +144,11 @@ test("review passes --no-open through and parses the comments after approved: fa
   assert.match(r.stderr, /approved: false/, "crit's stderr is echoed");
 });
 
+test("review marks a comment whose last reply is ours as answered", async (t) => {
+  const out = result(await gate(["review", "--range", "a..b"], makeBin(t), { FAKE_CRIT_VERDICT: "answered" }));
+  assert.deepEqual(out.comments.map((c) => [c.id, c.answered ?? false]), [["c_1", true], ["c_2", false], ["c_3", false]]);
+});
+
 test("review finds the comments on the other stream", async (t) => {
   const r = await gate(["review", "--range", "a..b"], makeBin(t), { FAKE_CRIT_VERDICT: "split" });
   const out = result(r);
@@ -157,4 +170,44 @@ test("review reports a crashed crit as broken", async (t) => {
   assert.equal(out.status, "broken");
   assert.equal(out.exit, 2);
   assert.equal(out.reason, "boom");
+});
+
+test("reply posts every answer as a crit reply in one bulk call", async (t) => {
+  const answers = [{ id: "c_1", body: "直しました" }, { id: "r_2", body: "Kept as is: 'quoted' and\nmultiline" }];
+  const r = await gate(["reply"], makeBin(t), {}, JSON.stringify(answers));
+  assert.deepEqual(result(r), { status: "replied" });
+  assert.match(r.log, /^comment --json --author Claude Code$/m);
+  const bulk = JSON.parse(r.log.split("\n").find((l) => l.startsWith("[")));
+  assert.deepEqual(bulk, [{ reply_to: "c_1", body: "直しました" }, { reply_to: "r_2", body: "Kept as is: 'quoted' and\nmultiline" }]);
+});
+
+test("reply with no answers does not call crit comment", async (t) => {
+  const r = await gate(["reply"], makeBin(t), {}, "[]");
+  assert.deepEqual(result(r), { status: "replied" });
+  assert.doesNotMatch(r.log, /^comment/m);
+});
+
+for (const [name, stdin, reason] of [
+  ["input that is not JSON", "not json", /not JSON/],
+  ["an object instead of an array", '{"id":"c_1","body":"x"}', /not a JSON array/],
+  ["an entry without a body", '[{"id":"c_1","body":"ok"},{"id":"c_2"}]', /entry 1/],
+]) {
+  test(`reply rejects ${name} without calling crit comment`, async (t) => {
+    const r = await gate(["reply"], makeBin(t), {}, stdin);
+    const out = result(r);
+    assert.equal(out.status, "rejected");
+    assert.match(out.reason, reason);
+    assert.doesNotMatch(r.log, /^comment/m);
+  });
+}
+
+test("reply reports a failed post as broken with crit's last stderr line", async (t) => {
+  const r = await gate(["reply"], makeBin(t), { FAKE_CRIT_REPLY_FAIL: "1" }, '[{"id":"c_x","body":"x"}]');
+  assert.deepEqual(result(r), { status: "broken", reason: "reply target c_x: comment not found" });
+});
+
+test("reply takes no arguments", async (t) => {
+  const r = await gate(["reply", "--range", "a..b"], makeBin(t));
+  assert.equal(r.code, 1);
+  assert.equal(r.stdout, "");
 });

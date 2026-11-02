@@ -4,9 +4,11 @@
 // Usage: node gate.mjs prep   --range <a>..<b>
 //        node gate.mjs story  --range <a>..<b> --story-file <path|->
 //        node gate.mjs review --range <a>..<b> [--no-open]
+//        node gate.mjs reply  < [{"id": "<comment id>", "body": "<text>"}]
 // `prep` prints crit's story guide, a `--- hunks ---` line, then the range's hunk listing (plain text).
 // `story` ingests a hand-authored story with --no-open: {"status":"ingested"|"rejected","ok","auto_repaired","error","daemon_url"}.
 // `review` launches `crit --range` and waits for the browser verdict: {"status":"approved"|"changes"|"broken","comments","exit","reason","url"}.
+// `reply` posts the stdin answers as crit replies, shown live in the open review: {"status":"replied"|"rejected"|"broken","reason"}.
 // Every subcommand answers {"status":"unavailable","reason"} when crit is missing or the session is remote.
 // crit's stderr is echoed live so a background caller can read the review URL. Exit 0 once a result line was
 // printed; 1 on a usage error.
@@ -14,10 +16,11 @@
 import { spawn } from "node:child_process";
 import { readFileSync } from "node:fs";
 
-const USAGE = "usage: gate.mjs prep|story|review --range <a>..<b> [--story-file <path|->] [--no-open]";
+const USAGE = "usage: gate.mjs prep|story|review --range <a>..<b> [--story-file <path|->] [--no-open] | gate.mjs reply < <json>";
 
 function parseArgs(argv) {
   const [cmd, ...rest] = argv;
+  if (cmd === "reply") return rest.length ? null : { cmd };
   const opts = { cmd, range: null, storyFile: null, noOpen: false };
   for (let i = 0; i < rest.length; i++) {
     const a = rest[i];
@@ -114,6 +117,13 @@ function parseArray(text) {
   }
 }
 
+const AUTHOR = "Claude Code";
+
+function markAnswered(c) {
+  const last = Array.isArray(c?.replies) ? c.replies[c.replies.length - 1] : null;
+  return last?.author === AUTHOR ? { ...c, answered: true } : c;
+}
+
 // The verdict line may sit on either stream; the comment array is looked for after it, then on the other stream.
 function readVerdict(stdout, stderr) {
   for (const [text, other] of [[stderr, stdout], [stdout, stderr]]) {
@@ -122,7 +132,7 @@ function readVerdict(stdout, stderr) {
     if (m[1] === "true") return { status: "approved", comments: [] };
     const after = text.slice(m.index + m[0].length);
     const comments = parseArray(after) ?? parseArray(other);
-    if (comments) return { status: "changes", comments };
+    if (comments) return { status: "changes", comments: comments.map(markAnswered) };
     return { status: "changes", comments: [], comments_raw: (after.trim() || other.trim()).slice(0, 2000) };
   }
   return null;
@@ -147,6 +157,36 @@ async function review(opts) {
   });
 }
 
+function parseReplies(text) {
+  let entries;
+  try {
+    entries = JSON.parse(text);
+  } catch {
+    return { error: "stdin is not JSON" };
+  }
+  if (!Array.isArray(entries)) return { error: "stdin is not a JSON array" };
+  const nonEmpty = (v) => typeof v === "string" && v.trim() !== "";
+  const bad = entries.findIndex((e) => !nonEmpty(e?.id) || !nonEmpty(e?.body));
+  if (bad !== -1) return { error: `entry ${bad} needs a non-empty id and body` };
+  return { entries };
+}
+
+// One bulk call: crit routes replies to the review file that holds their comment ids.
+async function reply() {
+  const { entries, error } = parseReplies(readFileSync(0, "utf8"));
+  if (error) {
+    emit({ status: "rejected", reason: error });
+    return;
+  }
+  if (!entries.length) {
+    emit({ status: "replied" });
+    return;
+  }
+  const bulk = entries.map((e) => ({ reply_to: e.id, body: e.body }));
+  const r = await run(["comment", "--json", "--author", AUTHOR], { stdin: JSON.stringify(bulk) });
+  emit(r.code === 0 ? { status: "replied" } : { status: "broken", reason: lastLine(r.stderr) });
+}
+
 async function main() {
   const opts = parseArgs(process.argv.slice(2));
   if (!opts) {
@@ -160,6 +200,7 @@ async function main() {
   }
   if (opts.cmd === "prep") await prep(opts);
   else if (opts.cmd === "story") await story(opts);
+  else if (opts.cmd === "reply") await reply();
   else await review(opts);
 }
 

@@ -30,12 +30,12 @@ test("the conditionally-read references stay under their own budget", () => {
   const dir = join(repoRoot, "skills", "dev-workflow", "references");
   const total = ["crit-gate.md", "plan-artifact.md", "decomposition-state.md", "browser-gate.md"]
     .reduce((n, f) => n + [...readFileSync(join(dir, f), "utf8")].length, 0);
-  assert.ok(total <= 17473, `the conditionally-read references total ${total} chars; budget is 17473`);
+  assert.ok(total <= 17811, `the conditionally-read references total ${total} chars; budget is 17811`);
 });
 
 test("mob-mode.md stays under its own budget", () => {
   const chars = [...readFileSync(join(repoRoot, "skills", "dev-workflow", "references", "mob-mode.md"), "utf8")].length;
-  assert.ok(chars <= 12330, `mob-mode.md is ${chars} chars; budget is 12330 (read only in mob mode)`);
+  assert.ok(chars <= 12323, `mob-mode.md is ${chars} chars; budget is 12323 (read only in mob mode)`);
 });
 
 test("mobpro stays a thin entry point", () => {

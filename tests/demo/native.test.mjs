@@ -332,6 +332,23 @@ test("win32: an unreachable DevTools endpoint leaves no window counted as a dial
   assert.ok(!r.calls.some((c) => c.includes("--window-id") && c[0] === "find"));
 });
 
+test("an action not delivered is sent once more, and the surface is read from the first one that shows anything", () => {
+  const sheet = { matches: [{ role: "statictext", name: "Sit down?" }, button("Yes", 1)] };
+  const r = run(["step", "--app", "Electron", "--surface", "dialog", "--name", "Yes", "--action", "click", "--out", "s.png"], [
+    { args: ["list-windows"], replies: [ok([])] },
+    { args: ["find", "--app", "Electron", "--surface", "alert", "--name"], replies: [ok({ matches: [button("Yes", 1)] })] },
+    { args: ["click"], replies: [err("ACTION_FAILED"), ok({})] },
+    { args: ["screenshot"], replies: [ok({})] },
+    { args: ["find", "--app", "Electron", "--surface", "alert", "--limit"], replies: [ok(sheet)] },
+    { args: ["find", "--app", "Electron", "--surface", "sheet", "--limit"], replies: [ok(sheet)] },
+  ]);
+  assert.equal(r.json.carried_out, true);
+  assert.equal(r.json.note, null);
+  assert.equal(r.calls.filter((c) => c[0] === "click").length, 2);
+  assert.deepEqual(r.json.surface, ["Sit down?", "Yes"]);
+  assert.ok(!r.calls.some((c) => c.join(" ") === "find --app Electron --surface sheet --limit 0"));
+});
+
 test("darwin: a parentless alert is found through focused by name, but never read or dismissed through it", () => {
   const r = run(["step", "--app", "Electron", "--surface", "dialog", "--name", "OK", "--action", "click", "--out", "s.png"], [
     { args: ["list-windows"], replies: [ok([])] },

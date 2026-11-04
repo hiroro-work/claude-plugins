@@ -107,10 +107,17 @@ async function step() {
   let acted = null;
   if (carriedOut) {
     // A headless type is refused on Windows, where set-value writes the field without taking the keyboard.
-    acted = run(action === "press" ? ["press", flags.value, "--app", app] : action === "type" ? [PLATFORM === "win32" ? "set-value" : "type", ref, flags.value] : [action, ref]);
+    const args = action === "press" ? ["press", flags.value, "--app", app] : action === "type" ? [PLATFORM === "win32" ? "set-value" : "type", ref, flags.value] : [action, ref];
+    const undelivered = (r) => !r.ok && (r.error?.disposition?.delivery ?? "not_delivered") === "not_delivered";
+    acted = run(args);
+    // A sheet replacing another can leave its button offscreen for a moment; nothing was delivered, so trying again is safe.
+    if (undelivered(acted)) {
+      Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, SETTLE_MS);
+      acted = run(args);
+    }
     if (!acted.ok) {
       notes.push(describe(action, acted));
-      if ((acted.error?.disposition?.delivery ?? "not_delivered") === "not_delivered") carriedOut = false;
+      if (undelivered(acted)) carriedOut = false;
     }
   }
 
@@ -128,8 +135,12 @@ async function step() {
   const read = { list: [], error: null };
   for (const scope of await scopes(app, surface, after)) {
     const found = find(scope, ["--limit", "0"]);
-    read.list.push(...found.list);
     if (found.error && !GONE.has(found.error.code)) read.error ??= found.error;
+    // alert and sheet can both answer with the same sheet, so the first surface that shows anything is the one read.
+    if (found.list.length) {
+      read.list.push(...found.list);
+      break;
+    }
   }
   if (read.error) notes.push(describe("find", read));
   const own = new Set(SURFACES[surface] ?? [surface]);

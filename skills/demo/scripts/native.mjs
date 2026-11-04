@@ -7,7 +7,7 @@
 //   dismiss --app <name>              → {"dismissed":<n>,"open":<n>}
 //   step --app <name> --surface <s> --action <click|check|uncheck|type|press> [--name <n>] [--value <v>]
 //        [--window-title <t>] [--cdp <origin>] --out <png>
-//                                     → {"carried_out","note","screenshot","window","surface"}
+//                                     → {"carried_out","note","screenshot","window","surface","opened"}
 // --surface takes tray, menu, dialog or app-menu, mapped per OS below; any other value is an agent-desktop surface name.
 // --cdp is the app's DevTools origin: on win32 a dialog is an app window its /json/list does not show.
 // Every subcommand but apps exits 0 with its JSON on stdout. A usage error prints one stderr line and exits 2.
@@ -27,7 +27,7 @@ const GONE = new Set(["ELEMENT_NOT_FOUND", "WINDOW_NOT_FOUND"]);
 const PLATFORM = process.env.DEMO_PLATFORM || process.platform;
 const UNDECLARED = Symbol("app windows the DevTools endpoint does not list");
 const SURFACES = {
-  darwin: { tray: ["menu-bar-extras"], menu: ["menu"], dialog: ["alert", "sheet"], "app-menu": ["menubar"] },
+  darwin: { tray: ["menu-bar-extras"], menu: ["menu"], dialog: ["alert", "sheet", "focused"], "app-menu": ["menubar"] },
   linux: { tray: [], menu: ["menu"], dialog: ["alert", "sheet"], "app-menu": ["window"] },
   win32: { tray: ["menu"], menu: ["menu"], dialog: ["sheet", UNDECLARED], "app-menu": ["window"] },
 }[PLATFORM] ?? {};
@@ -88,7 +88,7 @@ async function step() {
   const before = windows(app);
   let ref = null;
   if (action !== "press") {
-    const list = await scopes(app, surface, before);
+    const list = await scopes(app, surface, before, { byName: true });
     let error = null, open = false, closed = null;
     for (const scope of list) {
       const found = find(scope, ["--name", flags.name, "--exact", "--limit", "1"]);
@@ -104,12 +104,13 @@ async function step() {
       notes.push(!list.length ? `${surface} is not reachable on ${PLATFORM}` : error ? describe("find", { error }) : `find: no element named "${flags.name}" on ${surface}`);
     }
   }
+  let acted = null;
   if (carriedOut) {
     // A headless type is refused on Windows, where set-value writes the field without taking the keyboard.
-    const r = run(action === "press" ? ["press", flags.value, "--app", app] : action === "type" ? [PLATFORM === "win32" ? "set-value" : "type", ref, flags.value] : [action, ref]);
-    if (!r.ok) {
-      notes.push(describe(action, r));
-      if ((r.error?.disposition?.delivery ?? "not_delivered") === "not_delivered") carriedOut = false;
+    acted = run(action === "press" ? ["press", flags.value, "--app", app] : action === "type" ? [PLATFORM === "win32" ? "set-value" : "type", ref, flags.value] : [action, ref]);
+    if (!acted.ok) {
+      notes.push(describe(action, acted));
+      if ((acted.error?.disposition?.delivery ?? "not_delivered") === "not_delivered") carriedOut = false;
     }
   }
 
@@ -117,10 +118,10 @@ async function step() {
   const beforeIds = new Set(before.map((w) => w.id));
   const target = after.find((w) => !beforeIds.has(w.id)) ?? (flags["window-title"] ? after.find((w) => w.title === flags["window-title"]) : null) ?? after[0] ?? null;
   let shot = run(target ? ["screenshot", "--window-id", target.id, outPath] : ["screenshot", "--app", app, outPath]);
-  // Wayland captures no single window, only the whole display.
-  if (!shot.ok && shot.error?.code === "PLATFORM_NOT_SUPPORTED") {
+  // Wayland, and macOS while a parentless alert is up, capture no single window, only the whole display.
+  if (!shot.ok) {
     shot = run(["screenshot", outPath], 35000);
-    if (shot.ok) notes.push("screenshot: the window cannot be captured alone here, so the whole display was");
+    if (shot.ok) notes.push("screenshot: the window could not be captured alone, so the whole display was");
   }
   if (!shot.ok) notes.push(describe("screenshot", shot));
 
@@ -131,21 +132,31 @@ async function step() {
     if (found.error && !GONE.has(found.error.code)) read.error ??= found.error;
   }
   if (read.error) notes.push(describe("find", read));
+  const own = new Set(SURFACES[surface] ?? [surface]);
+  const opened = [];
+  for (const kind of new Set((acted?.data?.surfaces ?? []).map((o) => o?.type).filter((t) => typeof t === "string" && !own.has(t)))) {
+    let found = find(["--app", app, "--surface", kind], ["--limit", "0"]);
+    // A parentless macOS alert is not under the alert surface; the action just focused it.
+    if (PLATFORM === "darwin" && kind === "alert" && GONE.has(found.error?.code)) found = find(["--app", app, "--surface", "focused"], ["--limit", "0"]);
+    opened.push(...found.list.map((m) => m.name).filter(Boolean));
+  }
   out({
     carried_out: carriedOut,
     note: notes.length ? notes.join("; ") : null,
     screenshot: shot.ok ? basename(outPath) : null,
     window: shot.ok ? target?.title ?? null : null,
     surface: read.list.length ? read.list.map((m) => m.name).filter(Boolean) : null,
+    opened: opened.length ? opened : null,
   });
 }
 
-// The find scopes a surface name stands for on this OS, each as the arguments that select it.
-async function scopes(app, surface, wins) {
+// The find scopes a surface name stands for on this OS.
+// focused also holds a plain window's Close button, so only a lookup by name uses it.
+async function scopes(app, surface, wins, { byName = false } = {}) {
   const list = [];
   for (const s of SURFACES[surface] ?? [surface]) {
     if (s === UNDECLARED) list.push(...(await undeclared(wins)).map((w) => ["--window-id", w.id]));
-    else list.push(["--app", app, "--surface", s]);
+    else if (s !== "focused" || byName) list.push(["--app", app, "--surface", s]);
   }
   return list;
 }
@@ -163,7 +174,8 @@ async function undeclared(wins) {
 
 function find(scope, extra) {
   const r = run(["find", ...scope, ...extra]);
-  return { list: r.ok ? r.data?.matches ?? [] : [], error: r.ok ? null : r.error };
+  const list = r.ok ? r.data?.matches ?? [] : [];
+  return { list: scope.at(-1) === "focused" ? list.filter((m) => /^dialog/.test(m.path?.[0] ?? "")) : list, error: r.ok ? null : r.error };
 }
 
 function windows(app) {

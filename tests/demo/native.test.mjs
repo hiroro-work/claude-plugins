@@ -124,7 +124,7 @@ test("step clicks the named item, screenshots the window that appeared and reads
   ];
   const r = run(["--app", "Electron", "step", "--surface", "menu-bar-extras", "--name", "Use proxy", "--action", "click", "--window-title", "Main", "--out", "/tmp/x/step-01.png"], scenario);
   assert.equal(r.status, 0, r.stderr);
-  assert.deepEqual(r.json, { carried_out: true, note: null, screenshot: "step-01.png", window: "Electron", surface: ["Use proxy"] });
+  assert.deepEqual(r.json, { carried_out: true, note: null, screenshot: "step-01.png", window: "Electron", surface: ["Use proxy"], opened: null });
   assert.deepEqual(r.calls.find((c) => c[0] === "screenshot"), ["screenshot", "--window-id", "w-2", "/tmp/x/step-01.png"]);
   assert.ok(r.calls.every((c) => !c.includes("--headed") && !c.includes("--force")), "never headed or forced");
 });
@@ -154,7 +154,7 @@ test("step falls back to the window named by --window-title, and still screensho
     { args: ["find", "--app", "Electron", "--surface", "alert", "--limit"], replies: [err("ELEMENT_NOT_FOUND")] },
   ];
   const r = run(["step", "--app", "Electron", "--surface", "alert", "--name", "No", "--action", "click", "--window-title", "Main", "--out", "s.png"], scenario);
-  assert.deepEqual(r.json, { carried_out: true, note: null, screenshot: "s.png", window: "Main", surface: null });
+  assert.deepEqual(r.json, { carried_out: true, note: null, screenshot: "s.png", window: "Main", surface: null, opened: null });
 
   const missing = run(["step", "--app", "Electron", "--surface", "alert", "--name", "Maybe", "--action", "click", "--out", "s.png"], [
     { args: ["list-windows"], replies: [ok([main])] },
@@ -253,6 +253,7 @@ test("a surface that is not open does not hide that the name was not found", () 
     { args: ["list-windows"], replies: [ok([])] },
     { args: ["find", "--app", "Electron", "--surface", "alert"], replies: [err("ELEMENT_NOT_FOUND")] },
     { args: ["find", "--app", "Electron", "--surface", "sheet"], replies: [ok({ matches: [] })] },
+    { args: ["find", "--app", "Electron", "--surface", "focused"], replies: [ok({ matches: [] })] },
     { args: ["screenshot"], replies: [ok({})] },
   ]);
   assert.equal(r.json.carried_out, false);
@@ -329,6 +330,67 @@ test("win32: an unreachable DevTools endpoint leaves no window counted as a dial
   ], { shim: "linked", env: { DEMO_PLATFORM: "win32" } });
   assert.equal(r.json.carried_out, false);
   assert.ok(!r.calls.some((c) => c.includes("--window-id") && c[0] === "find"));
+});
+
+test("darwin: a parentless alert is found through focused by name, but never read or dismissed through it", () => {
+  const r = run(["step", "--app", "Electron", "--surface", "dialog", "--name", "OK", "--action", "click", "--out", "s.png"], [
+    { args: ["list-windows"], replies: [ok([])] },
+    { args: ["find", "--app", "Electron", "--surface", "alert"], replies: [err("ELEMENT_NOT_FOUND")] },
+    { args: ["find", "--app", "Electron", "--surface", "sheet"], replies: [err("ELEMENT_NOT_FOUND")] },
+    { args: ["find", "--app", "Electron", "--surface", "focused", "--name"], replies: [ok({ matches: [{ ...button("OK", 6), path: ["dialog:alert"] }] })] },
+    { args: ["click"], replies: [ok({})] },
+    { args: ["screenshot"], replies: [ok({})] },
+  ]);
+  assert.equal(r.json.carried_out, true);
+  assert.deepEqual(r.calls.find((c) => c[0] === "click"), ["click", "@s1:e6"]);
+  assert.ok(!r.calls.some((c) => c.includes("focused") && c.includes("--limit") && c.includes("0")), "the read after the action leaves focused alone");
+
+  const dismissed = run(["dismiss", "--app", "Electron"], [{ args: ["find"], replies: [err("ELEMENT_NOT_FOUND")] }]);
+  assert.ok(!dismissed.calls.some((c) => c.includes("focused")), "dismiss never searches focused, which holds a plain window's Close button");
+});
+
+test("darwin: under focused only a dialog's elements count, so a missing dialog never reaches the main window", () => {
+  const r = run(["step", "--app", "Electron", "--surface", "dialog", "--name", "Close", "--action", "click", "--out", "s.png"], [
+    { args: ["list-windows"], replies: [ok([{ id: "w-1", title: "Main" }])] },
+    { args: ["find", "--app", "Electron", "--surface", "alert"], replies: [err("ELEMENT_NOT_FOUND")] },
+    { args: ["find", "--app", "Electron", "--surface", "sheet"], replies: [err("ELEMENT_NOT_FOUND")] },
+    { args: ["find", "--app", "Electron", "--surface", "focused"], replies: [ok({ matches: [{ ...button("Close", 1), path: ["window", "toolbar"] }, button("Close", 2)] })] },
+    { args: ["screenshot"], replies: [ok({})] },
+  ]);
+  assert.equal(r.json.carried_out, false);
+  assert.equal(r.json.note, 'find: no element named "Close" on dialog');
+  assert.ok(!r.calls.some((c) => c[0] === "click"));
+});
+
+test("step reports what the action opened, reading a parentless macOS alert through focused", () => {
+  const scenario = (platform) => [
+    { args: ["list-windows"], replies: [ok([])] },
+    { args: ["find", "--app", "Electron", "--surface", platform === "darwin" ? "menu-bar-extras" : "menu", "--name"], replies: [ok({ matches: [button("About", 2)] })] },
+    { args: ["click"], replies: [ok({ surfaces: [{ type: "alert" }, { type: "menu" }] })] },
+    { args: ["screenshot"], replies: [ok({})] },
+    { args: ["find", "--app", "Electron", "--surface", "alert"], replies: [err("ELEMENT_NOT_FOUND")] },
+    { args: ["find", "--app", "Electron", "--surface", "focused"], replies: [ok({ matches: [{ role: "statictext", name: "Version 1.2.3", path: ["dialog"] }, { ...button("OK", 3), path: ["dialog"] }, { ...button("Close", 9), path: ["window"] }] })] },
+    { args: ["find"], replies: [ok({ matches: [] })] },
+  ];
+  const args = ["step", "--app", "Electron", "--surface", "tray", "--name", "About", "--action", "click", "--out", "s.png"];
+  const mac = run(args, scenario("darwin"));
+  assert.deepEqual(mac.json.opened, ["Version 1.2.3", "OK"]);
+  assert.ok(mac.calls.some((c) => c.join(" ") === "find --app Electron --surface menu --limit 0"), "an opened menu is read too");
+  const win = run(args, scenario("win32"), { shim: "linked", env: { DEMO_PLATFORM: "win32" } });
+  assert.equal(win.json.opened, null, "off macOS a missing alert is not looked for through focused");
+  assert.ok(!win.calls.some((c) => c.includes("focused")));
+});
+
+test("a failed window screenshot is taken again of the whole display, whatever the reason", () => {
+  const r = run(["step", "--app", "Electron", "--surface", "dialog", "--action", "press", "--value", "escape", "--out", "s.png"], [
+    { args: ["list-windows"], replies: [ok([{ id: "w-1", title: "Main" }])] },
+    { args: ["press"], replies: [ok({})] },
+    { args: ["screenshot", "--window-id"], replies: [err("TIMEOUT")] },
+    { args: ["screenshot"], replies: [ok({})] },
+    { args: ["find"], replies: [err("ELEMENT_NOT_FOUND")] },
+  ]);
+  assert.equal(r.json.screenshot, "s.png");
+  assert.match(r.json.note, /whole display/);
 });
 
 test("usage errors exit 2", () => {

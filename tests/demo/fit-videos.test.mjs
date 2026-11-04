@@ -9,6 +9,7 @@ import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, wr
 import { tmpdir } from "node:os";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
+import { PAGE_BUDGET } from "../../skills/demo/scripts/page-budget.mjs";
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
 const script = join(repoRoot, "skills", "demo", "scripts", "fit-videos.mjs");
@@ -60,6 +61,48 @@ const run = (env, args, extra = {}) => {
 const video = (dir, name, size) => writeFileSync(join(dir, name), Buffer.alloc(size));
 
 describe("fit-videos", { concurrency: true }, () => {
+
+test("with --ids, each case's recording is the largest of its per-window files; a case without one is left out", (t) => {
+  const env = setup(t);
+  video(env.dir, "A-1.webm", 2200);
+  video(env.dir, "A-1-2.webm", 9000);
+  video(env.dir, "A-1-4.webm", 7000);
+  video(env.dir, "A-10.webm", 99999);
+  video(env.dir, "B-1.webm", 3000);
+  const r = run(env, ["--dir", env.dir, "--ext", "webm", "--limit", "100000", "--ids", "A-1,B-1,C-1"]);
+  assert.equal(r.status, 0, r.stderr);
+  assert.deepEqual(r.json.map((e) => [e.id, e.video]), [["A-1", "A-1-2.webm"], ["B-1", "B-1.webm"]]);
+});
+
+test("with --embed, the page budget left after the screenshots is shared by the recordings", (t) => {
+  const env = setup(t, { tools: ["ffmpeg"] });
+  // The screenshots leave 7,500 bytes once base64 is counted: 3,750 each.
+  video(env.dir, "step-01.png", (PAGE_BUDGET * 3) / 4 - 7500);
+  video(env.dir, "A-1.webm", 5000);
+  video(env.dir, "B-1.webm", 3000);
+  const r = run(env, ["--dir", env.dir, "--ext", "webm", "--ids", "A-1,B-1", "--embed"], { FAKE_SIZE_1: "800" });
+  assert.equal(r.status, 0, r.stderr);
+  assert.deepEqual(r.json.map((e) => [e.id, e.outcome, e.video]), [["A-1", "compressed", "A-1.small.webm"], ["B-1", "fits", "B-1.webm"]]);
+});
+
+test("with --embed, what a small recording leaves passes to a larger one, which then needs no compression", (t) => {
+  const env = setup(t, { tools: ["ffmpeg"] });
+  // 7,500 to share: B-1 takes 1,000 of its 3,750, so A-1 may have the 6,500 left.
+  video(env.dir, "step-01.png", (PAGE_BUDGET * 3) / 4 - 7500);
+  video(env.dir, "A-1.webm", 6000);
+  video(env.dir, "B-1.webm", 1000);
+  const r = run(env, ["--dir", env.dir, "--ext", "webm", "--ids", "A-1,B-1", "--embed"], { FAKE_SIZE_1: "800" });
+  assert.equal(r.status, 0, r.stderr);
+  assert.deepEqual(r.json.map((e) => [e.id, e.outcome]), [["A-1", "fits"], ["B-1", "fits"]]);
+});
+
+test("with --embed, screenshots that fill the budget leave every recording over without compressing it", (t) => {
+  const env = setup(t, { tools: ["ffmpeg"] });
+  video(env.dir, "step-01.png", (PAGE_BUDGET * 3) / 4 + 1);
+  video(env.dir, "A-1.webm", 100);
+  const r = run(env, ["--dir", env.dir, "--ext", "webm", "--ids", "A-1", "--embed"], { FAKE_EXIT: "1" });
+  assert.deepEqual(r.json.map((e) => [e.id, e.outcome, e.tool]), [["A-1", "over", null]]);
+});
 
 test("a recording at or under the limit is kept as it is", (t) => {
   const env = setup(t);

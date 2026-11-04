@@ -1,8 +1,10 @@
 #!/usr/bin/env node
-// Fit each case recording under the artifact file limit, compressing the ones over it.
+// Fit each case recording under the page budget, compressing the ones over it.
 //
-// Usage: node fit-videos.mjs --dir <dir> --ext <webm|mp4> [--limit <bytes>]
-// Reads every `<id>.<ext>` directly under <dir>, not `<id>.part-NNN.<ext>` or `<id>.small.<ext>`.
+// Usage: node fit-videos.mjs --dir <dir> --ext <webm|mp4> [--limit <bytes>] [--ids <id,id,...>] [--embed]
+// Reads every `<id>.<ext>` directly under <dir>, not `<id>.part-NNN.<ext>` or `<id>.small.<ext>`. With --ids,
+// each listed case's recording is the largest of `<id>.<ext>` and `<id>-<n>.<ext>` (one file per window).
+// With --embed, the limit is also the page budget left after the step-*.png files, shared by the recordings.
 // A recording over --limit (default 15000000) is written again as `<id>.small.<ext>` by the first
 // compressor found: `ffmpeg` on PATH, then Playwright's bundled ffmpeg for webm, or `avconvert` for mp4
 // on macOS. The original is never changed.
@@ -16,14 +18,15 @@ import { existsSync, readdirSync, rmSync, statSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { parseArgs } from "node:util";
+import { PAGE_BUDGET } from "./page-budget.mjs";
 
 const usage = () => {
-  process.stderr.write("usage: fit-videos.mjs --dir <dir> --ext <webm|mp4> [--limit <bytes>]\n");
+  process.stderr.write("usage: fit-videos.mjs --dir <dir> --ext <webm|mp4> [--limit <bytes>] [--ids <id,id,...>] [--embed]\n");
   process.exit(2);
 };
 let args;
 try {
-  ({ values: args } = parseArgs({ options: { dir: { type: "string" }, ext: { type: "string" }, limit: { type: "string" } }, strict: true }));
+  ({ values: args } = parseArgs({ options: { dir: { type: "string" }, ext: { type: "string" }, limit: { type: "string" }, ids: { type: "string" }, embed: { type: "boolean" } }, strict: true }));
 } catch {
   usage();
 }
@@ -41,16 +44,41 @@ try {
 
 const deadline = Date.now() + 540_000;
 let tools = null;
-const pattern = new RegExp(`^([^.]+)\\.${args.ext}$`);
-const recordings = names.sort().map((n) => pattern.exec(n)).filter(Boolean);
-process.stdout.write(`${JSON.stringify(recordings.map(([name, id]) => fit(name, id)))}\n`);
+const recordings = args.ids === undefined ? byName() : byId(args.ids.split(",").map((id) => id.trim()).filter(Boolean));
+// Base64 makes every embedded file, screenshots too, a third larger. Smallest first, so what one leaves passes on.
+let left = args.embed ? Math.floor((PAGE_BUDGET * 3) / 4) - names.filter((n) => /^step-.*\.png$/.test(n)).reduce((sum, n) => sum + statSync(join(args.dir, n)).size, 0) : Infinity;
+const sized = recordings.map(([name, id]) => [name, id, statSync(join(args.dir, name)).size]).sort((a, b) => a[2] - b[2]);
+const fitted = new Map();
+sized.forEach(([name, id, bytes], i) => {
+  const entry = fit(name, id, bytes, Math.min(limit, Math.floor(left / (sized.length - i))));
+  left -= entry.video_bytes ?? 0;
+  fitted.set(id, entry);
+});
+process.stdout.write(`${JSON.stringify(recordings.map(([, id]) => fitted.get(id)))}\n`);
 
-function fit(name, id) {
+function byName() {
+  const pattern = new RegExp(`^([^.]+)\\.${args.ext}$`);
+  return names.sort().map((n) => pattern.exec(n)).filter(Boolean);
+}
+
+// A window that closes during a case leaves its recording short, so the largest one is the case's.
+function byId(ids) {
+  const escape = (t) => t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return ids.flatMap((id) => {
+    const pattern = new RegExp(`^${escape(id)}(-\\d+)?\\.${args.ext}$`);
+    const files = names.filter((n) => pattern.test(n)).map((n) => [n, statSync(join(args.dir, n)).size]);
+    if (!files.length) return [];
+    files.sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+    return [[files[0][0], id]];
+  });
+}
+
+function fit(name, id, bytes, cap) {
   const src = join(args.dir, name);
-  const bytes = statSync(src).size;
   const entry = { id, video: name, bytes, video_bytes: bytes, tool: null, outcome: "fits", error: null };
-  if (bytes <= limit) return entry;
+  if (bytes <= cap) return entry;
   const off = { ...entry, video: null, video_bytes: null };
+  if (cap < 1) return { ...off, outcome: "over" };
   tools ??= compressors();
   if (tools.length === 0) return { ...off, outcome: "no-tool" };
   const small = `${id}.small.${args.ext}`;
@@ -65,7 +93,7 @@ function fit(name, id) {
         break;
       }
       ran = true;
-      if (r.size <= limit) return { ...entry, video: small, video_bytes: r.size, tool: tool.name, outcome: "compressed" };
+      if (r.size <= cap) return { ...entry, video: small, video_bytes: r.size, tool: tool.name, outcome: "compressed" };
     }
     // A compressor that cannot run its first stage (no encoder, no decoder) hands over to the next one.
     if (ran) {

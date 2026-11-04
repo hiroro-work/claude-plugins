@@ -7,6 +7,7 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
+import { PAGE_BUDGET } from "../../skills/demo/scripts/page-budget.mjs";
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
 const script = join(repoRoot, "skills", "demo", "scripts", "render.mjs");
@@ -188,4 +189,56 @@ test("web, cdp and no target render the same page, without the portrait layout",
 test("missing arguments exit 1", () => {
   try { execFileSync("node", [script], { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }); throw new Error("expected a failure"); }
   catch (err) { assert.equal(err.status, 1); }
+});
+
+function renderIn(doc, files, args = ["--embed"]) {
+  const dir = mkdtempSync(join(tmpdir(), "demo-"));
+  try {
+    writeFileSync(join(dir, "s.json"), JSON.stringify(doc));
+    for (const [name, size] of Object.entries(files)) writeFileSync(join(dir, name), Buffer.alloc(size, 1));
+    const out = execFileSync("node", [script, "--steps", join(dir, "s.json"), "--out", join(dir, "p.html"), ...args], { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
+    return { html: readFileSync(join(dir, "p.html"), "utf8"), json: JSON.parse(out) };
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+}
+
+const shots = Object.fromEntries([1, 2, 3, 4, 5].map((n) => [`step-0${n}.png`, 100]));
+
+test("--embed puts every screenshot and recording into the page as a data URI", () => {
+  const { html, json } = renderIn(good, { ...shots, "A-1.webm": 300 });
+  assert.equal(count(html, /src="data:image\/png;base64,/g), 5);
+  assert.equal(count(html, /src="data:video\/webm;base64,/g), 1);
+  assert.ok(!html.includes('src="step-01.png"'));
+  assert.deepEqual(json.dropped, []);
+  assert.equal(json.bytes, Buffer.byteLength(html));
+});
+
+test("--embed leaves off the smallest recording that brings the page under the budget", () => {
+  const doc = { ...good, cases: good.cases.map((c) => (c.id === "B-1" ? { ...c, video: "B-1.mp4" } : c)) };
+  const { html, json } = renderIn(doc, { ...shots, "A-1.webm": (PAGE_BUDGET * 3) / 4 - 300_000, "B-1.mp4": 300_000 });
+  assert.deepEqual(json.dropped, ["B-1"]);
+  assert.ok(!html.includes("data:video/mp4"));
+  assert.equal(count(html, /src="data:video\/webm;base64,/g), 1);
+  assert.ok(json.bytes <= PAGE_BUDGET);
+});
+
+test("--embed leaves the recordings on when leaving them all off would not bring the page under", () => {
+  const { json } = renderIn(good, { ...shots, "step-01.png": PAGE_BUDGET, "A-1.webm": 300 });
+  assert.deepEqual(json.dropped, []);
+  assert.ok(json.bytes > PAGE_BUDGET);
+  assert.equal(json.over, true);
+});
+
+test("--embed leaves out a file it cannot read and names it", () => {
+  const { html, json } = renderIn(good, { "step-01.png": 100, "step-02.png": 100, "step-03.png": 100, "step-04.png": 100 });
+  assert.deepEqual(json.missing, ["A-1.webm", "step-05.png"]);
+  assert.equal(count(html, /<img /g), 4);
+  assert.ok(!html.includes("<video"));
+});
+
+test("without --embed the page names its files and stdout reports no dropped recording", () => {
+  const { html, json } = renderIn(good, {}, []);
+  assert.deepEqual(json.dropped, []);
+  assert.ok(html.includes('src="step-01.png"'));
 });

@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-11-04
+
+### demo v1.12.0 / dev-workflow-bundle v2.40.0
+
+- **A desktop app's native UI can be in the demo.** With `target: cdp`, `native_app` names the app as `agent-desktop list-apps` shows it; a step whose path is `native:<surface>` (`native:menu-bar-extras` for the tray menu, `native:alert` / `native:sheet` for a dialog, `native:menubar` for the app menu) is then driven through agent-desktop by the new `scripts/native.mjs` and gets a screenshot of the window the action opened. The recording stays on the renderer, so the page marks those steps as not in the recording. The run checks the agent-desktop permissions first, closes a dialog left open before each test case and before the stop, and Setup mode proposes `native_app` when the main process creates a tray or a message box. Without `native_app` nothing changes.
+
 ## 2026-11-02
 
 ### dev-workflow v2.15.0 / dev-workflow-bundle v2.39.0

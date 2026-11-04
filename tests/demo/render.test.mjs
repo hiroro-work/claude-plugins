@@ -166,6 +166,18 @@ test("ios and android lay out each step's text beside its screenshot", () => {
   }
 });
 
+test("a native step is marked as not in the recording only when its case has one", () => {
+  const doc = { ...good, steps: [...good.steps,
+    { n: 6, case: "A-1", path: "native:alert", action: "Press No", expected: "The dialog closes", result: "The dialog closed", status: "ok", screenshot: "step-06.png" },
+    { n: 7, case: "B-1", path: "native:menu-bar-extras", action: "Open the tray menu", expected: "The menu shows", result: "The menu showed", status: "ok", screenshot: "step-07.png" },
+  ] };
+  const ja = render(doc);
+  assert.ok(between(ja, 'id="step-6"', "</li>").includes('<p class="path">native:alert<span class="not-recorded">録画には映りません</span></p>'));
+  assert.ok(between(ja, 'id="step-7"', "</li>").includes('<p class="path">native:menu-bar-extras</p>'));
+  assert.equal(count(ja, /not-recorded">/g), 1);
+  assert.ok(between(render(doc, ["--lang", "en"]), 'id="step-6"', "</li>").includes('<span class="not-recorded">not in the recording</span>'));
+});
+
 test("web, cdp and no target render the same page, without the portrait layout", () => {
   assert.ok(!goodJa.includes("step-text"));
   assert.ok(!goodJa.includes("70vh"));

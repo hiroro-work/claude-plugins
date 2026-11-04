@@ -54,6 +54,7 @@ for (const f of prompts) {
   test(`${f}: the capture prompt placeholders match the preamble`, () => {
     const { preamble, body } = split(f);
     assert.deepEqual([...placeholders(preamble)].sort(), [...placeholders(body)].sort());
+    assert.equal(placeholders(body).has("native"), f === "references/capture-prompt-cdp.md", "the native UI command belongs to the CDP prompt only");
   });
 }
 

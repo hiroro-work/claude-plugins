@@ -2,6 +2,11 @@
 
 ## 2026-11-04
 
+### demo v1.13.0 / dev-workflow-bundle v2.41.0
+
+- **demo runs on Linux and Windows.** The new `scripts/stop-app.mjs` stops the process tree the run started and whatever listens on the port; it needs `lsof` (or `ss` on Linux) or, on Windows, `netstat`. `lsof` and `kill` leave `allowed-tools`. On Windows, Claude Code's Bash tool runs in Git Bash and the configured commands stay POSIX shell. `ios` still needs macOS. Verified on macOS only.
+- **`native_app` works on Linux and Windows too, and steps name the native UI in words that hold on every OS.** A step's path is `native:tray`, `native:menu`, `native:dialog` or `native:app-menu`, and `scripts/native.mjs` maps it to the OS's agent-desktop surfaces; an agent-desktop surface name such as `native:alert` still goes through as it is. `native:tray` is not reachable on Linux, and on Windows reaches only a tray menu the app has opened. On Windows, agent-desktop needs its install script allowed, and a dialog in a window of its own is reached by name but not closed between test cases. On Wayland a step's screenshot is the whole display.
+
 ### demo v1.12.0 / dev-workflow-bundle v2.40.0
 
 - **A desktop app's native UI can be in the demo.** With `target: cdp`, `native_app` names the app as `agent-desktop list-apps` shows it; a step whose path is `native:<surface>` (`native:menu-bar-extras` for the tray menu, `native:alert` / `native:sheet` for a dialog, `native:menubar` for the app menu) is then driven through agent-desktop by the new `scripts/native.mjs` and gets a screenshot of the window the action opened. The recording stays on the renderer, so the page marks those steps as not in the recording. The run checks the agent-desktop permissions first, closes a dialog left open before each test case and before the stop, and Setup mode proposes `native_app` when the main process creates a tray or a message box. Without `native_app` nothing changes.

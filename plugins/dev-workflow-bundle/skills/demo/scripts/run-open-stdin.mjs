@@ -19,7 +19,8 @@ rmSync(pgidFile, { force: true });
 let command;
 try { command = readFileSync(file, "utf8"); } catch (err) { process.stderr.write(`command file cannot be read: ${err.message}\n`); process.exit(2); }
 
-const child = spawn("sh", ["-c", command], { stdio: ["pipe", "inherit", "inherit"], detached: true });
+// On win32 there is no process group to signal; stop-app.mjs stops the tree from this pid with taskkill /T.
+const child = spawn("sh", ["-c", command], { stdio: ["pipe", "inherit", "inherit"], detached: process.platform !== "win32", windowsHide: true });
 child.stdin.on("error", () => {});
 child.on("error", (err) => {
   process.stderr.write(`${err.message}\n`);

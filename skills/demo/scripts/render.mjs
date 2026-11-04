@@ -1,8 +1,11 @@
 #!/usr/bin/env node
 // Render the demo page from steps.json.
 //
-// Usage: node render.mjs --steps <steps.json> --out <index.html> [--lang ja|en]
+// Usage: node render.mjs --steps <steps.json> --out <index.html> [--lang ja|en] [--embed]
 // On a validation failure nothing is written, violations go to stderr one per line, exit 3.
+// --embed puts every screenshot and recording, read from beside --out, into the page as a data URI, and leaves
+// recordings off while the page is over PAGE_BUDGET; a file that cannot be read is left out.
+// stdout: {"page":"<path>","bytes":<n>,"over":<bool>,"dropped":["<case id>",...],"missing":["<file>",...]}
 //
 // steps.json shape:
 // { title, dek?, url?, target?,
@@ -14,6 +17,8 @@
 // bare file name, next to the page.
 
 import { readFileSync, writeFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { PAGE_BUDGET } from "./page-budget.mjs";
 
 const args = parseArgs(process.argv.slice(2));
 for (const k of ["steps", "out"]) if (!args[k]) { process.stderr.write(`--${k} is required\n`); process.exit(1); }
@@ -42,7 +47,38 @@ figure img { width: auto; max-width: 100%; max-height: 70vh; margin: 0 auto; }
 `;
 const notConfirmed = cases.filter((c) => !c.ok).length;
 
-const html = `<!doctype html>
+const dropped = [];
+const missing = [];
+if (args.embed) {
+  const dir = dirname(args.out);
+  const uri = (file, type) => {
+    try { return `data:${type};base64,${readFileSync(join(dir, file)).toString("base64")}`; } catch { missing.push(file); return null; }
+  };
+  for (const c of cases) {
+    for (const s of c.steps) s.screenshot = uri(s.screenshot, "image/png");
+    if (c.video) c.video = uri(c.video, c.video.endsWith(".mp4") ? "video/mp4" : "video/webm");
+  }
+}
+let html = page();
+const over = args.embed ? Buffer.byteLength(html) - PAGE_BUDGET : 0;
+const recorded = cases.filter((c) => c.video).sort((a, b) => a.video.length - b.video.length);
+if (over > 0 && recorded.reduce((sum, c) => sum + c.video.length, 0) >= over) {
+  const one = recorded.find((c) => c.video.length >= over);
+  let left = over;
+  for (const c of one ? [one] : [...recorded].reverse()) {
+    if (left <= 0) break;
+    left -= c.video.length;
+    delete c.video;
+    dropped.push(c.id);
+  }
+  html = page();
+}
+
+writeFileSync(args.out, html);
+process.stdout.write(`${JSON.stringify({ page: args.out, bytes: Buffer.byteLength(html), over: Buffer.byteLength(html) > PAGE_BUDGET, dropped, missing })}\n`);
+
+function page() {
+  return `<!doctype html>
 <html lang="${lang}">
 <head>
 <meta charset="utf-8">
@@ -131,9 +167,7 @@ openCase(location.hash);
 </body>
 </html>
 `;
-
-writeFileSync(args.out, html);
-process.stdout.write(`${args.out}\n`);
+}
 
 function toc() {
   return `<nav class="toc"><h2>${esc(L.toc)}</h2>
@@ -175,7 +209,7 @@ ${s.path ? `<p class="path">${esc(s.path)}${recorded && s.path.startsWith("nativ
 ${s.data ? `<div class="row"><span class="k">${esc(L.data)}</span><span>${esc(s.data)}</span></div>` : ""}
 ${s.script ? `<div class="row"><span class="k">${esc(L.script)}</span></div><pre>${esc(s.script)}</pre>` : ""}
 ${!ok && s.note ? `<p class="note">${esc(L.note)}: ${esc(s.note)}</p>` : ""}
-${portrait ? "</div>\n" : ""}<figure><img src="${esc(s.screenshot)}" alt="${esc(s.action)}" loading="lazy"></figure>
+${portrait ? "</div>\n" : ""}${s.screenshot ? `<figure><img src="${esc(s.screenshot)}" alt="${esc(s.action)}" loading="lazy"></figure>` : ""}
 </li>`;
 }
 

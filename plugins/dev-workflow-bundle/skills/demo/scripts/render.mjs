@@ -22,8 +22,8 @@ let doc;
 try { doc = JSON.parse(readFileSync(args.steps, "utf8")); } catch (err) { process.stderr.write(`steps.json cannot be read: ${err.message}\n`); process.exit(3); }
 
 const L = {
-  ja: { eyebrow: "デモ", cases: (n) => `${n} テスト項目`, notConfirmed: (n) => `未確認 ${n}`, toc: "目次", precondition: "前提", expected: "期待する結果", result: "結果", data: "前提データ", script: "投入スクリプト", ok: "確認済み", ng: "未確認", note: "メモ", normal: "正常系", error: "異常系" },
-  en: { eyebrow: "Demo", cases: (n) => `${n} test case${n === 1 ? "" : "s"}`, notConfirmed: (n) => `${n} not confirmed`, toc: "Contents", precondition: "Precondition", expected: "Expected", result: "Result", data: "Data", script: "Script", ok: "confirmed", ng: "not confirmed", note: "Note", normal: "Normal case", error: "Error case" },
+  ja: { eyebrow: "デモ", cases: (n) => `${n} テスト項目`, notConfirmed: (n) => `未確認 ${n}`, toc: "目次", precondition: "前提", expected: "期待する結果", result: "結果", data: "前提データ", script: "投入スクリプト", ok: "確認済み", ng: "未確認", note: "メモ", notRecorded: "録画には映りません", normal: "正常系", error: "異常系" },
+  en: { eyebrow: "Demo", cases: (n) => `${n} test case${n === 1 ? "" : "s"}`, notConfirmed: (n) => `${n} not confirmed`, toc: "Contents", precondition: "Precondition", expected: "Expected", result: "Result", data: "Data", script: "Script", ok: "confirmed", ng: "not confirmed", note: "Note", notRecorded: "not in the recording", normal: "Normal case", error: "Error case" },
 }[lang];
 
 const errors = validate(doc);
@@ -90,6 +90,7 @@ li.step { border-top: 1px solid var(--line); padding: 16px 0 0; margin: 16px 0 0
 li.step h4 { font-size: 1.05rem; margin: 0 0 8px; display: flex; gap: 12px; align-items: baseline; flex-wrap: wrap; }
 .n { color: var(--accent); font-family: "IBM Plex Mono", monospace; font-weight: 500; }
 .path { color: var(--muted); font-family: "IBM Plex Mono", monospace; font-size: .85rem; margin: 0 0 8px; word-break: break-all; }
+.not-recorded { margin-left: 8px; font-family: "IBM Plex Sans JP", system-ui, sans-serif; }
 .row { display: flex; gap: 8px; margin: 4px 0; }
 .row .k { color: var(--muted); min-width: 7em; flex-shrink: 0; font-size: .9rem; }
 .badge { display: inline-block; font-size: .78rem; padding: 2px 8px; border-radius: 999px; border: 1px solid; margin-left: auto; white-space: nowrap; font-weight: 400; }
@@ -158,17 +159,17 @@ function renderCase(c) {
 ${c.precondition ? `<p class="precondition">${esc(L.precondition)}: ${esc(c.precondition)}</p>` : ""}
 ${c.video ? `<video controls preload="metadata" src="${esc(c.video)}"></video>` : ""}
 <ol class="steps">
-${c.steps.map(renderStep).join("\n")}
+${c.steps.map((s, i) => renderStep(s, i, Boolean(c.video))).join("\n")}
 </ol>
 </div>
 </details>`;
 }
 
-function renderStep(s, i) {
+function renderStep(s, i, recorded) {
   const ok = s.status === "ok";
   return `<li class="step" id="step-${s.n}">
 ${portrait ? '<div class="step-text">\n' : ""}<h4><span class="n">${i + 1}</span><span>${esc(s.action)}</span>${badge(ok)}</h4>
-${s.path ? `<p class="path">${esc(s.path)}</p>` : ""}
+${s.path ? `<p class="path">${esc(s.path)}${recorded && s.path.startsWith("native:") ? `<span class="not-recorded">${esc(L.notRecorded)}</span>` : ""}</p>` : ""}
 <div class="row"><span class="k">${esc(L.expected)}</span><span>${esc(s.expected)}</span></div>
 <div class="row"><span class="k">${esc(L.result)}</span><span>${esc(s.result)}</span></div>
 ${s.data ? `<div class="row"><span class="k">${esc(L.data)}</span><span>${esc(s.data)}</span></div>` : ""}

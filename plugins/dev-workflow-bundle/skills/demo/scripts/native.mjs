@@ -6,10 +6,11 @@
 //   apps [--since <file>]             → one app name per line (list-apps), minus the names listed in <file>; exit 1 with one stderr line on failure
 //   dismiss --app <name>              → {"dismissed":<n>,"open":<n>}
 //   step --app <name> --surface <s> --action <click|check|uncheck|type|press> [--name <n>] [--value <v>]
-//        [--window-title <t>] [--cdp <origin>] --out <png>
+//        [--window-title <t>] [--cdp <origin>] [--tray-name <t>] --out <png>
 //                                     → {"carried_out","note","screenshot","window","surface","opened"}
 // --surface takes tray, menu, dialog or app-menu, mapped per OS below; any other value is an agent-desktop surface name.
-// --cdp is the app's DevTools origin: on win32 a dialog is an app window its /json/list does not show.
+// --cdp is the app's DevTools origin: on win32 a dialog is an app window its /json/list does not show, or one that shows no page.
+// --tray-name is the name the win32 taskbar shows for the app's tray icon; it defaults to --app.
 // Every subcommand but apps exits 0 with its JSON on stdout. A usage error prints one stderr line and exits 2.
 // DEMO_NATIVE_SETTLE_MS overrides how long step waits for the window list to change after the action;
 // DEMO_PLATFORM overrides process.platform (tests).
@@ -20,6 +21,8 @@ import { basename, delimiter, join } from "node:path";
 import { parseArgs } from "node:util";
 
 const DECLINE = /^(cancel|no|close|dismiss|キャンセル|いいえ|閉じる)$/i;
+// A Windows message box names its buttons with an access key ("いいえ(N)").
+const ACCESS_KEY = /\s*\(&?[A-Za-z0-9]\)$/;
 const SETTLE_MS = Number.isFinite(Number(process.env.DEMO_NATIVE_SETTLE_MS)) ? Number(process.env.DEMO_NATIVE_SETTLE_MS) : 2000;
 const POLL_MS = 250;
 const ACTIONS = ["click", "check", "uncheck", "type", "press"];
@@ -48,7 +51,7 @@ await handlers[command]();
 function permissions() {
   const r = run(["permissions"]);
   if (r.error?.code === "ENOENT") return out({ ok: false, reason: "agent-desktop not installed", hint: "install it with `npm i -g agent-desktop@latest`" });
-  if (r.error?.code === "NOT_LINKED") return out({ ok: false, reason: r.error.message, hint: "reinstall it with its install script allowed: `npm install -g agent-desktop --allow-scripts=agent-desktop` (npm 11), or `npm install-scripts approve agent-desktop` (npm 12)" });
+  if (r.error?.code === "NOT_LINKED") return out({ ok: false, reason: r.error.message, hint: "reinstall it with its install script allowed: `npm install -g agent-desktop --allow-scripts=agent-desktop` (npm 11), or `npm install-scripts approve agent-desktop` (npm 12); installed another way (mise), run `node scripts/postinstall.js` in the agent-desktop package directory" });
   if (!r.ok) return out({ ok: false, reason: describe("permissions", r), hint: null });
   const missing = ["accessibility", "screen_recording"].filter((k) => !USABLE.has(r.data?.[k]?.state));
   if (missing.length) return out({ ok: false, reason: `agent-desktop permission not granted: ${missing.join(", ")}`, hint: HINT });
@@ -71,7 +74,8 @@ async function dismiss() {
     const found = find(scope, ["--role", "button"]).list;
     if (!found.length) continue;
     touched.push(scope);
-    const target = found.find((b) => DECLINE.test(b.name ?? ""));
+    const declining = found.filter((b) => DECLINE.test(bare(b.name)));
+    const target = declining.find((b) => !/^(close|閉じる)$/i.test(bare(b.name))) ?? declining[0];
     if (target?.ref_id && run(["click", target.ref_id]).ok) dismissed++;
   }
   out({ dismissed, open: touched.filter((scope) => find(scope, ["--role", "button"]).list.length).length });
@@ -86,13 +90,37 @@ async function step() {
   let carriedOut = true;
 
   const before = windows(app);
-  let ref = null;
-  if (action !== "press") {
+  const missing = `find: no element named "${flags.name}" on ${surface}`;
+  // agent-desktop takes no ref action on a Windows menu item (STALE_REF, TIMEOUT), so the item is clicked where it sits.
+  const viaPointer = PLATFORM === "win32" && (SURFACES[surface] ?? [surface]).includes("menu");
+  let ref = null, item = null, menuOpen = false;
+  if (viaPointer && action === "type") {
+    carriedOut = false;
+    notes.push(`type is not supported on ${surface} on ${PLATFORM}`);
+  } else if (viaPointer && action !== "press") {
+    item = menuItem(app);
+    let why = null, opened = false;
+    if (surface === "tray" && GONE.has(item.error?.code)) {
+      why = openTray(app);
+      opened = !why;
+      if (opened) item = menuItem(app);
+    }
+    menuOpen = opened || !item.error;
+    if (!item.point) {
+      carriedOut = false;
+      notes.push(why ?? (item.error && (opened || !GONE.has(item.error.code)) ? describe("snapshot", item) : missing));
+    } else if (item.states.includes("disabled")) {
+      carriedOut = false;
+      notes.push(`"${flags.name}" is disabled on ${surface}`);
+    }
+  } else if (action !== "press") {
     const list = await scopes(app, surface, before, { byName: true });
     let error = null, open = false, closed = null;
     for (const scope of list) {
       const found = find(scope, ["--name", flags.name, "--exact", "--limit", "1"]);
       ref = found.list[0]?.ref_id ?? null;
+      // An exact lookup misses a name that carries an access key.
+      if (!ref && !found.error && PLATFORM === "win32") ref = find(scope, ["--name", flags.name, "--limit", "0"]).list.find((m) => same(m.name, flags.name))?.ref_id ?? null;
       if (ref) break;
       if (!found.error) open = true;
       else if (GONE.has(found.error.code)) closed ??= found.error;
@@ -101,19 +129,24 @@ async function step() {
     error ??= open ? null : closed;
     if (!ref) {
       carriedOut = false;
-      notes.push(!list.length ? `${surface} is not reachable on ${PLATFORM}` : error ? describe("find", { error }) : `find: no element named "${flags.name}" on ${surface}`);
+      notes.push(!list.length ? `${surface} is not reachable on ${PLATFORM}` : error ? describe("find", { error }) : missing);
     }
   }
   let acted = null;
-  if (carriedOut) {
+  const settled = item?.point && action !== "click" && item.states.includes("checked") === (action === "check");
+  // An open Windows menu holds the input, so one read but left unclicked is closed.
+  if (menuOpen && (settled || !carriedOut)) run(["press", "escape", "--app", app]);
+  if (carriedOut && !settled) {
     // A headless type is refused on Windows, where set-value writes the field without taking the keyboard.
-    const args = action === "press" ? ["press", flags.value, "--app", app] : action === "type" ? [PLATFORM === "win32" ? "set-value" : "type", ref, flags.value] : [action, ref];
+    const args = action === "press" ? ["press", flags.value, "--app", app] : item ? ["mouse-click", "--xy", item.point, "--headed"] : action === "type" ? [PLATFORM === "win32" ? "set-value" : "type", ref, flags.value] : [action, ref];
     const undelivered = (r) => !r.ok && (r.error?.disposition?.delivery ?? "not_delivered") === "not_delivered";
     acted = run(args);
     // A sheet replacing another can leave its button offscreen for a moment; nothing was delivered, so trying again is safe.
-    if (undelivered(acted)) {
+    if (undelivered(acted) && !item) {
       Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, SETTLE_MS);
-      acted = run(args);
+      // On Windows a headless press reaches only the foreground app, and a headed one by --app refuses an app with several windows.
+      const focus = PLATFORM === "win32" && action === "press" ? before.find((w) => w.is_focused) ?? before.find((w) => w.title === flags["window-title"]) ?? before[0] : null;
+      acted = run(focus ? ["press", flags.value, "--window-id", focus.id, "--headed"] : args);
     }
     if (!acted.ok) {
       notes.push(describe(action, acted));
@@ -121,7 +154,7 @@ async function step() {
     }
   }
 
-  const after = carriedOut ? settle(app, before) : before;
+  const after = carriedOut && acted ? settle(app, before) : before;
   const beforeIds = new Set(before.map((w) => w.id));
   const target = after.find((w) => !beforeIds.has(w.id)) ?? (flags["window-title"] ? after.find((w) => w.title === flags["window-title"]) : null) ?? after[0] ?? null;
   let shot = run(target ? ["screenshot", "--window-id", target.id, outPath] : ["screenshot", "--app", app, outPath]);
@@ -145,12 +178,14 @@ async function step() {
   if (read.error) notes.push(describe("find", read));
   const own = new Set(SURFACES[surface] ?? [surface]);
   const opened = [];
-  for (const kind of new Set((acted?.data?.surfaces ?? []).map((o) => o?.type).filter((t) => typeof t === "string" && !own.has(t)))) {
+  for (const kind of new Set((acted?.data?.surfaces ?? []).map((o) => o?.type).filter((t) => typeof t === "string" && t !== "window" && !own.has(t)))) {
     let found = find(["--app", app, "--surface", kind], ["--limit", "0"]);
     // A parentless macOS alert is not under the alert surface; the action just focused it.
     if (PLATFORM === "darwin" && kind === "alert" && GONE.has(found.error?.code)) found = find(["--app", app, "--surface", "focused"], ["--limit", "0"]);
     opened.push(...found.list.map((m) => m.name).filter(Boolean));
   }
+  // A pointer click reports no surfaces, so a window it opened is read instead.
+  if (item && acted?.ok) for (const w of after.filter((x) => !beforeIds.has(x.id))) opened.push(...find(["--window-id", w.id], ["--limit", "0"]).list.map((m) => m.name).filter(Boolean));
   out({
     carried_out: carriedOut,
     note: notes.length ? notes.join("; ") : null,
@@ -177,10 +212,53 @@ async function undeclared(wins) {
   try {
     const res = await fetch(`${flags.cdp.replace(/\/+$/, "")}/json/list`, { signal: AbortSignal.timeout(5000) });
     const known = new Set((await res.json()).filter((t) => t.type === "page").flatMap((t) => [t.title, t.url]));
-    return wins.filter((w) => w.title && w.visible !== false && !known.has(w.title)).sort((a, b) => Number(Boolean(b.is_focused)) - Number(Boolean(a.is_focused)));
+    return wins.filter((w) => w.title && w.visible !== false && (!known.has(w.title) || messageBox(w))).sort((a, b) => Number(Boolean(b.is_focused)) - Number(Boolean(a.is_focused)));
   } catch {
     return [];
   }
+}
+
+// Electron titles a message box after the app, which a page can share, so a window holding no page counts as one.
+function messageBox(w) {
+  const scope = ["--window-id", w.id];
+  return !find(scope, ["--role", "document", "--limit", "1"]).list.length && find(scope, ["--role", "button", "--limit", "1"]).list.length > 0;
+}
+
+// The open menu's item named --name, with the point to click: { point, states }, or { error } when no menu can be read.
+function menuItem(app) {
+  const r = run(["snapshot", "--app", app, "--surface", "menu", "-i", "--include-bounds"]);
+  if (!r.ok) return { error: r.error };
+  const hit = nodes(r.data?.tree).find((n) => same(n.name, flags.name) && n.bounds?.width > 0 && n.bounds?.height > 0);
+  return hit ? { point: center(hit.bounds), states: hit.states ?? [] } : {};
+}
+
+// Windows gives an app's tray icon no surface, and its taskbar button takes no ref action, so the icon is right-clicked where it sits.
+function openTray(app) {
+  const name = flags["tray-name"] ?? app;
+  const r = run(["snapshot", "--surface", "taskbar", "-i", "--include-bounds"]);
+  if (!r.ok) return describe("snapshot", r);
+  const icon = nodes(r.data?.tree).find((n) => n.role === "button" && (n.name ?? "").split("\n")[0].trim() === name && n.bounds?.width > 0);
+  if (!icon) return `tray: no icon named "${name}" on the taskbar (show it there; hidden icons are not reached)`;
+  const clicked = run(["mouse-click", "--button", "right", "--xy", center(icon.bounds), "--headed"]);
+  if (!clicked.ok) return describe("mouse-click", clicked);
+  const menu = run(["wait", "--menu", "--app", app, "--timeout", "3000"]);
+  return menu.ok ? null : describe("wait", menu);
+}
+
+function nodes(n) {
+  return n ? [n, ...(n.children ?? []).flatMap(nodes)] : [];
+}
+
+function center({ x, y, width, height }) {
+  return `${Math.round(x + width / 2)},${Math.round(y + height / 2)}`;
+}
+
+function bare(name) {
+  return (name ?? "").replace(/\t.*$/, "").replace(ACCESS_KEY, "");
+}
+
+function same(name, wanted) {
+  return bare(name).toLowerCase() === bare(wanted).toLowerCase();
 }
 
 function find(scope, extra) {
@@ -244,7 +322,7 @@ function binary() {
 function parse() {
   const string = { type: "string" };
   try {
-    const { values, positionals } = parseArgs({ options: { app: string, surface: string, action: string, name: string, value: string, "window-title": string, out: string, since: string, cdp: string }, allowPositionals: true, strict: true });
+    const { values, positionals } = parseArgs({ options: { app: string, surface: string, action: string, name: string, value: string, "window-title": string, out: string, since: string, cdp: string, "tray-name": string }, allowPositionals: true, strict: true });
     if (positionals.length > 1) usage(`unexpected argument: ${positionals[1]}`);
     return { command: positionals[0] ?? null, flags: values };
   } catch (e) {

@@ -1,21 +1,28 @@
 // native.mjs: every subcommand against a fake agent-desktop placed first on PATH. The fake answers from a
 // scenario (a list of { args: <prefix>, replies: [<envelope>, ...] }, each reply consumed in order) and logs
 // every call it receives, so a test can check which flags the script passed.
+// A Windows host runs no script as an executable, so there the fake is a link to node.exe that loads the
+// script through NODE_OPTIONS, and PATH holds nothing else, so the real agent-desktop is never reached.
 
 import { describe, test } from "node:test";
 import assert from "node:assert/strict";
 import { execFileSync, spawn } from "node:child_process";
-import { chmodSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { chmodSync, copyFileSync, linkSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, dirname, delimiter } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
 const script = join(repoRoot, "skills", "demo", "scripts", "native.mjs");
+const WIN_HOST = process.platform === "win32";
 
 const FAKE = `#!/usr/bin/env node
 const fs = require("node:fs");
-const args = process.argv.slice(2);
+const path = require("node:path");
+// Loaded through NODE_OPTIONS, it also runs inside native.mjs's own node, where it must stay out of the way.
+if (require.main !== module && !/^(ad|agent-desktop)\\.exe$/i.test(path.basename(process.execPath))) return;
+// node takes the first argument for its script and resolves it, so the subcommand is its base name.
+const args = require.main === module ? process.argv.slice(2) : [path.basename(process.argv[1]), ...process.argv.slice(2)];
 fs.appendFileSync(process.env.FAKE_AGENT_DESKTOP_LOG, JSON.stringify(args) + "\\n");
 const scenario = JSON.parse(fs.readFileSync(process.env.FAKE_AGENT_DESKTOP, "utf8"));
 const state = JSON.parse(fs.readFileSync(process.env.FAKE_AGENT_DESKTOP + ".state", "utf8"));
@@ -32,6 +39,25 @@ const ok = (data) => ({ ok: true, data });
 const err = (code, delivery = "not_delivered") => ({ ok: false, error: { code, message: code, disposition: { delivery } } });
 const button = (name, e) => ({ ref_id: `@s1:e${e}`, role: "button", name });
 const parse = (s) => { try { return JSON.parse(s.trim().split("\n").pop()); } catch { return null; } };
+// A Windows menu item as the menu snapshot shows it, row `row` from the top; a 0×0 item is one the menu hides.
+const item = (name, row, states = [], role = "menuitem") => ({ role, name, states, ref_id: `@s9:e${row}`, bounds: row ? { x: 100, y: 100 + 40 * row, width: 200, height: 40 } : { x: 0, y: 0, width: 0, height: 0 } });
+const menu = (items) => ({ role: "menu", children: items });
+
+// The Windows fake, made once per process: bin/agent-desktop.exe and ad.exe link node.exe, and env loads the script.
+let windowsFakeMade = null;
+function windowsFake() {
+  if (windowsFakeMade) return windowsFakeMade;
+  const dir = mkdtempSync(join(tmpdir(), "native-fake-"));
+  const bin = join(dir, "bin");
+  mkdirSync(bin);
+  const exe = join(bin, "agent-desktop.exe");
+  try { linkSync(process.execPath, exe); } catch { copyFileSync(process.execPath, exe); }
+  linkSync(exe, join(dir, "ad.exe"));
+  writeFileSync(join(dir, "fake.cjs"), FAKE);
+  process.on("exit", () => rmSync(dir, { recursive: true, force: true }));
+  // NODE_OPTIONS reads a backslash inside quotes as an escape.
+  return (windowsFakeMade = { bin, ad: join(dir, "ad.exe"), env: { NODE_OPTIONS: `--require "${join(dir, "fake.cjs").replaceAll("\\", "/")}"` } });
+}
 
 // Runs the script with the fake first on PATH (or absent, with `installed: false`); returns stdout, status and the calls logged.
 // `shim` puts the fake behind a Windows agent-desktop.cmd instead: "linked" calls it as an exe, "unlinked" does not.
@@ -46,21 +72,28 @@ function run(args, scenario, { installed = true, env = {}, files = {}, shim = nu
     writeFileSync(log, "");
     for (const [name, content] of Object.entries(files)) writeFileSync(join(dir, name), content);
     let PATH = join(dir, "empty");
+    const fake = WIN_HOST ? windowsFake() : null;
+    const place = (file) => {
+      writeFileSync(file, FAKE.replace("/usr/bin/env node", process.execPath));
+      chmodSync(file, 0o755);
+    };
     if (shim) {
       mkdirSync(bin, { recursive: true });
-      writeFileSync(join(bin, "ad.exe"), FAKE.replace("/usr/bin/env node", process.execPath));
-      chmodSync(join(bin, "ad.exe"), 0o755);
-      writeFileSync(join(bin, "agent-desktop.cmd"), shim === "linked" ? `@echo off\r\n"${join(bin, "ad.exe")}" %*\r\nexit /b %errorlevel%\r\n` : `@ECHO off\r\n"%_prog%" "%dp0%\\node_modules\\agent-desktop\\bin\\agent-desktop" %*\r\n`);
+      const ad = fake?.ad ?? join(bin, "ad.exe");
+      if (!fake) place(ad);
+      writeFileSync(join(bin, "agent-desktop.cmd"), shim === "linked" ? `@echo off\r\n"${ad}" %*\r\nexit /b %errorlevel%\r\n` : `@ECHO off\r\n"%_prog%" "%dp0%\\node_modules\\agent-desktop\\bin\\agent-desktop" %*\r\n`);
       PATH = bin;
+    } else if (installed && fake) {
+      PATH = fake.bin;
     } else if (installed) {
       mkdirSync(bin, { recursive: true });
-      writeFileSync(join(bin, "agent-desktop"), FAKE);
-      chmodSync(join(bin, "agent-desktop"), 0o755);
+      place(join(bin, "agent-desktop"));
       PATH = bin + delimiter + process.env.PATH;
     }
     let stdout = "", status = 0, stderr = "";
     try {
-      stdout = execFileSync(process.execPath, [script, ...args.map((a) => a.replace("<dir>", dir))], { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"], env: { ...process.env, PATH, DEMO_NATIVE_SETTLE_MS: "0", DEMO_PLATFORM: "darwin", ...env, FAKE_AGENT_DESKTOP: scenarioPath, FAKE_AGENT_DESKTOP_LOG: log } });
+      const inherited = Object.fromEntries(Object.entries(process.env).filter(([k]) => !/^path$/i.test(k)));
+      stdout = execFileSync(process.execPath, [script, ...args.map((a) => a.replace("<dir>", dir))], { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"], env: { ...inherited, PATH, DEMO_NATIVE_SETTLE_MS: "0", DEMO_PLATFORM: "darwin", ...env, ...fake?.env, FAKE_AGENT_DESKTOP: scenarioPath, FAKE_AGENT_DESKTOP_LOG: log } });
     } catch (e) { status = e.status; stdout = e.stdout ?? ""; stderr = e.stderr ?? ""; }
     const calls = readFileSync(log, "utf8").trim().split("\n").filter(Boolean).map((l) => JSON.parse(l));
     return { stdout, stderr, status, calls, json: parse(stdout) };
@@ -216,6 +249,7 @@ test("win32 runs the exe the linked agent-desktop.cmd names, and stops on one th
   const unlinked = run(["permissions"], scenario, { shim: "unlinked", env: { DEMO_PLATFORM: "win32" } });
   assert.equal(unlinked.json.reason, "agent-desktop.cmd does not call the native binary");
   assert.match(unlinked.json.hint, /--allow-scripts=agent-desktop/);
+  assert.match(unlinked.json.hint, /node scripts\/postinstall\.js/);
   assert.deepEqual(unlinked.calls, []);
 });
 
@@ -235,13 +269,13 @@ test("logical surfaces map per OS: dialog searches alert then sheet; tray is the
   const trayArgs = ["step", "--app", "Electron", "--surface", "tray", "--name", "Quit", "--action", "click", "--out", "s.png"];
   const tray = run(trayArgs, [
     { args: ["list-windows"], replies: [ok([])] },
-    { args: ["find", "--app", "Electron", "--surface", "menu", "--name"], replies: [ok({ matches: [button("Quit", 5)] })] },
-    { args: ["click"], replies: [ok({})] },
+    { args: ["snapshot", "--app", "Electron", "--surface", "menu"], replies: [ok({ tree: menu([item("Quit", 5)]) })] },
+    { args: ["mouse-click"], replies: [ok({})] },
     { args: ["screenshot"], replies: [ok({})] },
     { args: ["find"], replies: [ok({ matches: [] })] },
   ], { shim: "linked", env: { DEMO_PLATFORM: "win32" } });
   assert.equal(tray.json.carried_out, true);
-  assert.ok(!tray.calls.some((c) => c.includes("system-tray")), "the shell's tray, which lists every app, is never searched");
+  assert.ok(!tray.calls.some((c) => c.includes("system-tray") || c.includes("taskbar")), "an open menu is used as it is; the shell is never searched");
   const linux = run(trayArgs, [{ args: ["list-windows"], replies: [ok([])] }, { args: ["screenshot"], replies: [ok({})] }], { env: { DEMO_PLATFORM: "linux" } });
   assert.equal(linux.json.carried_out, false);
   assert.equal(linux.json.note, "tray is not reachable on linux");
@@ -302,7 +336,7 @@ test("win32: a step's dialog is a visible, titled app window the DevTools endpoi
     ], { shim: "linked", env: { DEMO_PLATFORM: "win32" } });
     assert.equal(r.json.carried_out, true);
     assert.deepEqual(r.calls.find((c) => c[0] === "click"), ["click", "@s1:e1"]);
-    for (const id of ["w-1", "w-3", "w-4", "w-5"]) assert.ok(!r.calls.some((c) => c[0] === "find" && c.includes(id)), `${id} is not searched`);
+    for (const id of ["w-1", "w-3", "w-4", "w-5"]) assert.ok(!r.calls.some((c) => c[0] === "find" && c.includes(id) && c.includes("--name")), `${id} is not searched`);
 
     const missing = run(["step", "--app", "Electron", "--surface", "dialog", "--name", "Maybe", "--action", "click", "--cdp", cdp.origin, "--out", "s.png"], [
       { args: ["list-windows", "--app", "Electron"], replies: [ok(wins)] },
@@ -383,7 +417,7 @@ test("step reports what the action opened, reading a parentless macOS alert thro
   const scenario = (platform) => [
     { args: ["list-windows"], replies: [ok([])] },
     { args: ["find", "--app", "Electron", "--surface", platform === "darwin" ? "menu-bar-extras" : "menu", "--name"], replies: [ok({ matches: [button("About", 2)] })] },
-    { args: ["click"], replies: [ok({ surfaces: [{ type: "alert" }, { type: "menu" }] })] },
+    { args: ["click"], replies: [ok({ surfaces: [{ type: "alert" }, { type: "menu" }, { type: "window" }] })] },
     { args: ["screenshot"], replies: [ok({})] },
     { args: ["find", "--app", "Electron", "--surface", "alert"], replies: [err("ELEMENT_NOT_FOUND")] },
     { args: ["find", "--app", "Electron", "--surface", "focused"], replies: [ok({ matches: [{ role: "statictext", name: "Version 1.2.3", path: ["dialog"] }, { ...button("OK", 3), path: ["dialog"] }, { ...button("Close", 9), path: ["window"] }] })] },
@@ -393,6 +427,7 @@ test("step reports what the action opened, reading a parentless macOS alert thro
   const mac = run(args, scenario("darwin"));
   assert.deepEqual(mac.json.opened, ["Version 1.2.3", "OK"]);
   assert.ok(mac.calls.some((c) => c.join(" ") === "find --app Electron --surface menu --limit 0"), "an opened menu is read too");
+  assert.ok(!mac.calls.some((c) => c.join(" ") === "find --app Electron --surface window --limit 0"), "the app window the action left focused is not an opened surface");
   const win = run(args, scenario("win32"), { shim: "linked", env: { DEMO_PLATFORM: "win32" } });
   assert.equal(win.json.opened, null, "off macOS a missing alert is not looked for through focused");
   assert.ok(!win.calls.some((c) => c.includes("focused")));
@@ -408,6 +443,174 @@ test("a failed window screenshot is taken again of the whole display, whatever t
   ]);
   assert.equal(r.json.screenshot, "s.png");
   assert.match(r.json.note, /whole display/);
+});
+
+test("access keys: dismiss prefers いいえ(N) over the title bar's 閉じる, and step finds はい(Y) by はい", () => {
+  const dismissed = run(["dismiss", "--app", "Electron"], [
+    { args: ["find", "--app", "Electron", "--surface", "alert"], replies: [ok({ matches: [button("はい(Y)", 1), button("閉じる", 2), button("いいえ(N)", 3)] }), ok({ matches: [] })] },
+    { args: ["find", "--app", "Electron", "--surface", "sheet"], replies: [err("WINDOW_NOT_FOUND")] },
+    { args: ["click"], replies: [ok({})] },
+  ]);
+  assert.deepEqual(dismissed.json, { dismissed: 1, open: 0 });
+  assert.deepEqual(dismissed.calls.find((c) => c[0] === "click"), ["click", "@s1:e3"]);
+
+  const r = run(["step", "--app", "Electron", "--surface", "alert", "--name", "はい", "--action", "click", "--out", "s.png"], [
+    { args: ["list-windows"], replies: [ok([])] },
+    { args: ["find", "--app", "Electron", "--surface", "alert", "--name", "はい", "--exact"], replies: [ok({ matches: [] })] },
+    { args: ["find", "--app", "Electron", "--surface", "alert", "--name", "はい", "--limit", "0"], replies: [ok({ matches: [button("はいはい", 4), button("はい(Y)", 5)] })] },
+    { args: ["click"], replies: [ok({})] },
+    { args: ["screenshot"], replies: [ok({})] },
+    { args: ["find"], replies: [err("ELEMENT_NOT_FOUND")] },
+  ], { shim: "linked", env: { DEMO_PLATFORM: "win32" } });
+  assert.equal(r.json.carried_out, true);
+  assert.deepEqual(r.calls.find((c) => c[0] === "click"), ["click", "@s1:e5"]);
+});
+
+test("win32: a window titled like a page counts as a dialog when it shows no page but a button", async () => {
+  const cdp = await devtools([{ type: "page", title: "Sample App", url: "app://index.html" }]);
+  try {
+    const wins = [{ id: "w-1", title: "Sample App" }, { id: "w-2", title: "Sample App", is_focused: true }];
+    const r = run(["step", "--app", "Electron", "--surface", "dialog", "--name", "いいえ", "--action", "click", "--cdp", cdp.origin, "--out", "s.png"], [
+      { args: ["list-windows", "--app", "Electron"], replies: [ok(wins)] },
+      { args: ["find", "--app", "Electron", "--surface", "sheet"], replies: [err("WINDOW_NOT_FOUND")] },
+      { args: ["find", "--window-id", "w-1", "--role", "document"], replies: [ok({ matches: [{ role: "document", name: "Sample App" }] })] },
+      { args: ["find", "--window-id", "w-2", "--role", "document"], replies: [ok({ matches: [] })] },
+      { args: ["find", "--window-id", "w-2", "--role", "button"], replies: [ok({ matches: [button("はい(Y)", 1)] })] },
+      { args: ["find", "--window-id", "w-2", "--name", "いいえ", "--exact"], replies: [ok({ matches: [] })] },
+      { args: ["find", "--window-id", "w-2", "--name", "いいえ", "--limit", "0"], replies: [ok({ matches: [button("いいえ(N)", 2)] })] },
+      { args: ["click"], replies: [ok({})] },
+      { args: ["screenshot"], replies: [ok({})] },
+      { args: ["find"], replies: [err("WINDOW_NOT_FOUND")] },
+    ], { shim: "linked", env: { DEMO_PLATFORM: "win32" } });
+    assert.equal(r.json.carried_out, true, r.json.note);
+    assert.deepEqual(r.calls.find((c) => c[0] === "click"), ["click", "@s1:e2"]);
+    assert.ok(!r.calls.some((c) => c[0] === "find" && c.includes("w-1") && c.includes("--name")), "the window showing a page is not searched");
+  } finally {
+    cdp.close();
+  }
+});
+
+test("win32 tray: with no menu open, the icon the taskbar names is right-clicked, then the item is clicked where it sits", () => {
+  const args = ["step", "--app", "Electron", "--surface", "tray", "--name", "Reset", "--action", "click", "--tray-name", "Sample App", "--out", "s.png"];
+  const taskbar = ok({ tree: { role: "toolbar", children: [{ role: "button", name: "Sample App - 1 running window", bounds: { x: 900, y: 1128, width: 66, height: 72 } }, { role: "button", name: "Sample App", bounds: { x: 1505, y: 1128, width: 47, height: 72 } }] } });
+  const r = run(args, [
+    { args: ["list-windows"], replies: [ok([])] },
+    { args: ["snapshot", "--app", "Electron", "--surface", "menu"], replies: [err("WINDOW_NOT_FOUND"), ok({ tree: menu([item("Reset", 0), item("Reset\tCtrl+R", 3)]) })] },
+    { args: ["snapshot", "--surface", "taskbar"], replies: [taskbar] },
+    { args: ["mouse-click"], replies: [ok({})] },
+    { args: ["wait", "--menu", "--app", "Electron"], replies: [ok({ found: true })] },
+    { args: ["screenshot"], replies: [ok({})] },
+    { args: ["find"], replies: [err("WINDOW_NOT_FOUND")] },
+  ], { shim: "linked", env: { DEMO_PLATFORM: "win32" } });
+  assert.equal(r.json.carried_out, true, r.json.note);
+  const clicks = r.calls.filter((c) => c[0] === "mouse-click");
+  assert.deepEqual(clicks, [["mouse-click", "--button", "right", "--xy", "1529,1164", "--headed"], ["mouse-click", "--xy", "200,240", "--headed"]], "the hidden 0×0 twin is passed over");
+  assert.ok(!r.calls.some((c) => c[0] === "click" || c[0] === "right-click"), "no ref action on the taskbar or the menu");
+
+  const absent = run(args, [
+    { args: ["list-windows"], replies: [ok([])] },
+    { args: ["snapshot", "--app", "Electron", "--surface", "menu"], replies: [err("WINDOW_NOT_FOUND")] },
+    { args: ["snapshot", "--surface", "taskbar"], replies: [ok({ tree: { role: "toolbar", children: [] } })] },
+    { args: ["screenshot"], replies: [ok({})] },
+    { args: ["find"], replies: [err("WINDOW_NOT_FOUND")] },
+  ], { shim: "linked", env: { DEMO_PLATFORM: "win32" } });
+  assert.equal(absent.json.carried_out, false);
+  assert.match(absent.json.note, /no icon named "Sample App" on the taskbar/);
+  assert.ok(!absent.calls.some((c) => c[0] === "mouse-click"));
+
+  const unopened = run(args, [
+    { args: ["list-windows"], replies: [ok([])] },
+    { args: ["snapshot", "--app", "Electron", "--surface", "menu"], replies: [err("WINDOW_NOT_FOUND")] },
+    { args: ["snapshot", "--surface", "taskbar"], replies: [taskbar] },
+    { args: ["mouse-click"], replies: [ok({})] },
+    { args: ["wait"], replies: [err("TIMEOUT")] },
+    { args: ["screenshot"], replies: [ok({})] },
+    { args: ["find"], replies: [err("WINDOW_NOT_FOUND")] },
+  ], { shim: "linked", env: { DEMO_PLATFORM: "win32" } });
+  assert.equal(unopened.json.carried_out, false);
+  assert.match(unopened.json.note, /^wait: TIMEOUT/);
+  assert.equal(unopened.calls.filter((c) => c[0] === "mouse-click").length, 1, "nothing is clicked in a menu that did not open");
+
+  const unread = run(args, [
+    { args: ["list-windows"], replies: [ok([])] },
+    { args: ["snapshot", "--app", "Electron", "--surface", "menu"], replies: [err("WINDOW_NOT_FOUND"), err("WINDOW_NOT_FOUND")] },
+    { args: ["snapshot", "--surface", "taskbar"], replies: [taskbar] },
+    { args: ["mouse-click"], replies: [ok({})] },
+    { args: ["wait"], replies: [ok({ found: true })] },
+    { args: ["press"], replies: [ok({})] },
+    { args: ["screenshot"], replies: [ok({})] },
+    { args: ["find"], replies: [err("WINDOW_NOT_FOUND")] },
+  ], { shim: "linked", env: { DEMO_PLATFORM: "win32" } });
+  assert.match(unread.json.note, /^snapshot: WINDOW_NOT_FOUND/, "a menu that opened but cannot be read says so");
+  assert.deepEqual(unread.calls.find((c) => c[0] === "press"), ["press", "escape", "--app", "Electron"], "the menu it opened is closed");
+});
+
+test("win32 menu: a disabled item is not clicked, a check already in place is not clicked again, and the menu is closed", () => {
+  const scenario = (states) => [
+    { args: ["list-windows"], replies: [ok([])] },
+    { args: ["snapshot", "--app", "Electron", "--surface", "menu"], replies: [ok({ tree: menu([item("Use proxy", 2, states, "checkbox")]) })] },
+    { args: ["mouse-click"], replies: [ok({})] },
+    { args: ["press"], replies: [ok({})] },
+    { args: ["screenshot"], replies: [ok({})] },
+    { args: ["find"], replies: [err("WINDOW_NOT_FOUND")] },
+  ];
+  const step = (action, states) => run(["step", "--app", "Electron", "--surface", "menu", "--name", "Use proxy", "--action", action, "--out", "s.png"], scenario(states), { shim: "linked", env: { DEMO_PLATFORM: "win32" } });
+  const escape = ["press", "escape", "--app", "Electron"];
+
+  const disabled = step("click", ["disabled"]);
+  assert.equal(disabled.json.carried_out, false);
+  assert.equal(disabled.json.note, '"Use proxy" is disabled on menu');
+  assert.ok(!disabled.calls.some((c) => c[0] === "mouse-click"));
+  assert.deepEqual(disabled.calls.find((c) => c[0] === "press"), escape);
+
+  const kept = step("check", ["checked"]);
+  assert.equal(kept.json.carried_out, true);
+  assert.ok(!kept.calls.some((c) => c[0] === "mouse-click"));
+  assert.deepEqual(kept.calls.find((c) => c[0] === "press"), escape);
+  assert.equal(kept.calls.filter((c) => c[0] === "list-windows").length, 1, "nothing was sent, so no window change is waited for");
+
+  const lost = run(["step", "--app", "Electron", "--surface", "menu", "--name", "Use proxy", "--action", "click", "--out", "s.png"], [
+    { args: ["list-windows"], replies: [ok([])] },
+    { args: ["snapshot", "--app", "Electron", "--surface", "menu"], replies: [ok({ tree: menu([item("Use proxy", 2)]) })] },
+    { args: ["mouse-click"], replies: [err("ACTION_FAILED")] },
+    { args: ["screenshot"], replies: [ok({})] },
+    { args: ["find"], replies: [err("WINDOW_NOT_FOUND")] },
+  ], { shim: "linked", env: { DEMO_PLATFORM: "win32" } });
+  assert.equal(lost.json.carried_out, false);
+  assert.equal(lost.calls.filter((c) => c[0] === "mouse-click").length, 1, "a pointer click is not sent again where the menu may be gone");
+
+  const opening = run(["step", "--app", "Electron", "--surface", "menu", "--name", "Use proxy", "--action", "click", "--out", "s.png"], [
+    { args: ["list-windows"], replies: [ok([]), ok([{ id: "w-9", title: "Sample App" }])] },
+    { args: ["snapshot", "--app", "Electron", "--surface", "menu"], replies: [ok({ tree: menu([item("Use proxy", 2)]) })] },
+    { args: ["mouse-click"], replies: [ok({})] },
+    { args: ["screenshot"], replies: [ok({})] },
+    { args: ["find", "--window-id", "w-9"], replies: [ok({ matches: [{ role: "statictext", name: "Restart now?" }, button("Yes(Y)", 1)] })] },
+    { args: ["find"], replies: [err("WINDOW_NOT_FOUND")] },
+  ], { shim: "linked", env: { DEMO_PLATFORM: "win32" } });
+  assert.deepEqual(opening.json.opened, ["Restart now?", "Yes(Y)"], "the window a pointer click opened is read as what it opened");
+
+  const flipped = step("uncheck", ["checked"]);
+  assert.deepEqual(flipped.calls.find((c) => c[0] === "mouse-click"), ["mouse-click", "--xy", "200,200", "--headed"]);
+  assert.ok(!flipped.calls.some((c) => c[0] === "press"), "a clicked menu closes itself");
+
+  const typed = run(["step", "--app", "Electron", "--surface", "menu", "--name", "Use proxy", "--action", "type", "--value", "x", "--out", "s.png"], scenario([]), { shim: "linked", env: { DEMO_PLATFORM: "win32" } });
+  assert.equal(typed.json.carried_out, false);
+  assert.ok(!typed.calls.some((c) => c[0] === "snapshot"));
+});
+
+test("press not delivered: win32 sends it again headed at the focused window; elsewhere the same press again", () => {
+  const scenario = [
+    { args: ["list-windows"], replies: [ok([{ id: "w-1", title: "Main" }, { id: "w-2", title: "Sample App", is_focused: true }])] },
+    { args: ["press"], replies: [err("NOT_FOREGROUND"), ok({})] },
+    { args: ["screenshot"], replies: [ok({})] },
+    { args: ["find"], replies: [err("WINDOW_NOT_FOUND")] },
+  ];
+  const args = ["step", "--app", "Electron", "--surface", "dialog", "--action", "press", "--value", "escape", "--window-title", "Main", "--out", "s.png"];
+  const win = run(args, scenario, { shim: "linked", env: { DEMO_PLATFORM: "win32" } });
+  assert.equal(win.json.carried_out, true);
+  assert.deepEqual(win.calls.filter((c) => c[0] === "press"), [["press", "escape", "--app", "Electron"], ["press", "escape", "--window-id", "w-2", "--headed"]]);
+  const mac = run(args, scenario);
+  assert.deepEqual(mac.calls.filter((c) => c[0] === "press"), [["press", "escape", "--app", "Electron"], ["press", "escape", "--app", "Electron"]]);
 });
 
 test("usage errors exit 2", () => {

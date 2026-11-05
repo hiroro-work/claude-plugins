@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-11-05
+
+### demo v1.14.0 / dev-workflow-bundle v2.42.0
+
+- **`native:tray` opens the tray menu on Windows.** When no menu is open, the step right-clicks the app's icon on the taskbar, found by the name the new `native_tray` key gives (`native_app` when unset), and waits for the menu. The icon must be shown on the taskbar, because agent-desktop 1.1.0 cannot reach hidden icons. Setup mode proposes `native_tray` from the tray's `setToolTip(` string.
+- **Windows menu items are clicked where they sit.** agent-desktop cannot act on a Windows menu item by reference, so a `native:tray` or `native:menu` step clicks the item's position with the pointer. It does not click a disabled item, does not click when the check or uncheck is already in place, and closes a menu left without a click. The step's result carries the text of a window the click opened.
+- **Windows dialogs titled like the app's page are reached, and buttons with an access key are found.** Electron titles a message box after the app, and the main window's page often has the same title. Such a window now counts as a dialog when it shows a button but no page. A step's name may leave out the access key a Windows button carries (`いいえ` finds `いいえ(N)`), and `dismiss` picks `No` or `Cancel` before the title bar's `Close`.
+- **A Windows `press` that did not reach the app is resent to the app's focused window, which is brought to the front.**
+- **The hint shown when agent-desktop does not call its native binary on Windows now also names `node scripts/postinstall.js`,** for an install made another way, such as mise. `tests/demo/native.test.mjs` now runs on a Windows host without reaching the real agent-desktop.
+
 ## 2026-11-04
 
 ### demo v1.13.0 / dev-workflow-bundle v2.41.0

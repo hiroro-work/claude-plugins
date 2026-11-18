@@ -8,7 +8,7 @@ allowed-tools: Skill(dev-workflow)
 
 ```text
 /mobpro [--fast|--deep] [--artifact off|share|review] <task>
-/mobpro --resume <state-file> [--fast|--deep] [--artifact off|share|review]
+/mobpro --resume <state> [--fast|--deep] [--artifact off|share|review]
 ```
 
 ## Dispatch authorization

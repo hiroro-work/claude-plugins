@@ -74,9 +74,9 @@ Before the reviews are launched or run inline, predict where findings will come 
 
 ## Completion
 
-Add a learning summary: "what was worth learning here" as a few one-line points drawn from the reviewed units, plus any point a plan-building stop left open when the junior chose to advance, plus one line each for tests, review, and rules outcomes. For a decomposed run, give both resume commands: `/mobpro --resume <slug>` to continue learning, and `/dev-workflow --resume <slug>` to hand off; the state file is shared.
+Add a learning summary: "what was worth learning here" as a few one-line points drawn from the reviewed units, plus any point a plan-building stop left open when the junior chose to advance, plus one line each for tests, review, and rules outcomes. For a decomposed run, give both resume commands: `/mobpro --resume <slug>` to continue learning, and `/dev-workflow --resume <slug>` to hand off; the state is shared.
 
 ## Other differences
 
-- Task Decomposition: the walking-skeleton axis is the default candidate, and the first proposed subtask is "get the minimal happy path working". On accept, add a `Created by: mobpro` line to the state-file body.
+- Task Decomposition: the walking-skeleton axis is the default candidate, and the first proposed subtask is "get the minimal happy path working". On accept, add a `Created by: mobpro` line to the state's body.
 - Comment discipline adds to Phase 7's rule: default to no comment, write one only where the why is non-obvious and keep it to one line; an explanation for the junior belongs in the walkthrough, never in a comment; a comment the junior asks for is written.

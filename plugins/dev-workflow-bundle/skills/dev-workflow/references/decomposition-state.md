@@ -26,23 +26,23 @@ subtasks:
 ---
 ```
 
-Validate on every read: the four top-level keys present, ids unique integers, `depends_on` only earlier existing ids with no cycles, every string non-empty except `pr` and `branch`, which may be null (a missing `branch` reads as null). With `pr_stack`, `trunk` and `top` are non-empty strings. Stop and report the first violation; the user repairs the file. Once resolved, hold the absolute path and use it for every later read, write, and delete. Never run two sessions against one state file.
+Validate on every read: the four top-level keys present, ids unique integers, `depends_on` only earlier existing ids with no cycles, every string non-empty except `pr` and `branch`, which may be null (a missing `branch` reads as null). With `pr_stack`, `trunk` and `top` are non-empty strings. Stop and report the first violation; the user repairs it. Once resolved, hold the state's location: the file's absolute path, or the artifact URL. "Write back" overwrites the file; for a URL it follows `state-artifact.md` § Write, and a `--resume` line shown to the user names the URL in place of `<slug>`. Never run two sessions against one local state file.
 
 ## Resume
 
-1. Resolve the argument, first hit wins: an existing path; `.claude/plans/<arg>`; `.claude/plans/dev-workflow.<arg>.md`. Not found → list `.claude/plans/dev-workflow.*.md` and stop.
+1. Resolve the argument, first hit wins: a claude.ai artifact URL (read `state-artifact.md` and follow its § Read; steps 2–3 take the state it yields); an existing path; `.claude/plans/<arg>`; `.claude/plans/dev-workflow.<arg>.md`. Not found → list `.claude/plans/dev-workflow.*.md` and stop.
 2. A file with no frontmatter, or without `parent_task` / `subtasks`, is not a state file: say so, treat it as an inherited spec, set the effective task to its first heading or paragraph, and continue in Normal sub-mode without a state file.
 3. Validate (§ State file).
-4. Pick the subtask. All `completed` → go to § Finish a subtask's final step. No leftover `in_progress` → take the runnable frontier (`pending` with all dependencies `completed`); empty frontier → stop and report; one candidate, or none whose description carries a readiness condition ("resume only when X") → take the smallest id; otherwise ask the user to pick (USER GATE). Leftover `in_progress` entries → keep the runnable ones as candidates alongside the runnable `pending` ones, reset unrunnable leftovers to `pending`, and ask the user to pick when more than one remains. Mark the choice `in_progress`, write back. With `pr_stack`, run § Stacked PRs's "Resume" paragraph next.
+4. Pick the subtask. All `completed` → go to § Finish a subtask's final step. No leftover `in_progress` → take the runnable frontier (`pending` with all dependencies `completed`); empty frontier → stop and report; one candidate → take it; more → ask the user to pick (USER GATE). Leftover `in_progress` entries → keep the runnable ones as candidates alongside the runnable `pending` ones, reset unrunnable leftovers to `pending` in a state file only, and ask the user to pick, showing each one's `status`, when more than one remains or the state is at a URL. Mark the choice `in_progress`, write back. With `pr_stack`, run § Stacked PRs's "Resume" paragraph next.
 5. Summarize which parent task resumes, which subtask is current, and its `verification_hint`. The subtask is the effective task; the parent text and sibling statuses are background context.
 
 ## Finish a subtask (Completion, decomposed runs only)
 
 1. If work items were excluded or deferred during this run and live only in prose, ask the user per item: add as a new `pending` subtask (with `depends_on` when order matters), merge into an existing pending subtask, or accept as out of scope.
-2. Mark the subtask `completed`; write back.
+2. Mark the subtask `completed`; write back, unless the state is at a URL.
 3. Ask for an optional PR URL (USER GATE); set `pr` when given. With `pr_stack`, § Stacked PRs's "Finish" paragraph replaces this step and adds to steps 4–5.
-4. Find the next runnable subtask. If one exists and `landed_count > 0`: tell the user to open a PR for this run's commits, then start a new session with `--resume <slug>`. If one exists and `landed_count` is 0: tell the user to commit and open a PR first, because the next run takes a fresh `<base-commit>` and uncommitted changes would end up in the next subtask's diff. Add, when rule files remain uncommitted, that those need committing too. Never push outside `submit` in § Stacked PRs's "Finish" paragraph.
-5. If no subtask remains: `rm -f <state-file path>` and list every subtask's title and `pr` in the summary.
+4. Write back when step 3 changed the state or the state is at a URL. Find the next runnable subtask. If one exists and `landed_count > 0`: tell the user to open a PR for this run's commits, then start a new session with `--resume <slug>`. If one exists and `landed_count` is 0: tell the user to commit and open a PR first, because the next run takes a fresh `<base-commit>` and uncommitted changes would end up in the next subtask's diff. Add, when rule files remain uncommitted, that those need committing too. Never push outside `submit` in § Stacked PRs's "Finish" paragraph.
+5. If no subtask remains: `rm -f` the state file, leaving a state artifact as it is, and list every subtask's title and `pr` in the summary.
 
 ## Stacked PRs
 

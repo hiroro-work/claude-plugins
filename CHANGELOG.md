@@ -2,6 +2,10 @@
 
 ## 2026-11-18
 
+### dev-workflow v2.17.0 / dev-workflow-bundle v2.44.0
+
+- **The state artifact's page says what each subtask is.** The page the workflow publishes now lists every subtask with its description, how it is verified, what it depends on, its status, branch and PR, under a line counting the completed and in-progress subtasks with the time of the last write. It replaces the four-column table. The state text stays folded below in `<pre id="dev-workflow-state">`; the rule for other publishers and the way a resume reads the page are unchanged.
+
 ### dev-workflow v2.16.0 / mobpro v2.0.1 / dev-workflow-bundle v2.43.0
 
 - **`--resume` takes a claude.ai artifact URL.** `/dev-workflow --resume <artifact URL>` and `/mobpro --resume <artifact URL>` read the decomposition state from an artifact, for a task list a team shares without committing it. The page holds a `<pre id="dev-workflow-state">` whose text is the state file's text with `&`, `<`, `>` encoded; the rest of the page is the publisher's. Answering `artifact` to the split proposal publishes the state as a new private artifact in place of the state file; when publishing fails the workflow says so and writes the file. A resume from an artifact copies nothing into the repository.

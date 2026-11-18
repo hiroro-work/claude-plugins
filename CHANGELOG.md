@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-11-18
+
+### dev-workflow v2.16.0 / mobpro v2.0.1 / dev-workflow-bundle v2.43.0
+
+- **`--resume` takes a claude.ai artifact URL.** `/dev-workflow --resume <artifact URL>` and `/mobpro --resume <artifact URL>` read the decomposition state from an artifact, for a task list a team shares without committing it. The page holds a `<pre id="dev-workflow-state">` whose text is the state file's text with `&`, `<`, `>` encoded; the rest of the page is the publisher's. The workflow never creates the artifact and copies nothing into the repository.
+- **Progress is written back to the same URL.** Each write-back reads the page again, applies only this run's changes, and republishes it as a table of the subtasks with the state text folded below, built by the new `scripts/state/page.mjs`. It never overwrites a newer version: a refused publish is read again and retried, three times at most; any other failure is retried once, then reported in one line while the run continues. When every subtask is completed the page stays.
+- **A resume without edit access stops.** Whoever resumes must own the artifact or have edit access to it.
+- **Behavior change from v2.15.0**: a resume asks which subtask to take whenever more than one can be started, for a state file too. It used to take the smallest id unless a subtask's description named a readiness condition.
+
 ## 2026-11-05
 
 ### demo v1.14.0 / dev-workflow-bundle v2.42.0

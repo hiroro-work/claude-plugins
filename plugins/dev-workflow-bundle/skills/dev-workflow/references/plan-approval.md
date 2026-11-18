@@ -20,7 +20,7 @@ Render the plan per `plan-format.md`'s "Presentation at Plan Approval" paragraph
 
 ## Branch action
 
-Runs the Branch section's Recommendation, the approved choice, just before Implement, then, with a decomposition state file, `decomposition-state.md` § Stacked PRs's "Record" paragraph. A plan without a parseable Branch section counts as `stay` off the default branch and as `new` on it, with the `new` command `plan-format.md`'s Branch item defines; say so in one line.
+Runs the Branch section's Recommendation, the approved choice, just before Implement, then, with a decomposition state, `decomposition-state.md` § Stacked PRs's "Record" paragraph. A plan without a parseable Branch section counts as `stay` off the default branch and as `new` on it, with the `new` command `plan-format.md`'s Branch item defines; say so in one line.
 
 - `stay`, or a `new` / `stack` whose branch is already checked out: nothing.
 - `new` / `stack`: run the command the Branch section gives. Both branch from HEAD, so `<base-commit>` stays.

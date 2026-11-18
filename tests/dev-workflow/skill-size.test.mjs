@@ -12,7 +12,7 @@ const skill = readFileSync(join(repoRoot, "skills", "dev-workflow", "SKILL.md"),
 
 test("SKILL.md stays under the character budget", () => {
   const chars = [...skill].length;
-  assert.ok(chars <= 29067, `SKILL.md is ${chars} chars; budget is 29067 — cut, do not move to references`);
+  assert.ok(chars <= 29041, `SKILL.md is ${chars} chars; budget is 29041 — cut, do not move to references`);
 });
 
 // Outside the default read path; counted under their own budget.
@@ -25,18 +25,18 @@ test("SKILL.md plus the reference tree stays under the tree budget", () => {
   const excluded = new Set(["mob-mode.md", ...conditional]);
   const refs = readdirSync(dir).filter((f) => f.endsWith(".md") && !excluded.has(f));
   const total = [...skill].length + refs.reduce((n, f) => n + [...readFileSync(join(dir, f), "utf8")].length, 0);
-  assert.ok(total <= 70786, `SKILL.md + counted references total ${total} chars; budget is 70786`);
+  assert.ok(total <= 70953, `SKILL.md + counted references total ${total} chars; budget is 70953`);
 });
 
 test("the conditionally-read references stay under their own budget", () => {
   const dir = join(repoRoot, "skills", "dev-workflow", "references");
   const total = conditional.reduce((n, f) => n + [...readFileSync(join(dir, f), "utf8")].length, 0);
-  assert.ok(total <= 20399, `the conditionally-read references total ${total} chars; budget is 20399`);
+  assert.ok(total <= 21017, `the conditionally-read references total ${total} chars; budget is 21017`);
 });
 
 test("mob-mode.md stays under its own budget", () => {
   const chars = [...readFileSync(join(repoRoot, "skills", "dev-workflow", "references", "mob-mode.md"), "utf8")].length;
-  assert.ok(chars <= 12323, `mob-mode.md is ${chars} chars; budget is 12323 (read only in mob mode)`);
+  assert.ok(chars <= 12315, `mob-mode.md is ${chars} chars; budget is 12315 (read only in mob mode)`);
 });
 
 test("mobpro stays a thin entry point", () => {

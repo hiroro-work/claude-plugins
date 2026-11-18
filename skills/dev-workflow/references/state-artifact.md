@@ -1,8 +1,14 @@
 # State artifact
 
-Read from `decomposition-state.md` § Resume when the `--resume` argument is a claude.ai artifact URL. Unqualified `§` references point into this file.
+Read from `decomposition-state.md` § Resume when the `--resume` argument is a claude.ai artifact URL, and from `decomposition.md` § Propose a split on `artifact`. Unqualified `§` references point into this file.
 
-The state is the text inside the page's `<pre id="dev-workflow-state">`, with `&lt;`, `&gt;`, `&amp;` decoded: the state file text of `decomposition-state.md` § State file. This workflow never publishes a new state artifact.
+The state is the text inside the page's `<pre id="dev-workflow-state">`, with `&lt;`, `&gt;`, `&amp;` decoded: the state file text of `decomposition-state.md` § State file.
+
+## Create
+
+1. Write the state and build the `.html` as § Write step 3 does, then publish it with `Artifact` as a new artifact: `file_path` the `.html`, `icon` `list`, `description` the parent task in one sentence.
+2. Hold the returned URL as the state's location. Tell the user the URL, `--resume <URL>`, and that anyone else who resumes needs edit access, given from the page's Share menu.
+3. A failed publish → retry it once after 1–2 seconds. When that fails too, or the script exits non-zero, say § Write step 4's `state-publish-failed` line and continue as `decomposition.md` § Propose a split's `yes`.
 
 ## Read
 

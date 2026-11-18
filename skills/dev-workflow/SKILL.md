@@ -66,7 +66,7 @@ No tier skips a phase absent from the table. A skipped phase is marked `complete
 
 The only places the workflow waits for the user:
 
-- Task Decomposition: the split proposal (`yes` / `adjust` / `no`) and, on resume, the subtask picker when more than one is runnable.
+- Task Decomposition: the split proposal and, on resume, the subtask picker when more than one is runnable.
 - Plan Approval: the browser review (`approve` / `revise` with comments, and the branch choice) when a local browser is reachable; otherwise the chat replies Phase 5 (Plan Approval) lists, with the one-line read-back before a swap or rewrite is applied. A wrong-branch request waits for uncommitted changes to be committed or stashed. With `plan_artifact: review`, the wait for the team's review.
 - Check / Test: after 3 failed fix rounds the workflow stops and reports; a check command that rewrote files outside the task beyond trivial formatting, or a test skill's EXECUTION_ERROR, stops for the user.
 - Code Review: findings still unresolved after the passes, asked once.
@@ -115,7 +115,7 @@ This skill's procedure dispatches subagents, so invoking the skill **is** the re
 ## Phase 2: Task Decomposition
 
 - **Resume sub-mode**: read `references/decomposition-state.md` and follow its § Resume. The selected subtask becomes the effective task; read `references/tiers.md` and assess the tier from it.
-- **Normal sub-mode**: read `references/tiers.md` and assess the tier. On the full lane, read `references/decomposition.md` and follow § Propose a split; on `yes`, take the first subtask as the effective task. On the express lane, or on `no`, the effective task is the request itself.
+- **Normal sub-mode**: read `references/tiers.md` and assess the tier. On the full lane, read `references/decomposition.md` and follow § Propose a split; once accepted, take the first subtask as the effective task. On the express lane, or on `no`, the effective task is the request itself.
 
 Emit one line: the tier and the phases it skips. Mark the skipped rows. Resolve `<model>` = `subagent_model[tier]` (unset → inherit). In mob mode, apply `references/mob-mode.md` § Other differences to the split proposal.
 
@@ -189,7 +189,7 @@ Express lane skips. Take the background result per `references/review-launch.md`
 
 Skipped on Trivial and when `code_review: false`. Take the background result per `references/review-launch.md` § Collect when it is fresh; otherwise run step 1.
 
-1. Call `Skill(<reviewer>)` with `Model: <model>`, `git diff <base-commit>`, the content of untracked new files labeled as such, `custom_instructions` when set, Phase 7's no-comment rule as a standing rejection criterion, the three categories (correctness and edge cases; conventions and consistency including a light `.claude/rules/` check; simplicity and maintainability), the current subtask and its siblings when a decomposition state file is active, and Plan Review's finding-reporting instruction.
+1. Call `Skill(<reviewer>)` with `Model: <model>`, `git diff <base-commit>`, the content of untracked new files labeled as such, `custom_instructions` when set, Phase 7's no-comment rule as a standing rejection criterion, the three categories (correctness and edge cases; conventions and consistency including a light `.claude/rules/` check; simplicity and maintainability), the current subtask and its siblings when a decomposition state is active, and Plan Review's finding-reporting instruction.
 2. Fix genuine findings; reject the rest with one line each. If the user would plausibly raise the point themselves, fix it. Duplicates of Rules Compliance findings are skipped. After a Critical fix, sweep the diff for the same defect class. Record edited files in `review_fix_files`.
 3. Escalation: exactly one more pass when this pass had at least one Critical finding and at least one fix was applied. The escalation pass scopes to the changes since the first pass. It never triggers a third.
 4. Findings still unresolved after the passes go to the user once (USER GATE). Fixes made there also enter `review_fix_files`.

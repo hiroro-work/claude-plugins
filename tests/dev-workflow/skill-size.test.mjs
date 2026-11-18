@@ -12,25 +12,26 @@ const skill = readFileSync(join(repoRoot, "skills", "dev-workflow", "SKILL.md"),
 
 test("SKILL.md stays under the character budget", () => {
   const chars = [...skill].length;
-  assert.ok(chars <= 29077, `SKILL.md is ${chars} chars; budget is 29077 — cut, do not move to references`);
+  assert.ok(chars <= 29067, `SKILL.md is ${chars} chars; budget is 29067 — cut, do not move to references`);
 });
+
+// Outside the default read path; counted under their own budget.
+const conditional = ["crit-gate.md", "plan-artifact.md", "decomposition-state.md", "state-artifact.md", "browser-gate.md"];
 
 // Budgets are ratchets: raise deliberately, in a commit that changes the number here.
 test("SKILL.md plus the reference tree stays under the tree budget", () => {
   const dir = join(repoRoot, "skills", "dev-workflow", "references");
-  // mob-mode.md has its own budget below; crit-gate.md, plan-artifact.md, decomposition-state.md and
-  // browser-gate.md are outside the default read path and counted separately.
-  const excluded = new Set(["mob-mode.md", "crit-gate.md", "plan-artifact.md", "decomposition-state.md", "browser-gate.md"]);
+  // mob-mode.md has its own budget below.
+  const excluded = new Set(["mob-mode.md", ...conditional]);
   const refs = readdirSync(dir).filter((f) => f.endsWith(".md") && !excluded.has(f));
   const total = [...skill].length + refs.reduce((n, f) => n + [...readFileSync(join(dir, f), "utf8")].length, 0);
-  assert.ok(total <= 70796, `SKILL.md + counted references total ${total} chars; budget is 70796`);
+  assert.ok(total <= 70786, `SKILL.md + counted references total ${total} chars; budget is 70786`);
 });
 
 test("the conditionally-read references stay under their own budget", () => {
   const dir = join(repoRoot, "skills", "dev-workflow", "references");
-  const total = ["crit-gate.md", "plan-artifact.md", "decomposition-state.md", "browser-gate.md"]
-    .reduce((n, f) => n + [...readFileSync(join(dir, f), "utf8")].length, 0);
-  assert.ok(total <= 17811, `the conditionally-read references total ${total} chars; budget is 17811`);
+  const total = conditional.reduce((n, f) => n + [...readFileSync(join(dir, f), "utf8")].length, 0);
+  assert.ok(total <= 20399, `the conditionally-read references total ${total} chars; budget is 20399`);
 });
 
 test("mob-mode.md stays under its own budget", () => {

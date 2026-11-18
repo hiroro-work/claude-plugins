@@ -9,7 +9,7 @@ allowed-tools: Agent, Read, Write, Edit, Glob, Grep, TaskCreate, TaskUpdate, Tas
 ```text
 /dev-workflow --init                 # Detect check/test commands, write settings, generate run-tests
 /dev-workflow [--fast|--deep] [--artifact off|share|review] [--mob] <task>                 # Run the workflow
-/dev-workflow --resume <state-file> [--fast|--deep] [--artifact off|share|review] [--mob]  # Run the next subtask of a decomposed task
+/dev-workflow --resume <state> [--fast|--deep] [--artifact off|share|review] [--mob]  # Run the next subtask of a decomposed task
 ```
 
 Nineteen phases, always in this order. § Difficulty and the skip table decides what is skipped and how Plan Review runs. User gates are listed in § User gates; nothing else asks the user a question.
@@ -90,7 +90,7 @@ Files this workflow writes as its own state are excluded from every diff, review
 
 ## Mode detection
 
-`--init` → read `references/init-mode.md` and follow it; the session ends there. `--resume <state-file>` → Resume sub-mode. Otherwise Normal sub-mode. Other flags combine with either sub-mode; `--init` ignores them.
+`--init` → read `references/init-mode.md` and follow it; the session ends there. `--resume <state>` → Resume sub-mode. Otherwise Normal sub-mode. Other flags combine with either sub-mode; `--init` ignores them.
 
 ## Dispatch authorization
 

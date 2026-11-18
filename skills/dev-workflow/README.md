@@ -102,7 +102,14 @@ Commands in `check_commands` must match the Bash patterns the skill allows (pnpm
 
 ## Decomposed tasks
 
-Moderate and Complex tasks may be split into subtasks, each shipped as its own PR. The state file is `.claude/plans/dev-workflow.<slug>.md`, resumed with `--resume <slug>`.
+Moderate and Complex tasks may be split into subtasks, each shipped as its own PR. The state file is `.claude/plans/dev-workflow.<slug>.md`, resumed with `--resume <slug>`. When more than one subtask can be started, each resume asks which one to take.
+
+The state can also live in a claude.ai artifact, for a task list a team shares without committing it: `/dev-workflow --resume <artifact URL>` or `/mobpro --resume <artifact URL>`.
+
+- The workflow never creates the artifact. Whatever publishes it follows one rule: the page holds a `<pre id="dev-workflow-state">` whose text is the state file's text (the same frontmatter and body), with `&`, `<`, `>` written as `&amp;`, `&lt;`, `&gt;`. The rest of the page is the publisher's to design.
+- The workflow writes its own changes back to the same URL: the subtask it worked on (`status`, `pr`, `branch`), a subtask it added, and the stack it recorded. A subtask someone else has in progress is left alone, and is taken only when you pick it. A write-back republishes the whole page as a table of the subtasks with the state text folded below it, titled `dev-workflow.<slug>`, so a publisher's own layout and title last until then. When every subtask is completed the page stays.
+- Whoever resumes must own the artifact or have been given edit access to it from the page's Share menu. Without that the resume stops.
+- Nothing is copied into the repository.
 
 Every plan has a Branch section, chosen on the plan review page with radio buttons (or in the chat reply): `stay` on the current branch, `new` to branch off here, or `stack` to stack a branch on top of this one with the [`gh stack`](https://github.com/github/gh-stack) extension, offered only when it is installed. The page lists the choices as radio buttons under the current branch, with the default already selected; the plan text keeps the command each choice runs. When your `CLAUDE.md` or `.claude/rules/` state a branch-naming convention, a base branch, or that stacked PRs are not used, the plan follows them: the `new` / `stack` command names the branch per the convention, the base is the one you named, and `stack` is left out. A stacked subtask's branch is `<slug>-<id>-<subtask title>` and follows the convention the same way. Changing the choice does not send the plan back for revision; approving runs the command before implementation starts, and a comment on the Branch card asking for a different branch sends the run back to planning on that branch.
 
